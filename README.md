@@ -1,21 +1,11 @@
-# Lattenspecialist.nl – basiswebsite v1
+# Lattenspecialist.nl V2
 
-Statische website die direct geschikt is voor GitHub Pages.
+Statische website voor GitHub Pages.
 
-## Bestanden
-- `index.html` – complete one-page website
-- `styles.css` – vormgeving en responsive layout
-- `script.js` – mobiel menu + automatisch laden prijslijst
-- `data/prijzen.json` – centrale plek voor prijzen en pakketten
-- `CNAME` – koppeling met lattenspecialist.nl
-- `404.html` – foutpagina
+## Publiceren
+Upload de inhoud van deze map rechtstreeks naar de root van de `main` branch. Laat `CNAME` staan; dit koppelt `lattenspecialist.nl` aan GitHub Pages.
 
-## Nog definitief invullen vóór livegang
-1. Prijzen in `data/prijzen.json` (`null` vervangen door een getal, bijvoorbeeld `39.95`).
-2. Exact gratis haal- en brenggebied.
-3. Contactgegevens / WhatsApp-link.
-4. Normale doorlooptijd.
-5. Originele Lattenspecialist-logo en eigen werkfoto's.
-
-## Later uitbreiden
-De huidige knoppen en prijsonderdelen zijn bewust eenvoudig gehouden zodat later een boekings- en betaalsysteem kan worden gekoppeld zonder de hele website opnieuw te ontwerpen.
+## Belangrijk
+- Prijzen staan ook gestructureerd in `data/prijzen.json` voor latere koppeling aan een boekings-/betaalsysteem.
+- Contact: `info@lattenspecialist.nl`.
+- De huidige foto's zijn stock-/referentiebeelden; vervang ze later door eigen werkfoto's waar gewenst.

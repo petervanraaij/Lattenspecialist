@@ -1,34 +1,75 @@
-[
-  {
-    "tag": "LOSSE BEURT",
-    "naam": "Waxservice",
-    "prijs": null,
-    "popular": false,
-    "items": ["Belag reinigen", "Warme wax", "Borstelen & afwerken"],
-    "notitie": "Voor materiaal waarbij de kanten en het belag verder in goede staat zijn."
-  },
-  {
-    "tag": "MEEST GEKOZEN",
-    "naam": "Basis onderhoud",
-    "prijs": null,
-    "popular": true,
-    "items": ["Inspectie", "Kanten slijpen", "Waxen", "Afwerking"],
-    "notitie": "Voor regulier onderhoud vóór of tijdens het wintersportseizoen."
-  },
-  {
-    "tag": "UITGEBREID",
-    "naam": "Compleet onderhoud",
-    "prijs": null,
-    "popular": false,
-    "items": ["Inspectie", "Belag herstellen", "Kanten slijpen", "Waxen & afwerken"],
-    "notitie": "Voor materiaal met gebruikssporen, krassen of achterstallig onderhoud."
-  },
-  {
-    "tag": "MAATWERK",
-    "naam": "Reparatie",
-    "prijs": null,
-    "popular": false,
-    "items": ["Diepe krassen", "Gaten in het belag", "Schade beoordelen", "Prijs vooraf bespreken"],
-    "notitie": "Bij grotere beschadigingen bepalen we eerst wat technisch en economisch zinvol is."
-  }
-]
+{
+  "currency": "EUR",
+  "packages": [
+    {
+      "id": "brons",
+      "name": "Brons",
+      "tagline": "Wax & verzorging",
+      "ski": 19.95,
+      "snowboard": 24.95,
+      "items": [
+        "Warme waxbeurt",
+        "Afkoelen en afschrapen",
+        "Uitborstelen en finish"
+      ]
+    },
+    {
+      "id": "zilver",
+      "name": "Zilver",
+      "tagline": "Grip & glijvermogen",
+      "ski": 34.95,
+      "snowboard": 39.95,
+      "items": [
+        "Kanten slijpen en tunen",
+        "Warme waxbeurt",
+        "Uitborstelen en finish"
+      ]
+    },
+    {
+      "id": "goud",
+      "name": "Goud",
+      "tagline": "Complete onderhoudsbeurt",
+      "ski": 44.95,
+      "snowboard": 49.95,
+      "featured": true,
+      "items": [
+        "Kanten slijpen en tunen",
+        "Belagcontrole",
+        "Structuur handmatig opfrissen waar passend",
+        "Warme waxbeurt",
+        "Volledige finish"
+      ]
+    },
+    {
+      "id": "platinum",
+      "name": "Platinum",
+      "tagline": "Compleet + lichte reparaties",
+      "ski_from": 52.5,
+      "snowboard_from": 57.5,
+      "items": [
+        "Alles uit Goud",
+        "Kleine oppervlakkige belagreparaties",
+        "Altijd overleg bij grotere schade"
+      ]
+    }
+  ],
+  "extras": [
+    {
+      "name": "Kanten slijpen / tunen",
+      "ski": 24.95,
+      "snowboard": 29.95
+    },
+    {
+      "name": "Kleine oppervlakkige belagreparatie",
+      "from": 7.5
+    },
+    {
+      "name": "Snowboardbindingen demonteren + monteren",
+      "snowboard": 7.5
+    },
+    {
+      "name": "Spoedservice, indien mogelijk",
+      "surcharge": 10.0
+    }
+  ]
+}
