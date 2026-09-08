@@ -1,0 +1,34 @@
+[
+  {
+    "tag": "LOSSE BEURT",
+    "naam": "Waxservice",
+    "prijs": null,
+    "popular": false,
+    "items": ["Belag reinigen", "Warme wax", "Borstelen & afwerken"],
+    "notitie": "Voor materiaal waarbij de kanten en het belag verder in goede staat zijn."
+  },
+  {
+    "tag": "MEEST GEKOZEN",
+    "naam": "Basis onderhoud",
+    "prijs": null,
+    "popular": true,
+    "items": ["Inspectie", "Kanten slijpen", "Waxen", "Afwerking"],
+    "notitie": "Voor regulier onderhoud vóór of tijdens het wintersportseizoen."
+  },
+  {
+    "tag": "UITGEBREID",
+    "naam": "Compleet onderhoud",
+    "prijs": null,
+    "popular": false,
+    "items": ["Inspectie", "Belag herstellen", "Kanten slijpen", "Waxen & afwerken"],
+    "notitie": "Voor materiaal met gebruikssporen, krassen of achterstallig onderhoud."
+  },
+  {
+    "tag": "MAATWERK",
+    "naam": "Reparatie",
+    "prijs": null,
+    "popular": false,
+    "items": ["Diepe krassen", "Gaten in het belag", "Schade beoordelen", "Prijs vooraf bespreken"],
+    "notitie": "Bij grotere beschadigingen bepalen we eerst wat technisch en economisch zinvol is."
+  }
+]
