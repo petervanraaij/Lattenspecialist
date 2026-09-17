@@ -1,11 +1,11 @@
-# Lattenspecialist.nl V2
+# De Lattenspecialist website
 
-Statische website voor GitHub Pages.
-
-## Publiceren
-Upload de inhoud van deze map rechtstreeks naar de root van de `main` branch. Laat `CNAME` staan; dit koppelt `lattenspecialist.nl` aan GitHub Pages.
-
-## Belangrijk
-- Prijzen staan ook gestructureerd in `data/prijzen.json` voor latere koppeling aan een boekings-/betaalsysteem.
-- Contact: `info@lattenspecialist.nl`.
-- De huidige foto's zijn stock-/referentiebeelden; vervang ze later door eigen werkfoto's waar gewenst.
+Bijgewerkte GitHub Pages website met:
+- nieuwe zwart/gouden huisstijl en officiële logo-assets
+- Zorgeloos pisteplezier / ski- en snowboardonderhoud
+- WhatsApp 06 18 32 71 32
+- gratis haal- en brengservice: West Maas en Waal, Druten, Afferden, Horssen en Deest
+- zelf brengen/ophalen in Wamel op afspraak
+- betaling via betaalverzoek na onderhoud
+- KvK 99668637
+- responsive ontwerp en vernieuwde stockbeelden
