@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mijn Lattenspecialist | Status en waxplanning</title>
+  <meta name="description" content="Volg de onderhoudsstatus van je ski's of snowboard en bereid de waxkeuze voor op basis van bestemming, reisdatum en sneeuwcondities.">
+  <meta name="theme-color" content="#0b0b0c">
+  <link rel="canonical" href="https://lattenspecialist.nl/app.html">
+  <link rel="icon" href="images/badge.webp" type="image/webp">
+  <link rel="apple-touch-icon" href="images/badge.webp">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css?v=9">
+</head>
+<body class="app-body">
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="/" aria-label="Terug naar De Lattenspecialist"><img src="images/logo-main.webp" alt="De Lattenspecialist" class="header-logo"></a>
+      <div class="app-header-actions">
+        <button class="btn btn-ghost install-button" id="installApp" type="button" hidden>Installeer app</button>
+        <a class="nav-cta" href="/">Naar website</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="app-hero">
+      <div class="container app-hero-grid">
+        <div>
+          <span class="hero-kicker">Mijn Lattenspecialist</span>
+          <h1>Je materiaal gevolgd. Je wintersport voorbereid.</h1>
+          <p>Bekijk de voortgang van je onderhoud met je persoonlijke servicecode en leg bestemming, datum en omstandigheden vast voor een passende waxkeuze.</p>
+        </div>
+        <img src="images/badge.webp" alt="De Lattenspecialist" class="app-hero-badge">
+      </div>
+    </section>
+
+    <section class="section app-section" id="status">
+      <div class="container app-card-grid">
+        <div class="app-card app-card-intro">
+          <span class="eyebrow">Onderhoudsstatus</span>
+          <h2>Waar is mijn ski of snowboard?</h2>
+          <p>Vul de persoonlijke servicecode in die je bij de bevestiging ontvangt. De status bevat geen naam, adres of telefoonnummer.</p>
+          <form id="statusForm" class="compact-form">
+            <label><span>Persoonlijke servicecode</span><input name="code" autocomplete="off" autocapitalize="characters" placeholder="bijv. LS-7K4M9P" required></label>
+            <button class="btn btn-gold" type="submit">Bekijk status</button>
+          </form>
+        </div>
+        <div class="app-card status-result" id="statusResult" aria-live="polite">
+          <div class="empty-state">
+            <strong>Nog geen code ingevuld</strong>
+            <p>Je actuele voortgang verschijnt hier.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section wax-planner" id="waxplanner">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">Waxplanning</span>
+          <h2>Waar en wanneer ga je skiën?</h2>
+          <p>De uiteindelijke waxkeuze hangt af van temperatuur, vochtigheid en het soort sneeuw. Deze planner maakt een voorbereiding; de definitieve keuze volgt bij het onderhoud.</p>
+        </div>
+        <div class="wax-grid">
+          <form id="waxForm" class="app-card wax-form">
+            <div class="form-grid">
+              <label><span>Skigebied / bestemming</span><input name="destination" placeholder="bijv. Sölden, Oostenrijk" required></label>
+              <label><span>Eerste skidag</span><input type="date" name="date" required></label>
+              <label><span>Verwachte temperatuur</span><select name="temperature"><option value="unknown">Weet ik nog niet</option><option value="warm">Boven 0 °C</option><option value="nearzero">0 tot −5 °C</option><option value="cold">−6 tot −12 °C</option><option value="verycold">Kouder dan −12 °C</option></select></label>
+              <label><span>Sneeuwconditie</span><select name="snow"><option value="unknown">Weet ik nog niet</option><option value="fresh">Verse sneeuw</option><option value="old">Oude / omgevormde sneeuw</option><option value="artificial">Kunstsneeuw</option><option value="icy">Hard / ijzig</option><option value="wet">Nat / zacht</option></select></label>
+              <label><span>Klimaat</span><select name="humidity"><option value="unknown">Weet ik nog niet</option><option value="dry">Droog</option><option value="normal">Normaal</option><option value="humid">Vochtig</option></select></label>
+              <label><span>Gebruik</span><select name="usage"><option>Recreatief</option><option>Sportief</option><option>Wedstrijd / advies nodig</option></select></label>
+            </div>
+            <button class="btn btn-dark" type="submit">Maak waxvoorbereiding</button>
+          </form>
+          <div class="app-card wax-result" id="waxResult" aria-live="polite">
+            <div class="empty-state"><strong>Nog geen reis ingevuld</strong><p>De waxvoorbereiding verschijnt hier.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section inventory-section" id="aanbod">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">Actueel aanbod</span>
+          <h2>Verhuur die bij je past.</h2>
+          <p>We tonen alleen materiaal dat werkelijk beschikbaar is. Staat er niets passend tussen, dan kun je een aanvraag doen en bekijken we wat we kunnen regelen.</p>
+        </div>
+        <div id="inventoryList" class="inventory-grid" aria-live="polite"></div>
+        <div class="center-actions"><a class="btn btn-gold" href="/#afspraak">Verhuuraanvraag doen</a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer compact-footer">
+    <div class="container footer-bottom">© <span id="year"></span> De Lattenspecialist · <a href="privacy.html">Privacy</a> · <a href="service.html">Service-informatie</a></div>
+  </footer>
+  <script src="app.js?v=9"></script>
+</body>
+</html>

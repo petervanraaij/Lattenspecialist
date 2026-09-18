@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Deel je ervaring | De Lattenspecialist</title>
+  <meta name="description" content="Deel je ervaring of verbeterpunt met De Lattenspecialist.">
+  <meta name="theme-color" content="#0b0b0c">
+  <link rel="canonical" href="https://lattenspecialist.nl/ervaring.html">
+  <link rel="icon" href="images/badge.webp" type="image/webp">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css?v=9">
+</head>
+<body class="review-page">
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="/" aria-label="Terug naar De Lattenspecialist"><img src="images/logo-main.webp" alt="De Lattenspecialist" class="header-logo"></a>
+      <a class="nav-cta" href="/">Naar website</a>
+    </div>
+  </header>
+  <main class="review-main">
+    <div class="container review-page-grid">
+      <section class="review-copy">
+        <span class="eyebrow">Jouw ervaring</span>
+        <h1>Hoe hebben we het gedaan?</h1>
+        <p>Deel eerlijk wat goed ging en wat beter kan. Je bericht wordt in WhatsApp klaargezet en pas verstuurd nadat je het zelf controleert.</p>
+        <img src="images/review-qr.png" alt="QR-code naar deze ervaringspagina" class="review-qr">
+        <small>Handig voor op een visitekaartje: lattenspecialist.nl/ervaring.html</small>
+      </section>
+      <form id="reviewForm" class="request-form review-form">
+        <fieldset>
+          <legend>Hoe waardeer je onze service?</legend>
+          <div class="rating-options">
+            <label><input type="radio" name="rating" value="1" required><span>1</span></label>
+            <label><input type="radio" name="rating" value="2"><span>2</span></label>
+            <label><input type="radio" name="rating" value="3"><span>3</span></label>
+            <label><input type="radio" name="rating" value="4"><span>4</span></label>
+            <label><input type="radio" name="rating" value="5"><span>5</span></label>
+          </div>
+        </fieldset>
+        <label class="full-field"><span>Jouw ervaring of verbeterpunt</span><textarea name="review" rows="6" required placeholder="Vertel wat je van het onderhoud, contact en halen of brengen vond."></textarea></label>
+        <div class="form-grid">
+          <label><span>Voornaam (optioneel)</span><input name="name" autocomplete="given-name"></label>
+          <label><span>Woonplaats (optioneel)</span><input name="place" autocomplete="address-level2"></label>
+        </div>
+        <label class="consent-line"><input type="checkbox" name="consent"><span>Ik geef toestemming om mijn reactie met mijn ingevulde voornaam en woonplaats op lattenspecialist.nl te plaatsen. Ik kan deze toestemming later intrekken.</span></label>
+        <button class="btn btn-gold form-submit" type="submit">Open bericht in WhatsApp</button>
+        <p class="form-footnote">Geen beloning en geen verplichting. Ook een kritische reactie is welkom.</p>
+      </form>
+    </div>
+  </main>
+  <script src="review.js?v=9"></script>
+</body>
+</html>
