@@ -15,7 +15,8 @@ if (toggle && nav) {
   }));
 }
 
-document.getElementById('year').textContent = new Date().getFullYear();
+const year = document.getElementById('year');
+if (year) year.textContent = new Date().getFullYear();
 
 const form = document.getElementById('requestForm');
 const maintenanceFields = document.getElementById('maintenanceFields');
@@ -45,7 +46,10 @@ function buildMessage() {
       `Pakket: ${getValue('package')}`,
       `Logistiek: ${getValue('logistics')}`,
       `Voorkeursdag: ${getValue('pickupday')}`,
-      `Spoed: ${getValue('urgent')}`
+      `Spoed: ${getValue('urgent')}`,
+      `Skigebied / bestemming: ${getValue('destination') || '-'}`,
+      `Eerste skidag: ${formatDate(getValue('skidate')) || '-'}`,
+      `Verwachte omstandigheden: ${getValue('conditions') || 'Weet ik nog niet'}`
     );
   } else {
     lines.push(
@@ -76,3 +80,11 @@ form.addEventListener('submit', event => {
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
 });
 updateSummary();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // De website blijft volledig bruikbaar wanneer installatie niet beschikbaar is.
+    });
+  });
+}
