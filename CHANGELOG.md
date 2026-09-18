@@ -1,27 +1,19 @@
-# De Lattenspecialist – website update v7
+# De Lattenspecialist – website update v8
 
-- Nieuwe merkstijl: De Lattenspecialist / Zorgeloos pisteplezier / Ski- en snowboardonderhoud.
-- Nieuwe premium stockfoto's voor werkplaats, onderhoud, halen & brengen en wintersportbeleving.
-- Gratis haal- & brengservice verduidelijkt: West Maas en Waal en Druten, Afferden, Horssen en Deest.
-- Zelf brengen en/of ophalen in Wamel op afspraak.
-- Spoedonderhoud: + €10 indien planning het toelaat; extra ritten niet inbegrepen.
-- Betaling uitsluitend via betaalverzoek ná het onderhoud; Tikkie-teksten verwijderd.
-- WhatsApp gekoppeld aan 06 18 32 71 32.
-- Bedrijfsgegevens toegevoegd: Hollenhof 13, 6659 BB Wamel, KvK 99668637, BTW-id NL005403580B64.
-- SEO/local business structured data bijgewerkt.
-- Formulier en mobiele presentatie verfijnd.
+- Echte tekstuele H1 toegevoegd voor SEO en toegankelijkheid: ski- en snowboardonderhoud in West Maas en Waal & Druten.
+- Hero opgeschoond: geen tweede groot logo meer bovenop de foto; merkboodschap staat nu als echte webtekst.
+- Hero-CTA verduidelijkt naar "Afspraak aanvragen" plus aparte directe WhatsApp-link.
+- Servicegebied overal gelijkgetrokken: West Maas en Waal, Druten, Afferden, Horssen en Deest; "e.o." verwijderd.
+- Bij pakketten duidelijk gemaakt dat consumentenprijzen inclusief btw zijn.
+- Nieuwe sectie "Werk in beeld" toegevoegd voor meer vertrouwen en zicht op waxen, kantentuning en halen/brengen.
+- Verhuur uit de hoofdnavigatie gehaald en visueel als secundaire extra service neergezet.
+- Foto-instructie toegevoegd: schadefoto's kunnen na openen van WhatsApp worden meegestuurd.
+- Bezoekadres verduidelijkt: uitsluitend op afspraak.
+- Privacy- en service-informatiepagina toegevoegd en gelinkt in de footer.
+- Open Graph- en Twitter-card metadata toegevoegd voor betere linkvoorvertoning in WhatsApp/social media.
+- Sitemap uitgebreid met privacy- en servicepagina.
+- Lazy loading toegevoegd aan foto's onder de vouw.
+- Cacheversie verhoogd naar v8.
 
-# Wijzigingen t.o.v. de vorige site
-
-- Nieuwe huisstijl: De Lattenspecialist / Zorgeloos pisteplezier / Ski- en snowboardonderhoud.
-- Officiële logo-assets uit de goedgekeurde zwart-gouden versie gebruikt voor header, hero, footer en favicon.
-- Nieuwe stockbeelden per categorie: werkplaats, wax/finish, kantentuning, haal- & brengservice en wintersportbeleving.
-- WhatsApp direct gekoppeld aan 06 18 32 71 32.
-- Gratis haal- & brengservice aangescherpt naar: West Maas en Waal, Druten, Afferden, Horssen en Deest.
-- Zelf brengen en/of ophalen in Wamel op afspraak toegevoegd.
-- Spoedonderhoud verduidelijkt: + €10 indien mogelijk; voorrang in werkplanning; extra ritten niet inbegrepen.
-- Betaling gewijzigd naar betaalverzoek ná het onderhoud; Tikkie-tekst verwijderd.
-- KvK 99668637 toegevoegd aan footer.
-- Formulier uitgebreid met logistieke keuze en spoedkeuze.
-- SEO title, description, canonical, sitemap, robots en LocalBusiness structured data vernieuwd.
-- Responsive vormgeving volledig herwerkt in luxe zwart/goud.
+## Bewust niet toegevoegd
+Er zijn geen klantreviews, aantallen beurten of andere bewijsclaims verzonnen. Zodra echte reviews beschikbaar zijn, is een reviews-sectie de beste volgende verbetering.

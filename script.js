@@ -58,7 +58,7 @@ function buildMessage() {
   }
 
   lines.push('', `Naam: ${getValue('name') || '-'}`, `Mobiel: ${getValue('phone') || '-'}`, `Postcode: ${getValue('postcode') || '-'}`, `Adres / plaats: ${getValue('address') || '-'}`, `Opmerking: ${getValue('notes') || '-'}`);
-  if (service === 'Onderhoud') lines.push('', 'Betaling: betaalverzoek na het onderhoud.');
+  if (service === 'Onderhoud') lines.push('', 'Betaling: betaalverzoek na het onderhoud.', 'Heb je schade? Stuur in WhatsApp gerust één of meerdere foto\'s mee.');
   return lines.join('\n');
 }
 function updateSummary() {
