@@ -15,7 +15,7 @@ const baseEnv = {
   LATTENSPECIALIST_ADMIN_TOKEN: 'admin-secret-test',
   RESEND_API_KEY: 'resend-secret'
 };
-const lattenPayload = {service: 'Onderhoud', material: 'Ski', amount: '1', package: 'Goud', logistics: 'Zelf brengen in Wamel', pickupday: 'Vrijdag', urgent: 'Nee', destination: 'Sölden', skidate: '2099-12-01', conditions: 'Koud', name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', postcode: '6659 BB', address: 'Wamel', notes: 'Lichte kras', privacyConsent: true, website: '', turnstileToken: 'verified-token'};
+const lattenPayload = {service: 'Onderhoud', material: 'Ski', amount: '1', package: 'Goud', logistics: 'Zelf brengen in Wamel', pickupday: 'Vrijdag', urgent: 'Nee', destination: 'Sölden', skidate: '2099-12-01', conditions: 'Koud', name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', postcode: '6659 BB', address: 'Wamel', notes: 'Lichte kras', privacyConsent: true, whatsappConsent: true, website: '', turnstileToken: 'verified-token'};
 const stuiterPayload = {name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', date: '2099-06-12', location: 'Wamel', startTime: '10:00', endTime: '18:00', notes: 'Graag bellen.', privateSite: true, powerAvailable: true, adultHelper: true, privacyConsent: true, website: '', turnstileToken: 'verified-token'};
 
 assert.equal(getSite(lattenOrigin, baseEnv), 'lattenspecialist');
@@ -69,6 +69,7 @@ try {
   assert.deepEqual(lattenMessage.to, ['info@lattenspecialist.nl']);
   assert.match(lattenMessage.subject, /^\[Lattenspecialist aanvraag\].*Onderhoud/);
   assert.match(lattenMessage.text, /Bestemming: Sölden/);
+  assert.match(lattenMessage.text, /WhatsApp-statusupdates: Ja, toestemming gegeven/);
   assert.equal((await store.list({prefix: 'reservation:'})).keys.length, 1);
 
   const unauthorized = await worker.fetch(new Request('https://worker.example/api/admin/reservations', {method: 'GET', headers: {Origin: lattenOrigin}}), testEnv);
@@ -80,6 +81,7 @@ try {
   assert.equal(adminList.status, 200);
   assert.equal(adminResult.records.length, 1);
   assert.equal(adminResult.records[0].email, lattenPayload.email);
+  assert.equal(adminResult.records[0].whatsappConsent, true);
 
   const updateResponse = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${lattenResult.reference}`, {method: 'PATCH', headers: adminHeaders, body: JSON.stringify({generateServiceCode: true, currentStep: 4, status: STATUS_STEPS[3], expectedReady: '2099-12-03', note: 'Kanten gecontroleerd.'})}), testEnv);
   const updateResult = await updateResponse.json();

@@ -54,7 +54,7 @@
         `Periode: ${formatDate(getValue('rentfrom'))} t/m ${formatDate(getValue('rentto'))}`
       );
     }
-    lines.push('', `Naam: ${getValue('name') || '-'}`, `Mobiel: ${getValue('phone') || '-'}`, `E-mail: ${getValue('email') || '-'}`, `Postcode: ${getValue('postcode') || '-'}`, `Adres / plaats: ${getValue('address') || '-'}`, `Opmerking: ${getValue('notes') || '-'}`);
+    lines.push('', `Naam: ${getValue('name') || '-'}`, `Mobiel: ${getValue('phone') || '-'}`, `WhatsApp-updates: ${form.elements.whatsappConsent.checked ? 'Ja' : 'Nee'}`, `E-mail: ${getValue('email') || '-'}`, `Postcode: ${getValue('postcode') || '-'}`, `Adres / plaats: ${getValue('address') || '-'}`, `Opmerking: ${getValue('notes') || '-'}`);
     return lines.join('\n');
   };
 
@@ -114,6 +114,7 @@
     const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
     payload.privacyConsent = formData.get('privacyConsent') === 'on';
+    payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
     payload.turnstileToken = turnstileToken;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 15000);

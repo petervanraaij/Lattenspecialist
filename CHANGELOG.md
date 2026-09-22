@@ -1,4 +1,13 @@
-# De Lattenspecialist – beheerapp v11
+# De Lattenspecialist – WhatsApp-statusupdates v12
+
+- Klanten kunnen bij de aanvraag apart toestemming geven voor statusupdates via WhatsApp.
+- De beheerapp toont duidelijk of die toestemming is gegeven.
+- Na een statuswijziging kan de beheerder de aanvraag opslaan en WhatsApp openen met een volledig ingevuld klantbericht.
+- Het bericht bevat de nieuwe status, eventuele toelichting, verwachte gereeddatum, servicecode en de link naar Mijn Lattenspecialist.
+- Zonder toestemming blijft alleen opslaan beschikbaar; de klant ontvangt dan geen WhatsApp-statusupdate.
+- De bestaande WhatsApp Business-account, prijzen, inhoud en CNAME blijven ongewijzigd.
+
+## De Lattenspecialist – beheerapp v11
 
 - Beveiligde, installeerbare beheerapp toegevoegd op `/beheer.html`.
 - Websiteaanvragen verschijnen automatisch met klant- en aanvraaggegevens.

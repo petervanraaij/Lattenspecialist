@@ -27,6 +27,31 @@
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? String(value || '-') : new Intl.DateTimeFormat('nl-NL', {day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'}).format(date);
   };
+  const formatReadyDate = value => {
+    if (!value) return '';
+    const date = new Date(`${value}T12:00:00`);
+    return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat('nl-NL', {day: '2-digit', month: 'long', year: 'numeric'}).format(date);
+  };
+  const normalizeWhatsAppPhone = value => {
+    let digits = String(value || '').replace(/\D/g, '');
+    if (digits.startsWith('00')) digits = digits.slice(2);
+    if (digits.startsWith('0')) digits = `31${digits.slice(1)}`;
+    return digits;
+  };
+  const whatsappUrl = record => {
+    const phone = normalizeWhatsAppPhone(record.phone);
+    if (!phone || !record.serviceCode) return '';
+    const lines = [
+      `Hallo ${String(record.name || '').split(/\s+/)[0] || ''},`,
+      '',
+      'De status van je aanvraag bij De Lattenspecialist is bijgewerkt:',
+      `*${record.status || steps[Math.max(0, Number(record.currentStep || 1) - 1)]}*`
+    ];
+    if (record.note) lines.push('', record.note);
+    if (record.expectedReady) lines.push('', `Verwacht klaar: ${formatReadyDate(record.expectedReady)}`);
+    lines.push('', `Servicecode: ${record.serviceCode}`, 'Bekijk je voortgang: https://lattenspecialist.nl/app.html', '', 'Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.', '', 'Groet,', 'De Lattenspecialist');
+    return `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
+  };
   const valueOrDash = value => value ? escapeHtml(value) : '—';
   const headers = () => ({Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'});
   const showLoginStatus = message => {
@@ -59,6 +84,7 @@
         <div class="admin-info">
           <h3>Contact</h3>
           <p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)} ${valueOrDash(record.postcode)}</p>
+          <span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span>
           <h3>Aanvraag</h3>
           <div class="admin-detail-grid">${details}</div>
           ${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}
@@ -69,7 +95,11 @@
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
           <label><span>Verwacht klaar</span><input type="date" name="expectedReady" value="${escapeHtml(record.expectedReady || '')}"></label>
           <label><span>Bericht voor klant</span><textarea name="note" rows="3" maxlength="320" placeholder="Bijvoorbeeld: de kanten zijn gecontroleerd.">${escapeHtml(record.note || '')}</textarea></label>
-          <button class="btn btn-gold save-record" type="submit">Voortgang opslaan</button>
+          <div class="admin-save-actions">
+            <button class="btn btn-gold save-record" type="submit" data-action="whatsapp"${record.whatsappConsent && record.serviceCode ? '' : ' disabled'}>Opslaan + WhatsApp openen</button>
+            <button class="btn btn-dark save-record" type="submit" data-action="save">Alleen opslaan</button>
+          </div>
+          <small class="whatsapp-help">WhatsApp opent met een ingevuld statusbericht. Controleer het bericht en tik daarna op verzenden.</small>
           <div class="admin-record-message" role="status" aria-live="polite"></div>
         </form>
       </div>
@@ -157,23 +187,41 @@
     event.preventDefault();
     const card = form.closest('.admin-record');
     const message = form.querySelector('.admin-record-message');
-    const button = form.querySelector('.save-record');
+    const buttons = [...form.querySelectorAll('.save-record')];
+    const wantsWhatsapp = event.submitter?.dataset.action === 'whatsapp';
+    let whatsappWindow = wantsWhatsapp ? window.open('about:blank', '_blank') : null;
+    if (whatsappWindow) whatsappWindow.opener = null;
     const values = Object.fromEntries(new FormData(form));
     const currentStep = Number(values.currentStep);
-    button.disabled = true;
+    buttons.forEach(button => { button.disabled = true; });
     message.textContent = 'Opslaan…';
     message.className = 'admin-record-message';
     try {
       const result = await api(`/api/admin/reservations/${encodeURIComponent(card.dataset.reference)}`, {method: 'PATCH', body: JSON.stringify({serviceCode: values.serviceCode, currentStep, status: steps[currentStep - 1], expectedReady: values.expectedReady, note: values.note})});
       records = records.map(record => record.reference === result.record.reference ? result.record : record);
+      const messageUrl = wantsWhatsapp ? whatsappUrl(result.record) : '';
+      if (whatsappWindow && messageUrl) whatsappWindow.location.href = messageUrl;
+      else if (whatsappWindow) whatsappWindow.close();
       render();
       const updated = document.querySelector(`[data-reference="${CSS.escape(result.record.reference)}"]`);
       const updatedMessage = updated?.querySelector('.admin-record-message');
-      if (updatedMessage) { updatedMessage.textContent = 'Opgeslagen. De klant ziet de bijgewerkte status.'; updatedMessage.className = 'admin-record-message is-success'; }
+      if (updatedMessage) {
+        updatedMessage.textContent = wantsWhatsapp && messageUrl ? 'Opgeslagen. WhatsApp is geopend; tik daar op verzenden.' : 'Opgeslagen. De klant ziet de bijgewerkte status.';
+        updatedMessage.className = 'admin-record-message is-success';
+        if (wantsWhatsapp && messageUrl && !whatsappWindow) {
+          const link = document.createElement('a');
+          link.href = messageUrl;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = ' Open WhatsApp.';
+          updatedMessage.append(link);
+        }
+      }
     } catch (error) {
+      if (whatsappWindow) whatsappWindow.close();
       message.textContent = error.message;
       message.className = 'admin-record-message is-error';
-      button.disabled = false;
+      buttons.forEach(button => { button.disabled = false; });
     }
   });
 
