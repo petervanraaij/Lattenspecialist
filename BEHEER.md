@@ -1,4 +1,10 @@
-# Beheer van website v9
+# Beheer van website v10
+
+## Reserveringen
+
+Nieuwe aanvragen komen per e-mail binnen op `info@lattenspecialist.nl`. Het onderwerp begint met `[Lattenspecialist aanvraag]` en bevat de unieke aanvraagcode. Dezelfde aanvraag wordt beveiligd in Cloudflare KV opgeslagen. De geplande beheerapp gaat deze gegevens gebruiken om een onderhoudscode toe te kennen en de voortgang bij te werken.
+
+De tijdelijke technische afzender gebruikt het geverifieerde Stuiterbaas-domein. Zodra `lattenspecialist.nl` in Resend is geverifieerd, kan de afzender worden gewijzigd naar `reserveringen@lattenspecialist.nl` zonder het formulier aan te passen.
 
 ## Klantstatus bijwerken
 

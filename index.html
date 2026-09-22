@@ -25,7 +25,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -301,9 +301,9 @@
           <img src="images/badge.webp" alt="De Lattenspecialist" class="booking-badge" loading="lazy" decoding="async">
           <span class="eyebrow light">Afspraak aanvragen</span>
           <h2>Vertel ons wat je nodig hebt.</h2>
-          <p>Je aanvraag wordt als WhatsApp-bericht klaargezet. We bevestigen daarna de planning en eventuele bijzonderheden. Na het onderhoud ontvang je een betaalverzoek. Heb je schade? Voeg na het openen van WhatsApp gerust één of meerdere foto's toe.</p>
+          <p>Verstuur je aanvraag rechtstreeks via de website. Je ontvangt meteen een aanvraagcode; daarna bevestigen we persoonlijk de planning en eventuele bijzonderheden. Na het onderhoud ontvang je een betaalverzoek.</p>
           <div class="contact-quick">
-            <a href="https://wa.me/31618327132" target="_blank" rel="noopener">WhatsApp · 06 18 32 71 32</a>
+            <a href="https://wa.me/31618327132?text=Hallo%20De%20Lattenspecialist%2C%20ik%20wil%20graag%20een%20afspraak%20aanvragen." target="_blank" rel="noopener">Reserveer via WhatsApp · 06 18 32 71 32</a>
             <a href="mailto:info@lattenspecialist.nl">info@lattenspecialist.nl</a>
           </div>
         </div>
@@ -320,7 +320,7 @@
           <div id="maintenanceFields">
             <div class="form-grid">
               <label><span>Materiaal</span><select name="material"><option>Ski</option><option>Snowboard</option><option>Meerdere / combinatie</option></select></label>
-              <label><span>Aantal</span><input type="number" name="amount" min="1" value="1"></label>
+              <label><span>Aantal</span><input type="number" name="amount" min="1" max="20" value="1"></label>
               <label><span>Pakket</span><select name="package"><option>Brons</option><option>Zilver</option><option selected>Goud</option><option>Platinum</option><option>Losse werkzaamheden / advies</option></select></label>
               <label><span>Logistiek</span><select name="logistics"><option>Gratis ophalen & terugbrengen (servicegebied)</option><option>Zelf brengen in Wamel</option><option>Zelf brengen en zelf ophalen</option><option>In overleg</option></select></label>
               <label><span>Voorkeursdag</span><select name="pickupday"><option>Vrijdag</option><option>Zaterdag</option><option>Zondag</option><option>In overleg</option></select></label>
@@ -346,17 +346,22 @@
           <div class="form-section">
             <label class="form-label">2. Jouw gegevens</label>
             <div class="form-grid">
-              <label><span>Naam</span><input type="text" name="name" required></label>
-              <label><span>Mobiel nummer</span><input type="tel" name="phone" required></label>
-              <label><span>Postcode</span><input type="text" name="postcode" placeholder="1234 AB"></label>
-              <label><span>Adres / plaats</span><input type="text" name="address" placeholder="Straat + plaats"></label>
+              <label><span>Naam</span><input type="text" name="name" autocomplete="name" required></label>
+              <label><span>Mobiel nummer</span><input type="tel" name="phone" autocomplete="tel" required></label>
+              <label><span>E-mailadres</span><input type="email" name="email" autocomplete="email" required></label>
+              <label><span>Postcode</span><input type="text" name="postcode" autocomplete="postal-code" placeholder="1234 AB"></label>
+              <label><span>Adres / plaats</span><input type="text" name="address" autocomplete="street-address" placeholder="Straat + plaats"></label>
             </div>
             <label class="full-field"><span>Opmerking / schade / bijzonderheden</span><textarea name="notes" rows="4" placeholder="Bijvoorbeeld: lichte kras, gewenste ophaaltijd of vraag over het pakket."></textarea></label>
           </div>
 
           <div class="request-summary" id="requestSummary"></div>
-          <button class="btn btn-gold form-submit" type="submit">Aanvraag via WhatsApp versturen</button>
-          <p class="form-footnote">Geen online betaling. Na het onderhoud ontvang je een betaalverzoek. Foto's van schade kun je daarna direct in WhatsApp toevoegen.</p>
+          <label class="website-field" aria-hidden="true"><span>Website</span><input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+          <label class="privacy-check"><input type="checkbox" name="privacyConsent" required><span>Ik geef toestemming om mijn gegevens te gebruiken voor deze aanvraag en heb de <a href="privacy.html" target="_blank">privacy-informatie</a> gelezen.</span></label>
+          <div id="turnstileContainer" class="turnstile-container" hidden></div>
+          <button class="btn btn-gold form-submit" type="submit">Aanvraag via website versturen</button>
+          <div class="booking-status" id="bookingStatus" role="status" aria-live="polite"></div>
+          <p class="form-footnote">Dit is nog geen definitieve afspraak. We nemen contact met je op om de planning te bevestigen. Foto's van schade kun je daarna via WhatsApp sturen.</p>
         </form>
       </div>
     </section>
@@ -377,6 +382,8 @@
     <div class="container footer-bottom">© <span id="year"></span> De Lattenspecialist · Handelsnaam van Van Raaij Services · Hollenhof 13, 6659 BB Wamel · KvK 99668637 · BTW-id NL005403580B64 · Prijzen onder voorbehoud van typefouten en wijzigingen.</div>
   </footer>
 
-  <script src="script.js?v=9"></script>
+  <script src="script.js?v=10"></script>
+  <script src="booking-config.js?v=1"></script>
+  <script src="booking.js?v=1"></script>
 </body>
 </html>

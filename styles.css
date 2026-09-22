@@ -45,6 +45,18 @@
 .request-form .choice-buttons input{width:1px;height:1px;padding:0;border:0}
 .choice-buttons input:focus-visible+span{outline:2px solid var(--gold);outline-offset:3px}
 
+/* v10: aanvragen rechtstreeks via de website */
+.privacy-check{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start;margin:20px 0;color:#4d4942;font-size:.88rem;cursor:pointer}
+.privacy-check input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--gold)}
+.privacy-check a{color:#7d5d13;text-decoration:underline;font-weight:800}
+.website-field{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}
+.turnstile-container{min-height:66px;margin:0 0 18px}
+.form-submit[disabled]{cursor:wait;opacity:.72;transform:none}
+.booking-status{display:none;margin-top:16px;padding:14px 16px;border-radius:13px;font-weight:750}
+.booking-status.is-visible{display:block}
+.booking-status.is-success{background:#e7f8ed;border:1px solid #86d49e;color:#175e2e}
+.booking-status.is-error{background:#fff0ef;border:1px solid #e8a4a0;color:#8a211c}
+
 /* Keep the long heading readable on narrow screens. */
 .hero h1{overflow-wrap:anywhere;hyphens:auto}
 @media(max-width:560px){.hero h1{font-size:clamp(1.65rem,7.2vw,2.65rem)}}
