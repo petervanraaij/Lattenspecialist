@@ -84,7 +84,7 @@ const readAndValidateLattenspecialist = raw => {
     rentto: clean(raw.rentto, 10), name: clean(raw.name, 80), phone: clean(raw.phone, 30),
     email: clean(raw.email, 120), postcode: clean(raw.postcode, 12), address: clean(raw.address, 140),
     notes: clean(raw.notes, 800), website: clean(raw.website, 120), turnstileToken: clean(raw.turnstileToken, 2048),
-    privacyConsent: raw.privacyConsent === true
+    privacyConsent: raw.privacyConsent === true, whatsappConsent: raw.whatsappConsent === true
   };
   if (data.website) return {data, spam: true};
   if (!['Onderhoud', 'Verhuur'].includes(data.service)) throw new ValidationError('Kies onderhoud of verhuur.');
@@ -224,7 +224,7 @@ const sendStuiterbaasEmail = async (data, env) => {
 };
 
 const lattenspecialistFields = data => {
-  const common = [['Dienst', data.service], ['Naam', data.name], ['Telefoon', data.phone], ['E-mail', data.email], ['Postcode', data.postcode || 'Niet ingevuld'], ['Adres / plaats', data.address || 'Niet ingevuld']];
+  const common = [['Dienst', data.service], ['Naam', data.name], ['Telefoon', data.phone], ['WhatsApp-statusupdates', data.whatsappConsent ? 'Ja, toestemming gegeven' : 'Nee'], ['E-mail', data.email], ['Postcode', data.postcode || 'Niet ingevuld'], ['Adres / plaats', data.address || 'Niet ingevuld']];
   const specific = data.service === 'Onderhoud' ? [
     ['Materiaal', data.material], ['Aantal', data.amount], ['Pakket', data.package], ['Logistiek', data.logistics], ['Voorkeursdag', data.pickupday], ['Spoed', data.urgent], ['Bestemming', data.destination || 'Niet ingevuld'], ['Eerste skidag', data.skidate || 'Niet ingevuld'], ['Omstandigheden', data.conditions || 'Niet ingevuld']
   ] : [

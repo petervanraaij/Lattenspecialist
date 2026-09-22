@@ -14,6 +14,19 @@ De klant vult de code in op `https://lattenspecialist.nl/app.html`. Alleen mater
 
 De stappen lopen van 1 tot en met 8: aanvraag ontvangen, planning, ontvangen, inspectie, onderhoud gestart, wax koelt af, finish/eindcontrole en klaar.
 
+## WhatsApp-statusupdate versturen
+
+Bij een nieuwe aanvraag kan de klant apart toestemming geven voor WhatsApp-statusupdates. In de beheerapp staat dan bij de aanvraag **WhatsApp-statusupdates toegestaan**.
+
+1. Kies de nieuwe status en vul zo nodig de verwachte gereeddatum en een klantbericht in.
+2. Druk op **Opslaan + WhatsApp openen**.
+3. De wijziging wordt eerst opgeslagen. Daarna opent WhatsApp met het juiste telefoonnummer en een ingevuld bericht.
+4. Controleer het bericht en druk in WhatsApp op **Versturen**.
+
+De knop is alleen beschikbaar wanneer de klant toestemming heeft gegeven en de aanvraag een servicecode heeft. Met **Alleen opslaan** wordt de status bijgewerkt zonder WhatsApp te openen. Oudere aanvragen hebben nog geen opgeslagen toestemming en kunnen daarom alleen worden opgeslagen.
+
+Het laatste tikje op **Versturen** blijft nodig zolang de gewone WhatsApp Business-app wordt gebruikt. Volledig automatisch versturen kan later via de officiële WhatsApp Business Platform-koppeling met goedgekeurde berichttemplates.
+
 ## Verhuuraanbod bijwerken
 
 Zet alleen materiaal dat werkelijk beschikbaar is in `data/aanbod.json`. Een lege `items`-lijst toont automatisch dat verhuur op aanvraag gaat.
