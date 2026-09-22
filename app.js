@@ -1,4 +1,5 @@
 const WHATSAPP_NUMBER = '31618327132';
+const BOOKING_ENDPOINT = String(window.LATTENSPECIALIST_BOOKING?.endpoint || '').replace(/\/$/, '');
 const STATUS_STEPS = [
   'Aanvraag ontvangen',
   'Ophalen of brengen gepland',
@@ -26,6 +27,13 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('nl-NL', {day: '2-digit', month: 'long', year: 'numeric'}).format(date);
 }
 
+function formatDateTime(value) {
+  if (!value) return 'Nog niet bijgewerkt';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat('nl-NL', {day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'}).format(date);
+}
+
 const statusForm = document.getElementById('statusForm');
 const statusResult = document.getElementById('statusResult');
 
@@ -34,14 +42,15 @@ statusForm.addEventListener('submit', async event => {
   const code = String(new FormData(statusForm).get('code') || '').trim().toUpperCase().replace(/\s+/g, '');
   statusResult.innerHTML = '<div class="empty-state"><strong>Status ophalen…</strong></div>';
   try {
-    const response = await fetch(`data/status.json?ts=${Date.now()}`, {cache: 'no-store'});
-    if (!response.ok) throw new Error('Statusbestand niet beschikbaar');
-    const data = await response.json();
-    const record = (data.records || []).find(item => String(item.code || '').toUpperCase().replace(/\s+/g, '') === code);
-    if (!record) {
+    if (!BOOKING_ENDPOINT) throw new Error('Statusservice niet geconfigureerd');
+    const response = await fetch(`${BOOKING_ENDPOINT}/api/status/${encodeURIComponent(code)}`, {cache: 'no-store'});
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 404 || response.status === 400) {
       statusResult.innerHTML = `<div class="empty-state"><strong>Code niet gevonden</strong><p>Controleer de code uit je bevestiging. Heb je nog geen code, neem dan contact op via WhatsApp.</p><a class="text-link" href="https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hallo De Lattenspecialist, ik heb een vraag over mijn servicecode ${code}.`)}" target="_blank" rel="noopener">Vraag het via WhatsApp →</a></div>`;
       return;
     }
+    if (!response.ok || !data.record) throw new Error(data.message || 'Status niet beschikbaar');
+    const record = data.record;
     const currentStep = Math.max(1, Math.min(STATUS_STEPS.length, Number(record.currentStep) || 1));
     const steps = STATUS_STEPS.map((label, index) => {
       const number = index + 1;
@@ -49,7 +58,7 @@ statusForm.addEventListener('submit', async event => {
       return `<li class="${state}"><span>${number < currentStep ? '✓' : number}</span><strong>${escapeHtml(label)}</strong></li>`;
     }).join('');
     statusResult.innerHTML = `
-      <div class="status-head"><span class="status-code">${escapeHtml(record.code)}</span><span>Bijgewerkt ${escapeHtml(record.updatedAt || data.updated || '')}</span></div>
+      <div class="status-head"><span class="status-code">${escapeHtml(record.code)}</span><span>Bijgewerkt ${escapeHtml(formatDateTime(record.updatedAt))}</span></div>
       <h3>${escapeHtml(record.material || 'Ski- of snowboardonderhoud')}</h3>
       <p>${escapeHtml(record.status || STATUS_STEPS[currentStep - 1])}</p>
       <ul class="status-steps">${steps}</ul>

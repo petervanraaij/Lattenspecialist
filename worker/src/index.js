@@ -1,6 +1,17 @@
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
 
+const STATUS_STEPS = [
+  'Aanvraag ontvangen',
+  'Ophalen of brengen gepland',
+  'Materiaal ontvangen',
+  'Inspectie uitgevoerd',
+  'Onderhoud gestart',
+  'Wax koelt af',
+  'Finish en eindcontrole',
+  'Klaar voor ophalen of terugbrengen'
+];
+
 const clean = (value, maxLength) => String(value || '')
   .replace(/[\u0000-\u001f\u007f]/g, ' ')
   .replace(/\s+/g, ' ')
@@ -20,8 +31,8 @@ const json = (body, status, origin) => new Response(JSON.stringify(body), {
   headers: {
     ...JSON_HEADERS,
     ...(origin ? {'Access-Control-Allow-Origin': origin} : {}),
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Vary': 'Origin',
     'Cache-Control': 'no-store'
   }
@@ -99,6 +110,92 @@ const createReference = () => {
   return `LS-${String(now.getUTCFullYear()).slice(-2)}${String(now.getUTCMonth() + 1).padStart(2, '0')}-${suffix}`;
 };
 
+const createServiceCode = () => {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  return `LS-${Array.from(bytes, byte => alphabet[byte % alphabet.length]).join('')}`;
+};
+
+const normalizeServiceCode = value => clean(value, 24).toUpperCase().replace(/\s+/g, '');
+
+const isAdminAuthorized = (request, env) => {
+  const expected = String(env.LATTENSPECIALIST_ADMIN_TOKEN || '');
+  const authorization = request.headers.get('Authorization') || '';
+  const supplied = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+  if (!expected || expected.length !== supplied.length) return false;
+  let difference = 0;
+  for (let index = 0; index < expected.length; index += 1) difference |= expected.charCodeAt(index) ^ supplied.charCodeAt(index);
+  return difference === 0;
+};
+
+const requireReservationStore = env => {
+  if (!env.LATTENSPECIALIST_RESERVATIONS_KV) throw new Error('Reservation storage is unavailable.');
+  return env.LATTENSPECIALIST_RESERVATIONS_KV;
+};
+
+const listReservations = async env => {
+  const store = requireReservationStore(env);
+  const records = [];
+  let cursor;
+  do {
+    const page = await store.list({prefix: 'reservation:', cursor});
+    const values = await Promise.all((page.keys || []).map(key => store.get(key.name, 'json')));
+    records.push(...values.filter(Boolean));
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  records.sort((left, right) => String(right.createdAt || '').localeCompare(String(left.createdAt || '')));
+  return records;
+};
+
+const assignUniqueServiceCode = async store => {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const code = createServiceCode();
+    if (!await store.get(`service:${code}`)) return code;
+  }
+  throw new Error('Unable to create a unique service code.');
+};
+
+const updateReservation = async (reference, raw, env) => {
+  const store = requireReservationStore(env);
+  const key = `reservation:${reference}`;
+  const record = await store.get(key, 'json');
+  if (!record) return null;
+  const currentStep = Math.max(1, Math.min(STATUS_STEPS.length, Number(raw.currentStep) || Number(record.currentStep) || 1));
+  const status = clean(raw.status, 100) || STATUS_STEPS[currentStep - 1];
+  const expectedReady = clean(raw.expectedReady, 40);
+  const note = clean(raw.note, 320);
+  let serviceCode = normalizeServiceCode(raw.serviceCode || record.serviceCode);
+  if (raw.generateServiceCode === true && !serviceCode) serviceCode = await assignUniqueServiceCode(store);
+  if (serviceCode && !/^LS-[A-Z2-9]{6}$/.test(serviceCode)) throw new ValidationError('De servicecode heeft geen geldig formaat.');
+  if (serviceCode) {
+    const owner = await store.get(`service:${serviceCode}`);
+    if (owner && owner !== reference) throw new ValidationError('Deze servicecode is al in gebruik.');
+    await store.put(`service:${serviceCode}`, reference);
+  }
+  const updated = {...record, serviceCode: serviceCode || null, currentStep, status, expectedReady, note, updatedAt: new Date().toISOString()};
+  await store.put(key, JSON.stringify(updated));
+  return updated;
+};
+
+const publicStatus = record => ({
+  code: record.serviceCode,
+  material: record.service === 'Verhuur' ? record.rentaltype : `${record.amount || 1}× ${record.material || 'materiaal'}`,
+  package: record.package || (record.service === 'Verhuur' ? 'Verhuur op aanvraag' : 'In overleg'),
+  currentStep: Number(record.currentStep) || 1,
+  status: record.status || STATUS_STEPS[0],
+  updatedAt: record.updatedAt || record.createdAt,
+  expectedReady: record.expectedReady || '',
+  note: record.note || ''
+});
+
+const getReservationByServiceCode = async (code, env) => {
+  const store = requireReservationStore(env);
+  const reference = await store.get(`service:${code}`);
+  if (!reference) return null;
+  return store.get(`reservation:${reference}`, 'json');
+};
+
 const sendResendEmail = async (message, env) => {
   if (!env.RESEND_API_KEY) throw new Error('Email configuration is incomplete.');
   const response = await fetch('https://api.resend.com/emails', {
@@ -151,7 +248,8 @@ const sendLattenspecialistEmail = async (data, reference, env) => {
 
 const saveLattenspecialistReservation = async (data, reference, env) => {
   if (!env.LATTENSPECIALIST_RESERVATIONS_KV) return;
-  const stored = {...data, reference, createdAt: new Date().toISOString(), status: 'Aanvraag ontvangen', serviceCode: null};
+  const now = new Date().toISOString();
+  const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], currentStep: 1, expectedReady: '', note: '', serviceCode: null};
   delete stored.turnstileToken;
   delete stored.website;
   await env.LATTENSPECIALIST_RESERVATIONS_KV.put(`reservation:${reference}`, JSON.stringify(stored));
@@ -162,7 +260,42 @@ export default {
     const origin = request.headers.get('Origin') || '';
     const site = getSite(origin, env);
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
-    if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
+    if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
+    const url = new URL(request.url);
+
+    if (site === 'lattenspecialist' && request.method === 'GET' && url.pathname.startsWith('/api/status/')) {
+      const code = normalizeServiceCode(decodeURIComponent(url.pathname.slice('/api/status/'.length)));
+      if (!/^LS-[A-Z2-9]{6}$/.test(code)) return json({message: 'Controleer de servicecode.'}, 400, origin);
+      try {
+        const record = await getReservationByServiceCode(code, env);
+        return record ? json({ok: true, record: publicStatus(record)}, 200, origin) : json({message: 'Servicecode niet gevonden.'}, 404, origin);
+      } catch {
+        return json({message: 'De status kon niet worden opgehaald.'}, 502, origin);
+      }
+    }
+
+    if (site === 'lattenspecialist' && url.pathname === '/api/admin/reservations' && request.method === 'GET') {
+      if (!isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
+      try {
+        return json({ok: true, records: await listReservations(env)}, 200, origin);
+      } catch {
+        return json({message: 'De reserveringen konden niet worden opgehaald.'}, 502, origin);
+      }
+    }
+
+    if (site === 'lattenspecialist' && url.pathname.startsWith('/api/admin/reservations/') && request.method === 'PATCH') {
+      if (!isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
+      const reference = clean(decodeURIComponent(url.pathname.slice('/api/admin/reservations/'.length)), 32).toUpperCase();
+      if (!/^LS-\d{4}-[A-Z2-9]{6}$/.test(reference)) return json({message: 'Aanvraagcode ongeldig.'}, 400, origin);
+      try {
+        const record = await updateReservation(reference, await request.json(), env);
+        return record ? json({ok: true, record}, 200, origin) : json({message: 'Aanvraag niet gevonden.'}, 404, origin);
+      } catch (error) {
+        const validation = error instanceof ValidationError;
+        return json({message: validation ? error.message : 'De aanvraag kon niet worden bijgewerkt.'}, validation ? 400 : 502, origin);
+      }
+    }
+
     if (request.method !== 'POST') return json({message: 'Alleen POST is toegestaan.'}, 405, origin);
 
     const turnstileSecret = site === 'stuiterbaas' ? env.TURNSTILE_SECRET_KEY : env.LATTENSPECIALIST_TURNSTILE_SECRET_KEY;
@@ -189,4 +322,4 @@ export default {
   }
 };
 
-export {clean, createReference, escapeHtml, getSite, readAndValidateLattenspecialist, readAndValidateStuiterbaas};
+export {STATUS_STEPS, clean, createReference, createServiceCode, escapeHtml, getSite, isAdminAuthorized, normalizeServiceCode, publicStatus, readAndValidateLattenspecialist, readAndValidateStuiterbaas};

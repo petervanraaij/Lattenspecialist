@@ -2,33 +2,17 @@
 
 ## Reserveringen
 
-Nieuwe aanvragen komen per e-mail binnen op `info@lattenspecialist.nl`. Het onderwerp begint met `[Lattenspecialist aanvraag]` en bevat de unieke aanvraagcode. Dezelfde aanvraag wordt beveiligd in Cloudflare KV opgeslagen. De geplande beheerapp gaat deze gegevens gebruiken om een onderhoudscode toe te kennen en de voortgang bij te werken.
+Nieuwe aanvragen komen per e-mail binnen op `info@lattenspecialist.nl`. Het onderwerp begint met `[Lattenspecialist aanvraag]` en bevat de unieke aanvraagcode. Dezelfde aanvraag wordt beveiligd in Cloudflare KV opgeslagen en verschijnt in de beheerapp op `https://lattenspecialist.nl/beheer.html`.
 
 De tijdelijke technische afzender gebruikt het geverifieerde Stuiterbaas-domein. Zodra `lattenspecialist.nl` in Resend is geverifieerd, kan de afzender worden gewijzigd naar `reserveringen@lattenspecialist.nl` zonder het formulier aan te passen.
 
-## Klantstatus bijwerken
+## Beheerapp en klantstatus
 
-Voeg in `data/status.json` één record toe per actieve servicecode. Gebruik een willekeurige code van minimaal twaalf tekens en zet nooit een naam, telefoonnummer, adres of e-mailadres in dit bestand.
+Open `https://lattenspecialist.nl/beheer.html` op telefoon of computer en log in met de persoonlijke beheercode. Kies bij een nieuwe aanvraag **Maak code**. Geef deze code aan de klant en werk daarna de voortgang, verwachte gereeddatum en een kort klantbericht bij.
 
-```json
-{
-  "updated": "2026-09-18",
-  "records": [
-    {
-      "code": "voorbeeldcode123",
-      "material": "Ski’s",
-      "package": "Goud",
-      "currentStep": 4,
-      "status": "Inspectie uitgevoerd",
-      "updatedAt": "18 september 2026 om 15:30",
-      "expectedReady": "20 september 2026",
-      "note": "De kanten worden nu geslepen."
-    }
-  ]
-}
-```
+De klant vult de code in op `https://lattenspecialist.nl/app.html`. Alleen materiaal, pakket, voortgang, gereeddatum en het klantbericht worden getoond. Contact- en adresgegevens verlaten de beveiligde beheerweergave niet.
 
-De stappen lopen van 1 tot en met 8: aanvraag ontvangen, planning, ontvangen, inspectie, onderhoud gestart, wax koelt af, finish/eindcontrole en klaar. Verwijder een record zodra de klant het materiaal heeft opgehaald.
+De stappen lopen van 1 tot en met 8: aanvraag ontvangen, planning, ontvangen, inspectie, onderhoud gestart, wax koelt af, finish/eindcontrole en klaar.
 
 ## Verhuuraanbod bijwerken
 

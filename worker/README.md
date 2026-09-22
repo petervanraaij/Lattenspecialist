@@ -9,5 +9,6 @@ Benodigde versleutelde secrets:
 - `RESEND_API_KEY`
 - `TURNSTILE_SECRET_KEY` voor Stuiterbaas
 - `LATTENSPECIALIST_TURNSTILE_SECRET_KEY` voor Lattenspecialist
+- `LATTENSPECIALIST_ADMIN_TOKEN` voor de beveiligde beheerapp
 
-De openbare configuratie staat in `wrangler.toml`. Secrets horen nooit in Git.
+De openbare configuratie staat in `wrangler.toml`. Secrets horen nooit in Git. De beheerapp staat op `/beheer.html`; een ingelogde beheerder kan reserveringen bekijken, een persoonlijke servicecode aanmaken en de klantstatus bijwerken. De openbare statusroute geeft uitsluitend service-informatie terug en nooit naam, telefoonnummer, e-mailadres of adres.

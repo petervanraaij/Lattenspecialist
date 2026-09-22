@@ -1,0 +1,16 @@
+{
+  "name": "Lattenspecialist Beheer",
+  "short_name": "Latten Beheer",
+  "id": "/beheer",
+  "description": "Reserveringen, servicecodes en onderhoudsvoortgang beheren.",
+  "start_url": "/beheer.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f0e8",
+  "theme_color": "#0b0b0c",
+  "lang": "nl-NL",
+  "icons": [
+    {"src": "/images/app-icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/images/app-icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}

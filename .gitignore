@@ -4,6 +4,8 @@ worker/.dev.vars
 worker/.turnstile-widget.json
 worker/.turnstile-secret.txt
 worker/.resend-key.txt
+worker/.admin-token.txt
 worker/.inspect-cloudflare.mjs
+worker/.verify-production.mjs
 worker/.deploy-shared.mjs
 worker/.dry-run/
