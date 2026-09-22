@@ -1,4 +1,15 @@
-# De Lattenspecialist – website update v10
+# De Lattenspecialist – beheerapp v11
+
+- Beveiligde, installeerbare beheerapp toegevoegd op `/beheer.html`.
+- Websiteaanvragen verschijnen automatisch met klant- en aanvraaggegevens.
+- Per aanvraag kan een persoonlijke servicecode worden gemaakt.
+- De onderhoudsvoortgang, verwachte gereeddatum en een klantbericht zijn direct bij te werken.
+- `Mijn Lattenspecialist` haalt de actuele status voortaan veilig uit Cloudflare KV.
+- De openbare status bevat geen naam, telefoonnummer, e-mailadres of adres.
+- Mobiele en desktopweergave van de beheerapp zijn gecontroleerd.
+- De bestaande Stuiterbaas-reservering en Lattenspecialist-e-mailmelding blijven behouden.
+
+## Website update v10
 
 - Onderhouds- en verhuuraanvragen worden rechtstreeks via de website verstuurd.
 - Iedere aanvraag krijgt een herkenbare, unieke aanvraagcode.

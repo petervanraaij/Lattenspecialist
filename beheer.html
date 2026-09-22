@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Beheer | De Lattenspecialist</title>
+  <meta name="theme-color" content="#0b0b0c">
+  <link rel="icon" href="images/badge.webp" type="image/webp">
+  <link rel="apple-touch-icon" href="images/app-icon-192.png">
+  <link rel="manifest" href="beheer.webmanifest">
+  <link rel="stylesheet" href="styles.css?v=12">
+</head>
+<body class="admin-body">
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="/" aria-label="De Lattenspecialist"><img src="images/logo-main.webp" alt="De Lattenspecialist" class="header-logo"></a>
+      <div class="app-header-actions">
+        <button class="btn btn-ghost install-button" id="installAdmin" type="button" hidden>Installeer app</button>
+        <button class="btn btn-ghost admin-logout" id="logoutAdmin" type="button" hidden>Uitloggen</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <section class="container admin-login" id="adminLogin">
+      <div class="admin-login-card">
+        <img src="images/badge.webp" alt="" class="admin-badge">
+        <span class="eyebrow">Beveiligd beheer</span>
+        <h1>Reserveringen en onderhoud</h1>
+        <p>Log in met je persoonlijke beheercode. De code blijft alleen op dit apparaat staan wanneer je dat hieronder kiest.</p>
+        <form id="adminLoginForm" class="compact-form">
+          <label><span>Beheercode</span><input type="password" name="token" autocomplete="current-password" required></label>
+          <label class="admin-remember"><input type="checkbox" name="remember"><span>Onthoud op dit apparaat</span></label>
+          <button class="btn btn-gold" type="submit">Open beheer</button>
+          <div class="booking-status" id="adminLoginStatus" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="container admin-dashboard" id="adminDashboard" hidden>
+      <div class="admin-toolbar">
+        <div>
+          <span class="eyebrow">De Lattenspecialist</span>
+          <h1>Reserveringen</h1>
+          <p>Ken een servicecode toe en werk de voortgang bij. De klant ziet alleen de status, nooit de contactgegevens.</p>
+        </div>
+        <div class="admin-tools">
+          <label><span>Zoeken</span><input type="search" id="adminSearch" placeholder="Naam, code, telefoon…"></label>
+          <button class="btn btn-dark" id="refreshAdmin" type="button">Vernieuwen</button>
+        </div>
+      </div>
+      <div class="admin-summary" id="adminSummary" aria-live="polite"></div>
+      <div class="admin-list" id="adminList" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script src="booking-config.js?v=1"></script>
+  <script src="beheer.js?v=1"></script>
+</body>
+</html>
