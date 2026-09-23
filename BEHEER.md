@@ -1,4 +1,4 @@
-# Beheer van website v10
+# Beheer van website v11
 
 ## Reserveringen
 
@@ -8,24 +8,30 @@ De tijdelijke technische afzender gebruikt het geverifieerde Stuiterbaas-domein.
 
 ## Beheerapp en klantstatus
 
-Open `https://lattenspecialist.nl/beheer.html` op telefoon of computer en log in met de persoonlijke beheercode. Kies bij een nieuwe aanvraag **Maak code**. Geef deze code aan de klant en werk daarna de voortgang, verwachte gereeddatum en een kort klantbericht bij.
+Open `https://lattenspecialist.nl/beheer.html` op telefoon of computer en log in met de persoonlijke beheercode. Vink bovenaan de concrete ophaaldata aan die klanten mogen kiezen en druk op **Data opslaan**. Kies bij een nieuwe aanvraag **Maak code**. Geef deze code aan de klant en werk daarna de voortgang, waxsoort, verwachte gereeddatum en een kort klantbericht bij.
 
 De klant vult de code in op `https://lattenspecialist.nl/app.html`. Alleen materiaal, pakket, voortgang, gereeddatum en het klantbericht worden getoond. Contact- en adresgegevens verlaten de beveiligde beheerweergave niet.
 
 De stappen lopen van 1 tot en met 8: aanvraag ontvangen, planning, ontvangen, inspectie, onderhoud gestart, wax koelt af, finish/eindcontrole en klaar.
 
-## WhatsApp-statusupdate versturen
+## Klant informeren
 
 Bij een nieuwe aanvraag kan de klant apart toestemming geven voor WhatsApp-statusupdates. In de beheerapp staat dan bij de aanvraag **WhatsApp-statusupdates toegestaan**.
 
-1. Kies de nieuwe status en vul zo nodig de verwachte gereeddatum en een klantbericht in.
-2. Druk op **Opslaan + WhatsApp openen**.
-3. De wijziging wordt eerst opgeslagen. Daarna opent WhatsApp met het juiste telefoonnummer en een ingevuld bericht.
-4. Controleer het bericht en druk in WhatsApp op **Versturen**.
+1. Kies de nieuwe status, waxsoort en zo nodig de verwachte gereeddatum en een klantbericht.
+2. Druk op **Opslaan + klant berichten**.
+3. De status wordt opgeslagen en de klant ontvangt een e-mail.
+4. Als de officiële WhatsApp-koppeling actief is, wordt ook automatisch een goedgekeurd WhatsApp-bericht verzonden. Tot die tijd verschijnt een groene knop met een volledig ingevuld WhatsApp-bericht; controleer dit en druk in WhatsApp op **Versturen**.
 
-De knop is alleen beschikbaar wanneer de klant toestemming heeft gegeven en de aanvraag een servicecode heeft. Met **Alleen opslaan** wordt de status bijgewerkt zonder WhatsApp te openen. Oudere aanvragen hebben nog geen opgeslagen toestemming en kunnen daarom alleen worden opgeslagen.
+Met **Alleen opslaan** wordt de status bijgewerkt zonder klantbericht. Bij oudere aanvragen kan WhatsApp-toestemming na mondelinge of schriftelijke toestemming handmatig worden vastgelegd.
 
-Het laatste tikje op **Versturen** blijft nodig zolang de gewone WhatsApp Business-app wordt gebruikt. Volledig automatisch versturen kan later via de officiële WhatsApp Business Platform-koppeling met goedgekeurde berichttemplates.
+Het laatste tikje op **Versturen** blijft nodig zolang de gewone WhatsApp Business-app wordt gebruikt. Volledig automatisch versturen werkt pas wanneer de officiële WhatsApp Business Platform-koppeling, de Meta-toegangssleutel en goedgekeurde berichttemplates zijn ingesteld.
+
+## Betaalverzoek en afmelden
+
+Maak een betaallink in je eigen bank- of betaaldienst, vul in de beheerapp het bedrag en de `https://`-link in en druk op **Betaalverzoek e-mailen**. De beheerapp maakt zelf geen betaaltransactie aan. Bij WhatsApp-toestemming verschijnt ook hier een WhatsApp-knop zolang de officiële automatische koppeling nog niet actief is.
+
+Met **Aanvraag afmelden** verdwijnt de aanvraag uit de open telling. De gegevens worden niet verwijderd; met **Aanvraag opnieuw openen** kan de aanvraag worden hersteld.
 
 ## Verhuuraanbod bijwerken
 

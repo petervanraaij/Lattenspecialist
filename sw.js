@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v13';
+const CACHE_NAME = 'lattenspecialist-v15';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -7,13 +7,14 @@ const APP_SHELL = [
   '/ervaring.html',
   '/privacy.html',
   '/service.html',
-  '/styles.css?v=10',
+  '/styles.css?v=9',
   '/styles.css?v=13',
+  '/styles.css?v=15',
   '/script.js?v=10',
-  '/booking-config.js?v=1',
-  '/booking.js?v=2',
+  '/booking-config.js?v=2',
+  '/booking.js?v=3',
   '/app.js?v=11',
-  '/beheer.js?v=2',
+  '/beheer.js?v=4',
   '/review.js?v=9',
   '/manifest.webmanifest',
   '/beheer.webmanifest',

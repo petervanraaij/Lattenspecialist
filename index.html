@@ -25,7 +25,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="stylesheet" href="styles.css?v=15">
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -287,7 +287,7 @@
         <details><summary>Hoe weet ik welk pakket ik nodig heb?</summary><p>Twijfel je, dan beoordelen we het materiaal eerst. We adviseren wat past bij de staat van je ski of snowboard. Extra werkzaamheden voeren we alleen uit na overleg.</p></details>
         <details><summary>Waarom slijpen jullie niet standaard het hele belag vlak?</summary><p>Vlakslijpen verwijdert materiaal. Soms is dat nodig en dan is het een goede behandeling, maar we willen het niet automatisch bij iedere beurt doen. Waar mogelijk kiezen we voor gerichter onderhoud.</p></details>
         <details><summary>Wat gebeurt er met oude waxresten?</summary><p>We controleren en reinigen het belag voordat we nieuwe wax aanbrengen. Vuil en oude waxresten worden verwijderd, waarna verse premium warme wax wordt aangebracht, afgekoeld, afgeschraapt en uitgeborsteld.</p></details>
-        <details><summary>Waar geldt de gratis haal- & brengservice?</summary><p>In West Maas en Waal en in Druten, Afferden en Horssen. Buiten dit gebied kun je je materiaal op afspraak zelf in Wamel brengen en ophalen.</p></details>
+        <details><summary>Waar geldt de gratis haal- & brengservice?</summary><p>In West Maas en Waal en in de plaatsen Druten, Afferden en Horssen. Deest valt buiten het gratis servicegebied. Buiten dit gebied kun je je materiaal op afspraak zelf in Wamel brengen en ophalen.</p></details>
         <details><summary>Kan ik mijn ski's of snowboard zelf brengen?</summary><p>Ja. Brengen en ophalen in Wamel kan op afspraak. Dat is ook handig bij spoedonderhoud.</p></details>
         <details><summary>Wat is spoedonderhoud?</summary><p>Als je je materiaal eerder nodig hebt dan de normale onderhoudsronde, kunnen we het in overleg voorrang geven. Dat kost € 10 extra en is alleen mogelijk als de planning het toelaat. Extra ritten zijn niet inbegrepen.</p></details>
         <details><summary>Wanneer betaal ik?</summary><p>Na het onderhoud ontvang je een betaalverzoek. Zo is vooraf duidelijk wat er is uitgevoerd en betaal je pas wanneer je materiaal klaar is.</p></details>
@@ -323,13 +323,13 @@
               <label><span>Aantal</span><input type="number" name="amount" min="1" max="20" value="1"></label>
               <label><span>Pakket</span><select name="package"><option>Brons</option><option>Zilver</option><option selected>Goud</option><option>Platinum</option><option>Losse werkzaamheden / advies</option></select></label>
               <label><span>Logistiek</span><select name="logistics"><option>Gratis ophalen & terugbrengen (servicegebied)</option><option>Zelf brengen in Wamel</option><option>Zelf brengen en zelf ophalen</option><option>In overleg</option></select></label>
-              <label><span>Voorkeursdag</span><select name="pickupday"><option>Vrijdag</option><option>Zaterdag</option><option>Zondag</option><option>In overleg</option></select></label>
+              <label><span>Ophaaldatum</span><select name="pickupDate" required><option value="">Beschikbare data laden…</option><option>In overleg</option></select></label>
               <label><span>Spoed</span><select name="urgent"><option>Nee</option><option>Ja, graag overleggen (+ €10 indien mogelijk)</option></select></label>
               <label><span>Skigebied / bestemming</span><input type="text" name="destination" placeholder="bijv. Sölden, Oostenrijk"></label>
               <label><span>Eerste skidag</span><input type="date" name="skidate"></label>
               <label><span>Verwachte omstandigheden</span><select name="conditions"><option>Weet ik nog niet</option><option>Zacht / warm</option><option>Rond het vriespunt</option><option>Koud</option><option>Kunstsneeuw / hard / ijzig</option></select></label>
             </div>
-            <p class="field-note">Gratis halen & brengen geldt in West Maas en Waal en in Druten, Afferden en Horssen. Zelf brengen of ophalen in Wamel kan op afspraak. Bestemming en reisdatum helpen ons een passende premium wax te kiezen.</p>
+            <p class="field-note">Gratis halen & brengen geldt in West Maas en Waal en in de plaatsen Druten, Afferden en Horssen; Deest valt buiten het gratis servicegebied. Zelf brengen of ophalen in Wamel kan op afspraak. Bestemming en reisdatum helpen ons een passende premium wax te kiezen.</p>
           </div>
 
           <div id="rentalFields" hidden>
@@ -349,9 +349,12 @@
               <label><span>Naam</span><input type="text" name="name" autocomplete="name" required></label>
               <label><span>Mobiel nummer</span><input type="tel" name="phone" autocomplete="tel" required></label>
               <label><span>E-mailadres</span><input type="email" name="email" autocomplete="email" required></label>
-              <label><span>Postcode</span><input type="text" name="postcode" autocomplete="postal-code" placeholder="1234 AB"></label>
-              <label><span>Adres / plaats</span><input type="text" name="address" autocomplete="street-address" placeholder="Straat + plaats"></label>
+              <label><span>Postcode</span><input type="text" name="postcode" autocomplete="postal-code" inputmode="text" placeholder="1234 AB"></label>
+              <label><span>Huisnummer + toevoeging</span><input type="text" name="houseNumber" autocomplete="address-line2" placeholder="13 of 13A"></label>
+              <label class="address-result"><span>Ophaal- en terugbrenglocatie</span><input type="text" name="address" autocomplete="street-address" placeholder="Wordt automatisch ingevuld"></label>
+              <input type="hidden" name="addressCity">
             </div>
+            <div class="address-status" id="addressStatus" role="status" aria-live="polite">Vul postcode en huisnummer in; het adres wordt automatisch opgezocht.</div>
             <label class="full-field"><span>Opmerking / schade / bijzonderheden</span><textarea name="notes" rows="4" placeholder="Bijvoorbeeld: lichte kras, gewenste ophaaltijd of vraag over het pakket."></textarea></label>
           </div>
 
@@ -384,7 +387,7 @@
   </footer>
 
   <script src="script.js?v=10"></script>
-  <script src="booking-config.js?v=1"></script>
-  <script src="booking.js?v=2"></script>
+  <script src="booking-config.js?v=2"></script>
+  <script src="booking.js?v=3"></script>
 </body>
 </html>

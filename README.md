@@ -1,4 +1,4 @@
-# De Lattenspecialist website v9
+# De Lattenspecialist website v11
 
 GitHub Pages-website voor De Lattenspecialist, inclusief de installeerbare webapp **Mijn Lattenspecialist**.
 
@@ -9,6 +9,8 @@ GitHub Pages-website voor De Lattenspecialist, inclusief de installeerbare webap
 - Zelf brengen en ophalen in Wamel, uitsluitend op afspraak
 - WhatsApp: 06 18 32 71 32
 - Betaling via betaalverzoek na onderhoud
+- Concrete ophaaldata uit de beheerapp en automatische Nederlandse adresopzoeking via PDOK
+- Beheer van servicecode, voortgang, waxsoort, klantberichten, betaalverzoeken en afmelden
 - KvK 99668637
 - BTW-id NL005403580B64
 
