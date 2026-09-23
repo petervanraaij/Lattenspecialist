@@ -1,6 +1,24 @@
 # Mijn Lattenspecialist — klantenapp
 
-Klanten gebruiken bij voorkeur de installeerbare webapp op `https://lattenspecialist.nl/app.html#installeren`. Dezelfde schermen zijn beschikbaar in de native Android- en iPhone-app, app-ID `nl.lattenspecialist.klanten`. De eigenaar gebruikt de afzonderlijke `mobile-admin`-app of `beheer.html`. De klantenapp bevat geen beheerpagina, beheercode, reserveringenlijst of private API-sleutels.
+Android-klanten kunnen de ondertekende APK rechtstreeks ontvangen; iPhone-klanten gebruiken voorlopig de webapp. Dezelfde schermen zijn beschikbaar in de native Android- en iPhone-broncode, app-ID `nl.lattenspecialist.klanten`. De eigenaar gebruikt de afzonderlijke `mobile-admin`-app of `beheer.html`. De klantenapp bevat geen beheerpagina, beheercode, reserveringenlijst of private API-sleutels.
+
+## Persoonlijke WhatsApp-statuslink
+
+`https://lattenspecialist.nl/app.html#status=LS-ABC234` opent direct de status van die onderhoudscode. Dit is een voorbeeldcode, geen echte klant. De code staat in het URL-fragment zodat de hostingserver hem niet ontvangt. De app verwijdert het fragment met de code uit de huidige geschiedenisvermelding, toont meteen de voortgang en bewaart de code alleen als de klant dat zelf kiest. De link geeft toegang tot de openbare onderhoudsstatus; behandel echte links daarom als persoonlijk. Naam, adres, telefoon en e-mail worden niet door de status-API teruggegeven.
+
+De beheerpagina zet deze link in het WhatsApp-statusbericht; de backend gebruikt dezelfde link in statusmails en de bestaande WhatsApp-templateparameter. Als de code bij het eerste statusbericht nog ontbreekt, wordt hij eerst aangemaakt en opgeslagen. Automatische WhatsApp-verzending blijft afhankelijk van de bestaande Meta-configuratie en toestemming van de klant.
+
+Android App Links koppelen uitsluitend `/app.html` aan de klantenapp. `.well-known/assetlinks.json` bevat alleen de openbare SHA-256-certificaatvingerafdruk; `.nojekyll` zorgt dat GitHub Pages dit bestand publiceert. Geïnstalleerde Android-apps kunnen hiermee persoonlijke links rechtstreeks openen. Op iPhone blijft de persoonlijke link een webapp-link; er is geen App Store-publicatie nodig voor deze route.
+
+## Android rechtstreeks delen
+
+De workflow bouwt zowel een test-APK als een niet-debugbare, nog ongetekende release-APK. Download voor een release het artifact `mijn-lattenspecialist-android-release-unsigned`. Het bevat de APK, pakketcontrole, checksums en de officiële `apksigner.jar` uit de Android SDK. Onderteken lokaal met de vaste release-sleutel; upload nooit een private sleutel of wachtwoord naar Git of een openbaar artifact. De release van deze wijziging gebruikt versiecode 2 / versie 1.0.1.
+
+De vaste sleutel staat op de beheerderscomputer buiten de repository in `%LOCALAPPDATA%\Lattenspecialist\Signing`. Het wachtwoord is beschermd met Windows DPAPI voor die gebruiker. Bewaar een veilige herstelkopie via de eigen back-upvoorziening; dezelfde sleutel is nodig voor latere updates. Controleer na ondertekenen `apksigner verify --verbose --print-certs`, de APK-checksum en overeenkomst met `assetlinks.json`.
+
+De klant kan `Mijn-Lattenspecialist.apk` als document ontvangen. Na installatie heet de app **Mijn Lattenspecialist** en gebruikt hij het bestaande logo. Android vraagt bij installatie buiten een winkel toestemming voor die bron en kan een beveiligingsmelding tonen; de naam of ondertekening schakelt die bescherming niet uit. Schakel Play Protect niet uit.
+
+Een eerder geïnstalleerde debug/test-APK gebruikt een andere sleutel en kan niet met deze release worden overschreven. Noteer in dat geval eerst de eigen onderhoudscode en reisgegevens voordat de testapp handmatig wordt verwijderd. Reserveringen blijven op de server bewaard. Latere releases met dezelfde release-sleutel kunnen de klantenapp wel bijwerken.
 
 ## Installeren vanaf de website
 

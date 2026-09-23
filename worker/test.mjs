@@ -135,6 +135,30 @@ try {
   const autoWhatsappResult = await autoWhatsappResponse.json();
   assert.equal(autoWhatsappResult.notifications.whatsapp.sent, true);
   assert.ok(requests.some(request => request.url.includes('graph.facebook.com/v23.0/123456/messages')));
+  const statusMessage = JSON.parse(requests.findLast(request => request.url.includes('graph.facebook.com')).options.body);
+  assert.equal(statusMessage.template.components[0].parameters[3].text, `https://lattenspecialist.nl/app.html#status=${updateResult.record.serviceCode}`);
+
+  // First status notification must already contain a working personal link.
+  const newReference = 'LS-2609-NEW234';
+  await store.put(`reservation:${newReference}`, JSON.stringify({...adminResult.records[0], reference:newReference, serviceCode:null}));
+  const firstNotify = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${newReference}`, {method:'PATCH',headers:adminHeaders,body:JSON.stringify({sendWhatsApp:true,sendStatusEmail:true})}),whatsappEnv);
+  const firstResult = await firstNotify.json();
+  assert.equal(firstNotify.status,200);
+  const personalCode = firstResult.record.serviceCode;
+  assert.match(personalCode,/^LS-[A-Z2-9]{6}$/);
+  assert.equal(await store.get(`service:${personalCode}`),newReference);
+  const personalUrl = `https://lattenspecialist.nl/app.html#status=${personalCode}`;
+  const firstEmail = JSON.parse(requests.findLast(request => request.url.includes('api.resend.com')).options.body);
+  assert.ok(firstEmail.text.includes(personalUrl));
+  assert.ok(firstEmail.html.includes(`href="${personalUrl}"`));
+  const firstWhatsApp = JSON.parse(requests.findLast(request => request.url.includes('graph.facebook.com')).options.body);
+  assert.equal(firstWhatsApp.template.components[0].parameters[3].text,personalUrl);
+  const followup = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${newReference}`, {method:'PATCH',headers:adminHeaders,body:JSON.stringify({sendWhatsApp:true})}),whatsappEnv);
+  assert.equal((await followup.json()).record.serviceCode,personalCode);
+  const directStatus = await worker.fetch(new Request(`https://worker.example/api/status/${personalCode}`,{headers:{Origin:lattenOrigin}}),testEnv);
+  const directRecord = (await directStatus.json()).record;
+  assert.equal(directRecord.code,personalCode);
+  for (const field of ['name','email','phone','address','postcode','paymentUrl']) assert.equal(directRecord[field],undefined);
 
   requests.length = 0;
   const stuiterResponse = await worker.fetch(new Request('https://worker.example', {method: 'POST', headers: {Origin: stuiterOrigin, 'Content-Type': 'application/json'}, body: JSON.stringify(stuiterPayload)}), baseEnv);

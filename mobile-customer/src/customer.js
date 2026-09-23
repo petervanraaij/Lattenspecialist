@@ -1,7 +1,7 @@
 import {Capacitor} from '@capacitor/core';
 import {App} from '@capacitor/app';
 import {Browser} from '@capacitor/browser';
-import {SITE, normalizeCode, validCode, escape, today, readTrip, formatDate, renderStatus} from './domain.js';
+import {SITE, normalizeCode, validCode, codeFromStatusHash, codeFromAppLink, escape, today, readTrip, formatDate, renderStatus} from './domain.js';
 
 const endpoint = String(window.LATTENSPECIALIST_BOOKING?.endpoint || '').replace(/\/$/, '');
 const $ = id => document.getElementById(id);
@@ -59,10 +59,33 @@ async function loadStatus(code) {
     updateSavedCode();
   } catch(error) {
     if (request !== statusRequest) return;
+    showCodeForm();
     const missing = error.status === 404 || error.status === 400;
     $('statusResult').innerHTML = fail(missing ? 'Deze onderhoudscode is niet gevonden. Controleer de code uit je bericht; je aanvraagcode is een andere code.' : 'Je actuele voortgang kon niet worden opgehaald. Controleer je internetverbinding en probeer het opnieuw.');
   } finally { if (request === statusRequest) $('statusSubmit').disabled=false; }
 }
+
+function showCodeForm() {
+  $('statusForm').hidden = false;
+  $('changeCode').hidden = true;
+  $('statusIntro').textContent = 'Vul de persoonlijke onderhoudscode in die je van ons ontvangt. Je aanvraagcode is een andere code.';
+}
+function openPersonalStatus(code) {
+  ++statusRequest;
+  currentCode = code;
+  $('serviceCode').value = code;
+  $('rememberCode').checked = storage.get(CODE_KEY) === code;
+  if (!$('rememberCode').checked) storage.remove(CODE_KEY);
+  updateSavedCode();
+  $('codeFeedback').textContent = '';
+  $('statusResult').innerHTML = '';
+  $('statusForm').hidden = true;
+  $('changeCode').hidden = false;
+  $('statusIntro').textContent = 'Je persoonlijke voortgang wordt automatisch opgehaald.';
+  // Remove the personal code from browser history and subsequent navigation.
+  history.replaceState(null, '', `${location.pathname}${location.search}#onderhoud`);
+}
+$('changeCode').addEventListener('click', () => { showCodeForm(); $('serviceCode').focus(); });
 
 $('statusForm').addEventListener('submit', event => {
   event.preventDefault();
@@ -87,6 +110,7 @@ $('forgetCode').addEventListener('click', () => {
   currentCode=''; $('serviceCode').value=''; $('rememberCode').checked=false;
   $('statusSubmit').disabled=false;
   $('statusResult').innerHTML=''; $('codeFeedback').textContent='De code en getoonde voortgang zijn van dit toestel verwijderd.';
+  showCodeForm();
   updateSavedCode();
 });
 $('rememberCode').addEventListener('change', () => {
@@ -209,7 +233,18 @@ document.addEventListener('click', event => {
   event.preventDefault(); openExternal(a.href);
 });
 function navigate(focus = true) {
-  const hash=location.hash.slice(1);
+  let hash=location.hash.slice(1);
+  if (hash.toLowerCase().startsWith('status=')) {
+    const code=codeFromStatusHash(location.hash);
+    if (code) openPersonalStatus(code);
+    else {
+      ++statusRequest; currentCode=''; $('statusSubmit').disabled=false;
+      $('serviceCode').value=''; $('statusResult').innerHTML=''; showCodeForm();
+      $('codeFeedback').textContent='Deze persoonlijke link is niet geldig. Gebruik de onderhoudscode uit je bericht of vraag ons om een nieuwe link.';
+      history.replaceState(null, '', `${location.pathname}${location.search}#onderhoud`);
+    }
+    hash='onderhoud';
+  }
   const page=({status:'onderhoud',waxplanner:'reis'})[hash] || hash;
   activeScreen=pages.includes(page)?page:'home';
   for(const id of pages)$(id).hidden=id!==activeScreen;
@@ -231,6 +266,13 @@ window.addEventListener('online',() => {updateConnection(); if(activeScreen==='o
 window.addEventListener('offline',updateConnection);
 document.addEventListener('visibilitychange',() => {if(!document.hidden&&activeScreen==='onderhoud'&&currentCode)loadStatus(currentCode);});
 if(Capacitor.isNativePlatform()) {
+  const openAppLink = url => {
+    const code=codeFromAppLink(url);
+    if (!code) return;
+    openPersonalStatus(code); navigate();
+  };
+  App.addListener('appUrlOpen', ({url}) => openAppLink(url));
+  App.getLaunchUrl().then(result => { if(result?.url)openAppLink(result.url); }).catch(() => {});
   App.addListener('backButton',() => { if(activeScreen!=='home')location.hash='home';else App.exitApp(); });
   App.addListener('appStateChange',({isActive}) => {if(isActive&&activeScreen==='onderhoud'&&currentCode)loadStatus(currentCode);});
 }
