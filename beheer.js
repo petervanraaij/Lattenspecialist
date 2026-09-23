@@ -46,7 +46,8 @@
     if (type === 'status') {
       if (record.note) lines.push('',record.note);
       if (record.expectedReady) lines.push('',`Verwacht klaar: ${formatDate(record.expectedReady)}`);
-      lines.push('',`Servicecode: ${record.serviceCode || record.reference}`,'Bekijk je voortgang: https://lattenspecialist.nl/app.html','','Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.','','Groet,','De Lattenspecialist');
+      const statusUrl = record.serviceCode ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : 'https://lattenspecialist.nl/app.html#onderhoud';
+      lines.push('',`Servicecode: ${record.serviceCode || 'wordt nog toegekend'}`,'Bekijk direct jouw voortgang in Mijn Lattenspecialist:',statusUrl,'Je hoeft geen code in te voeren.','','Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.','','Groet,','De Lattenspecialist');
     }
     return `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
   };

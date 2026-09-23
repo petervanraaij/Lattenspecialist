@@ -4,6 +4,19 @@ export const STEPS = ['Aanvraag ontvangen', 'Ophalen of brengen gepland', 'Mater
 export const CONDITIONS = ['Weet ik nog niet', 'Zacht / warm', 'Rond het vriespunt', 'Koud', 'Kunstsneeuw / hard / ijzig'];
 export const normalizeCode = value => String(value || '').trim().toUpperCase().replace(/\s+/g, '');
 export const validCode = value => /^LS-[A-Z2-9]{6}$/.test(value);
+export function codeFromStatusHash(hash) {
+  try {
+    const match = /^#status=(LS-[A-Z2-9]{6})$/i.exec(decodeURIComponent(String(hash)));
+    return match ? normalizeCode(match[1]) : '';
+  } catch { return ''; }
+}
+export function codeFromAppLink(value) {
+  try {
+    const url = new URL(value);
+    if (url.origin !== 'https://lattenspecialist.nl' || url.pathname !== '/app.html' || url.search || url.username || url.password) return '';
+    return codeFromStatusHash(url.hash);
+  } catch { return ''; }
+}
 export const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const today = () => {
   const date = new Date();

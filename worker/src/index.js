@@ -244,7 +244,7 @@ const updateReservation = async (reference, raw, env) => {
   const paymentUrl = clean(Object.prototype.hasOwnProperty.call(raw, 'paymentUrl') ? raw.paymentUrl : record.paymentUrl, 500);
   if (paymentUrl && !isHttpsUrl(paymentUrl)) throw new ValidationError('De betaallink moet met https:// beginnen.');
   let serviceCode = normalizeServiceCode(raw.serviceCode || record.serviceCode);
-  if (raw.generateServiceCode === true && !serviceCode) serviceCode = await assignUniqueServiceCode(store);
+  if ((raw.generateServiceCode === true || raw.sendStatusEmail === true || raw.sendWhatsApp === true) && !serviceCode) serviceCode = await assignUniqueServiceCode(store);
   if (serviceCode && !/^LS-[A-Z2-9]{6}$/.test(serviceCode)) throw new ValidationError('De servicecode heeft geen geldig formaat.');
   if (serviceCode) {
     const owner = await store.get(`service:${serviceCode}`);
@@ -305,6 +305,8 @@ const sendCustomerConfirmationEmail = async (data, reference, env) => {
   }, env);
 };
 
+const customerStatusUrl = record => record.serviceCode ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : 'https://lattenspecialist.nl/app.html#onderhoud';
+
 const sendCustomerStatusEmail = async (record, env) => {
   const ready = record.expectedReady ? `\nVerwacht klaar: ${record.expectedReady}` : '';
   const note = record.note ? `\n\n${record.note}` : '';
@@ -312,8 +314,8 @@ const sendCustomerStatusEmail = async (record, env) => {
     from: lattenspecialistFrom(env),
     to: [record.email],
     subject: `Status van je onderhoud: ${record.status}`,
-    text: [`Hallo ${record.name},`, '', 'De status van je aanvraag is bijgewerkt:', record.status, `${ready}${note}`, '', `Servicecode: ${record.serviceCode || 'wordt nog toegekend'}`, 'Bekijk je voortgang: https://lattenspecialist.nl/app.html', '', 'Groet,', 'De Lattenspecialist'].join('\n'),
-    html: `<p>Hallo ${escapeHtml(record.name)},</p><p>De status van je aanvraag is bijgewerkt:</p><p><strong>${escapeHtml(record.status)}</strong></p>${record.expectedReady ? `<p>Verwacht klaar: ${escapeHtml(record.expectedReady)}</p>` : ''}${record.note ? `<p>${escapeHtml(record.note)}</p>` : ''}<p>Servicecode: <strong>${escapeHtml(record.serviceCode || 'wordt nog toegekend')}</strong><br><a href="https://lattenspecialist.nl/app.html">Bekijk je voortgang</a></p><p>Groet,<br>De Lattenspecialist</p>`
+    text: [`Hallo ${record.name},`, '', 'De status van je aanvraag is bijgewerkt:', record.status, `${ready}${note}`, '', `Servicecode: ${record.serviceCode || 'wordt nog toegekend'}`, `Bekijk direct je voortgang: ${customerStatusUrl(record)}`, '', 'Groet,', 'De Lattenspecialist'].join('\n'),
+    html: `<p>Hallo ${escapeHtml(record.name)},</p><p>De status van je aanvraag is bijgewerkt:</p><p><strong>${escapeHtml(record.status)}</strong></p>${record.expectedReady ? `<p>Verwacht klaar: ${escapeHtml(record.expectedReady)}</p>` : ''}${record.note ? `<p>${escapeHtml(record.note)}</p>` : ''}<p>Servicecode: <strong>${escapeHtml(record.serviceCode || 'wordt nog toegekend')}</strong><br><a href="${escapeHtml(customerStatusUrl(record))}">Bekijk direct je voortgang</a></p><p>Groet,<br>De Lattenspecialist</p>`
   }, env);
 };
 
@@ -339,7 +341,7 @@ const sendWhatsAppTemplate = async (record, type, env) => {
   if (!destination) return {sent: false, reason: 'invalid_phone'};
   const values = type === 'payment'
     ? [String(record.name || '').split(/\s+/)[0], `€ ${Number(record.paymentAmount || 0).toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, record.paymentUrl || '', record.reference]
-    : [String(record.name || '').split(/\s+/)[0], record.status || STATUS_STEPS[0], record.serviceCode || record.reference, 'https://lattenspecialist.nl/app.html'];
+    : [String(record.name || '').split(/\s+/)[0], record.status || STATUS_STEPS[0], record.serviceCode || record.reference, customerStatusUrl(record)];
   const response = await fetch(`https://graph.facebook.com/${clean(env.WHATSAPP_GRAPH_VERSION || 'v23.0', 12)}/${phoneNumberId}/messages`, {
     method: 'POST',
     headers: {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'},

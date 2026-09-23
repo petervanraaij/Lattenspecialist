@@ -27,7 +27,7 @@
       </div>
     </section>
     <section id="onderhoud" class="screen" aria-labelledby="statusTitle" hidden>
-      <div class="page-content"><span class="eyebrow">Jouw ski's of snowboard</span><h1 id="statusTitle" tabindex="-1">Mijn onderhoud</h1><p>Vul de persoonlijke onderhoudscode in die je van ons ontvangt. Je aanvraagcode is een andere code.</p>
+      <div class="page-content"><span class="eyebrow">Jouw ski's of snowboard</span><h1 id="statusTitle" tabindex="-1">Mijn onderhoud</h1><p id="statusIntro">Vul de persoonlijke onderhoudscode in die je van ons ontvangt. Je aanvraagcode is een andere code.</p><button id="changeCode" class="text-button" type="button" hidden>Andere onderhoudscode gebruiken of bewaren</button>
         <form id="statusForm" class="card"><label for="serviceCode">Onderhoudscode</label><input id="serviceCode" name="code" placeholder="LS-7K4M9P" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="24" required><label class="check"><input type="checkbox" id="rememberCode">Bewaar deze code op mijn toestel</label><button class="button dark" id="statusSubmit" type="submit">Bekijk mijn onderhoud</button><div id="codeFeedback" role="status" class="muted"></div></form>
         <div class="saved-code" id="savedCodeArea" hidden><span id="savedCodeLabel"></span><button type="button" id="forgetCode" class="text-button">Code vergeten</button></div>
         <div id="statusResult" role="status" aria-live="polite"><div class="empty"><span aria-hidden="true">◇</span><h2>Volg elke stap</h2><p>Van ontvangst tot klaar voor ophalen. Ook de gekozen wax zie je hier.</p></div></div>
