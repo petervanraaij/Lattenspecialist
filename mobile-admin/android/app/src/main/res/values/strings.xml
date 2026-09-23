@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lattenspecialist Beheer</string>
+    <string name="title_activity_main">Lattenspecialist Beheer</string>
+    <string name="package_name">nl.lattenspecialist.beheer</string>
+    <string name="custom_url_scheme">nl.lattenspecialist.beheer</string>
+</resources>

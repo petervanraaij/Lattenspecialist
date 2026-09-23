@@ -1,0 +1,31 @@
+name: iPhone beheerapp controle
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "mobile-admin/**"
+      - "beheer.html"
+      - "beheer.js"
+      - "styles.css"
+      - "booking-config.js"
+      - ".github/workflows/ios-app-check.yml"
+
+jobs:
+  build-ios-simulator:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile-admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile-admin/package-lock.json
+      - run: npm ci
+      - run: npm run sync
+      - run: python -m pip install Pillow==12.3.0
+      - run: npm run prepare:assets
+      - run: xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build

@@ -1,0 +1,31 @@
+{
+  "appId": "nl.lattenspecialist.beheer",
+  "appName": "Lattenspecialist Beheer",
+  "webDir": "www",
+  "backgroundColor": "#0b0b0cff",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "capacitor",
+    "cleartext": false
+  },
+  "android": {
+    "backgroundColor": "#0b0b0cff",
+    "allowMixedContent": false
+  },
+  "ios": {
+    "backgroundColor": "#0b0b0cff",
+    "contentInset": "automatic",
+    "scrollEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#0b0b0cff",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#0b0b0c"
+    }
+  }
+}

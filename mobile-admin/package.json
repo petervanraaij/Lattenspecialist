@@ -1,0 +1,24 @@
+{
+  "name": "lattenspecialist-beheer-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Native Android- en iPhone-app voor het beheer van De Lattenspecialist.",
+  "scripts": {
+    "prepare:web": "node scripts/sync-web.mjs",
+    "prepare:assets": "python scripts/generate-assets.py",
+    "sync": "npm run prepare:web && cap sync",
+    "doctor": "cap doctor",
+    "build:android": "npm run sync && cd android && gradlew.bat assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.4.3",
+    "@capacitor/ios": "^8.5.2"
+  }
+}

@@ -53,7 +53,9 @@ const json = (body, status, origin) => new Response(JSON.stringify(body), {
 
 const getSite = (origin, env) => {
   if (origin === (env.STUITERBAAS_ORIGIN || 'https://stuiterbaas.nl')) return 'stuiterbaas';
-  if (csv(env.LATTENSPECIALIST_ORIGINS || 'https://lattenspecialist.nl,https://www.lattenspecialist.nl').includes(origin)) return 'lattenspecialist';
+  const websiteOrigins = csv(env.LATTENSPECIALIST_ORIGINS || 'https://lattenspecialist.nl,https://www.lattenspecialist.nl');
+  const nativeAppOrigins = csv(env.LATTENSPECIALIST_APP_ORIGINS || 'capacitor://localhost,https://localhost,http://localhost');
+  if ([...websiteOrigins, ...nativeAppOrigins].includes(origin)) return 'lattenspecialist';
   return null;
 };
 

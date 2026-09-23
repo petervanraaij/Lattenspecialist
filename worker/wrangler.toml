@@ -7,6 +7,7 @@ STUITERBAAS_ORIGIN = "https://stuiterbaas.nl"
 STUITERBAAS_TO_EMAIL = "verhuur@stuiterbaas.nl"
 STUITERBAAS_FROM_EMAIL = "Stuiterbaas Reserveringen <reserveringen@stuiterbaas.nl>"
 LATTENSPECIALIST_ORIGINS = "https://lattenspecialist.nl,https://www.lattenspecialist.nl"
+LATTENSPECIALIST_APP_ORIGINS = "capacitor://localhost,https://localhost,http://localhost"
 LATTENSPECIALIST_TO_EMAIL = "info@lattenspecialist.nl"
 LATTENSPECIALIST_FROM_EMAIL = "De Lattenspecialist via Stuiterbaas <reserveringen@stuiterbaas.nl>"
 

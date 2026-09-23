@@ -22,3 +22,5 @@ Optioneel voor automatische WhatsApp-status- en betaalberichten via de officiël
 De klant moet in het aanvraagformulier toestemming geven. Business-geïnitieerde berichten gebruiken goedgekeurde templates. Als deze variabelen ontbreken of Meta een bericht weigert, blijft de veilige handmatige WhatsApp-knop in de beheerapp beschikbaar.
 
 De openbare configuratie staat in `wrangler.toml`. Secrets horen nooit in Git. De beheerapp staat op `/beheer.html`; een ingelogde beheerder kan ophaaldata beheren, reserveringen bekijken, een persoonlijke servicecode aanmaken, wax registreren, de klantstatus bijwerken, een betaalverzoek e-mailen en een aanvraag omkeerbaar afmelden. De openbare statusroute geeft uitsluitend service-informatie terug en nooit naam, telefoonnummer, e-mailadres of adres.
+
+`LATTENSPECIALIST_APP_ORIGINS` bevat de lokale HTTPS-herkomsten van de native Android- en iPhone-app. Ook deze app gebruikt voor alle beheeracties de persoonlijke beheercode.
