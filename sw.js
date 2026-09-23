@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v16';
+const CACHE_NAME = 'lattenspecialist-v17';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -14,8 +14,10 @@ const APP_SHELL = [
   '/booking-config.js?v=2',
   '/booking.js?v=4',
   '/customer-booking.css?v=1',
-  '/customer-booking.js?v=1',
-  '/app.js?v=11',
+  '/customer-booking.js?v=2',
+  '/customer-app.css?v=1',
+  '/customer-app.js?v=1',
+  '/pwa-install.js?v=1',
   '/beheer.js?v=4',
   '/review.js?v=9',
   '/manifest.webmanifest',
@@ -23,7 +25,8 @@ const APP_SHELL = [
   '/images/badge.webp',
   '/images/logo-main.webp',
   '/images/app-icon-192.png',
-  '/images/app-icon-512.png'
+  '/images/app-icon-512.png',
+  '/images/family-ready.webp'
 ];
 
 self.addEventListener('install', event => {
@@ -32,7 +35,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))));
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('lattenspecialist-v') && key !== CACHE_NAME).map(key => caches.delete(key)))));
   self.clients.claim();
 });
 
@@ -40,21 +43,33 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/data/')) {
-    event.respondWith(fetch(event.request, {cache: 'no-store'}).catch(() => new Response('{"records":[],"items":[]}', {headers: {'Content-Type': 'application/json'}})));
+  // Live prices, availability and customer status must not silently use cached data.
+  if (event.request.cache === 'no-store' || url.pathname.startsWith('/data/') || url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
     return;
   }
   if (event.request.mode === 'navigate') {
     event.respondWith(fetch(event.request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+      if (response.ok) {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)));
+      }
       return response;
-    }).catch(() => caches.match(event.request).then(response => response || caches.match('/app.html'))));
+    }).catch(async () => {
+      // Never load the app itself into its booking iframe, which could recurse offline.
+      if (url.searchParams.get('app') !== 'klant') {
+        const cached = await caches.match(event.request) || (url.pathname === '/app.html' ? await caches.match('/app.html') : null);
+        if (cached) return cached;
+      }
+      return new Response('<!doctype html><html lang="nl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Geen verbinding</title><h1>Geen internetverbinding</h1><p>Voor het aanvraagformulier is internet nodig. Controleer je verbinding en laad het formulier opnieuw.</p></html>', {status:503,headers:{'Content-Type':'text/html; charset=utf-8'}});
+    }));
     return;
   }
   event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-    const copy = response.clone();
-    caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+    if (response.ok) {
+      const copy = response.clone();
+      event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)));
+    }
     return response;
   })));
 });

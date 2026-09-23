@@ -1,4 +1,5 @@
-export const SITE = 'https://lattenspecialist.nl';
+// The web app and its booking form share an origin; native apps use the public site.
+export const SITE = typeof __WEB_APP__ !== 'undefined' && __WEB_APP__ ? window.location.origin : 'https://lattenspecialist.nl';
 export const STEPS = ['Aanvraag ontvangen', 'Ophalen of brengen gepland', 'Materiaal ontvangen', 'Inspectie uitgevoerd', 'Onderhoud gestart', 'Wax koelt af', 'Finish en eindcontrole', 'Klaar voor ophalen of terugbrengen'];
 export const CONDITIONS = ['Weet ik nog niet', 'Zacht / warm', 'Rond het vriespunt', 'Koud', 'Kunstsneeuw / hard / ijzig'];
 export const normalizeCode = value => String(value || '').trim().toUpperCase().replace(/\s+/g, '');

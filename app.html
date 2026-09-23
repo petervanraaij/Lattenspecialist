@@ -1,103 +1,88 @@
+<!-- Generated from mobile-customer/src; run npm run build in mobile-customer. -->
 <!doctype html>
 <html lang="nl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Mijn Lattenspecialist | Status en waxplanning</title>
-  <meta name="description" content="Volg de onderhoudsstatus van je ski's of snowboard en bereid de waxkeuze voor op basis van bestemming, reisdatum en sneeuwcondities.">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0c">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://lattenspecialist.nl https://stuiterbaas-reserveren.stuiterbaas-456655a6.workers.dev; frame-src 'self' https://lattenspecialist.nl; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>Mijn Lattenspecialist</title>
+  <meta name="description" content="Vraag onderhoud aan, volg je ski’s of snowboard en bereid je wintersport voor met Mijn Lattenspecialist.">
   <link rel="canonical" href="https://lattenspecialist.nl/app.html">
-  <link rel="icon" href="images/badge.webp" type="image/webp">
-  <link rel="apple-touch-icon" href="images/badge.webp">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="apple-touch-icon" href="images/app-icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Lattenspecialist">
+  <link rel="icon" href="images/app-icon-512.png">
+  <link rel="stylesheet" href="customer-app.css?v=1">
 </head>
-<body class="app-body">
-  <header class="site-header">
-    <div class="container nav-wrap">
-      <a class="brand" href="/" aria-label="Terug naar De Lattenspecialist"><img src="images/logo-main.webp" alt="De Lattenspecialist" class="header-logo"></a>
-      <div class="app-header-actions">
-        <button class="btn btn-ghost install-button" id="installApp" type="button" hidden>Installeer app</button>
-        <a class="nav-cta" href="/">Naar website</a>
-      </div>
+<body>
+  <header class="topbar"><a href="#home" aria-label="Mijn Lattenspecialist, start"><img src="images/logo-main.webp" alt="De Lattenspecialist"></a><span>Mijn<br><strong>Lattenspecialist</strong></span></header>
+  <div id="offlineNotice" class="connection-notice" role="status" hidden>Je bent offline. Voor actuele voortgang, aanbod en aanvragen is internet nodig.</div>
+  <main id="main">
+    <section id="home" class="screen" aria-labelledby="homeTitle">
+      <div class="hero"><img src="images/family-ready.webp" alt="Wintersporters met hun ski's en snowboard"><div class="hero-copy"><span class="eyebrow">Zorgeloos de piste op</span><h1 id="homeTitle" tabindex="-1">Jouw wintersport.<br>Ons vakwerk.</h1><p>Je onderhoud en voorbereiding, bij de hand.</p><a class="button gold" href="#aanvragen">Onderhoud aanvragen <span aria-hidden="true">↗</span></a></div></div>
+      <div class="page-content">
+        <aside class="card install-card" id="installCard" aria-labelledby="installTitle">
+  <span class="tag">Altijd bij de hand</span>
+  <h2 id="installTitle">Mijn Lattenspecialist op je telefoon</h2>
+  <p>Voeg de app toe aan je beginscherm. Open daarna met één tik je onderhoud, aanvraag en reis.</p>
+  <button class="button dark" id="installApp" type="button" hidden>Installeer app</button>
+  <p id="installFeedback" role="status" class="muted"></p>
+  <details id="installHelp">
+    <summary>Zo zet je de app op je telefoon</summary>
+    <div class="install-instructions">
+      <h3>Android</h3>
+      <p>Open deze pagina in Chrome. Tik op de drie puntjes en kies <strong>Installeren</strong> of <strong>Toevoegen aan startscherm</strong>. De naam kan per telefoon verschillen.</p>
+      <h3>iPhone</h3>
+      <p>Open deze pagina in Safari. Tik op <strong>Deel</strong> en daarna <strong>Zet op beginscherm</strong>. Laat <strong>Open als webapp</strong> aan staan als die keuze verschijnt en tik op <strong>Voeg toe</strong>.</p>
+      <p class="muted">Zit je in WhatsApp of een andere app? Open de link eerst in Chrome of Safari. Je kunt de klantenapp ook gewoon hier blijven gebruiken.</p>
     </div>
-  </header>
-
-  <main>
-    <section class="app-hero">
-      <div class="container app-hero-grid">
-        <div>
-          <span class="hero-kicker">Mijn Lattenspecialist</span>
-          <h1>Je materiaal gevolgd. Je wintersport voorbereid.</h1>
-          <p>Bekijk de voortgang van je onderhoud met je persoonlijke servicecode en leg bestemming, datum en omstandigheden vast voor een passende waxkeuze.</p>
-        </div>
-        <img src="images/badge.webp" alt="De Lattenspecialist" class="app-hero-badge">
+  </details>
+</aside>
+        <a class="feature-card" href="#onderhoud"><span class="icon-ring" aria-hidden="true">✓</span><div><h2>Hoe staat je materiaal ervoor?</h2><p>Bekijk de voortgang met je onderhoudscode.</p></div><span aria-hidden="true">→</span></a>
+        <div class="section-heading"><span class="eyebrow">Van voordeur tot pisteklaar</span><h2>Plan je volgende beurt</h2></div>
+        <div class="card"><span class="tag">Haal- & brengservice</span><h3>Beschikbare ophaaldata</h3><p id="pickupDates" aria-live="polite">De beschikbare data worden opgehaald…</p><p class="muted">Gratis binnen het servicegebied. Zelf brengen in Wamel kan op afspraak.</p><a class="text-link" href="#aanvragen">Kies een datum in je aanvraag →</a></div>
+        <div class="quick-grid"><a class="card" href="#aanbod"><span class="eyebrow">Pakketten & verhuur</span><h3>Bekijk het aanbod</h3><span aria-hidden="true">→</span></a><a class="card" href="#reis"><span class="eyebrow">Goed voorbereid</span><h3>Waar ga jij skiën?</h3><span aria-hidden="true">→</span></a></div>
+        <p class="contact-line">Een vraag? <a href="https://wa.me/31618327132">Neem contact op via WhatsApp</a></p>
       </div>
     </section>
-
-    <section class="section app-section" id="status">
-      <div class="container app-card-grid">
-        <div class="app-card app-card-intro">
-          <span class="eyebrow">Onderhoudsstatus</span>
-          <h2>Waar is mijn ski of snowboard?</h2>
-          <p>Vul de persoonlijke servicecode in die je bij de bevestiging ontvangt. De status bevat geen naam, adres of telefoonnummer.</p>
-          <form id="statusForm" class="compact-form">
-            <label><span>Persoonlijke servicecode</span><input name="code" autocomplete="off" autocapitalize="characters" placeholder="bijv. LS-7K4M9P" required></label>
-            <button class="btn btn-gold" type="submit">Bekijk status</button>
-          </form>
-        </div>
-        <div class="app-card status-result" id="statusResult" aria-live="polite">
-          <div class="empty-state">
-            <strong>Nog geen code ingevuld</strong>
-            <p>Je actuele voortgang verschijnt hier.</p>
-          </div>
-        </div>
+    <section id="onderhoud" class="screen" aria-labelledby="statusTitle" hidden>
+      <div class="page-content"><span class="eyebrow">Jouw ski's of snowboard</span><h1 id="statusTitle" tabindex="-1">Mijn onderhoud</h1><p>Vul de persoonlijke onderhoudscode in die je van ons ontvangt. Je aanvraagcode is een andere code.</p>
+        <form id="statusForm" class="card"><label for="serviceCode">Onderhoudscode</label><input id="serviceCode" name="code" placeholder="LS-7K4M9P" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="24" required><label class="check"><input type="checkbox" id="rememberCode">Bewaar deze code op mijn toestel</label><button class="button dark" id="statusSubmit" type="submit">Bekijk mijn onderhoud</button><div id="codeFeedback" role="status" class="muted"></div></form>
+        <div class="saved-code" id="savedCodeArea" hidden><span id="savedCodeLabel"></span><button type="button" id="forgetCode" class="text-button">Code vergeten</button></div>
+        <div id="statusResult" role="status" aria-live="polite"><div class="empty"><span aria-hidden="true">◇</span><h2>Volg elke stap</h2><p>Van ontvangst tot klaar voor ophalen. Ook de gekozen wax zie je hier.</p></div></div>
+        <p class="muted">Deel je persoonlijke code niet met anderen. <a href="https://wa.me/31618327132">Hulp nodig met je code?</a></p>
       </div>
     </section>
-
-    <section class="section wax-planner" id="waxplanner">
-      <div class="container">
-        <div class="section-head center">
-          <span class="eyebrow">Waxplanning</span>
-          <h2>Waar en wanneer ga je skiën?</h2>
-          <p>De uiteindelijke waxkeuze hangt af van temperatuur, vochtigheid en het soort sneeuw. Deze planner maakt een voorbereiding; de definitieve keuze volgt bij het onderhoud.</p>
-        </div>
-        <div class="wax-grid">
-          <form id="waxForm" class="app-card wax-form">
-            <div class="form-grid">
-              <label><span>Skigebied / bestemming</span><input name="destination" placeholder="bijv. Sölden, Oostenrijk" required></label>
-              <label><span>Eerste skidag</span><input type="date" name="date" required></label>
-              <label><span>Verwachte temperatuur</span><select name="temperature"><option value="unknown">Weet ik nog niet</option><option value="warm">Boven 0 °C</option><option value="nearzero">0 tot −5 °C</option><option value="cold">−6 tot −12 °C</option><option value="verycold">Kouder dan −12 °C</option></select></label>
-              <label><span>Sneeuwconditie</span><select name="snow"><option value="unknown">Weet ik nog niet</option><option value="fresh">Verse sneeuw</option><option value="old">Oude / omgevormde sneeuw</option><option value="artificial">Kunstsneeuw</option><option value="icy">Hard / ijzig</option><option value="wet">Nat / zacht</option></select></label>
-              <label><span>Klimaat</span><select name="humidity"><option value="unknown">Weet ik nog niet</option><option value="dry">Droog</option><option value="normal">Normaal</option><option value="humid">Vochtig</option></select></label>
-              <label><span>Gebruik</span><select name="usage"><option>Recreatief</option><option>Sportief</option><option>Wedstrijd / advies nodig</option></select></label>
-            </div>
-            <button class="btn btn-dark" type="submit">Maak waxvoorbereiding</button>
-          </form>
-          <div class="app-card wax-result" id="waxResult" aria-live="polite">
-            <div class="empty-state"><strong>Nog geen reis ingevuld</strong><p>De waxvoorbereiding verschijnt hier.</p></div>
-          </div>
-        </div>
+    <section id="aanvragen" class="screen" aria-labelledby="bookingTitle" hidden>
+      <div class="page-content booking-heading"><span class="eyebrow">We regelen het samen</span><h1 id="bookingTitle" tabindex="-1">Aanvraag doen</h1><p>Vul je aanvraag hier in. Daarna bevestigen we persoonlijk de planning.</p><p id="bookingLoadStatus" role="status">Het aanvraagformulier wordt geladen…</p><button class="text-button" type="button" id="reloadBooking">Formulier opnieuw laden</button></div>
+      <iframe id="bookingFrame" title="Onderhoud of verhuur aanvragen bij De Lattenspecialist" referrerpolicy="no-referrer" hidden></iframe>
+      <div class="page-content"><p class="muted">Lukt het formulier niet? <a href="https://lattenspecialist.nl/#afspraak">Open het op de website</a>.</p><a class="text-link" href="https://wa.me/31618327132?text=Hallo%20De%20Lattenspecialist%2C%20ik%20wil%20graag%20een%20afspraak%20aanvragen.">Reserveer via WhatsApp →</a></div>
+    </section>
+    <section id="aanbod" class="screen" aria-labelledby="offerTitle" hidden>
+      <div class="page-content"><span class="eyebrow">Aandacht voor je materiaal</span><h1 id="offerTitle" tabindex="-1">Pakketten & aanbod</h1><p>De actuele pakketten, prijzen en beschikbaarheid komen rechtstreeks van onze website.</p><button class="text-button" type="button" id="refreshOffers">Aanbod vernieuwen</button><div id="packages" class="stack" aria-live="polite"></div>
+        <div class="section-heading"><span class="eyebrow">Een passende set</span><h2>Verhuur op aanvraag</h2></div><div id="inventory" class="stack" aria-live="polite"></div><button class="button dark" type="button" id="requestRental">Verhuur aanvragen</button><p class="muted">Maat, periode, beschikbaarheid en prijs worden persoonlijk bevestigd.</p>
       </div>
     </section>
-
-    <section class="section inventory-section" id="aanbod">
-      <div class="container">
-        <div class="section-head center">
-          <span class="eyebrow">Actueel aanbod</span>
-          <h2>Verhuur die bij je past.</h2>
-          <p>We tonen alleen materiaal dat werkelijk beschikbaar is. Staat er niets passend tussen, dan kun je een aanvraag doen en bekijken we wat we kunnen regelen.</p>
-        </div>
-        <div id="inventoryList" class="inventory-grid" aria-live="polite"></div>
-        <div class="center-actions"><a class="btn btn-gold" href="/#afspraak">Verhuuraanvraag doen</a></div>
+    <section id="reis" class="screen" aria-labelledby="tripTitle" hidden>
+      <div class="page-content"><span class="eyebrow">Voorbereid op de sneeuw</span><h1 id="tripTitle" tabindex="-1">Mijn reis</h1><p>Waar en wanneer je skiet helpt ons de wax te kiezen. De definitieve keuze maken we bij het onderhoud.</p>
+        <form id="tripForm" class="card"><label for="destination">Skigebied / bestemming</label><input id="destination" name="destination" maxlength="100" placeholder="Bijvoorbeeld Sölden, Oostenrijk" required><label for="skiDate">Eerste skidag</label><input type="date" id="skiDate" name="skidate" required><label for="conditions">Verwachte omstandigheden</label><select id="conditions" name="conditions"><option>Weet ik nog niet</option><option>Zacht / warm</option><option>Rond het vriespunt</option><option>Koud</option><option>Kunstsneeuw / hard / ijzig</option></select><p class="muted">Je reis wordt alleen op dit toestel bewaard, totdat je die zelf met je aanvraag verstuurt.</p><button class="button dark" type="submit">Reis bewaren</button></form>
+        <div id="tripResult" class="card" hidden></div><div class="result-actions"><button class="button gold" id="tripBooking" type="button">Neem reis mee in aanvraag</button><button class="text-button" id="clearTrip" type="button">Bewaarde reis wissen</button></div>
+        <div class="card"><h2>Voor vertrek</h2><ul class="checklist"><li>Onderhoud op tijd aanvragen</li><li>Bestemming en eerste skidag doorgeven</li><li>Actuele sneeuw- en weersverwachting controleren</li></ul><p class="muted">Temperatuur en sneeuwcondities verschillen per hoogte. Een weersverwachting is nog geen definitieve waxkeuze.</p></div>
       </div>
     </section>
+    <footer class="page-content"><a href="https://lattenspecialist.nl/privacy.html">Privacy</a><span> · </span><a href="https://lattenspecialist.nl/service.html">Service-informatie</a><p>De Lattenspecialist · Wamel</p></footer>
   </main>
-
-  <footer class="site-footer compact-footer">
-    <div class="container footer-bottom">© <span id="year"></span> De Lattenspecialist · <a href="privacy.html">Privacy</a> · <a href="service.html">Service-informatie</a></div>
-  </footer>
-  <script src="booking-config.js?v=2"></script>
-  <script src="app.js?v=11"></script>
+  <nav class="bottom-nav" aria-label="Appnavigatie">
+    <a href="#home" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/></svg><span>Start</span></a>
+    <a href="#onderhoud"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg><span>Onderhoud</span></a>
+    <a href="#aanvragen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 2v6m8-6v6M4 11h16m-8 3v4m-2-2h4"/></svg><span>Aanvragen</span></a>
+    <a href="#aanbod"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8l10 10-8 8L3 11Z"/><circle cx="7.5" cy="7.5" r="1"/></svg><span>Aanbod</span></a>
+    <a href="#reis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 20 7-14 5 9 3-5 5 10H2Zm4-8 3 2 2-4"/></svg><span>Mijn reis</span></a>
+  </nav>
+  <script src="booking-config.js?v=2"></script><script src="customer-app.js?v=1"></script>
+  <script src="pwa-install.js?v=1"></script>
 </body>
 </html>

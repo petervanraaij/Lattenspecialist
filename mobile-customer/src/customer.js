@@ -105,7 +105,7 @@ function loadBooking() {
   clearTimeout(bookingTimer);
   bookingStarted=true; bookingReady=false; frame.hidden=false;
   $('bookingLoadStatus').textContent='Het aanvraagformulier wordt geladen…';
-  frame.src=`${SITE}/?app=klant#afspraak`;
+  frame.src=`${SITE}/?app=klant`;
   bookingTimer=setTimeout(() => {
     if (!bookingReady) $('bookingLoadStatus').textContent='Het formulier reageert nog niet. Controleer je verbinding, laad opnieuw of gebruik de link naar de website hieronder.';
   },15000);
@@ -209,7 +209,8 @@ document.addEventListener('click', event => {
   event.preventDefault(); openExternal(a.href);
 });
 function navigate(focus = true) {
-  const page=location.hash.slice(1);
+  const hash=location.hash.slice(1);
+  const page=({status:'onderhoud',waxplanner:'reis'})[hash] || hash;
   activeScreen=pages.includes(page)?page:'home';
   for(const id of pages)$(id).hidden=id!==activeScreen;
   for(const link of document.querySelectorAll('.bottom-nav a')) {
