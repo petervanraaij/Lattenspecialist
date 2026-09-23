@@ -9,7 +9,7 @@
   <link rel="icon" href="images/badge.webp" type="image/webp">
   <link rel="apple-touch-icon" href="images/app-icon-192.png">
   <link rel="manifest" href="beheer.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body class="admin-body">
   <header class="site-header">
@@ -50,12 +50,21 @@
           <button class="btn btn-dark" id="refreshAdmin" type="button">Vernieuwen</button>
         </div>
       </div>
+      <section class="availability-admin" aria-labelledby="availabilityTitle">
+        <div class="availability-admin-head">
+          <div><span class="eyebrow">Ophaalplanning</span><h2 id="availabilityTitle">Beschikbare ophaaldata</h2><p>Vink de concrete data aan die klanten in het aanvraagformulier mogen kiezen.</p></div>
+          <button class="btn btn-gold" id="saveAvailability" type="button">Data opslaan</button>
+        </div>
+        <div class="availability-calendar" id="availabilityCalendar" aria-live="polite"></div>
+        <div class="availability-custom"><label><span>Andere datum toevoegen</span><input type="date" id="customAvailabilityDate"></label><button class="btn btn-dark" id="addAvailabilityDate" type="button">Toevoegen</button></div>
+        <div class="admin-record-message" id="availabilityMessage" role="status" aria-live="polite"></div>
+      </section>
       <div class="admin-summary" id="adminSummary" aria-live="polite"></div>
       <div class="admin-list" id="adminList" aria-live="polite"></div>
     </section>
   </main>
 
-  <script src="booking-config.js?v=1"></script>
-  <script src="beheer.js?v=2"></script>
+  <script src="booking-config.js?v=2"></script>
+  <script src="beheer.js?v=4"></script>
 </body>
 </html>

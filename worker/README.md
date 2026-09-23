@@ -11,4 +11,14 @@ Benodigde versleutelde secrets:
 - `LATTENSPECIALIST_TURNSTILE_SECRET_KEY` voor Lattenspecialist
 - `LATTENSPECIALIST_ADMIN_TOKEN` voor de beveiligde beheerapp
 
-De openbare configuratie staat in `wrangler.toml`. Secrets horen nooit in Git. De beheerapp staat op `/beheer.html`; een ingelogde beheerder kan reserveringen bekijken, een persoonlijke servicecode aanmaken en de klantstatus bijwerken. De openbare statusroute geeft uitsluitend service-informatie terug en nooit naam, telefoonnummer, e-mailadres of adres.
+Optioneel voor automatische WhatsApp-status- en betaalberichten via de officiële WhatsApp Business Platform-koppeling:
+
+- `WHATSAPP_ACCESS_TOKEN`
+- `WHATSAPP_PHONE_NUMBER_ID`
+- `LATTENSPECIALIST_WHATSAPP_STATUS_TEMPLATE`
+- `LATTENSPECIALIST_WHATSAPP_PAYMENT_TEMPLATE`
+- `WHATSAPP_GRAPH_VERSION` (optioneel; standaard `v23.0`)
+
+De klant moet in het aanvraagformulier toestemming geven. Business-geïnitieerde berichten gebruiken goedgekeurde templates. Als deze variabelen ontbreken of Meta een bericht weigert, blijft de veilige handmatige WhatsApp-knop in de beheerapp beschikbaar.
+
+De openbare configuratie staat in `wrangler.toml`. Secrets horen nooit in Git. De beheerapp staat op `/beheer.html`; een ingelogde beheerder kan ophaaldata beheren, reserveringen bekijken, een persoonlijke servicecode aanmaken, wax registreren, de klantstatus bijwerken, een betaalverzoek e-mailen en een aanvraag omkeerbaar afmelden. De openbare statusroute geeft uitsluitend service-informatie terug en nooit naam, telefoonnummer, e-mailadres of adres.
