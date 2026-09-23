@@ -1,6 +1,14 @@
 # Mijn Lattenspecialist — klantenapp
 
-Android- en iPhone-app voor klanten, app-ID `nl.lattenspecialist.klanten`. De eigenaar gebruikt de afzonderlijke `mobile-admin`-app of `beheer.html`. De klantenapp bevat geen beheerpagina, beheercode, reserveringenlijst of private API-sleutels.
+Klanten gebruiken bij voorkeur de installeerbare webapp op `https://lattenspecialist.nl/app.html#installeren`. Dezelfde schermen zijn beschikbaar in de native Android- en iPhone-app, app-ID `nl.lattenspecialist.klanten`. De eigenaar gebruikt de afzonderlijke `mobile-admin`-app of `beheer.html`. De klantenapp bevat geen beheerpagina, beheercode, reserveringenlijst of private API-sleutels.
+
+## Installeren vanaf de website
+
+Chrome biedt de normale webapp-installatie aan zodra de browser die beschikbaar stelt. De knop vraagt dit uitsluitend na een klik van de klant. Safari-gebruikers krijgen instructies voor 'Zet op beginscherm'. Er wordt geen APK gedownload en niemand hoeft installatie uit onbekende bronnen toe te staan. De browser en telefoon blijven hun eigen beveiliging toepassen; geen website kan garanderen dat een apparaat nooit een waarschuwing zal tonen. HTTPS, een geldig manifest en normale browserinstallatie worden gebruikt.
+
+De bestaande manifestidentiteit `/app.html` blijft behouden. Bestaande links naar `#status` en `#waxplanner` blijven bruikbaar. Installatiehulp verdwijnt wanneer de app zelfstandig geopend is. Annuleren van installatie verhindert het gebruik niet.
+
+`npm run build` genereert ook de GitHub Pages-bestanden `app.html`, `customer-app.js`, `customer-app.css` en `pwa-install.js` in de repositoryroot. Pas de bronbestanden in `src` aan en commit die samen met de gegenereerde bestanden. De workflow controleert dat deze gelijk blijven. De serviceworker cachet het scherm voor offline openen, maar haalt prijzen, voorraad en status altijd via het netwerk op. Een offline aanvraagformulier krijgt een verbindingsmelding, geen schijnbare bevestiging.
 
 ## Klantfuncties
 
@@ -13,7 +21,7 @@ Android- en iPhone-app voor klanten, app-ID `nl.lattenspecialist.klanten`. De ei
 
 ## Formulier en beveiliging
 
-De app bundelt zijn eigen schermen. Alleen het formulier laadt vanuit `https://lattenspecialist.nl/?app=klant#afspraak` in een iframe. Zo werkt de bestaande Turnstile-controle op de al toegestane domeinnaam; er wordt geen beveiliging uitgezet en geen sleutel in de app ingebouwd. `customer-booking.js` verandert alleen in deze expliciete modus de weergave. Dit volgt Cloudflares aanpak voor [Turnstile in mobiele WebViews](https://developers.cloudflare.com/turnstile/get-started/mobile-implementation/).
+De app bundelt zijn eigen schermen. Alleen het formulier laadt vanuit `https://lattenspecialist.nl/?app=klant` in een iframe. Zo werkt de bestaande Turnstile-controle op de al toegestane domeinnaam; er wordt geen beveiliging uitgezet en geen sleutel in de app ingebouwd. `customer-booking.js` verandert alleen in deze expliciete modus de weergave. Dit volgt Cloudflares aanpak voor [Turnstile in mobiele WebViews](https://developers.cloudflare.com/turnstile/get-started/mobile-implementation/).
 
 De berichten tussen formulier en app controleren bronvenster, origin en berichttype. Prefill verstuurt uitsluitend de door de klant gekozen reisgegevens/pakketkeuze; versturen van een aanvraag blijft een handmatige actie. Alleen de aanvraagreferentie keert naar de app terug. Een gewone websitebezoeker krijgt de bestaande weergave.
 

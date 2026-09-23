@@ -108,6 +108,9 @@ test('website form stays unchanged without app flag and embed rejects untrusted 
   assert.equal(w.document.querySelector('[name=destination]').value,'Sölden');
   assert.equal(w.document.querySelector('[name=conditions]').value,'Koud');
   assert.notEqual(w.document.querySelector('[name=package]').value,'Not a package');
+  w.dispatchEvent(new w.MessageEvent('message',{origin:w.location.origin,source:w.parent,data:{type:'lattenspecialist:hello'}}));
+  w.dispatchEvent(new w.MessageEvent('message',{origin:w.location.origin,source:w.parent,data:{type:'lattenspecialist:prefill',values:{destination:'Davos'}}}));
+  assert.equal(w.document.querySelector('[name=destination]').value,'Davos');
   const plain=new JSDOM(site,{url:'https://lattenspecialist.nl/',runScripts:'outside-only'});t.after(()=>plain.window.close());plain.window.eval(embed);
   assert.equal(plain.window.document.documentElement.classList.contains('customer-booking'),false);
 });

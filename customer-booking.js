@@ -2,7 +2,7 @@
 (() => {
   if (new URLSearchParams(location.search).get('app') !== 'klant') return;
   document.documentElement.classList.add('customer-booking');
-  const appOrigins = new Set(['https://localhost','http://localhost','capacitor://localhost']);
+  const appOrigins = new Set([location.origin,'https://localhost','http://localhost','capacitor://localhost']);
   let parentOrigin = null;
   let formReady = false;
   const post = data => { if (parentOrigin && window.parent !== window) window.parent.postMessage(data,parentOrigin); };

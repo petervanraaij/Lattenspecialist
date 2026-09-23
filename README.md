@@ -21,14 +21,16 @@ In `mobile-admin` staat de native beheerapp voor Android en iPhone. De app bevat
 ## Website en webapp
 
 - `index.html`: hoofdwebsite en aanvraagformulieren
-- `app.html`: status, waxadvies en actueel huuraanbod
+- `app.html`: installeerbare klantenapp met aanvragen, status, waxkeuze, aanbod en reisgegevens
 - `ervaring.html`: neutraal verzoek om een ervaring te delen
 - `service.html`: uitleg over onderhoud, servicegebied en verhuur op aanvraag
 - `privacy.html`: privacy-informatie, waaronder ervaringen en servicecodes
 - `data/status.json`: statusrecords zonder persoonsgegevens
 - `data/aanbod.json`: actueel aanbod of een lege lijst bij verhuur op aanvraag
 
-De PWA gebruikt `manifest.webmanifest` en `sw.js`. Bij een nieuwe release moet de cachenaam in `sw.js` worden verhoogd.
+De PWA gebruikt `manifest.webmanifest` en `sw.js`. De klantenschermen worden samen met de native apps gebouwd vanuit `mobile-customer/src` (`cd mobile-customer`, `npm ci`, `npm run build`, `npm test`). Commit de gegenereerde `app.html`, `customer-app.js`, `customer-app.css` en `pwa-install.js` voor GitHub Pages. Bij een nieuwe release moeten de gewijzigde assetversies en de cachenaam in `sw.js` worden verhoogd.
+
+Klanten openen `https://lattenspecialist.nl/app.html#installeren` en installeren via Chrome of voegen de app in Safari toe aan het beginscherm. Er is geen APK-download of toestemming voor onbekende bronnen nodig. De browser kan een normale installatiebevestiging tonen. De losse debug-APK is alleen voor interne tests; deze wordt niet aan klanten aangeboden op de website.
 
 ## Beheer
 
