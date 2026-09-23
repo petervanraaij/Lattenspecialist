@@ -1,0 +1,11 @@
+html.customer-booking{background:#fff;scroll-behavior:auto}
+.customer-booking body{background:#fff}
+.customer-booking .site-header,.customer-booking main>section:not(#afspraak),.customer-booking .site-footer,.customer-booking .floating-whatsapp,.customer-booking .booking-intro{display:none!important}
+.customer-booking #afspraak{background:#fff;padding:12px 0;margin:0}
+.customer-booking .booking-shell{display:block;width:100%;max-width:720px;padding:0 18px;margin:0 auto}
+.customer-booking .request-form{box-shadow:none;padding:8px 0;border:0;border-radius:0}
+.customer-booking .request-form input,.customer-booking .request-form select,.customer-booking .request-form textarea{font-size:16px}
+.customer-booking .request-summary{white-space:pre-wrap;overflow-wrap:anywhere}
+.customer-booking .turnstile-container{min-width:0;max-width:100%}
+@media(max-width:420px){.customer-booking .form-grid{grid-template-columns:1fr}.customer-booking .booking-shell{padding:0 20px}}
+@media(max-width:360px){.customer-booking .booking-shell{padding:0 8px}}

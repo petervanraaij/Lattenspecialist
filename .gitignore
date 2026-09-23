@@ -2,6 +2,13 @@ worker/node_modules/
 mobile-admin/node_modules/
 mobile-admin/resources/
 mobile-admin/dist/
+mobile-customer/node_modules/
+mobile-customer/www/
+mobile-customer/dist/
+mobile-customer/android/app/src/main/res/**/*.png
+mobile-customer/ios/App/App/Assets.xcassets/**/*.png
+mobile-customer/**/*.jks
+mobile-customer/**/*.keystore
 mobile-admin/android/app/src/main/res/**/*.png
 mobile-admin/ios/App/App/Assets.xcassets/**/*.png
 worker/.wrangler/
