@@ -2,6 +2,10 @@
 
 GitHub Pages-website voor De Lattenspecialist, inclusief de installeerbare webapp **Mijn Lattenspecialist**.
 
+## Native beheerapp
+
+In `mobile-admin` staat de native beheerapp voor Android en iPhone. De app bevat de reserveringen, ophaalplanning, servicecodes, waxregistratie, voortgang en betaalverzoeken. Android wordt als test-APK gebouwd via GitHub Actions; het iPhone-project is klaar voor ondertekening en publicatie via TestFlight of de App Store.
+
 ## Kerngegevens
 
 - Ski- en snowboardonderhoud in West Maas en Waal en omgeving

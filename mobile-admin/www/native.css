@@ -1,0 +1,6 @@
+
+html{background:#f4f0e8}
+body.native-admin-body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);overscroll-behavior-y:none}
+.native-admin-body .site-header{top:env(safe-area-inset-top)}
+.native-admin-body .install-button{display:none!important}
+@media(max-width:560px){.native-admin-body .admin-main{padding-top:24px}.native-admin-body .container{width:min(100% - 24px,1180px)}}

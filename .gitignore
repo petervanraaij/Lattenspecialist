@@ -1,4 +1,8 @@
 worker/node_modules/
+mobile-admin/node_modules/
+mobile-admin/resources/
+mobile-admin/android/app/src/main/res/**/*.png
+mobile-admin/ios/App/App/Assets.xcassets/**/*.png
 worker/.wrangler/
 worker/.dev.vars
 worker/.turnstile-widget.json

@@ -19,6 +19,8 @@ const lattenPayload = {service: 'Onderhoud', material: 'Ski', amount: '1', packa
 const stuiterPayload = {name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', date: '2099-06-12', location: 'Wamel', startTime: '10:00', endTime: '18:00', notes: 'Graag bellen.', privateSite: true, powerAvailable: true, adultHelper: true, privacyConsent: true, website: '', turnstileToken: 'verified-token'};
 
 assert.equal(getSite(lattenOrigin, baseEnv), 'lattenspecialist');
+assert.equal(getSite('capacitor://localhost', baseEnv), 'lattenspecialist');
+assert.equal(getSite('https://localhost', baseEnv), 'lattenspecialist');
 assert.equal(getSite(stuiterOrigin, baseEnv), 'stuiterbaas');
 assert.equal(getSite('https://example.com', baseEnv), null);
 assert.equal(readAndValidateLattenspecialist(lattenPayload).data.package, 'Goud');
