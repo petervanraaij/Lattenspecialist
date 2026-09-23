@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v15';
+const CACHE_NAME = 'lattenspecialist-v16';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -12,7 +12,9 @@ const APP_SHELL = [
   '/styles.css?v=15',
   '/script.js?v=10',
   '/booking-config.js?v=2',
-  '/booking.js?v=3',
+  '/booking.js?v=4',
+  '/customer-booking.css?v=1',
+  '/customer-booking.js?v=1',
   '/app.js?v=11',
   '/beheer.js?v=4',
   '/review.js?v=9',

@@ -171,6 +171,7 @@
       await loadAvailability();
       updateForm();
       showStatus(`Gelukt! Je aanvraagcode is ${result.reference}.${confirmation} De planning wordt persoonlijk bevestigd.`, 'success');
+      window.dispatchEvent(new CustomEvent('lattenspecialist:booking-submitted', {detail: {reference: result.reference}}));
       if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
     } catch (error) {
       const message = error.name === 'AbortError' ? 'Het versturen duurde te lang. Controleer je verbinding en probeer het opnieuw.' : error.message;

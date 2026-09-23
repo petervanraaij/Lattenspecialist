@@ -1,0 +1,10 @@
+{
+  "appId": "nl.lattenspecialist.klanten",
+  "appName": "Mijn Lattenspecialist",
+  "webDir": "www",
+  "backgroundColor": "#f5f1e9",
+  "server": {"androidScheme": "https", "iosScheme": "capacitor", "cleartext": false},
+  "android": {"backgroundColor": "#f5f1e9", "allowMixedContent": false},
+  "ios": {"backgroundColor": "#f5f1e9", "contentInset": "never", "scrollEnabled": true},
+  "plugins": {"SplashScreen": {"launchShowDuration": 500, "backgroundColor": "#0b0b0c", "showSpinner": false}}
+}

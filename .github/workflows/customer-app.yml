@@ -1,0 +1,58 @@
+name: Klantenapp Android en iPhone
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'mobile-customer/**'
+      - 'customer-booking.*'
+      - 'booking.js'
+      - 'booking-config.js'
+      - 'index.html'
+      - '.github/workflows/customer-app.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Android
+          - os: macos-latest
+            platform: iPhone
+    runs-on: ${{ matrix.os }}
+    name: Klantenapp ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: mobile-customer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile-customer/package-lock.json
+      - uses: actions/setup-java@v4
+        if: matrix.platform == 'Android'
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run sync
+      - run: npm test
+      - run: python -m pip install Pillow==12.3.0
+      - run: npm run prepare:assets
+      - if: matrix.platform == 'Android'
+        run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug
+      - if: matrix.platform == 'iPhone'
+        run: xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+      - uses: actions/upload-artifact@v4
+        if: matrix.platform == 'Android'
+        with:
+          name: mijn-lattenspecialist-klanten-android-test
+          path: mobile-customer/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

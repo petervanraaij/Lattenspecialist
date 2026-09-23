@@ -35,3 +35,9 @@ De PWA gebruikt `manifest.webmanifest` en `sw.js`. Bij een nieuwe release moet d
 Zie `BEHEER.md` voor het bijwerken van klantstatussen, verhuuraanbod en de stappen voor Google Search Console en Google Bedrijfsprofiel.
 
 De repository moet `CNAME` met exact `lattenspecialist.nl` behouden.
+
+## Mobiele apps
+
+`mobile-customer/` is **Mijn Lattenspecialist**, de Android- en iPhone-app voor klanten: aanvragen, actuele prijzen en aanbod, persoonlijke onderhoudsstatus met waxkeuze en reisvoorbereiding. Zie de README in die map voor bouwen, testen en publicatie. De winkelpublicatie vereist nog eigen ontwikkelaarsaccounts en ondertekening.
+
+`mobile-admin/` is uitsluitend **Lattenspecialist Beheer** voor de eigenaar. De beheerapp wordt niet aan klanten aangeboden. Klanten gebruiken hun persoonlijke onderhoudscode; de beheercode blijft alleen voor de eigenaar.
