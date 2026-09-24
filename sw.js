@@ -1,9 +1,9 @@
-const CACHE_NAME = 'lattenspecialist-v21-metallic';
+const CACHE_NAME = 'lattenspecialist-v22-refined';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
-  '/homepage.css?v=2',
+  '/homepage.css?v=3',
   '/homepage.js?v=1',
   '/app.html',
   '/beheer.html',
