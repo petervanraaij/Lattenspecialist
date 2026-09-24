@@ -62,8 +62,8 @@ jobs:
         if: matrix.platform == 'Android'
         run: |
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk > dev-package.txt
-          rg "package: name='nl.lattenspecialist.klanten.dev'" dev-package.txt
-          rg "application-label:'Lattenspecialist DEV'" dev-package.txt
+          grep -F "package: name='nl.lattenspecialist.klanten.dev'" dev-package.txt
+          grep -F "application-label:'Lattenspecialist DEV'" dev-package.txt
       - name: Prepare Google Play bundle
         if: matrix.platform == 'Android'
         run: |
@@ -80,7 +80,7 @@ jobs:
           cp "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar" dist/android-release/
           "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 dist/android-release/app-release-unsigned.apk
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging dist/android-release/app-release-unsigned.apk > dist/android-release/package-info.txt
-          if rg -q 'application-debuggable' dist/android-release/package-info.txt; then
+          if grep -Fq 'application-debuggable' dist/android-release/package-info.txt; then
             echo 'Release must not be debuggable'
             exit 1
           fi
