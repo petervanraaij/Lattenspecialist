@@ -1,6 +1,6 @@
 # Mijn Lattenspecialist — klantenapp
 
-Android-klanten kunnen de ondertekende APK rechtstreeks ontvangen; iPhone-klanten gebruiken voorlopig de webapp. Dezelfde schermen zijn beschikbaar in de native Android- en iPhone-broncode, app-ID `nl.lattenspecialist.klanten`. De eigenaar gebruikt de afzonderlijke `mobile-admin`-app of `beheer.html`. De klantenapp bevat geen beheerpagina, beheercode, reserveringenlijst of private API-sleutels.
+Klanten op Android en iPhone ontvangen standaard een persoonlijke statuslink: direct hun eigen onderhoud, zonder code-invoer of installatie. Daarnaast ontwikkelen we de Android-app voor Google Play. Losse APK-bestanden zijn uitsluitend voor interne ontwikkeling. Dezelfde schermen zijn beschikbaar in de native Android- en iPhone-broncode, app-ID `nl.lattenspecialist.klanten`. De eigenaar gebruikt de afzonderlijke `mobile-admin`-app of `beheer.html`. De klantenapp bevat geen beheerpagina, beheercode, reserveringenlijst of private API-sleutels.
 
 ## Persoonlijke WhatsApp-statuslink
 
@@ -10,15 +10,13 @@ De beheerpagina zet deze link in het WhatsApp-statusbericht; de backend gebruikt
 
 Android App Links koppelen uitsluitend `/app.html` aan de klantenapp. `.well-known/assetlinks.json` bevat alleen de openbare SHA-256-certificaatvingerafdruk; `.nojekyll` zorgt dat GitHub Pages dit bestand publiceert. Geïnstalleerde Android-apps kunnen hiermee persoonlijke links rechtstreeks openen. Op iPhone blijft de persoonlijke link een webapp-link; er is geen App Store-publicatie nodig voor deze route.
 
-## Android rechtstreeks delen
+## Ontwikkelplatform en Android
 
-De workflow bouwt zowel een test-APK als een niet-debugbare, nog ongetekende release-APK. Download voor een release het artifact `mijn-lattenspecialist-android-release-unsigned`. Het bevat de APK, pakketcontrole, checksums en de officiële `apksigner.jar` uit de Android SDK. Onderteken lokaal met de vaste release-sleutel; upload nooit een private sleutel of wachtwoord naar Git of een openbaar artifact. De release van deze wijziging gebruikt versiecode 2 / versie 1.0.1.
+Zie [het ontwikkelplatform](../PLATFORM.md) voor de gezamenlijke opzet van klantportaal, mobiele apps en beheer, plus de latere uitbreiding met medewerkers en accounts. `npm run dev` vanuit de repositoryroot start een lokale omgeving met fictieve statusvoorbeelden. Deze demo verstuurt niets. De echte native DEV-app gebruikt wel de bestaande dienst; gebruik daarin alleen herkenbare eigen testaanvragen.
 
-De vaste sleutel staat op de beheerderscomputer buiten de repository in `%LOCALAPPDATA%\Lattenspecialist\Signing`. Het wachtwoord is beschermd met Windows DPAPI voor die gebruiker. Bewaar een veilige herstelkopie via de eigen back-upvoorziening; dezelfde sleutel is nodig voor latere updates. Controleer na ondertekenen `apksigner verify --verbose --print-certs`, de APK-checksum en overeenkomst met `assetlinks.json`.
+De Android-ontwikkeling gebruikt een eigen pakketnaam `nl.lattenspecialist.klanten.dev` en label **Lattenspecialist DEV**. De release blijft `nl.lattenspecialist.klanten` / **Mijn Lattenspecialist**, versie 1.1.0 / code 3. Alleen de release registreert officiele Android App Links.
 
-De klant kan `Mijn-Lattenspecialist.apk` als document ontvangen. Na installatie heet de app **Mijn Lattenspecialist** en gebruikt hij het bestaande logo. Android vraagt bij installatie buiten een winkel toestemming voor die bron en kan een beveiligingsmelding tonen; de naam of ondertekening schakelt die bescherming niet uit. Schakel Play Protect niet uit.
-
-Een eerder geïnstalleerde debug/test-APK gebruikt een andere sleutel en kan niet met deze release worden overschreven. Noteer in dat geval eerst de eigen onderhoudscode en reisgegevens voordat de testapp handmatig wordt verwijderd. Reserveringen blijven op de server bewaard. Latere releases met dezelfde release-sleutel kunnen de klantenapp wel bijwerken.
+De workflow bouwt een DEV-APK en een ongetekende Android App Bundle. Zie [Google Play voorbereiden](PLAY-CONSOLE.md) voor ondertekenen, interne tests, app-signingcertificaat en publicatie. Er vindt geen automatische publicatie plaats. De bestaande signing-sleutel blijft buiten Git bewaard; vervang die niet voor een update van de eerder gedeelde APK.
 
 ## Installeren vanaf de website
 
@@ -57,7 +55,7 @@ npm run prepare:assets
 
 `npm run sync` bouwt de webbestanden en synchroniseert beide native projecten. De afbeeldingen komen uit het bestaande logo en bestaande websitefoto's. De map `www` is gegenereerd en staat niet in Git.
 
-De workflow `customer-app.yml` test de klantinteracties, bouwt een Android-test-APK en compileert iOS voor de simulator. Download de Android-artifact `mijn-lattenspecialist-klanten-android-test` voor een toesteltest. Deze APK is een debugversie, geen definitieve distributie via Google Play. Publiceer de bijbehorende websitewijziging voordat je het aanvraagformulier in de app test.
+De workflow `customer-app.yml` test de klantinteracties, bouwt een Android-test-APK en compileert iOS voor de simulator. Download de Android-artifact `lattenspecialist-android-ontwikkeling` voor een toesteltest. Deze APK is een debugversie, geen definitieve distributie via Google Play. Publiceer de bijbehorende websitewijziging voordat je het aanvraagformulier in de app test.
 
 Voor Google Play zijn een eigen ondertekeningssleutel en Play Console-account nodig. Voor TestFlight/App Store zijn een Apple Developer-account, signing en winkelbeoordeling nodig. Een geslaagde simulatorbuild is geen installeerbare iPhone-release. Bewaar signingmateriaal en wachtwoorden buiten Git. Native toesteltests, met name Turnstile op Android WebView en iOS WKWebView, blijven nodig vóór publieke distributie.
 

@@ -1,6 +1,6 @@
 {
   "name": "mijn-lattenspecialist",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Android- en iPhone-app voor klanten van De Lattenspecialist.",
@@ -8,7 +8,11 @@
     "build": "node scripts/build.mjs",
     "sync": "npm run build && cap sync",
     "prepare:assets": "python scripts/generate-assets.py",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "dev": "npm run build && node scripts/dev-server.mjs",
+    "android:open": "npm run sync && cap open android",
+    "android:dev": "node scripts/android-build.mjs dev",
+    "android:bundle": "node scripts/android-build.mjs bundle"
   },
   "dependencies": {
     "@capacitor/app": "8.1.1",

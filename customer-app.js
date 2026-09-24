@@ -747,6 +747,7 @@
       if (!data.record || normalizeCode(data.record.code) !== code) throw new Error("Ongeldig antwoord");
       currentCode = code;
       $("statusResult").innerHTML = renderStatus(data.record);
+      if ($("statusForm").hidden) $("statusIntro").textContent = "Hier zie je de actuele voortgang van jouw onderhoud. Je hoeft niets te installeren.";
       $("refreshStatus").addEventListener("click", () => loadStatus(currentCode));
       if ($("rememberCode").checked) {
         const ok = storage.set(CODE_KEY, code);
@@ -755,9 +756,18 @@
       updateSavedCode();
     } catch (error) {
       if (request !== statusRequest) return;
-      showCodeForm();
       const missing = error.status === 404 || error.status === 400;
+      if (missing) showCodeForm();
       $("statusResult").innerHTML = fail(missing ? "Deze onderhoudscode is niet gevonden. Controleer de code uit je bericht; je aanvraagcode is een andere code." : "Je actuele voortgang kon niet worden opgehaald. Controleer je internetverbinding en probeer het opnieuw.");
+      if (!missing) {
+        $("statusIntro").textContent = "Je persoonlijke link is geopend. De voortgang is tijdelijk niet bereikbaar.";
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "button dark";
+        retry.textContent = "Opnieuw proberen";
+        retry.addEventListener("click", () => loadStatus(code));
+        $("statusResult").append(retry);
+      }
     } finally {
       if (request === statusRequest) $("statusSubmit").disabled = false;
     }
@@ -778,7 +788,7 @@
     $("statusResult").innerHTML = "";
     $("statusForm").hidden = true;
     $("changeCode").hidden = false;
-    $("statusIntro").textContent = "Je persoonlijke voortgang wordt automatisch opgehaald.";
+    $("statusIntro").textContent = "Je persoonlijke voortgang wordt opgehaald. Je hoeft niets te installeren.";
     history.replaceState(null, "", `${location.pathname}${location.search}#onderhoud`);
   }
   $("changeCode").addEventListener("click", () => {

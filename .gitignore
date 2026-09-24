@@ -21,3 +21,11 @@ worker/.inspect-cloudflare.mjs
 worker/.verify-production.mjs
 worker/.deploy-shared.mjs
 worker/.dry-run/
+
+# Android signing material stays outside source control.
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.dpapi
+keystore.properties

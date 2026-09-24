@@ -1,0 +1,12 @@
+{
+  "name": "lattenspecialist-platform",
+  "private": true,
+  "description": "Ontwikkelomgeving voor klantportaal, mobiele apps en reserveringsbeheer.",
+  "scripts": {
+    "dev": "npm --prefix mobile-customer run dev",
+    "check": "npm --prefix mobile-customer run build && npm --prefix mobile-customer test && npm --prefix worker test",
+    "android:open": "npm --prefix mobile-customer run android:open",
+    "android:dev": "npm --prefix mobile-customer run android:dev",
+    "android:bundle": "npm --prefix mobile-customer run android:bundle"
+  }
+}
