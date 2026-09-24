@@ -7,6 +7,7 @@ import {normalizeCode, validCode, validDate, readTrip, renderStatus, codeFromApp
 const html=await readFile(new URL('../www/index.html',import.meta.url),'utf8');
 const bundle=await readFile(new URL('../www/customer.js',import.meta.url),'utf8');
 const site=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const bookingPage=await readFile(new URL('../../afspraak.html',import.meta.url),'utf8');
 const embed=await readFile(new URL('../../customer-booking.js',import.meta.url),'utf8');
 const turn=()=>new Promise(resolve=>setTimeout(resolve,20));
 const reply=(body,status=200)=>({ok:status>=200&&status<300,status,json:async()=>body,text:async()=>String(body)});
@@ -139,7 +140,7 @@ test('trip transfers only after user action and only to verified booking frame',
   assert.equal(w.localStorage.getItem('lattenspecialist-customer-trip'),null);
 });
 test('website form stays unchanged without app flag and embed rejects untrusted prefill',async t=>{
-  const dom=new JSDOM(site,{url:'https://lattenspecialist.nl/?app=klant',runScripts:'outside-only'});
+  const dom=new JSDOM(bookingPage,{url:'https://lattenspecialist.nl/afspraak.html?app=klant',runScripts:'outside-only'});
   t.after(()=>dom.window.close());const w=dom.window;
   w.ResizeObserver=class {observe(){}};
   w.eval(embed);w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
@@ -156,6 +157,6 @@ test('website form stays unchanged without app flag and embed rejects untrusted 
   w.dispatchEvent(new w.MessageEvent('message',{origin:w.location.origin,source:w.parent,data:{type:'lattenspecialist:hello'}}));
   w.dispatchEvent(new w.MessageEvent('message',{origin:w.location.origin,source:w.parent,data:{type:'lattenspecialist:prefill',values:{destination:'Davos'}}}));
   assert.equal(w.document.querySelector('[name=destination]').value,'Davos');
-  const plain=new JSDOM(site,{url:'https://lattenspecialist.nl/',runScripts:'outside-only'});t.after(()=>plain.window.close());plain.window.eval(embed);
+  const plain=new JSDOM(bookingPage,{url:'https://lattenspecialist.nl/afspraak.html',runScripts:'outside-only'});t.after(()=>plain.window.close());plain.window.eval(embed);
   assert.equal(plain.window.document.documentElement.classList.contains('customer-booking'),false);
 });
