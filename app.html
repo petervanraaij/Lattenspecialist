@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Lattenspecialist">
   <link rel="icon" href="images/app-icon-512.png">
-  <link rel="stylesheet" href="customer-app.css?v=1">
+  <link rel="stylesheet" href="customer-app.css?v=2">
 </head>
 <body>
   <header class="topbar"><a href="#home" aria-label="Mijn Lattenspecialist, start"><img src="images/logo-main.webp" alt="De Lattenspecialist"></a><span>Mijn<br><strong>Lattenspecialist</strong></span></header>
@@ -41,7 +41,7 @@
     </div>
   </details>
 </aside>
-        <a class="feature-card" href="#onderhoud"><span class="icon-ring" aria-hidden="true">✓</span><div><h2>Hoe staat je materiaal ervoor?</h2><p>Bekijk de voortgang met je onderhoudscode.</p></div><span aria-hidden="true">→</span></a>
+        <a class="feature-card" href="#onderhoud"><span class="icon-ring" aria-hidden="true">✓</span><div><h2>Hoe staat je materiaal ervoor?</h2><p>Open jouw onderhoud of gebruik de persoonlijke link uit je bericht.</p></div><span aria-hidden="true">→</span></a>
         <div class="section-heading"><span class="eyebrow">Van voordeur tot pisteklaar</span><h2>Plan je volgende beurt</h2></div>
         <div class="card"><span class="tag">Haal- & brengservice</span><h3>Beschikbare ophaaldata</h3><p id="pickupDates" aria-live="polite">De beschikbare data worden opgehaald…</p><p class="muted">Gratis binnen het servicegebied. Zelf brengen in Wamel kan op afspraak.</p><a class="text-link" href="#aanvragen">Kies een datum in je aanvraag →</a></div>
         <div class="quick-grid"><a class="card" href="#aanbod"><span class="eyebrow">Pakketten & verhuur</span><h3>Bekijk het aanbod</h3><span aria-hidden="true">→</span></a><a class="card" href="#reis"><span class="eyebrow">Goed voorbereid</span><h3>Waar ga jij skiën?</h3><span aria-hidden="true">→</span></a></div>
@@ -52,12 +52,15 @@
       <div class="page-content"><span class="eyebrow">Jouw ski's of snowboard</span><h1 id="statusTitle" tabindex="-1">Mijn onderhoud</h1><p id="statusIntro">Vul de persoonlijke onderhoudscode in die je van ons ontvangt. Je aanvraagcode is een andere code.</p><button id="changeCode" class="text-button" type="button" hidden>Andere onderhoudscode gebruiken of bewaren</button>
         <form id="statusForm" class="card"><label for="serviceCode">Onderhoudscode</label><input id="serviceCode" name="code" placeholder="LS-7K4M9P" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="24" required><label class="check"><input type="checkbox" id="rememberCode">Bewaar deze code op mijn toestel</label><button class="button dark" id="statusSubmit" type="submit">Bekijk mijn onderhoud</button><div id="codeFeedback" role="status" class="muted"></div></form>
         <div class="saved-code" id="savedCodeArea" hidden><span id="savedCodeLabel"></span><button type="button" id="forgetCode" class="text-button">Code vergeten</button></div>
-        <div id="statusResult" role="status" aria-live="polite"><div class="empty"><span aria-hidden="true">◇</span><h2>Volg elke stap</h2><p>Van ontvangst tot klaar voor ophalen. Ook de gekozen wax zie je hier.</p></div></div>
-        <p class="muted">Deel je persoonlijke code niet met anderen. <a href="https://wa.me/31618327132">Hulp nodig met je code?</a></p>
+        <div id="statusResult" role="status" aria-live="polite"><div class="empty"><span aria-hidden="true">◇</span><h2>Volg elke stap</h2><p>Open de persoonlijke link uit je bericht: jouw voortgang, waxkeuze en betaalverzoek, zonder inloggen.</p></div></div>
+          <aside id="notificationCard" class="card personal-access" hidden><h2>Meldingen op je telefoon</h2><p id="notificationMessage" role="status"></p><button class="button dark" id="enableNotifications" type="button" hidden>Zet meldingen aan</button><button class="text-button" id="disableNotifications" type="button" hidden>Zet meldingen uit</button></aside>
+          <aside id="personalAccess" class="card personal-access" hidden><p id="personalAccessLabel" role="status"></p><button class="text-button" id="rememberMaintenance" type="button">Bewaar mijn onderhoud op dit toestel</button><button class="text-button" id="forgetMaintenance" type="button">Verwijder van dit toestel</button></aside>
+        <p class="muted">Je persoonlijke link geeft toegang tot jouw onderhoud. Deel hem niet met anderen. <a href="https://wa.me/31618327132">Hulp nodig?</a></p>
       </div>
     </section>
     <section id="aanvragen" class="screen" aria-labelledby="bookingTitle" hidden>
       <div class="page-content booking-heading"><span class="eyebrow">We regelen het samen</span><h1 id="bookingTitle" tabindex="-1">Aanvraag doen</h1><p>Vul je aanvraag hier in. Daarna bevestigen we persoonlijk de planning.</p><p id="bookingLoadStatus" role="status">Het aanvraagformulier wordt geladen…</p><button class="text-button" type="button" id="reloadBooking">Formulier opnieuw laden</button></div>
+      <div class="page-content" id="bookedMaintenance"><button class="button gold" id="openBookedMaintenance" type="button" hidden>Bekijk mijn onderhoud →</button></div>
       <iframe id="bookingFrame" title="Onderhoud of verhuur aanvragen bij De Lattenspecialist" referrerpolicy="no-referrer" hidden></iframe>
       <div class="page-content"><p class="muted">Lukt het formulier niet? <a href="https://lattenspecialist.nl/#afspraak">Open het op de website</a>.</p><a class="text-link" href="https://wa.me/31618327132?text=Hallo%20De%20Lattenspecialist%2C%20ik%20wil%20graag%20een%20afspraak%20aanvragen.">Reserveer via WhatsApp →</a></div>
     </section>
@@ -82,7 +85,7 @@
     <a href="#aanbod"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8l10 10-8 8L3 11Z"/><circle cx="7.5" cy="7.5" r="1"/></svg><span>Aanbod</span></a>
     <a href="#reis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 20 7-14 5 9 3-5 5 10H2Zm4-8 3 2 2-4"/></svg><span>Mijn reis</span></a>
   </nav>
-  <script src="booking-config.js?v=2"></script><script src="customer-app.js?v=3"></script>
+  <script src="booking-config.js?v=2"></script><script src="customer-app.js?v=4"></script>
   <script src="pwa-install.js?v=1"></script>
 </body>
 </html>

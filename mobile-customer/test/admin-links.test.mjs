@@ -49,3 +49,25 @@ test('no personal link is shown until a valid maintenance code exists', async t 
     assert.match(d.querySelector('.admin-update-form').textContent, /persoonlijke klantlink/);
   }
 });
+
+test('admin publishes payments only to the app and reports notification availability honestly', async t => {
+  const {w,d} = await admin(t);
+  const payloads = [], token = 'c'.repeat(64);
+  w.CSS = {escape:value=>value};
+  w.fetch = async (url,options) => {
+    const payload = JSON.parse(options.body); payloads.push(payload);
+    return {ok:true,status:200,json:async()=>({record:{reference:'LS-2609-ABC234',name:'Testklant',serviceCode:'LS-ABC234',customerToken:token,...payload,paymentRequestedAt:'2026-09-24T10:00:00Z'},notifications:{push:{reason:'not_subscribed'}}})};
+  };
+  d.querySelector('[name="paymentAmount"]').value='44,95';
+  d.querySelector('[name="paymentUrl"]').value='https://example.test/pay';
+  d.querySelector('[data-action="payment"]').click(); await turn();
+  assert.equal(payloads[0].publishPayment,true);
+  assert.equal(payloads[0].paymentAmount,'44.95');
+  for (const flag of ['sendStatusEmail','sendPaymentEmail','sendWhatsApp']) assert.equal(payloads[0][flag],undefined);
+  assert.match(d.querySelector('#adminList .admin-record-message').textContent,/nog geen telefoonmeldingen/);
+  assert.equal(d.querySelector('.customer-status-link').value,`https://lattenspecialist.nl/app.html#klant=${token}`);
+  d.querySelector('[name="paymentPaid"]').checked=true;
+  d.querySelector('[data-action="save"]').click(); await turn();
+  assert.equal(payloads[1].paymentPaid,true);
+  assert.equal(payloads[1].publishPayment,undefined);
+});

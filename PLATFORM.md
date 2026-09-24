@@ -16,7 +16,9 @@ Start vanuit de repository met `npm ci --prefix mobile-customer`, daarna `npm ru
 
 Op Windows kun je ook dubbelklikken op `Start-ontwikkelplatform.cmd`. Node.js moet geïnstalleerd zijn. Laat het venster open zolang je test. Start niet nog een exemplaar als de ontwikkelomgeving al op poort 8780 draait.
 
-`npm run check` controleert klantinteracties, klantlinks, de preview en de reserveringsdienst. `npm run android:open` opent het Android-project na synchronisatie (Android Studio moet geïnstalleerd zijn). `npm run android:dev` bouwt de interne testapp; `npm run android:bundle` bouwt de AAB. Java 21, Android SDK en de bestaande Pillow-assetsgenerator zijn hiervoor nodig. De GitHub-workflow levert dezelfde Android-bestanden zonder lokale SDK-installatie.
+Installeer ook `npm ci --prefix worker` voordat je `npm run check` uitvoert. De controles dekken klantinteracties, persoonlijke toegang, betaalverzoeken, pushmeldingen, de preview en de reserveringsdienst. `npm run android:open` opent het Android-project na synchronisatie (Android Studio moet geïnstalleerd zijn). `npm run android:dev` bouwt de interne testapp; `npm run android:bundle` bouwt de AAB. Java 21, Android SDK en de bestaande Pillow-assetsgenerator zijn hiervoor nodig. De GitHub-workflow levert dezelfde Android-bestanden zonder lokale SDK-installatie.
+
+Klanten ontvangen hun bevestiging, status en betaalverzoek uitsluitend in de app. De webapp kan na toestemming telefoonmeldingen geven; daarvoor zijn VAPID-sleutels op de Worker nodig. Native Android-push vereist nog FCM-configuratie. Zie [de klantenapp](mobile-customer/README.md) voor de precieze mogelijkheden en toestelcontrole.
 
 ## Uitbreiding met medewerkers en accounts
 

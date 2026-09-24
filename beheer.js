@@ -23,9 +23,8 @@
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[character]);
   const formatDateTime = value => { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value || '-') : new Intl.DateTimeFormat('nl-NL',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(date); };
   const formatDate = value => { if (!value || value === 'In overleg') return value || '—'; const date = new Date(`${value}T12:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('nl-NL',{weekday:'short',day:'numeric',month:'long',year:'numeric'}).format(date); };
-  const normalizeWhatsAppPhone = value => { let digits = String(value || '').replace(/\D/g,''); if (digits.startsWith('00')) digits = digits.slice(2); if (digits.startsWith('0')) digits = `31${digits.slice(1)}`; return digits; };
   const valueOrDash = value => value ? escapeHtml(value) : '—';
-  const customerStatusUrl = record => /^LS-[A-Z2-9]{6}$/.test(record.serviceCode || '') ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : '';
+  const customerStatusUrl = record => /^[a-f0-9]{64}$/.test(record.customerToken || '') ? `https://lattenspecialist.nl/app.html#klant=${record.customerToken}` : /^LS-[A-Z2-9]{6}$/.test(record.serviceCode || '') ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : '';
   const headers = () => ({Authorization:`Bearer ${token}`,'Content-Type':'application/json'});
   const showLoginStatus = message => { loginStatus.textContent = message; loginStatus.className = 'booking-status is-visible is-error'; };
   const suggestWax = record => {
@@ -37,22 +36,6 @@
     if (conditions.includes('kunst') || conditions.includes('ijzig') || conditions.includes('hard')) return waxOptions[4];
     return waxOptions[0];
   };
-  const whatsappUrl = (record, type = 'status') => {
-    const phone = normalizeWhatsAppPhone(record.phone);
-    if (!phone) return '';
-    const firstName = String(record.name || '').split(/\s+/)[0] || '';
-    const lines = type === 'payment'
-      ? [`Hallo ${firstName},`,'',`Je materiaal is behandeld. Het betaalverzoek van € ${Number(record.paymentAmount || 0).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})} staat hier:`,record.paymentUrl || '','',`Aanvraagcode: ${record.reference}`,'','Groet,','De Lattenspecialist']
-      : [`Hallo ${firstName},`,'','De status van je aanvraag bij De Lattenspecialist is bijgewerkt:',`*${record.status || steps[Math.max(0,Number(record.currentStep || 1)-1)]}*`];
-    if (type === 'status') {
-      if (record.note) lines.push('',record.note);
-      if (record.expectedReady) lines.push('',`Verwacht klaar: ${formatDate(record.expectedReady)}`);
-      const statusUrl = customerStatusUrl(record);
-      lines.push('','Bekijk je onderhoudsstatus:',statusUrl,'Deze persoonlijke link opent direct jouw onderhoud. Je hoeft niets te installeren of een code in te voeren.','','Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.','','Groet,','De Lattenspecialist');
-    }
-    return `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
-  };
-
   const api = async (path, options = {}) => {
     const response = await fetch(`${endpoint}${path}`, {...options, headers:{...headers(),...(options.headers || {})}, cache:'no-store'});
     const result = await response.json().catch(() => ({}));
@@ -115,18 +98,17 @@
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
       <div class="admin-record-head"><div><span class="admin-request-code">${escapeHtml(record.reference)}</span><h2>${escapeHtml(record.name || 'Naam onbekend')}</h2><p>${escapeHtml(record.service || 'Aanvraag')} · ontvangen ${escapeHtml(formatDateTime(record.createdAt))}${closed ? ` · afgemeld ${escapeHtml(formatDateTime(record.closedAt))}` : ''}</p></div><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div>
       <div class="admin-record-grid">
-        <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
+        <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
         <form class="admin-update-form">
           <h3>Onderhoud registreren</h3>
           <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Nog niet toegekend" readonly><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
-          ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan + klant berichten” gebeurt dit automatisch.</p>'}
+          ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan voor klant” gebeurt dit automatisch.</p>'}
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
           <label><span>Wax voor deze beurt</span><select name="waxType">${waxChoices}</select><small class="field-hint">Voorstel op basis van de opgegeven omstandigheden; controleer dit zelf.</small></label>
           <label><span>Verwacht klaar</span><input type="date" name="expectedReady" value="${escapeHtml(record.expectedReady || '')}"></label>
           <label><span>Bericht voor klant</span><textarea name="note" rows="3" maxlength="320" placeholder="Bijvoorbeeld: de kanten zijn gecontroleerd.">${escapeHtml(record.note || '')}</textarea></label>
-          <label class="admin-consent-confirm"><input type="checkbox" name="whatsappConsent"${record.whatsappConsent ? ' checked' : ''}><span>Klant heeft toestemming gegeven voor WhatsApp-statusupdates</span><small>Alleen aanvinken na mondelinge of schriftelijke toestemming.</small></label>
-          <div class="admin-save-actions"><button class="btn btn-gold save-record" type="submit" data-action="notify">Opslaan + klant berichten</button><button class="btn btn-dark save-record" type="submit" data-action="save">Alleen opslaan</button></div>
-          <section class="admin-payment"><h3>Betaalverzoek</h3><div class="payment-fields"><label><span>Bedrag (€)</span><input name="paymentAmount" inputmode="decimal" placeholder="44,95" value="${escapeHtml(String(record.paymentAmount || '').replace('.',','))}"></label><label><span>Betaallink</span><input name="paymentUrl" type="url" placeholder="https://…" value="${escapeHtml(record.paymentUrl || '')}"></label></div><button class="btn btn-dark save-record" type="submit" data-action="payment">Betaalverzoek e-mailen</button></section>
+          <div class="admin-save-actions"><button class="btn btn-gold save-record" type="submit" data-action="save">Opslaan voor klant</button></div><p class="field-hint">Bij een gewijzigde status krijgt de klant een appmelding als die op het toestel is ingeschakeld.</p>
+          <section class="admin-payment"><h3>Betaalverzoek</h3><div class="payment-fields"><label><span>Bedrag (€)</span><input name="paymentAmount" inputmode="decimal" placeholder="44,95" value="${escapeHtml(String(record.paymentAmount || '').replace('.',','))}"></label><label><span>Betaallink</span><input name="paymentUrl" type="url" placeholder="https://…" value="${escapeHtml(record.paymentUrl || '')}"></label></div><p class="field-hint">${record.paymentRequestedAt ? 'Dit verzoek staat in de klantomgeving. Na wijziging van bedrag of link moet je het opnieuw klaarzetten.' : 'Bedrag en link zijn een concept tot je het betaalverzoek klaarzet.'}</p><label class="admin-consent-confirm"><input type="checkbox" name="paymentPaid"${record.paymentPaidAt ? ' checked' : ''}><span>Betaling ontvangen en gecontroleerd</span><small>Alleen aanvinken na controle bij je bank. Klik daarna op Opslaan voor klant.</small></label><button class="btn btn-dark save-record" type="submit" data-action="payment"${closed ? ' disabled' : ''}>Betaalverzoek klaarzetten in klantapp</button></section>
           <button class="admin-close-button" type="submit" data-action="close">${closed ? 'Aanvraag opnieuw openen' : 'Aanvraag afmelden'}</button>
           <div class="admin-record-message" role="status" aria-live="polite"></div>
         </form>
@@ -187,9 +169,8 @@
     const form = event.target.closest('.admin-update-form'); if (!form) return; event.preventDefault();
     const card = form.closest('.admin-record'); const message = form.querySelector('.admin-record-message'); const buttons = [...form.querySelectorAll('button')];
     const action = event.submitter?.dataset.action || 'save'; const existing = records.find(record => record.reference === card.dataset.reference); const values = Object.fromEntries(new FormData(form)); const currentStep = Number(values.currentStep);
-    const payload = {serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,note:values.note,waxType:values.waxType,whatsappConsent:form.elements.whatsappConsent.checked,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl};
-    if (action === 'notify') { payload.sendStatusEmail = true; payload.sendWhatsApp = true; payload.notificationType = 'status'; }
-    if (action === 'payment') { payload.sendPaymentEmail = true; payload.sendWhatsApp = true; payload.notificationType = 'payment'; }
+    const payload = {serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,note:values.note,waxType:values.waxType,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl,paymentPaid:form.elements.paymentPaid.checked};
+    if (action === 'payment') payload.publishPayment = true;
     if (action === 'close') payload.closed = !existing?.closedAt;
     buttons.forEach(button => { button.disabled = true; }); message.textContent = action === 'payment' ? 'Betaalverzoek versturen…' : 'Opslaan…'; message.className = 'admin-record-message';
     try {
@@ -197,15 +178,15 @@
       records = records.map(record => record.reference === result.record.reference ? result.record : record); render();
       const updated = document.querySelector(`[data-reference="${CSS.escape(result.record.reference)}"]`); const updatedMessage = updated?.querySelector('.admin-record-message');
       if (!updatedMessage) return;
-      let messageText = 'Opgeslagen.';
-      if (action === 'notify') messageText = result.notifications?.email?.sent ? 'Opgeslagen en status per e-mail verstuurd.' : 'Opgeslagen; de status-e-mail kon niet worden verstuurd.';
-      if (action === 'payment') messageText = result.notifications?.paymentEmail?.sent ? 'Betaalverzoek per e-mail verstuurd.' : `Opgeslagen; betaalmail niet verstuurd (${result.notifications?.paymentEmail?.reason || 'controleer de gegevens'}).`;
+      let messageText = 'Opgeslagen. De voortgang is zichtbaar in de klantenapp.';
+      if (action === 'payment') messageText = 'Betaalverzoek staat klaar in de klantenapp.';
       if (action === 'close') messageText = result.record.closedAt ? 'Aanvraag afgemeld.' : 'Aanvraag opnieuw geopend.';
+      const push = result.notifications?.push;
+      if (push?.reason === 'accepted') messageText += ' Melding aangeboden aan de telefoondienst.';
+      if (push?.reason === 'not_subscribed') messageText += ' Deze klant heeft nog geen telefoonmeldingen aangezet.';
+      if (push?.reason === 'not_configured') messageText += ' Telefoonmeldingen zijn nog niet ingesteld.';
+      if (push?.reason === 'failed' || push?.failed) messageText += ' Niet alle telefoonmeldingen konden worden verstuurd. De update staat wel in de klantapp.';
       updatedMessage.textContent = messageText; updatedMessage.className = 'admin-record-message is-success';
-      const whatsAppSent = result.notifications?.whatsapp?.sent;
-      if ((action === 'notify' || action === 'payment') && result.record.whatsappConsent && !whatsAppSent) {
-        const link = document.createElement('a'); link.href = whatsappUrl(result.record,action === 'payment' ? 'payment' : 'status'); link.target = '_blank'; link.rel = 'noopener'; link.className = 'btn whatsapp-launch'; link.textContent = 'Open WhatsApp en verstuur'; updatedMessage.append(link);
-      } else if (whatsAppSent) updatedMessage.append(document.createTextNode(' WhatsApp is automatisch verstuurd.'));
     } catch (error) { message.textContent = error.message; message.className = 'admin-record-message is-error'; buttons.forEach(button => { button.disabled = false; }); }
   });
 

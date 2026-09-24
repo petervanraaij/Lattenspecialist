@@ -26,8 +26,8 @@ const web = template
   <meta name="apple-mobile-web-app-title" content="Lattenspecialist">`)
   .replace('<!-- WEB_INSTALL -->', install.trim())
   .replace('<!-- WEB_SCRIPT -->', '<script src="pwa-install.js?v=1"></script>')
-  .replace('href="customer.css"', 'href="customer-app.css?v=1"')
-  .replace('src="customer.js"', 'src="customer-app.js?v=3"')
+  .replace('href="customer.css"', 'href="customer-app.css?v=2"')
+  .replace('src="customer.js"', 'src="customer-app.js?v=4"')
   .replace('src="booking-config.js"', 'src="booking-config.js?v=2"')
   .replace('frame-src https://lattenspecialist.nl;', "frame-src 'self' https://lattenspecialist.nl;");
 await writeFile(join(site, 'app.html'), '<!-- Generated from mobile-customer/src; run npm run build in mobile-customer. -->\n' + web);

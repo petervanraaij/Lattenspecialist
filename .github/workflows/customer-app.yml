@@ -53,6 +53,7 @@ jobs:
       - run: npm run sync
       - run: git diff --exit-code -- ../app.html ../customer-app.js ../customer-app.css ../pwa-install.js
       - run: npm test
+      - run: npm --prefix ../worker ci
       - run: npm --prefix ../worker test
       - run: python -m pip install Pillow==12.3.0
       - run: npm run prepare:assets
