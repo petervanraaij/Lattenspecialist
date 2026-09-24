@@ -12,6 +12,8 @@ on:
       - 'booking.js'
       - 'booking-config.js'
       - 'index.html'
+      - 'afspraak.html'
+      - 'homepage.*'
       - 'app.html'
       - 'customer-app.*'
       - 'pwa-install.js'

@@ -26,8 +26,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=15">
-  <link rel="stylesheet" href="customer-booking.css?v=1">
-  <script src="customer-booking.js?v=2"></script>
+  <link rel="stylesheet" href="homepage.css?v=1">
+  <script src="homepage.js?v=1"></script>
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -45,78 +45,64 @@
   }
   </script>
 </head>
-<body>
+<body class="home-page">
+  <a class="skip-link" href="#main">Naar de inhoud</a>
   <header class="site-header" id="top">
     <div class="container nav-wrap">
-      <a class="brand" href="#top" aria-label="De Lattenspecialist home">
-        <img src="images/logo-main.webp" alt="De Lattenspecialist" class="header-logo">
-      </a>
-      <button class="menu-toggle" aria-label="Menu openen" aria-expanded="false">☰</button>
-      <nav class="main-nav" aria-label="Hoofdnavigatie">
+      <a class="brand" href="/" aria-label="De Lattenspecialist home"><img src="images/logo-main.webp" alt="De Lattenspecialist" class="header-logo" width="250" height="64"></a>
+      <button class="menu-toggle" aria-label="Menu openen" aria-expanded="false" aria-controls="main-nav">☰</button>
+      <nav class="main-nav" id="main-nav" aria-label="Hoofdnavigatie">
         <a href="#pakketten">Pakketten</a>
-        <a href="#onderhoud">Onderhoud</a>
-        <a href="#haalbreng">Haal & breng</a>
+        <a href="#onderhoud">Vakwerk</a>
+        <a href="#haalbreng">Haal &amp; breng</a>
         <a href="app.html">Mijn onderhoud</a>
-        <a href="#faq">FAQ</a>
-        <a class="nav-cta" href="#afspraak">Afspraak maken</a>
+        <a class="nav-cta" href="afspraak.html">Plan onderhoud</a>
       </nav>
     </div>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="hero-bg" role="img" aria-label="Ambachtelijk onderhoud van ski's in een professionele werkplaats"></div>
+  <main id="main" tabindex="-1">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-bg" role="img" aria-label="Ambachtelijk skionderhoud in de werkplaats"></div>
       <div class="hero-shade"></div>
       <div class="container hero-grid">
         <div class="hero-copy">
-          <span class="hero-kicker">De Lattenspecialist · Wamel</span>
-          <h1>Ski- en snowboardonderhoud in <span>West Maas en Waal en omgeving</span></h1>
-          <p class="hero-lead">Ambachtelijk onderhoud met hoogwaardige producten, gericht op grip, glijvermogen én zo lang mogelijk plezier van je materiaal.</p>
-          <div class="hero-actions">
-            <a class="btn btn-gold" href="#afspraak">Afspraak aanvragen</a>
-            <a class="btn btn-ghost" href="#pakketten">Bekijk pakketten</a>
-          </div>
-          <a class="hero-whatsapp" href="https://wa.me/31618327132?text=Hallo%20De%20Lattenspecialist%2C%20ik%20heb%20een%20vraag%20over%20onderhoud." target="_blank" rel="noopener">Liever direct WhatsApp? 06 18 32 71 32 →</a>
-          <div class="hero-points">
-            <span>✓ Ski én snowboard</span>
-            <span>✓ Gratis halen & brengen in West Maas en Waal, Druten, Afferden en Horssen</span>
-            <span>✓ Zelf brengen of ophalen in Wamel op afspraak</span>
-          </div>
+          <span class="hero-kicker">Ski- &amp; snowboardonderhoud</span>
+          <h1 id="hero-title">Jouw wintersport.<br><span>Ons vakwerk.</span></h1>
+          <p class="hero-lead">Meer grip. Soepeler glijden. Met aandacht onderhouden, klaar voor de sneeuw.</p>
+          <a class="btn btn-gold" href="#pakketten">Ontdek de pakketten <span aria-hidden="true">↗</span></a>
+          <p class="hero-region">Vanuit Wamel · West Maas en Waal en omgeving</p>
         </div>
       </div>
     </section>
 
-    <section class="trust-strip" aria-label="Belangrijkste voordelen">
+    <section class="trust-strip" aria-label="Onze service">
       <div class="container trust-grid">
-        <div><strong>Zorgeloos pisteplezier</strong><span>onderhoud met aandacht</span></div>
-        <div><strong>Ambachtelijk</strong><span>gericht, niet onnodig slijpen</span></div>
-        <div><strong>Gratis haal- & brengservice</strong><span>West Maas en Waal, Druten, Afferden & Horssen</span></div>
-        <div><strong>Betaal achteraf</strong><span>betaalverzoek na het onderhoud</span></div>
+        <div><strong>Premium warme wax</strong><span>Afgestemd op jouw wintersport</span></div>
+        <div><strong>Gratis halen &amp; brengen</strong><span>Binnen ons servicegebied</span></div>
+        <div><strong>Betaal achteraf</strong><span>Als je materiaal klaar is</span></div>
       </div>
     </section>
 
-    <section class="section choice-helper" id="advies">
-      <div class="container">
-        <div class="section-head center">
-          <span class="eyebrow">Welke beurt past bij mij?</span>
-          <h2>Je hoeft zelf niet te beoordelen wat nodig is.</h2>
-          <p>Wij bekijken je materiaal eerst. Is een andere behandeling slimmer dan wat je hebt gekozen, dan overleggen we vóórdat we extra werk uitvoeren.</p>
-        </div>
-        <div class="choice-grid">
-          <a href="#pakketten" class="choice-card"><span>Brons</span><strong>Belag voelt droog of glijdt minder.</strong><small>Warme wax & verzorging</small></a>
-          <a href="#pakketten" class="choice-card"><span>Zilver</span><strong>Je mist grip op harde pistes.</strong><small>Kanten + warme wax</small></a>
-          <a href="#pakketten" class="choice-card featured-choice"><span>Goud</span><strong>Compleet klaar voor de wintersport.</strong><small>Meest gekozen</small></a>
-          <a href="#pakketten" class="choice-card"><span>Platinum</span><strong>Ook lichte krassen in het belag.</strong><small>Goud + lichte reparaties</small></a>
+    <section class="section home-craft" id="onderhoud" aria-labelledby="craft-title">
+      <div class="container craft-grid">
+        <div class="photo-frame"><img src="images/edge-tuning.webp" alt="Zorgvuldige kantentuning van een ski" width="1100" height="734" loading="lazy" decoding="async"></div>
+        <div class="craft-copy">
+          <span class="eyebrow">Aandacht die je voelt</span>
+          <h2 id="craft-title">Goed voor je materiaal.<br>Fijn op de piste.</h2>
+          <p class="lead">Gericht onderhoud, met oog voor de staat van jouw ski’s of snowboard. Voor grip, glijvermogen en langer plezier van je materiaal.</p>
+          <p>We verwijderen vuil en oude waxresten en brengen verse premium warme wax aan. De wax stemmen we af op je bestemming, reisperiode en de verwachte omstandigheden.</p>
+          <a class="quiet-link" href="service.html">Meer over onze werkwijze <span aria-hidden="true">→</span></a>
         </div>
       </div>
     </section>
 
-    <section class="section packages" id="pakketten">
+    <section class="section packages" id="pakketten" aria-labelledby="packages-title">
       <div class="container">
         <div class="section-head center">
-          <span class="eyebrow">Onderhoudspakketten</span>
-          <h2>Van verzorging tot compleet onderhoud</h2>
-          <p>Heldere pakketten voor ski's en snowboards. We behandelen wat nodig is en voorkomen onnodige slijtage.</p>
+          <span class="eyebrow">Voor ski’s en snowboards</span>
+          <h2 id="packages-title">Kies jouw onderhoud.</h2>
+          <p>Van een verse waxlaag tot een complete onderhoudsbeurt.</p>
         </div>
         <div class="package-grid">
           <article class="package-card">
@@ -141,7 +127,8 @@
           </article>
         </div>
         <p class="price-note">Alle genoemde consumentenprijzen zijn inclusief btw.</p>
-
+        <details class="price-details">
+          <summary>Losse werkzaamheden &amp; spoed</summary>
         <div class="extras-card">
           <div><h3>Losse werkzaamheden</h3><p>Ook mogelijk als een volledig pakket niet nodig is.</p></div>
           <div class="extras-list">
@@ -152,244 +139,50 @@
           </div>
           <p class="extras-foot"><strong>Spoed?</strong> Dan geven we je onderhoud in overleg voorrang in de werkplanning. Extra haal- of brengritten vallen niet onder de spoedtoeslag. Zelf brengen en ophalen kan op afspraak.</p>
         </div>
-      </div>
-    </section>
-
-    <section class="section dark-section" id="onderhoud">
-      <div class="container split photo-split">
-        <div>
-          <span class="eyebrow light">Onze manier van werken</span>
-          <h2>Vakwerk dat je materiaal respecteert.</h2>
-          <p class="lead-light">Eerst controleren en reinigen, daarna gericht behandelen. Zo krijgt ieder materiaal verse premium wax en alleen het onderhoud dat werkelijk nodig is.</p>
-          <div class="service-list">
-            <div><span>01</span><div><strong>Inspectie</strong><p>We controleren belag, kanten en eventuele beschadigingen.</p></div></div>
-            <div><span>02</span><div><strong>Belag reinigen</strong><p>Vuil en oude waxresten worden verwijderd, zodat de nieuwe wax goed kan worden aangebracht.</p></div></div>
-            <div><span>03</span><div><strong>Kanten slijpen & tunen</strong><p>Waar nodig behandelen we de kanten voor grip en controle.</p></div></div>
-            <div><span>04</span><div><strong>Premium warme wax</strong><p>We kiezen de wax passend bij bestemming, reisperiode en verwachte omstandigheden.</p></div></div>
-            <div><span>05</span><div><strong>Afschrapen & finishen</strong><p>Na het afkoelen verwijderen we overtollige wax en borstelen we het belag zorgvuldig uit.</p></div></div>
-          </div>
-        </div>
-        <div class="photo-frame tall"><img src="images/maintenance-closeup.webp" alt="Warme wax en afwerking van ski's" loading="lazy" decoding="async"></div>
-      </div>
-    </section>
-
-    <section class="section craft-section">
-      <div class="container craft-grid">
-        <div class="photo-frame"><img src="images/edge-tuning.webp" alt="Precisiewerk aan de kanten van een ski" loading="lazy" decoding="async"></div>
-        <div>
-          <span class="eyebrow">Ambacht & hoogwaardige producten</span>
-          <h2>Meer aandacht voor je materiaal.</h2>
-          <p class="lead">Goed onderhoud is niet alleen een scherpe kant of verse wax. Het is bepalen wat je materiaal werkelijk nodig heeft.</p>
-          <p>Bij een eerste onderhoudsbeurt beginnen we met een grondige controle en reiniging. Oude waxresten en vuil worden verwijderd voordat we verse hoogwaardige warme wax aanbrengen. Zo weet je dat je materiaal met een verzorgde basis en nieuwe wax de piste op gaat.</p>
-          <blockquote>Het doel: zorgeloos pisteplezier én langer plezier van je materiaal.</blockquote>
+        </details>
+        <div class="package-action">
+          <p>Twijfel je? Wij bekijken je materiaal en adviseren wat nodig is.<br>Extra werk doen we alleen na overleg.</p>
+          <a class="btn btn-dark" href="afspraak.html">Onderhoud aanvragen <span aria-hidden="true">→</span></a>
         </div>
       </div>
     </section>
 
-    <section class="section gallery-section" aria-labelledby="werk-in-beeld">
-      <div class="container">
-        <div class="section-head center">
-          <span class="eyebrow">Werk in beeld</span>
-          <h2 id="werk-in-beeld">Onderhoud draait om aandacht in elke stap.</h2>
-          <p>Van waxen en borstelen tot kantentuning en het ophalen van je materiaal: rustig, gericht en met oog voor de staat van je ski of snowboard.</p>
-        </div>
-        <div class="gallery-grid">
-          <figure class="gallery-card"><img src="images/maintenance-closeup.webp" alt="Warme wax en borstelen van een ski" loading="lazy" decoding="async"><figcaption>Wax & finish</figcaption></figure>
-          <figure class="gallery-card"><img src="images/edge-tuning.webp" alt="Precisiewerk aan de stalen kant van een ski" loading="lazy" decoding="async"><figcaption>Kanten & tuning</figcaption></figure>
-          <figure class="gallery-card"><img src="images/pickup-service.webp" alt="Ski's worden bij een klant opgehaald binnen het servicegebied" loading="lazy" decoding="async"><figcaption>Haal- & brengservice</figcaption></figure>
-        </div>
-      </div>
-    </section>
-
-    <section class="section pickup" id="haalbreng">
+    <section class="section pickup" id="haalbreng" aria-labelledby="pickup-title">
       <div class="container pickup-grid">
         <div class="pickup-copy">
-          <span class="eyebrow light">Gratis haal- & brengservice</span>
-          <h2>Wij halen het op. Jij hoeft alleen aan de piste te denken.</h2>
-          <p>De gratis haal- & brengservice geldt in <strong>West Maas en Waal</strong> en in <strong>Druten, Afferden en Horssen</strong>.</p>
-          <p>We halen onderhoud in principe op vrijdag, zaterdag of zondag en brengen het materiaal het daaropvolgende weekend weer terug.</p>
-          <div class="pickup-options">
-            <div><strong>Gratis haal- & brengservice</strong><span>West Maas en Waal, Druten, Afferden en Horssen</span></div>
-            <div><strong>Zelf brengen of ophalen</strong><span>In Wamel, uitsluitend op afspraak</span></div>
-          </div>
-          <a class="btn btn-gold" href="#afspraak">Plan je onderhoud</a>
+          <span class="eyebrow light">Gratis haal- &amp; brengservice</span>
+          <h2 id="pickup-title">Jij denkt aan de sneeuw.<br>Wij aan je materiaal.</h2>
+          <p>We halen je ski’s of snowboard op en brengen ze na het onderhoud weer terug. Gratis in <strong>West Maas en Waal, Druten, Afferden en Horssen.</strong></p>
+          <p class="pickup-note">Liever zelf brengen? Je bent op afspraak welkom in Wamel.</p>
         </div>
-        <div class="photo-frame pickup-photo"><img src="images/pickup-service.webp" alt="Ski's ophalen bij een klant in West Maas en Waal en Druten" loading="lazy" decoding="async"></div>
+        <div class="photo-frame pickup-photo"><img src="images/pickup-service.webp" alt="Ski’s worden opgehaald voor onderhoud" loading="lazy" decoding="async"></div>
       </div>
     </section>
 
-    <section class="section process-section">
-      <div class="container">
-        <div class="section-head center">
-          <span class="eyebrow">Zo werkt het</span>
-          <h2>Van jouw voordeur tot weer pisteklaar.</h2>
-        </div>
-        <div class="process-grid">
-          <div><b>1</b><strong>Aanvragen</strong><span>Via WhatsApp of het formulier.</span></div>
-          <div><b>2</b><strong>Ophalen of brengen</strong><span>Gratis binnen het servicegebied. Zelf brengen kan op afspraak in Wamel.</span></div>
-          <div><b>3</b><strong>Controleren & onderhouden</strong><span>Extra werk doen we alleen na overleg.</span></div>
-          <div><b>4</b><strong>Terugbrengen of ophalen</strong><span>Volgens afspraak.</span></div>
-          <div><b>5</b><strong>Betaalverzoek</strong><span>Je betaalt na het onderhoud.</span></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section ready-section">
-      <div class="container ready-grid">
-        <div class="photo-frame"><img src="images/family-ready.webp" alt="Gezin klaar voor wintersport met ski's en snowboard" loading="lazy" decoding="async"></div>
-        <div>
-          <span class="eyebrow">Daar doen we het voor</span>
-          <h2>Materiaal klaar. Vakantie kan beginnen.</h2>
-          <p class="lead">Geen gedoe vlak voor vertrek. Goed onderhouden materiaal geeft vertrouwen, grip en plezier zodra je de piste op gaat.</p>
-          <a class="btn btn-dark" href="#afspraak">Maak een afspraak</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="section app-promo" aria-labelledby="mijn-onderhoud-title">
-      <div class="container app-promo-shell">
-        <div>
-          <span class="eyebrow">Mijn Lattenspecialist</span>
-          <h2 id="mijn-onderhoud-title">Volg je onderhoud en bereid je wintersport voor.</h2>
-          <p>Vraag onderhoud aan, volg de voortgang met je persoonlijke onderhoudscode en geef je bestemming, reisdatum en omstandigheden door. Je kunt Mijn Lattenspecialist rechtstreeks vanuit je browser op je telefoon zetten.</p>
-        </div>
-        <a class="btn btn-dark" href="app.html#installeren">Open of installeer de klantenapp</a>
-      </div>
-    </section>
-
-    <section class="section rental secondary-section" id="verhuur">
-      <div class="container">
-        <div class="section-head center">
-          <span class="eyebrow">Extra service</span>
-          <h2>Skiverhuur op aanvraag.</h2>
-          <p>Zoek je ski's, een snowboard of een complete set? Geef je maten, niveau en reisperiode door. We bekijken vervolgens of we een passende set kunnen aanbieden of regelen.</p>
-        </div>
-        <div class="rental-grid">
-          <article><h3>Persoonlijk afgestemd</h3><p>We kijken naar lengte, schoenmaat, niveau en reisperiode.</p></article>
-          <article><h3>Beschikbaarheid op aanvraag</h3><p>We tonen geen vaste aantallen; beschikbaarheid kan per periode veranderen.</p></article>
-          <article><h3>Eerst bevestigd</h3><p>Je aanvraag is pas definitief nadat maat, periode en prijs persoonlijk zijn bevestigd.</p></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section review-invite" aria-labelledby="ervaring-title">
-      <div class="container review-shell">
-        <div>
-          <span class="eyebrow light">Jouw ervaring</span>
-          <h2 id="ervaring-title">Hoe hebben we het gedaan?</h2>
-          <p>Deel je ervaring of verbeterpunt. Met jouw toestemming kunnen we je reactie later op de website plaatsen.</p>
-        </div>
-        <a class="btn btn-gold" href="ervaring.html">Deel je ervaring</a>
-      </div>
-    </section>
-
-    <section class="section faq" id="faq">
+    <section class="section faq" id="faq" aria-labelledby="faq-title">
       <div class="container narrow">
-        <div class="section-head center"><span class="eyebrow">Veelgestelde vragen</span><h2>Goed om te weten</h2></div>
-        <details><summary>Hoe weet ik welk pakket ik nodig heb?</summary><p>Twijfel je, dan beoordelen we het materiaal eerst. We adviseren wat past bij de staat van je ski of snowboard. Extra werkzaamheden voeren we alleen uit na overleg.</p></details>
-        <details><summary>Waarom slijpen jullie niet standaard het hele belag vlak?</summary><p>Vlakslijpen verwijdert materiaal. Soms is dat nodig en dan is het een goede behandeling, maar we willen het niet automatisch bij iedere beurt doen. Waar mogelijk kiezen we voor gerichter onderhoud.</p></details>
-        <details><summary>Wat gebeurt er met oude waxresten?</summary><p>We controleren en reinigen het belag voordat we nieuwe wax aanbrengen. Vuil en oude waxresten worden verwijderd, waarna verse premium warme wax wordt aangebracht, afgekoeld, afgeschraapt en uitgeborsteld.</p></details>
-        <details><summary>Waar geldt de gratis haal- & brengservice?</summary><p>In West Maas en Waal en in de plaatsen Druten, Afferden en Horssen. Deest valt buiten het gratis servicegebied. Buiten dit gebied kun je je materiaal op afspraak zelf in Wamel brengen en ophalen.</p></details>
-        <details><summary>Kan ik mijn ski's of snowboard zelf brengen?</summary><p>Ja. Brengen en ophalen in Wamel kan op afspraak. Dat is ook handig bij spoedonderhoud.</p></details>
-        <details><summary>Wat is spoedonderhoud?</summary><p>Als je je materiaal eerder nodig hebt dan de normale onderhoudsronde, kunnen we het in overleg voorrang geven. Dat kost € 10 extra en is alleen mogelijk als de planning het toelaat. Extra ritten zijn niet inbegrepen.</p></details>
-        <details><summary>Wanneer betaal ik?</summary><p>Na het onderhoud ontvang je een betaalverzoek. Zo is vooraf duidelijk wat er is uitgevoerd en betaal je pas wanneer je materiaal klaar is.</p></details>
-        <details><summary>Welke reparaties voeren jullie uit?</summary><p>We herstellen lichte, oppervlakkige belagschade en eenvoudige lokale P‑Tex-beschadigingen. Diepe kernschade, staalkantschade en constructieve reparaties beoordelen we apart en kunnen buiten onze service vallen.</p></details>
-      </div>
-    </section>
-
-    <section class="section booking" id="afspraak">
-      <div class="container booking-shell">
-        <div class="booking-intro">
-          <img src="images/badge.webp" alt="De Lattenspecialist" class="booking-badge" loading="lazy" decoding="async">
-          <span class="eyebrow light">Afspraak aanvragen</span>
-          <h2>Vertel ons wat je nodig hebt.</h2>
-          <p>Verstuur je aanvraag rechtstreeks via de website. Je ontvangt meteen een aanvraagcode; daarna bevestigen we persoonlijk de planning en eventuele bijzonderheden. Na het onderhoud ontvang je een betaalverzoek.</p>
-          <div class="contact-quick">
-            <a href="https://wa.me/31618327132?text=Hallo%20De%20Lattenspecialist%2C%20ik%20wil%20graag%20een%20afspraak%20aanvragen." target="_blank" rel="noopener">Reserveer via WhatsApp · 06 18 32 71 32</a>
-            <a href="mailto:info@lattenspecialist.nl">info@lattenspecialist.nl</a>
-          </div>
-        </div>
-
-        <form id="requestForm" class="request-form">
-          <div class="form-section">
-            <label class="form-label">1. Wat wil je aanvragen?</label>
-            <div class="choice-buttons">
-              <label><input type="radio" name="service" value="Onderhoud" checked><span>Onderhoud</span></label>
-              <label><input type="radio" name="service" value="Verhuur"><span>Verhuur</span></label>
-            </div>
-          </div>
-
-          <div id="maintenanceFields">
-            <div class="form-grid">
-              <label><span>Materiaal</span><select name="material"><option>Ski</option><option>Snowboard</option><option>Meerdere / combinatie</option></select></label>
-              <label><span>Aantal</span><input type="number" name="amount" min="1" max="20" value="1"></label>
-              <label><span>Pakket</span><select name="package"><option>Brons</option><option>Zilver</option><option selected>Goud</option><option>Platinum</option><option>Losse werkzaamheden / advies</option></select></label>
-              <label><span>Logistiek</span><select name="logistics"><option>Gratis ophalen & terugbrengen (servicegebied)</option><option>Zelf brengen in Wamel</option><option>Zelf brengen en zelf ophalen</option><option>In overleg</option></select></label>
-              <label><span>Ophaaldatum</span><select name="pickupDate" required><option value="">Beschikbare data laden…</option><option>In overleg</option></select></label>
-              <label><span>Spoed</span><select name="urgent"><option>Nee</option><option>Ja, graag overleggen (+ €10 indien mogelijk)</option></select></label>
-              <label><span>Skigebied / bestemming</span><input type="text" name="destination" placeholder="bijv. Sölden, Oostenrijk"></label>
-              <label><span>Eerste skidag</span><input type="date" name="skidate"></label>
-              <label><span>Verwachte omstandigheden</span><select name="conditions"><option>Weet ik nog niet</option><option>Zacht / warm</option><option>Rond het vriespunt</option><option>Koud</option><option>Kunstsneeuw / hard / ijzig</option></select></label>
-            </div>
-            <p class="field-note">Gratis halen & brengen geldt in West Maas en Waal en in de plaatsen Druten, Afferden en Horssen; Deest valt buiten het gratis servicegebied. Zelf brengen of ophalen in Wamel kan op afspraak. Bestemming en reisdatum helpen ons een passende premium wax te kiezen.</p>
-          </div>
-
-          <div id="rentalFields" hidden>
-            <div class="form-grid">
-              <label><span>Wat wil je huren?</span><select name="rentaltype"><option>Complete set</option><option>Ski's</option><option>Stokken</option><option>Combinatie / advies</option></select></label>
-              <label><span>Lengte persoon (cm)</span><input type="number" name="height" min="100" max="220" placeholder="bijv. 178"></label>
-              <label><span>Schoenmaat</span><input type="text" name="shoesize" placeholder="bijv. 42"></label>
-              <label><span>Niveau</span><select name="level"><option>Beginner</option><option>Gemiddeld</option><option>Gevorderd</option><option>Weet ik niet</option></select></label>
-              <label><span>Van</span><input type="date" name="rentfrom"></label>
-              <label><span>Tot en met</span><input type="date" name="rentto"></label>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <label class="form-label">2. Jouw gegevens</label>
-            <div class="form-grid">
-              <label><span>Naam</span><input type="text" name="name" autocomplete="name" required></label>
-              <label><span>Mobiel nummer</span><input type="tel" name="phone" autocomplete="tel" required></label>
-              <label><span>E-mailadres</span><input type="email" name="email" autocomplete="email" required></label>
-              <label><span>Postcode</span><input type="text" name="postcode" autocomplete="postal-code" inputmode="text" placeholder="1234 AB"></label>
-              <label><span>Huisnummer + toevoeging</span><input type="text" name="houseNumber" autocomplete="address-line2" placeholder="13 of 13A"></label>
-              <label class="address-result"><span>Ophaal- en terugbrenglocatie</span><input type="text" name="address" autocomplete="street-address" placeholder="Wordt automatisch ingevuld"></label>
-              <input type="hidden" name="addressCity">
-            </div>
-            <div class="address-status" id="addressStatus" role="status" aria-live="polite">Vul postcode en huisnummer in; het adres wordt automatisch opgezocht.</div>
-            <label class="full-field"><span>Opmerking / schade / bijzonderheden</span><textarea name="notes" rows="4" placeholder="Bijvoorbeeld: lichte kras, gewenste ophaaltijd of vraag over het pakket."></textarea></label>
-          </div>
-
-          <div class="request-summary" id="requestSummary"></div>
-          <label class="website-field" aria-hidden="true"><span>Website</span><input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-          <label class="privacy-check whatsapp-consent"><input type="checkbox" name="whatsappConsent"><span>Ja, ik wil via WhatsApp statusupdates over deze aanvraag ontvangen van De Lattenspecialist. Afmelden kan in de WhatsApp-chat.</span></label>
-          <label class="privacy-check"><input type="checkbox" name="privacyConsent" required><span>Ik geef toestemming om mijn gegevens te gebruiken voor deze aanvraag en heb de <a href="privacy.html" target="_blank">privacy-informatie</a> gelezen.</span></label>
-          <div id="turnstileContainer" class="turnstile-container" hidden></div>
-          <button class="btn btn-gold form-submit" type="submit">Aanvraag via website versturen</button>
-          <div class="booking-status" id="bookingStatus" role="status" aria-live="polite"></div>
-          <p class="form-footnote">Dit is nog geen definitieve afspraak. We nemen contact met je op om de planning te bevestigen. Foto's van schade kun je daarna via WhatsApp sturen.</p>
-        </form>
+        <div class="section-head center"><span class="eyebrow">Nog even dit</span><h2 id="faq-title">Goed om te weten.</h2></div>
+        <details><summary>Wanneer is mijn materiaal weer klaar?</summary><p>Normaal gesproken brengen we het materiaal het volgende weekend terug. De beschikbare ophaaldata staan in het aanvraagformulier; de planning bevestigen we persoonlijk.</p></details>
+        <details><summary>Kan het ook met spoed?</summary><p>Als de planning het toelaat, geven we je onderhoud in overleg voorrang voor € 10 extra. Extra haal- of brengritten zijn niet inbegrepen.</p></details>
+        <details><summary>Woon ik buiten het servicegebied?</summary><p>Deest en andere plaatsen buiten West Maas en Waal, Druten, Afferden en Horssen vallen buiten de gratis service. Zelf brengen en ophalen in Wamel kan op afspraak.</p></details>
+        <details id="verhuur"><summary>Kan ik ook ski’s of een snowboard huren?</summary><p>Verhuur is mogelijk op aanvraag. We bekijken of we een passende set kunnen aanbieden of regelen. Maat, periode, prijs en beschikbaarheid worden eerst persoonlijk bevestigd.</p></details>
+        <p class="faq-more"><a class="quiet-link" href="service.html">Alle service-informatie <span aria-hidden="true">→</span></a></p>
       </div>
     </section>
   </main>
-
-  <a class="floating-whatsapp" href="https://wa.me/31618327132" target="_blank" rel="noopener" aria-label="Neem contact op via WhatsApp">WhatsApp</a>
-
   <footer class="site-footer">
     <div class="container footer-grid">
       <div class="footer-brand">
         <img src="images/logo-lockup.webp" alt="De Lattenspecialist" class="footer-logo">
         <p>Ambachtelijk ski- en snowboardonderhoud.<br>Zorgeloos pisteplezier.</p>
       </div>
-      <div><strong>Snel naar</strong><a href="#pakketten">Pakketten</a><a href="#onderhoud">Onderhoud</a><a href="#haalbreng">Haal & breng</a><a href="#afspraak">Afspraak maken</a><a href="app.html">Mijn onderhoud</a></div>
+      <div><strong>Snel naar</strong><a href="#pakketten">Pakketten</a><a href="#onderhoud">Onderhoud</a><a href="#haalbreng">Haal & breng</a><a href="afspraak.html">Afspraak aanvragen</a><a href="app.html">Mijn onderhoud</a></div>
       <div><strong>Contact & bedrijfsgegevens</strong><a href="mailto:info@lattenspecialist.nl">info@lattenspecialist.nl</a><a href="https://wa.me/31618327132" target="_blank" rel="noopener">WhatsApp · 06 18 32 71 32</a><span>Bezoek uitsluitend op afspraak · Hollenhof 13 · 6659 BB Wamel</span><span>KvK 99668637</span><span>BTW-id NL005403580B64</span></div>
     </div>
-    <div class="container footer-legal"><a href="privacy.html">Privacy</a><a href="service.html">Service-informatie</a><a href="ervaring.html">Deel je ervaring</a><a href="app.html">Mijn Lattenspecialist</a></div>
+    <div class="container footer-legal"><a href="privacy.html">Privacy</a><a href="service.html">Service-informatie</a><a href="ervaring.html">Deel je ervaring</a></div>
     <div class="container footer-bottom">© <span id="year"></span> De Lattenspecialist · Handelsnaam van Van Raaij Services · Hollenhof 13, 6659 BB Wamel · KvK 99668637 · BTW-id NL005403580B64 · Prijzen onder voorbehoud van typefouten en wijzigingen.</div>
   </footer>
 
   <script src="script.js?v=10"></script>
-  <script src="booking-config.js?v=2"></script>
-  <script src="booking.js?v=4"></script>
 </body>
 </html>
