@@ -12,11 +12,14 @@
   <h2>Test de klantreis</h2>
   <p>Deze lokale preview gebruikt fictief onderhoud. Kies een scenario en bekijk hoe de persoonlijke link opent op een klein of groot scherm.</p>
   <div class="stack">
-    <a class="card" href="/app.html?scenario=active#status=LS-DEMO23"><h2>Onderhoud in behandeling →</h2><p>Direct de voortgang en wax, zonder code-invoer.</p></a>
-    <a class="card" href="/app.html?scenario=ready#status=LS-DEMO23"><h2>Onderhoud klaar →</h2><p>De laatste stap van het onderhoud.</p></a>
-    <a class="card" href="/app.html?scenario=closed#status=LS-DEMO23"><h2>Aanvraag afgemeld →</h2><p>Een gesloten aanvraag wordt niet als afgerond onderhoud getoond.</p></a>
-    <a class="card" href="/app.html?scenario=missing#status=LS-DEMO23"><h2>Onbekende onderhoudscode →</h2><p>Een duidelijke melding en hulp voor de klant.</p></a>
-    <a class="card" href="/app.html?scenario=offline#status=LS-DEMO23"><h2>Verbindingsprobleem →</h2><p>Opnieuw proberen met dezelfde persoonlijke link.</p></a>
+    <a class="card" href="/app.html?scenario=pending#klant=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"><h2>Aanvraag ontvangen →</h2><p>Bevestiging in de app; wax en planning volgen.</p></a>
+    <a class="card" href="/app.html?scenario=payment#klant=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"><h2>Betaalverzoek klaar →</h2><p>Fictief bedrag; de demonstratieknop voert geen betaling uit.</p></a>
+    <a class="card" href="/app.html?scenario=paid#klant=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"><h2>Betaling ontvangen →</h2><p>Na handmatige controle door de eigenaar.</p></a>
+    <a class="card" href="/app.html?scenario=active#klant=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"><h2>Onderhoud in behandeling →</h2><p>Direct de voortgang en wax, zonder code-invoer.</p></a>
+    <a class="card" href="/app.html?scenario=ready#klant=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"><h2>Onderhoud klaar →</h2><p>De laatste stap van het onderhoud.</p></a>
+    <a class="card" href="/app.html?scenario=closed#klant=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"><h2>Aanvraag afgemeld →</h2><p>Een gesloten aanvraag wordt niet als afgerond onderhoud getoond.</p></a>
+    <a class="card" href="/app.html?scenario=missing#klant=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"><h2>Onbekende onderhoudscode →</h2><p>Een duidelijke melding en hulp voor de klant.</p></a>
+    <a class="card" href="/app.html?scenario=offline#klant=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"><h2>Verbindingsprobleem →</h2><p>Opnieuw proberen met dezelfde persoonlijke link.</p></a>
   </div>
   <section class="card"><h2>Android bouwen en testen</h2><p>De broncode staat in het Android Studio-project <strong>mobile-customer/android</strong>. De testapp heet <strong>Lattenspecialist DEV</strong> en staat los van de klantenapp.</p><p>De native testapp gebruikt de echte dienst. Test daarin alleen eigen testaanvragen. Deze browserpreview verstuurt niets en test het echte aanvraagformulier niet.</p><a class="text-link" href="https://github.com/petervanraaij/Lattenspecialist/actions/workflows/customer-app.yml" target="_blank" rel="noopener noreferrer">Open bouwresultaten in GitHub →</a></section>
   <section class="card"><h2>Uitbrengen via Google Play</h2><p>De bouwomgeving maakt een Android App Bundle (AAB). Na ondertekening kan die naar de interne test in je eigen Play Console. De app is nog niet gepubliceerd of goedgekeurd.</p><a class="text-link" href="https://play.google.com/console/" target="_blank" rel="noopener noreferrer">Open Google Play Console →</a></section>

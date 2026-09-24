@@ -52,7 +52,7 @@
         `Periode: ${formatDate(getValue('rentfrom'))} t/m ${formatDate(getValue('rentto'))}`
       );
     }
-    lines.push('', `Naam: ${getValue('name') || '-'}`, `Mobiel: ${getValue('phone') || '-'}`, `WhatsApp-updates: ${form.elements.whatsappConsent.checked ? 'Ja' : 'Nee'}`, `E-mail: ${getValue('email') || '-'}`, `Ophaal- en terugbrenglocatie: ${getValue('address') || '-'}`, `Opmerking: ${getValue('notes') || '-'}`);
+    lines.push('', `Naam: ${getValue('name') || '-'}`, `Mobiel: ${getValue('phone') || '-'}`, `E-mail: ${getValue('email') || '-'}`, `Ophaal- en terugbrenglocatie: ${getValue('address') || '-'}`, `Opmerking: ${getValue('notes') || '-'}`);
     return lines.join('\n');
   };
 
@@ -156,7 +156,7 @@
     const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
     payload.privacyConsent = formData.get('privacyConsent') === 'on';
-    payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
+
     payload.turnstileToken = turnstileToken;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 15000);
@@ -166,12 +166,18 @@
       const response = await fetch(endpoint, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload), signal: controller.signal});
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.message || 'De aanvraag kon niet worden verstuurd.');
-      const confirmation = result.confirmationSent === false ? ' De aanvraag staat wel veilig in het systeem; controleer eventueel je spammap.' : ' Je ontvangt ook een bevestiging per e-mail.';
+      const confirmation = ' Je bevestiging, voortgang en betaalverzoek staan in je klantenapp. Open en bewaar je onderhoud via de knop hieronder.';
       form.reset();
       await loadAvailability();
       updateForm();
       showStatus(`Gelukt! Je aanvraagcode is ${result.reference}.${confirmation} De planning wordt persoonlijk bevestigd.`, 'success');
-      window.dispatchEvent(new CustomEvent('lattenspecialist:booking-submitted', {detail: {reference: result.reference}}));
+      if (/^[a-f0-9]{64}$/.test(result.customerToken || '')) {
+        const link = document.createElement('a');
+        link.href = `app.html#klant=${result.customerToken}`;
+        link.className = 'btn btn-gold'; link.textContent = 'Bekijk mijn onderhoud';
+        status.append(document.createElement('br'), link);
+      }
+      window.dispatchEvent(new CustomEvent('lattenspecialist:booking-submitted', {detail: {reference: result.reference, customerToken: result.customerToken}}));
       if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
     } catch (error) {
       const message = error.name === 'AbortError' ? 'Het versturen duurde te lang. Controleer je verbinding en probeer het opnieuw.' : error.message;

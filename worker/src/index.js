@@ -1,3 +1,4 @@
+import {PushValidationError, pushConfigured, manageSubscription, customerChanged, notifyCustomer} from './push.js';
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
 
@@ -140,13 +141,13 @@ const normalizeServiceCode = value => clean(value, 24).toUpperCase().replace(/\s
 const normalizePostcode = value => clean(value, 12).toUpperCase().replace(/\s+/g, '');
 const isIsoDate = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
 const isHttpsUrl = value => {
-  try { return new URL(String(value || '')).protocol === 'https:'; } catch { return false; }
+  try { const url = new URL(String(value || '')); return url.protocol === 'https:' && !url.username && !url.password; } catch { return false; }
 };
-const normalizeWhatsAppPhone = value => {
-  let digits = String(value || '').replace(/\D/g, '');
-  if (digits.startsWith('00')) digits = digits.slice(2);
-  if (digits.startsWith('0')) digits = `31${digits.slice(1)}`;
-  return digits;
+const validCustomerToken = value => /^[a-f0-9]{64}$/.test(value || '');
+const createCustomerToken = () => Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
+const customerKey = async token => {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return `customer:${Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')}`;
 };
 
 const isAdminAuthorized = (request, env) => {
@@ -243,8 +244,21 @@ const updateReservation = async (reference, raw, env) => {
   if (paymentAmount && (!/^\d{1,4}(\.\d{1,2})?$/.test(paymentAmount) || Number(paymentAmount) <= 0)) throw new ValidationError('Vul een geldig bedrag in.');
   const paymentUrl = clean(Object.prototype.hasOwnProperty.call(raw, 'paymentUrl') ? raw.paymentUrl : record.paymentUrl, 500);
   if (paymentUrl && !isHttpsUrl(paymentUrl)) throw new ValidationError('De betaallink moet met https:// beginnen.');
+  const paymentChanged = paymentAmount !== (record.paymentAmount || '') || paymentUrl !== (record.paymentUrl || '');
+  let paymentRequestedAt = paymentChanged ? null : record.paymentRequestedAt || null;
+  let paymentPaidAt = paymentChanged ? null : record.paymentPaidAt || null;
+  if (raw.publishPayment === true || raw.sendPaymentEmail === true) {
+    if (closed) throw new ValidationError('Open de aanvraag opnieuw voordat je een betaalverzoek verstuurt.');
+    if (!paymentAmount || !paymentUrl) throw new ValidationError('Vul eerst een bedrag en geldige betaallink in.');
+    if (paymentPaidAt && raw.paymentPaid !== false) throw new ValidationError('Deze betaling is al als ontvangen geregistreerd.');
+    paymentRequestedAt ||= new Date().toISOString();
+  }
+  if (raw.paymentPaid === true) {
+    if (!paymentRequestedAt) throw new ValidationError('Zet eerst een betaalverzoek klaar voordat je betaling registreert.');
+    paymentPaidAt ||= new Date().toISOString();
+  } else if (raw.paymentPaid === false) paymentPaidAt = null;
   let serviceCode = normalizeServiceCode(raw.serviceCode || record.serviceCode);
-  if ((raw.generateServiceCode === true || raw.sendStatusEmail === true || raw.sendWhatsApp === true) && !serviceCode) serviceCode = await assignUniqueServiceCode(store);
+  if (!serviceCode) serviceCode = await assignUniqueServiceCode(store);
   if (serviceCode && !/^LS-[A-Z2-9]{6}$/.test(serviceCode)) throw new ValidationError('De servicecode heeft geen geldig formaat.');
   if (serviceCode) {
     const owner = await store.get(`service:${serviceCode}`);
@@ -253,10 +267,13 @@ const updateReservation = async (reference, raw, env) => {
   }
   const updated = {
     ...record, serviceCode: serviceCode || null, currentStep, status, expectedReady, note, whatsappConsent,
+    customerToken: validCustomerToken(record.customerToken) ? record.customerToken : createCustomerToken(),
+    paymentRequestedAt, paymentPaidAt,
     waxType, paymentAmount, paymentUrl, closedAt: closed ? (record.closedAt || new Date().toISOString()) : null,
     updatedAt: new Date().toISOString()
   };
   await store.put(key, JSON.stringify(updated));
+  await store.put(await customerKey(updated.customerToken), reference);
   return updated;
 };
 
@@ -277,8 +294,23 @@ const getReservationByServiceCode = async (code, env) => {
   const store = requireReservationStore(env);
   const reference = await store.get(`service:${code}`);
   if (!reference) return null;
-  return store.get(`reservation:${reference}`, 'json');
+  const record = await store.get(`reservation:${reference}`, 'json');
+  return record?.serviceCode === code ? record : null;
 };
+
+// Only the long personal-link token unlocks payment details. The short service
+// code remains compatible with older apps and never exposes payment or contact data.
+const customerStatus = record => ({
+  ...publicStatus(record),
+  pickupDate: record.pickupDate || '',
+  payment: record.paymentRequestedAt && record.paymentAmount && isHttpsUrl(record.paymentUrl)
+    ? record.paymentPaidAt
+      ? {state: 'paid', amount: record.paymentAmount, paidAt: record.paymentPaidAt}
+      : record.closedAt
+        ? {state: 'withdrawn'}
+        : {state: 'open', amount: record.paymentAmount, url: record.paymentUrl}
+    : {state: 'none'}
+});
 
 const sendResendEmail = async (message, env) => {
   if (!env.RESEND_API_KEY) throw new Error('Email configuration is incomplete.');
@@ -291,64 +323,6 @@ const sendResendEmail = async (message, env) => {
     console.error('Email provider rejected the booking notification.', response.status);
     throw new Error('Email notification failed.');
   }
-};
-
-const lattenspecialistFrom = env => env.LATTENSPECIALIST_FROM_EMAIL || 'De Lattenspecialist via Stuiterbaas <reserveringen@stuiterbaas.nl>';
-
-const sendCustomerConfirmationEmail = async (data, reference, env) => {
-  await sendResendEmail({
-    from: lattenspecialistFrom(env),
-    to: [data.email],
-    subject: `We hebben je aanvraag ontvangen – ${reference}`,
-    text: [`Hallo ${data.name},`, '', 'We hebben je aanvraag bij De Lattenspecialist ontvangen.', `Aanvraagcode: ${reference}`, '', 'Dit is nog geen definitieve afspraak. We nemen contact met je op om de planning te bevestigen.', '', 'Groet,', 'De Lattenspecialist'].join('\n'),
-    html: `<p>Hallo ${escapeHtml(data.name)},</p><p>We hebben je aanvraag bij De Lattenspecialist ontvangen.</p><p><strong>Aanvraagcode: ${escapeHtml(reference)}</strong></p><p>Dit is nog geen definitieve afspraak. We nemen contact met je op om de planning te bevestigen.</p><p>Groet,<br>De Lattenspecialist</p>`
-  }, env);
-};
-
-const customerStatusUrl = record => record.serviceCode ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : 'https://lattenspecialist.nl/app.html#onderhoud';
-
-const sendCustomerStatusEmail = async (record, env) => {
-  const ready = record.expectedReady ? `\nVerwacht klaar: ${record.expectedReady}` : '';
-  const note = record.note ? `\n\n${record.note}` : '';
-  await sendResendEmail({
-    from: lattenspecialistFrom(env),
-    to: [record.email],
-    subject: `Status van je onderhoud: ${record.status}`,
-    text: [`Hallo ${record.name},`, '', 'De status van je aanvraag is bijgewerkt:', record.status, `${ready}${note}`, '', `Servicecode: ${record.serviceCode || 'wordt nog toegekend'}`, `Bekijk direct je voortgang: ${customerStatusUrl(record)}`, '', 'Groet,', 'De Lattenspecialist'].join('\n'),
-    html: `<p>Hallo ${escapeHtml(record.name)},</p><p>De status van je aanvraag is bijgewerkt:</p><p><strong>${escapeHtml(record.status)}</strong></p>${record.expectedReady ? `<p>Verwacht klaar: ${escapeHtml(record.expectedReady)}</p>` : ''}${record.note ? `<p>${escapeHtml(record.note)}</p>` : ''}<p>Servicecode: <strong>${escapeHtml(record.serviceCode || 'wordt nog toegekend')}</strong><br><a href="${escapeHtml(customerStatusUrl(record))}">Bekijk direct je voortgang</a></p><p>Groet,<br>De Lattenspecialist</p>`
-  }, env);
-};
-
-const sendPaymentEmail = async (record, env) => {
-  if (!record.paymentAmount || !record.paymentUrl) throw new ValidationError('Vul eerst een bedrag en geldige betaallink in.');
-  const amount = Number(record.paymentAmount).toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-  await sendResendEmail({
-    from: lattenspecialistFrom(env),
-    to: [record.email],
-    subject: `Betaalverzoek De Lattenspecialist – € ${amount}`,
-    text: [`Hallo ${record.name},`, '', `Je materiaal is behandeld. Via deze link kun je € ${amount} betalen:`, record.paymentUrl, '', `Aanvraagcode: ${record.reference}`, '', 'Groet,', 'De Lattenspecialist'].join('\n'),
-    html: `<p>Hallo ${escapeHtml(record.name)},</p><p>Je materiaal is behandeld. Via onderstaande knop kun je <strong>€ ${escapeHtml(amount)}</strong> betalen.</p><p><a href="${escapeHtml(record.paymentUrl)}" style="display:inline-block;padding:12px 20px;border-radius:999px;background:#c99a2e;color:#111;text-decoration:none;font-weight:bold">Betaal € ${escapeHtml(amount)}</a></p><p>Aanvraagcode: ${escapeHtml(record.reference)}</p><p>Groet,<br>De Lattenspecialist</p>`
-  }, env);
-};
-
-const sendWhatsAppTemplate = async (record, type, env) => {
-  const token = env.WHATSAPP_ACCESS_TOKEN;
-  const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID;
-  const template = type === 'payment' ? env.LATTENSPECIALIST_WHATSAPP_PAYMENT_TEMPLATE : env.LATTENSPECIALIST_WHATSAPP_STATUS_TEMPLATE;
-  if (!token || !phoneNumberId || !template) return {sent: false, reason: 'not_configured'};
-  if (!record.whatsappConsent) return {sent: false, reason: 'no_consent'};
-  const destination = normalizeWhatsAppPhone(record.phone);
-  if (!destination) return {sent: false, reason: 'invalid_phone'};
-  const values = type === 'payment'
-    ? [String(record.name || '').split(/\s+/)[0], `€ ${Number(record.paymentAmount || 0).toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, record.paymentUrl || '', record.reference]
-    : [String(record.name || '').split(/\s+/)[0], record.status || STATUS_STEPS[0], record.serviceCode || record.reference, customerStatusUrl(record)];
-  const response = await fetch(`https://graph.facebook.com/${clean(env.WHATSAPP_GRAPH_VERSION || 'v23.0', 12)}/${phoneNumberId}/messages`, {
-    method: 'POST',
-    headers: {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'},
-    body: JSON.stringify({messaging_product: 'whatsapp', to: destination, type: 'template', template: {name: template, language: {code: 'nl'}, components: [{type: 'body', parameters: values.map(text => ({type: 'text', text}))}]}})
-  });
-  if (!response.ok) return {sent: false, reason: 'provider_error'};
-  return {sent: true};
 };
 
 const sendStuiterbaasEmail = async (data, env) => {
@@ -366,7 +340,7 @@ const sendStuiterbaasEmail = async (data, env) => {
 };
 
 const lattenspecialistFields = data => {
-  const common = [['Dienst', data.service], ['Naam', data.name], ['Telefoon', data.phone], ['WhatsApp-statusupdates', data.whatsappConsent ? 'Ja, toestemming gegeven' : 'Nee'], ['E-mail', data.email], ['Ophaal- en terugbrenglocatie', data.address || 'Niet ingevuld']];
+  const common = [['Dienst', data.service], ['Naam', data.name], ['Telefoon', data.phone], ['E-mail', data.email], ['Ophaal- en terugbrenglocatie', data.address || 'Niet ingevuld']];
   const specific = data.service === 'Onderhoud' ? [
     ['Materiaal', data.material], ['Aantal', data.amount], ['Pakket', data.package], ['Logistiek', data.logistics], ['Ophaaldatum', data.pickupDate], ['Spoed', data.urgent], ['Bestemming', data.destination || 'Niet ingevuld'], ['Eerste skidag', data.skidate || 'Niet ingevuld'], ['Omstandigheden', data.conditions || 'Niet ingevuld']
   ] : [
@@ -389,12 +363,17 @@ const sendLattenspecialistEmail = async (data, reference, env) => {
 };
 
 const saveLattenspecialistReservation = async (data, reference, env) => {
-  if (!env.LATTENSPECIALIST_RESERVATIONS_KV) return;
+  const store = requireReservationStore(env);
   const now = new Date().toISOString();
   const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], currentStep: 1, expectedReady: '', note: '', serviceCode: null, waxType: 'Nog te bepalen', paymentAmount: '', paymentUrl: '', closedAt: null};
   delete stored.turnstileToken;
   delete stored.website;
-  await env.LATTENSPECIALIST_RESERVATIONS_KV.put(`reservation:${reference}`, JSON.stringify(stored));
+  stored.customerToken = createCustomerToken();
+  stored.serviceCode = await assignUniqueServiceCode(store);
+  await store.put(`reservation:${reference}`, JSON.stringify(stored));
+  await store.put(`service:${stored.serviceCode}`, reference);
+  await store.put(await customerKey(stored.customerToken), reference);
+  return stored;
 };
 
 export default {
@@ -404,6 +383,42 @@ export default {
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
     if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
+
+    if (site === 'lattenspecialist' && request.method === 'GET' && url.pathname === '/api/push/config') {
+      const configured = pushConfigured(env);
+      return json({ok: true, configured, publicKey: configured ? env.VAPID_PUBLIC_KEY : ''}, 200, origin);
+    }
+
+    if (site === 'lattenspecialist' && request.method === 'POST' && url.pathname === '/api/customer/push') {
+      const token = (request.headers.get('Authorization') || '').replace(/^Bearer /, '');
+      if (!validCustomerToken(token)) return json({message: 'Persoonlijke link ongeldig.'}, 401, origin);
+      try {
+        const store = requireReservationStore(env);
+        const reference = await store.get(await customerKey(token));
+        const record = reference ? await store.get(`reservation:${reference}`, 'json') : null;
+        if (record?.customerToken !== token) return json({message: 'Persoonlijke link niet gevonden.'}, 404, origin);
+        const body = await request.text();
+        if (body.length > 8192) return json({message: 'Te groot verzoek.'}, 413, origin);
+        const raw = JSON.parse(body);
+        return json({ok: true, ...await manageSubscription(store, reference, raw, env)}, 200, origin);
+      } catch (error) {
+        const validation = error instanceof PushValidationError || error instanceof SyntaxError;
+        return json({message: validation ? 'Meldingen konden niet worden ingesteld. Controleer de browsertoestemming of probeer opnieuw.' : 'Meldingen zijn tijdelijk niet bereikbaar.'}, validation ? 400 : 502, origin);
+      }
+    }
+
+    if (site === 'lattenspecialist' && request.method === 'GET' && url.pathname === '/api/customer/status') {
+      const token = (request.headers.get('Authorization') || '').replace(/^Bearer /, '');
+      if (!validCustomerToken(token)) return json({message: 'Persoonlijke link ongeldig.'}, 401, origin);
+      try {
+        const store = requireReservationStore(env);
+        const reference = await store.get(await customerKey(token));
+        const record = reference ? await store.get(`reservation:${reference}`, 'json') : null;
+        return record?.customerToken === token
+          ? json({ok: true, record: customerStatus(record)}, 200, origin)
+          : json({message: 'Persoonlijke link niet gevonden.'}, 404, origin);
+      } catch { return json({message: 'Je onderhoud kon niet worden opgehaald.'}, 502, origin); }
+    }
 
     if (site === 'lattenspecialist' && request.method === 'GET' && url.pathname === '/api/address') {
       try {
@@ -459,19 +474,21 @@ export default {
       const reference = clean(decodeURIComponent(url.pathname.slice('/api/admin/reservations/'.length)), 32).toUpperCase();
       if (!/^LS-\d{4}-[A-Z2-9]{6}$/.test(reference)) return json({message: 'Aanvraagcode ongeldig.'}, 400, origin);
       try {
-        const raw = await request.json();
-        const record = await updateReservation(reference, raw, env);
+          const raw = await request.json();
+          const store = requireReservationStore(env);
+          const before = await store.get(`reservation:${reference}`, 'json');
+          const record = await updateReservation(reference, raw, env);
         if (!record) return json({message: 'Aanvraag niet gevonden.'}, 404, origin);
-        const notifications = {};
-        if (raw.sendStatusEmail === true) {
-          try { await sendCustomerStatusEmail(record, env); notifications.email = {sent: true}; }
-          catch { notifications.email = {sent: false, reason: 'provider_error'}; }
-        }
-        if (raw.sendPaymentEmail === true) {
-          try { await sendPaymentEmail(record, env); notifications.paymentEmail = {sent: true}; }
-          catch (error) { notifications.paymentEmail = {sent: false, reason: error instanceof ValidationError ? error.message : 'provider_error'}; }
-        }
-        if (raw.sendWhatsApp === true) notifications.whatsapp = await sendWhatsAppTemplate(record, raw.notificationType === 'payment' ? 'payment' : 'status', env);
+        // Older installed admin apps may still request email/WhatsApp delivery.
+        // Keep their save/publish operations working without contacting customers.
+          const notifications = {app:{published:true}};
+          if (customerChanged(before, record)) {
+            try { notifications.push = await notifyCustomer(store, record, env); }
+            catch { notifications.push = {accepted:0, reason:'failed'}; }
+          } else notifications.push = {accepted:0, reason:'unchanged'};
+        if (raw.sendStatusEmail === true) notifications.email = {sent:false,reason:'app_only'};
+        if (raw.sendPaymentEmail === true) notifications.paymentEmail = {sent:false,reason:'app_only'};
+        if (raw.sendWhatsApp === true) notifications.whatsapp = {sent:false,reason:'app_only'};
         return json({ok: true, record, notifications}, 200, origin);
       } catch (error) {
         const validation = error instanceof ValidationError;
@@ -500,10 +517,8 @@ export default {
       }
       const reference = createReference();
       await sendLattenspecialistEmail(result.data, reference, env);
-      await saveLattenspecialistReservation(result.data, reference, env);
-      let confirmationSent = true;
-      try { await sendCustomerConfirmationEmail(result.data, reference, env); } catch { confirmationSent = false; }
-      return json({ok: true, reference, confirmationSent}, 202, origin);
+      const stored = await saveLattenspecialistReservation(result.data, reference, env);
+      return json({ok: true, reference, confirmationChannel:'app', customerToken: stored.customerToken}, 202, origin);
     } catch (error) {
       const validation = error instanceof ValidationError;
       return json({message: validation ? error.message : 'De aanvraag kon niet worden verstuurd.'}, validation ? 400 : 502, origin);

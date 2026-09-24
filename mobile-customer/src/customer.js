@@ -1,18 +1,25 @@
 import {Capacitor} from '@capacitor/core';
 import {App} from '@capacitor/app';
 import {Browser} from '@capacitor/browser';
-import {SITE, normalizeCode, validCode, codeFromStatusHash, codeFromAppLink, escape, today, readTrip, formatDate, renderStatus} from './domain.js';
+import {createNotifications} from './notifications.js';
+import {SITE, normalizeCode, validCode, codeFromStatusHash, codeFromAppLink, validCustomerToken, tokenFromStatusHash, tokenFromAppLink, escape, today, readTrip, formatDate, renderStatus} from './domain.js';
 
 const endpoint = String(window.LATTENSPECIALIST_BOOKING?.endpoint || '').replace(/\/$/, '');
 const $ = id => document.getElementById(id);
 const CODE_KEY = 'lattenspecialist-customer-code';
 const TRIP_KEY = 'lattenspecialist-customer-trip';
+const ACCESS_KEY = 'lattenspecialist-customer-access';
 const storage = {
   get(key) { try { return localStorage.getItem(key); } catch { return null; } },
   set(key,value) { try { localStorage.setItem(key,value); return true; } catch { return false; } },
   remove(key) { try { localStorage.removeItem(key); } catch {} }
 };
 let currentCode = '';
+let currentToken = '';
+const session = {
+  get() { try { return sessionStorage.getItem(ACCESS_KEY); } catch { return null; } },
+  set(value) { try { if (value) sessionStorage.setItem(ACCESS_KEY, value); else sessionStorage.removeItem(ACCESS_KEY); } catch {} }
+};
 let statusRequest = 0;
 let offersRequest = 0;
 let activeScreen = 'home';
@@ -23,12 +30,13 @@ let bookingPrefill = null;
 const frame = $('bookingFrame');
 const pages = ['home','onderhoud','aanvragen','aanbod','reis'];
 const fail = message => `<div class="card"><p class="error">${escape(message)}</p></div>`;
+const notifications = createNotifications({endpoint,native:Capacitor.isNativePlatform(),getToken:()=>currentToken,document,navigator,window});
 
-async function fetchResource(url, json = true) {
+async function fetchResource(url, json = true, headers = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12000);
   try {
-    const response = await fetch(url, {cache:'no-store', signal:controller.signal, credentials:'omit'});
+    const response = await fetch(url, {cache:'no-store', signal:controller.signal, credentials:'omit', headers});
     if (!response.ok) { const error = new Error('Ophalen mislukt'); error.status=response.status; throw error; }
     return json ? await response.json() : await response.text();
   } finally { clearTimeout(timer); }
@@ -38,36 +46,43 @@ function updateSavedCode() {
   const saved = normalizeCode(storage.get(CODE_KEY));
   $('savedCodeArea').hidden = !validCode(saved);
   $('savedCodeLabel').textContent = validCode(saved) ? `Bewaard op dit toestel: ${saved}` : '';
+  $('personalAccess').hidden = !currentToken;
+  $('notificationCard').hidden = !currentToken;
+  $('rememberMaintenance').hidden = !currentToken || storage.get(ACCESS_KEY) === currentToken;
+  $('personalAccessLabel').textContent = currentToken && storage.get(ACCESS_KEY) === currentToken ? 'Je onderhoud is bewaard op dit toestel.' : 'Wil je je onderhoud later meteen terugvinden?';
 }
 
-async function loadStatus(code) {
+async function loadStatus(code = currentCode, accessToken = currentToken) {
   const request = ++statusRequest;
   $('statusResult').innerHTML = '<div class="empty"><p>Je actuele voortgang wordt opgehaald…</p></div>';
   $('statusSubmit').disabled = true;
   try {
-    if (!validCode(code) || !endpoint) throw new Error('Ongeldige code');
-    const data = await fetchResource(`${endpoint}/api/status/${encodeURIComponent(code)}`);
+    if ((!validCode(code) && !validCustomerToken(accessToken)) || !endpoint) throw new Error('Ongeldige code');
+    const data = accessToken
+      ? await fetchResource(`${endpoint}/api/customer/status`, true, {Authorization:`Bearer ${accessToken}`})
+      : await fetchResource(`${endpoint}/api/status/${encodeURIComponent(code)}`);
     if (request !== statusRequest) return;
-    if (!data.record || normalizeCode(data.record.code) !== code) throw new Error('Ongeldig antwoord');
-    currentCode = code;
+    if (!data.record || !validCode(data.record.code) || (!accessToken && normalizeCode(data.record.code) !== code)) throw new Error('Ongeldig antwoord');
+    currentCode = data.record.code;
     $('statusResult').innerHTML = renderStatus(data.record);
     if ($('statusForm').hidden) $('statusIntro').textContent = 'Hier zie je de actuele voortgang van jouw onderhoud. Je hoeft niets te installeren.';
-    $('refreshStatus').addEventListener('click', () => loadStatus(currentCode));
-    if ($('rememberCode').checked) {
+    $('refreshStatus').addEventListener('click', () => loadStatus());
+    if (!accessToken && $('rememberCode').checked) {
       const ok = storage.set(CODE_KEY, code);
       $('codeFeedback').textContent = ok ? '' : 'Je toestel kon de code niet bewaren. De status is wel opgehaald.';
     } else storage.remove(CODE_KEY);
     updateSavedCode();
+    notifications.refresh();
   } catch(error) {
     if (request !== statusRequest) return;
-    const missing = error.status === 404 || error.status === 400;
-    if (missing) showCodeForm();
-    $('statusResult').innerHTML = fail(missing ? 'Deze onderhoudscode is niet gevonden. Controleer de code uit je bericht; je aanvraagcode is een andere code.' : 'Je actuele voortgang kon niet worden opgehaald. Controleer je internetverbinding en probeer het opnieuw.');
+    const missing = [400,401,404].includes(error.status);
+    if (missing && !accessToken) showCodeForm();
+    $('statusResult').innerHTML = fail(missing ? (accessToken ? 'Deze persoonlijke link werkt niet meer. Open je nieuwste bericht of vraag ons om een nieuwe link.' : 'Deze onderhoudscode is niet gevonden. Controleer de code uit je bericht; je aanvraagcode is een andere code.') : 'Je actuele voortgang kon niet worden opgehaald. Controleer je internetverbinding en probeer het opnieuw.');
     if (!missing) {
       $('statusIntro').textContent = 'Je persoonlijke link is geopend. De voortgang is tijdelijk niet bereikbaar.';
       const retry = document.createElement('button');
       retry.type = 'button'; retry.className = 'button dark'; retry.textContent = 'Opnieuw proberen';
-      retry.addEventListener('click', () => loadStatus(code));
+      retry.addEventListener('click', () => loadStatus(code, accessToken));
       $('statusResult').append(retry);
     }
   } finally { if (request === statusRequest) $('statusSubmit').disabled=false; }
@@ -80,6 +95,7 @@ function showCodeForm() {
 }
 function openPersonalStatus(code) {
   ++statusRequest;
+  currentToken = ''; session.set(''); storage.remove(ACCESS_KEY);
   currentCode = code;
   $('serviceCode').value = code;
   $('rememberCode').checked = storage.get(CODE_KEY) === code;
@@ -93,7 +109,40 @@ function openPersonalStatus(code) {
   // Remove the personal code from browser history and subsequent navigation.
   history.replaceState(null, '', `${location.pathname}${location.search}#onderhoud`);
 }
+function openCustomerStatus(accessToken) {
+  ++statusRequest;
+  currentToken = accessToken; currentCode = '';
+  session.set(accessToken);
+  if (storage.get(ACCESS_KEY) !== accessToken) storage.remove(ACCESS_KEY);
+  storage.remove(CODE_KEY);
+  $('rememberCode').checked = false;
+  $('serviceCode').value = '';
+  $('codeFeedback').textContent = '';
+  $('statusResult').innerHTML = '';
+  $('statusForm').hidden = true;
+  $('changeCode').hidden = true;
+  $('statusIntro').textContent = 'Jouw onderhoud, planning en betaalverzoek bij elkaar.';
+  history.replaceState(null, '', `${location.pathname}${location.search}#onderhoud`);
+  updateSavedCode();
+}
 $('changeCode').addEventListener('click', () => { showCodeForm(); $('serviceCode').focus(); });
+$('rememberMaintenance').addEventListener('click', () => {
+  if (!currentToken) return;
+  const ok = storage.set(ACCESS_KEY, currentToken);
+  updateSavedCode();
+  if (!ok) $('personalAccessLabel').textContent = 'Bewaren lukt niet op dit toestel. Open later opnieuw de link uit je bericht.';
+});
+$('forgetMaintenance').addEventListener('click', async () => {
+  const tokenToForget = currentToken;
+  if (notifications.supported && !await notifications.remove()) return;
+  if (tokenToForget !== currentToken) return;
+  ++statusRequest;
+  currentToken = ''; currentCode = ''; session.set(''); storage.remove(ACCESS_KEY); storage.remove(CODE_KEY);
+  $('serviceCode').value = ''; $('rememberCode').checked = false; $('statusSubmit').disabled = false;
+  $('statusResult').innerHTML = ''; showCodeForm(); updateSavedCode();
+  notifications.refresh();
+  $('codeFeedback').textContent = 'Je onderhoud is van dit toestel verwijderd. Open je persoonlijke link om het weer te bekijken.';
+});
 
 $('statusForm').addEventListener('submit', event => {
   event.preventDefault();
@@ -108,6 +157,7 @@ $('statusForm').addEventListener('submit', event => {
     return;
   }
   $('codeFeedback').textContent='';
+  currentToken=''; session.set(''); storage.remove(ACCESS_KEY);
   currentCode=code;
   if(storage.get(CODE_KEY)!==code){storage.remove(CODE_KEY);updateSavedCode();}
   loadStatus(code);
@@ -135,6 +185,7 @@ async function loadDates() {
 
 function loadBooking() {
   clearTimeout(bookingTimer);
+  $('openBookedMaintenance').hidden = true;
   bookingStarted=true; bookingReady=false; frame.hidden=false;
   $('bookingLoadStatus').textContent='Het aanvraagformulier wordt geladen…';
   frame.src=`${SITE}/?app=klant`;
@@ -159,12 +210,19 @@ window.addEventListener('message', event => {
   if (event.data.type === 'lattenspecialist:booked' && /^LS-\d{4}-[A-Z2-9]{6}$/.test(event.data.reference || '')) {
     $('bookingLoadStatus').textContent=`Aanvraag ontvangen: ${event.data.reference}. De planning wordt persoonlijk bevestigd.`;
     $('bookingLoadStatus').scrollIntoView({block:'center'});
+    if (validCustomerToken(event.data.customerToken)) {
+      $('openBookedMaintenance').hidden = false;
+      $('openBookedMaintenance').onclick = () => { openCustomerStatus(event.data.customerToken); navigate(); };
+    }
   }
   if (event.data.type === 'lattenspecialist:external') {
     try {
       const url = new URL(event.data.url);
       if (url.origin === SITE && ['/privacy.html','/service.html'].includes(url.pathname)) openExternal(url.href);
     } catch {}
+  }
+  if (event.data.type === 'lattenspecialist:open-maintenance' && validCustomerToken(event.data.customerToken)) {
+    openCustomerStatus(event.data.customerToken); navigate();
   }
 });
 $('reloadBooking').addEventListener('click', loadBooking);
@@ -242,11 +300,14 @@ document.addEventListener('click', event => {
 });
 function navigate(focus = true) {
   let hash=location.hash.slice(1);
-  if (hash.toLowerCase().startsWith('status=')) {
+  if (hash.toLowerCase().startsWith('status=') || hash.toLowerCase().startsWith('klant=')) {
     const code=codeFromStatusHash(location.hash);
-    if (code) openPersonalStatus(code);
+    const accessToken=tokenFromStatusHash(location.hash);
+    if (accessToken) openCustomerStatus(accessToken);
+    else if (code) openPersonalStatus(code);
     else {
       ++statusRequest; currentCode=''; $('statusSubmit').disabled=false;
+      currentToken=''; session.set(''); storage.remove(ACCESS_KEY); storage.remove(CODE_KEY); updateSavedCode();
       $('serviceCode').value=''; $('statusResult').innerHTML=''; showCodeForm();
       $('codeFeedback').textContent='Deze persoonlijke link is niet geldig. Gebruik de onderhoudscode uit je bericht of vraag ons om een nieuwe link.';
       history.replaceState(null, '', `${location.pathname}${location.search}#onderhoud`);
@@ -261,27 +322,36 @@ function navigate(focus = true) {
   }
   if(focus){window.scrollTo(0,0); $(activeScreen).querySelector('h1')?.focus({preventScroll:true});}
   if(activeScreen==='home')loadDates();
-  if(activeScreen==='onderhoud' && currentCode)loadStatus(currentCode);
+  if(activeScreen==='onderhoud' && (currentCode || currentToken))loadStatus();
   if(activeScreen==='aanvragen'){if(!bookingStarted)loadBooking();else sendPrefill();}
   if(activeScreen==='aanbod')loadOffers();
 }
 window.addEventListener('hashchange',() => navigate());
 const savedCode=normalizeCode(storage.get(CODE_KEY));
 if(validCode(savedCode)){currentCode=savedCode;$('serviceCode').value=savedCode;$('rememberCode').checked=true;}
+const savedAccess = session.get() || storage.get(ACCESS_KEY);
+if (validCustomerToken(savedAccess) && !/^#(?:status|klant)=/i.test(location.hash)) {
+  const originalHash = location.hash;
+  openCustomerStatus(savedAccess);
+  if (originalHash && originalHash !== '#home') history.replaceState(null, '', `${location.pathname}${location.search}${originalHash}`);
+}
 updateSavedCode();
 function updateConnection(){ $('offlineNotice').hidden=navigator.onLine; if(!navigator.onLine)$('offlineNotice').textContent='Je bent offline. Voor actuele voortgang, aanbod en aanvragen is internet nodig.'; }
-window.addEventListener('online',() => {updateConnection(); if(activeScreen==='onderhoud'&&currentCode)loadStatus(currentCode);if(activeScreen==='home')loadDates();});
-window.addEventListener('offline',updateConnection);
-document.addEventListener('visibilitychange',() => {if(!document.hidden&&activeScreen==='onderhoud'&&currentCode)loadStatus(currentCode);});
+window.addEventListener('online',() => {updateConnection(); if(activeScreen==='onderhoud'&&(currentCode||currentToken))loadStatus();if(activeScreen==='home')loadDates();});
+window.addEventListener('offline',() => {updateConnection(); if(activeScreen==='onderhoud'&&(currentCode||currentToken)){++statusRequest;$('statusSubmit').disabled=false;$('statusResult').innerHTML=fail('Je bent offline. Maak verbinding om je actuele voortgang en betaalverzoek te bekijken.');}});
+document.addEventListener('visibilitychange',() => {if(!document.hidden&&activeScreen==='onderhoud'&&(currentCode||currentToken))loadStatus();});
 if(Capacitor.isNativePlatform()) {
   const openAppLink = url => {
     const code=codeFromAppLink(url);
-    if (!code) return;
-    openPersonalStatus(code); navigate();
+    const accessToken=tokenFromAppLink(url);
+    if (accessToken) openCustomerStatus(accessToken);
+    else if (code) openPersonalStatus(code);
+    else return;
+    navigate();
   };
   App.addListener('appUrlOpen', ({url}) => openAppLink(url));
   App.getLaunchUrl().then(result => { if(result?.url)openAppLink(result.url); }).catch(() => {});
   App.addListener('backButton',() => { if(activeScreen!=='home')location.hash='home';else App.exitApp(); });
-  App.addListener('appStateChange',({isActive}) => {if(isActive&&activeScreen==='onderhoud'&&currentCode)loadStatus(currentCode);});
+  App.addListener('appStateChange',({isActive}) => {if(isActive&&activeScreen==='onderhoud'&&(currentCode||currentToken))loadStatus();});
 }
 updateConnection();navigate(false);

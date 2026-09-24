@@ -626,12 +626,148 @@
     web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.BrowserWeb())
   });
 
+  // src/notifications.js
+  function createNotifications({ endpoint: endpoint2, native, getToken, document: document2, navigator: navigator2, window: window2 }) {
+    const card = document2.getElementById("notificationCard");
+    const message = document2.getElementById("notificationMessage");
+    const enable = document2.getElementById("enableNotifications");
+    const disable = document2.getElementById("disableNotifications");
+    const supported = !native && "Notification" in window2 && "PushManager" in window2 && Boolean(navigator2.serviceWorker);
+    let config, registration, generation = 0, busy = false;
+    const fetchTimed = async (url, options) => {
+      const controller = new window2.AbortController();
+      const timer = window2.setTimeout(() => controller.abort(), 12e3);
+      try {
+        return await window2.fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        window2.clearTimeout(timer);
+      }
+    };
+    const api = async (token, body) => {
+      const response = await fetchTimed(`${endpoint2}/api/customer/push`, { method: "POST", cache: "no-store", credentials: "omit", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+      if (!response.ok) throw new Error("Meldingen konden niet worden opgeslagen. Probeer het opnieuw.");
+      return response.json();
+    };
+    const state = (text, canEnable = false, canDisable = false) => {
+      message.textContent = text;
+      enable.hidden = !canEnable;
+      disable.hidden = !canDisable;
+      enable.disabled = disable.disabled = busy;
+    };
+    const getRegistration = async () => {
+      if (registration) return registration;
+      registration = await navigator2.serviceWorker.getRegistration("/");
+      if (!(registration == null ? void 0 : registration.active)) throw new Error("Laad de app opnieuw om meldingen in te stellen.");
+      return registration;
+    };
+    async function refresh() {
+      const token = getToken(), version = ++generation;
+      card.hidden = !token;
+      if (!token || busy) return;
+      if (!supported) {
+        state(native ? "Telefoonmeldingen zijn nog niet beschikbaar in deze Android-testapp. Gebruik hiervoor de webapp op je beginscherm." : "Op iPhone: open deze app in Safari en kies Deel \u2192 Zet op beginscherm. Open de app daarna vanaf je beginscherm om meldingen aan te zetten. Gebruik op andere toestellen een browser die appmeldingen ondersteunt.");
+        return;
+      }
+      state("Meldingen controleren\u2026");
+      try {
+        const response = await fetchTimed(`${endpoint2}/api/push/config`, { cache: "no-store", credentials: "omit" });
+        if (!response.ok) throw new Error("Meldingen zijn tijdelijk niet bereikbaar.");
+        const settings = await response.json();
+        if (version !== generation || token !== getToken()) return;
+        config = settings;
+        if (!config.configured) return state("Telefoonmeldingen worden nog ingesteld. Je actuele voortgang staat altijd hier.");
+        const reg = await getRegistration();
+        const subscription = await reg.pushManager.getSubscription();
+        const result = subscription ? await api(token, { action: "status", endpoint: subscription.endpoint }) : { subscribed: false };
+        if (version !== generation || token !== getToken()) return;
+        if (window2.Notification.permission === "denied") return state("Meldingen zijn geblokkeerd. Je kunt ze toestaan via de instellingen van je browser of telefoon.", false, result.subscribed);
+        state(result.subscribed ? "Meldingen staan aan voor dit onderhoud op dit toestel." : "Ontvang een melding bij een nieuwe status of betaalverzoek. Je kiest zelf of je dit wilt.", !result.subscribed, result.subscribed);
+      } catch (error) {
+        if (version === generation && token === getToken()) state(error.message);
+      }
+    }
+    enable.addEventListener("click", async () => {
+      const token = getToken();
+      if (!token || !(config == null ? void 0 : config.configured) || busy) return;
+      const permission = window2.Notification.requestPermission();
+      busy = true;
+      ++generation;
+      state("Meldingen instellen\u2026");
+      try {
+        if (await permission !== "granted") throw new Error("Meldingen staan uit. Je kunt je voortgang hier blijven bekijken.");
+        if (token !== getToken()) return;
+        const reg = await getRegistration();
+        const key = Uint8Array.from(window2.atob(config.publicKey.replace(/-/g, "+").replace(/_/g, "/")), (char) => char.charCodeAt(0));
+        const subscription = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+        if (token !== getToken()) return;
+        await api(token, { action: "subscribe", subscription: subscription.toJSON() });
+        if (token === getToken()) state("Meldingen staan aan voor dit onderhoud op dit toestel.", false, true);
+      } catch (error) {
+        if (token === getToken()) state(error.message, true);
+      } finally {
+        busy = false;
+        enable.disabled = disable.disabled = false;
+      }
+    });
+    async function remove(token = getToken()) {
+      var _a2;
+      if (!supported || !token) return true;
+      try {
+        const reg = await getRegistration();
+        const subscription = await reg.pushManager.getSubscription();
+        if (subscription) await api(token, { action: "unsubscribe", endpoint: subscription.endpoint });
+        const notifications2 = await ((_a2 = reg.getNotifications) == null ? void 0 : _a2.call(reg)) || [];
+        notifications2.filter((item) => {
+          var _a3, _b;
+          return (_b = (_a3 = item.data) == null ? void 0 : _a3.url) == null ? void 0 : _b.endsWith(`#klant=${token}`);
+        }).forEach((item) => item.close());
+        return true;
+      } catch {
+        state("Uitzetten is nog niet gelukt. Controleer je verbinding en probeer opnieuw.", false, true);
+        return false;
+      }
+    }
+    disable.addEventListener("click", async () => {
+      if (busy) return;
+      const token = getToken();
+      busy = true;
+      state("Meldingen uitzetten\u2026");
+      const removed = await remove(token);
+      busy = false;
+      if (removed && token === getToken()) state("Meldingen zijn uitgezet voor dit onderhoud op dit toestel.", true);
+      enable.disabled = disable.disabled = false;
+    });
+    return { refresh, remove, supported };
+  }
+
   // src/domain.js
   var SITE = true ? window.location.origin : "https://lattenspecialist.nl";
   var STEPS = ["Aanvraag ontvangen", "Ophalen of brengen gepland", "Materiaal ontvangen", "Inspectie uitgevoerd", "Onderhoud gestart", "Wax koelt af", "Finish en eindcontrole", "Klaar voor ophalen of terugbrengen"];
   var CONDITIONS = ["Weet ik nog niet", "Zacht / warm", "Rond het vriespunt", "Koud", "Kunstsneeuw / hard / ijzig"];
   var normalizeCode = (value) => String(value || "").trim().toUpperCase().replace(/\s+/g, "");
   var validCode = (value) => /^LS-[A-Z2-9]{6}$/.test(value);
+  var validCustomerToken = (value) => /^[a-f0-9]{64}$/.test(value || "");
+  function tokenFromStatusHash(hash) {
+    const match = /^#klant=([a-f0-9]{64})$/.exec(String(hash));
+    return match ? match[1] : "";
+  }
+  function tokenFromAppLink(value) {
+    try {
+      const url = new URL(value);
+      if (url.origin !== "https://lattenspecialist.nl" || url.pathname !== "/app.html" || url.search || url.username || url.password) return "";
+      return tokenFromStatusHash(url.hash);
+    } catch {
+      return "";
+    }
+  }
+  function safePaymentUrl(value) {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password ? url.href : "";
+    } catch {
+      return "";
+    }
+  }
   function codeFromStatusHash(hash) {
     try {
       const match = /^#status=(LS-[A-Z2-9]{6})$/i.exec(decodeURIComponent(String(hash)));
@@ -671,9 +807,30 @@
     return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric" }).format(date);
   }
   function renderStatus(record) {
-    const step = Math.max(1, Math.min(STEPS.length, Number(record.currentStep) || 1));
-    const progress = record.closed ? '<p class="status-note">Deze aanvraag is afgemeld. Neem bij vragen contact met ons op.</p>' : `<ol class="status-steps">${STEPS.map((label, i) => `<li class="${i + 1 < step ? "done" : i + 1 === step ? "current" : ""}"><span>${i + 1 < step ? "\u2713" : i + 1}</span>${escape2(label)}</li>`).join("")}</ol>`;
-    return `<article class="card"><div class="status-label"><span>${escape2(record.code)}</span><span>${record.closed ? "Afgemeld" : `Stap ${step} van ${STEPS.length}`}</span></div><h2>${escape2(record.material || "Jouw materiaal")}</h2><p>${escape2(record.status || STEPS[step - 1])}</p>${progress}<dl class="status-details"><div><dt>Pakket</dt><dd>${escape2(record.package || "In overleg")}</dd></div><div><dt>Verwacht klaar</dt><dd>${escape2(record.expectedReady ? formatDate(record.expectedReady) : "Nog niet gepland")}</dd></div><div><dt>Gekozen wax</dt><dd>${escape2(record.waxType || "Nog te bepalen")}</dd></div><div><dt>Laatst bijgewerkt</dt><dd>${escape2(record.updatedAt ? formatDate(record.updatedAt) : "Nog niet bekend")}</dd></div></dl>${record.note ? `<p class="status-note">${escape2(record.note)}</p>` : ""}<button class="text-button" type="button" id="refreshStatus">Voortgang vernieuwen</button></article>`;
+    var _a2, _b, _c, _d;
+    const step = Math.max(1, Math.min(STEPS.length, Math.trunc(Number(record.currentStep)) || 1));
+    const next = record.closed ? "Deze aanvraag is afgemeld. Neem bij vragen contact met ons op." : step === 1 ? "We nemen contact met je op om de planning te bevestigen. Je aanvraag is nog geen definitieve afspraak." : step === 2 ? "Houd je materiaal klaar voor de afgesproken ophaal- of brengafspraak." : step === 8 ? "Je materiaal is klaar. We stemmen het ophalen of terugbrengen met je af." : "Je materiaal is bij ons in behandeling. Je hoeft nu niets te doen; hier zie je de laatste stand.";
+    const progress = record.closed ? "" : `<details class="progress-details"><summary>Bekijk alle onderhoudsstappen</summary><ol class="status-steps">${STEPS.map((label, i) => `<li class="${i + 1 < step ? "done" : i + 1 === step ? "current" : ""}"${i + 1 === step ? ' aria-current="step"' : ""}><span aria-hidden="true">${i + 1 < step ? "\u2713" : i + 1}</span>${escape2(label)}</li>`).join("")}</ol></details>`;
+    const waxChosen = record.waxType && record.waxType !== "Nog te bepalen";
+    let payment;
+    const amount = String(((_a2 = record.payment) == null ? void 0 : _a2.amount) || "");
+    const validAmount = /^\d{1,4}(\.\d{1,2})?$/.test(amount) && Number(amount) > 0;
+    const formatted = validAmount ? new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(Number(amount)) : "";
+    const payUrl = safePaymentUrl((_b = record.payment) == null ? void 0 : _b.url);
+    if (((_c = record.payment) == null ? void 0 : _c.state) === "paid" && validAmount) {
+      payment = `<span class="tag">Betaling ontvangen</span><h2>Bedankt, je betaling is verwerkt</h2><p class="payment-amount">${escape2(formatted)}</p><p>De Lattenspecialist heeft de ontvangst geregistreerd.</p>`;
+    } else if (!record.closed && ((_d = record.payment) == null ? void 0 : _d.state) === "open" && validAmount && payUrl) {
+      payment = `<span class="tag">Betaalverzoek</span><h2>Je betaalverzoek staat klaar</h2><p class="payment-amount">${escape2(formatted)}</p><a class="button gold" id="customerPayment" href="${escape2(payUrl)}" target="_blank" rel="noopener noreferrer">Betaal ${escape2(formatted)} <span aria-hidden="true">\u2197</span></a><p class="muted">Je betaalt via ${escape2(new URL(payUrl).hostname)}. Al betaald? We werken dit bij zodra we je betaling hebben gecontroleerd.</p>`;
+    } else {
+      payment = `<span class="tag">Betaling</span><h2>${record.closed ? "Geen actief betaalverzoek" : record.payment ? "Nog geen betaalverzoek" : "Je betaalverzoek bekijken"}</h2><p>${record.closed ? "Neem bij een vraag over betaling contact met ons op." : record.payment ? "Zodra je betaalverzoek klaarstaat, vind je het hier." : "Open de persoonlijke link uit je nieuwste bericht om je betaalverzoek te bekijken."}</p>`;
+    }
+    return `<div class="maintenance-overview">
+    <article class="card maintenance-summary"><div class="status-label"><span>${escape2(record.code)}</span><span>${record.closed ? "Afgemeld" : `Stap ${step} van ${STEPS.length}`}</span></div><h2>${escape2(record.closed ? "Aanvraag afgemeld" : record.status || STEPS[step - 1])}</h2><p>${escape2(record.material || "Jouw materiaal")} \xB7 ${escape2(record.package || "In overleg")}</p><div class="next-step"><h3>Wat gebeurt er nu?</h3><p>${next}</p></div></article>
+    <dl class="status-details"><div><dt>Verwacht klaar</dt><dd>${escape2(record.expectedReady ? formatDate(record.expectedReady) : "We stemmen dit met je af")}</dd></div><div><dt>Laatst bijgewerkt</dt><dd>${escape2(record.updatedAt && !Number.isNaN(new Date(record.updatedAt).getTime()) ? new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Amsterdam" }).format(new Date(record.updatedAt)) : "Nog niet bekend")}</dd></div>${record.pickupDate ? `<div><dt>Aangevraagde ophaaldatum</dt><dd>${escape2(record.pickupDate === "In overleg" ? "In overleg" : formatDate(record.pickupDate))}</dd></div>` : ""}</dl>
+    ${record.note ? `<article class="card"><span class="eyebrow">Bericht van De Lattenspecialist</span><p class="status-note">${escape2(record.note)}</p></article>` : ""}
+    <div class="maintenance-grid"><article class="card wax-card"><span class="tag">Wax voor jouw beurt</span><h2>${escape2(waxChosen ? record.waxType : "Waxkeuze volgt")}</h2><p>${waxChosen ? "Dit is de wax die voor deze onderhoudsbeurt is geselecteerd." : "We kiezen de wax bij het onderhoud. Je bestemming, reisdatum en verwachte sneeuwcondities helpen daarbij."}</p></article><article class="card payment-card">${payment}</article></div>
+    ${progress}<div class="status-actions"><button class="text-button" type="button" id="refreshStatus">Voortgang vernieuwen</button><a class="text-link" href="https://wa.me/31618327132">Vraag over je onderhoud? \u2192</a></div>
+  </div>`;
   }
 
   // src/customer.js
@@ -682,6 +839,7 @@
   var $ = (id) => document.getElementById(id);
   var CODE_KEY = "lattenspecialist-customer-code";
   var TRIP_KEY = "lattenspecialist-customer-trip";
+  var ACCESS_KEY = "lattenspecialist-customer-access";
   var storage = {
     get(key) {
       try {
@@ -706,6 +864,23 @@
     }
   };
   var currentCode = "";
+  var currentToken = "";
+  var session = {
+    get() {
+      try {
+        return sessionStorage.getItem(ACCESS_KEY);
+      } catch {
+        return null;
+      }
+    },
+    set(value) {
+      try {
+        if (value) sessionStorage.setItem(ACCESS_KEY, value);
+        else sessionStorage.removeItem(ACCESS_KEY);
+      } catch {
+      }
+    }
+  };
   var statusRequest = 0;
   var offersRequest = 0;
   var activeScreen = "home";
@@ -716,11 +891,12 @@
   var frame = $("bookingFrame");
   var pages = ["home", "onderhoud", "aanvragen", "aanbod", "reis"];
   var fail = (message) => `<div class="card"><p class="error">${escape2(message)}</p></div>`;
-  async function fetchResource(url, json = true) {
+  var notifications = createNotifications({ endpoint, native: Capacitor.isNativePlatform(), getToken: () => currentToken, document, navigator, window });
+  async function fetchResource(url, json = true, headers = {}) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12e3);
     try {
-      const response = await fetch(url, { cache: "no-store", signal: controller.signal, credentials: "omit" });
+      const response = await fetch(url, { cache: "no-store", signal: controller.signal, credentials: "omit", headers });
       if (!response.ok) {
         const error = new Error("Ophalen mislukt");
         error.status = response.status;
@@ -735,37 +911,42 @@
     const saved = normalizeCode(storage.get(CODE_KEY));
     $("savedCodeArea").hidden = !validCode(saved);
     $("savedCodeLabel").textContent = validCode(saved) ? `Bewaard op dit toestel: ${saved}` : "";
+    $("personalAccess").hidden = !currentToken;
+    $("notificationCard").hidden = !currentToken;
+    $("rememberMaintenance").hidden = !currentToken || storage.get(ACCESS_KEY) === currentToken;
+    $("personalAccessLabel").textContent = currentToken && storage.get(ACCESS_KEY) === currentToken ? "Je onderhoud is bewaard op dit toestel." : "Wil je je onderhoud later meteen terugvinden?";
   }
-  async function loadStatus(code) {
+  async function loadStatus(code = currentCode, accessToken = currentToken) {
     const request = ++statusRequest;
     $("statusResult").innerHTML = '<div class="empty"><p>Je actuele voortgang wordt opgehaald\u2026</p></div>';
     $("statusSubmit").disabled = true;
     try {
-      if (!validCode(code) || !endpoint) throw new Error("Ongeldige code");
-      const data = await fetchResource(`${endpoint}/api/status/${encodeURIComponent(code)}`);
+      if (!validCode(code) && !validCustomerToken(accessToken) || !endpoint) throw new Error("Ongeldige code");
+      const data = accessToken ? await fetchResource(`${endpoint}/api/customer/status`, true, { Authorization: `Bearer ${accessToken}` }) : await fetchResource(`${endpoint}/api/status/${encodeURIComponent(code)}`);
       if (request !== statusRequest) return;
-      if (!data.record || normalizeCode(data.record.code) !== code) throw new Error("Ongeldig antwoord");
-      currentCode = code;
+      if (!data.record || !validCode(data.record.code) || !accessToken && normalizeCode(data.record.code) !== code) throw new Error("Ongeldig antwoord");
+      currentCode = data.record.code;
       $("statusResult").innerHTML = renderStatus(data.record);
       if ($("statusForm").hidden) $("statusIntro").textContent = "Hier zie je de actuele voortgang van jouw onderhoud. Je hoeft niets te installeren.";
-      $("refreshStatus").addEventListener("click", () => loadStatus(currentCode));
-      if ($("rememberCode").checked) {
+      $("refreshStatus").addEventListener("click", () => loadStatus());
+      if (!accessToken && $("rememberCode").checked) {
         const ok = storage.set(CODE_KEY, code);
         $("codeFeedback").textContent = ok ? "" : "Je toestel kon de code niet bewaren. De status is wel opgehaald.";
       } else storage.remove(CODE_KEY);
       updateSavedCode();
+      notifications.refresh();
     } catch (error) {
       if (request !== statusRequest) return;
-      const missing = error.status === 404 || error.status === 400;
-      if (missing) showCodeForm();
-      $("statusResult").innerHTML = fail(missing ? "Deze onderhoudscode is niet gevonden. Controleer de code uit je bericht; je aanvraagcode is een andere code." : "Je actuele voortgang kon niet worden opgehaald. Controleer je internetverbinding en probeer het opnieuw.");
+      const missing = [400, 401, 404].includes(error.status);
+      if (missing && !accessToken) showCodeForm();
+      $("statusResult").innerHTML = fail(missing ? accessToken ? "Deze persoonlijke link werkt niet meer. Open je nieuwste bericht of vraag ons om een nieuwe link." : "Deze onderhoudscode is niet gevonden. Controleer de code uit je bericht; je aanvraagcode is een andere code." : "Je actuele voortgang kon niet worden opgehaald. Controleer je internetverbinding en probeer het opnieuw.");
       if (!missing) {
         $("statusIntro").textContent = "Je persoonlijke link is geopend. De voortgang is tijdelijk niet bereikbaar.";
         const retry = document.createElement("button");
         retry.type = "button";
         retry.className = "button dark";
         retry.textContent = "Opnieuw proberen";
-        retry.addEventListener("click", () => loadStatus(code));
+        retry.addEventListener("click", () => loadStatus(code, accessToken));
         $("statusResult").append(retry);
       }
     } finally {
@@ -779,6 +960,9 @@
   }
   function openPersonalStatus(code) {
     ++statusRequest;
+    currentToken = "";
+    session.set("");
+    storage.remove(ACCESS_KEY);
     currentCode = code;
     $("serviceCode").value = code;
     $("rememberCode").checked = storage.get(CODE_KEY) === code;
@@ -791,9 +975,51 @@
     $("statusIntro").textContent = "Je persoonlijke voortgang wordt opgehaald. Je hoeft niets te installeren.";
     history.replaceState(null, "", `${location.pathname}${location.search}#onderhoud`);
   }
+  function openCustomerStatus(accessToken) {
+    ++statusRequest;
+    currentToken = accessToken;
+    currentCode = "";
+    session.set(accessToken);
+    if (storage.get(ACCESS_KEY) !== accessToken) storage.remove(ACCESS_KEY);
+    storage.remove(CODE_KEY);
+    $("rememberCode").checked = false;
+    $("serviceCode").value = "";
+    $("codeFeedback").textContent = "";
+    $("statusResult").innerHTML = "";
+    $("statusForm").hidden = true;
+    $("changeCode").hidden = true;
+    $("statusIntro").textContent = "Jouw onderhoud, planning en betaalverzoek bij elkaar.";
+    history.replaceState(null, "", `${location.pathname}${location.search}#onderhoud`);
+    updateSavedCode();
+  }
   $("changeCode").addEventListener("click", () => {
     showCodeForm();
     $("serviceCode").focus();
+  });
+  $("rememberMaintenance").addEventListener("click", () => {
+    if (!currentToken) return;
+    const ok = storage.set(ACCESS_KEY, currentToken);
+    updateSavedCode();
+    if (!ok) $("personalAccessLabel").textContent = "Bewaren lukt niet op dit toestel. Open later opnieuw de link uit je bericht.";
+  });
+  $("forgetMaintenance").addEventListener("click", async () => {
+    const tokenToForget = currentToken;
+    if (notifications.supported && !await notifications.remove()) return;
+    if (tokenToForget !== currentToken) return;
+    ++statusRequest;
+    currentToken = "";
+    currentCode = "";
+    session.set("");
+    storage.remove(ACCESS_KEY);
+    storage.remove(CODE_KEY);
+    $("serviceCode").value = "";
+    $("rememberCode").checked = false;
+    $("statusSubmit").disabled = false;
+    $("statusResult").innerHTML = "";
+    showCodeForm();
+    updateSavedCode();
+    notifications.refresh();
+    $("codeFeedback").textContent = "Je onderhoud is van dit toestel verwijderd. Open je persoonlijke link om het weer te bekijken.";
   });
   $("statusForm").addEventListener("submit", (event) => {
     event.preventDefault();
@@ -808,6 +1034,9 @@
       return;
     }
     $("codeFeedback").textContent = "";
+    currentToken = "";
+    session.set("");
+    storage.remove(ACCESS_KEY);
     currentCode = code;
     if (storage.get(CODE_KEY) !== code) {
       storage.remove(CODE_KEY);
@@ -844,6 +1073,7 @@
   }
   function loadBooking() {
     clearTimeout(bookingTimer);
+    $("openBookedMaintenance").hidden = true;
     bookingStarted = true;
     bookingReady = false;
     frame.hidden = false;
@@ -876,6 +1106,13 @@
     if (event.data.type === "lattenspecialist:booked" && /^LS-\d{4}-[A-Z2-9]{6}$/.test(event.data.reference || "")) {
       $("bookingLoadStatus").textContent = `Aanvraag ontvangen: ${event.data.reference}. De planning wordt persoonlijk bevestigd.`;
       $("bookingLoadStatus").scrollIntoView({ block: "center" });
+      if (validCustomerToken(event.data.customerToken)) {
+        $("openBookedMaintenance").hidden = false;
+        $("openBookedMaintenance").onclick = () => {
+          openCustomerStatus(event.data.customerToken);
+          navigate();
+        };
+      }
     }
     if (event.data.type === "lattenspecialist:external") {
       try {
@@ -883,6 +1120,10 @@
         if (url.origin === SITE && ["/privacy.html", "/service.html"].includes(url.pathname)) openExternal(url.href);
       } catch {
       }
+    }
+    if (event.data.type === "lattenspecialist:open-maintenance" && validCustomerToken(event.data.customerToken)) {
+      openCustomerStatus(event.data.customerToken);
+      navigate();
     }
   });
   $("reloadBooking").addEventListener("click", loadBooking);
@@ -988,13 +1229,20 @@
   function navigate(focus = true) {
     var _a2;
     let hash = location.hash.slice(1);
-    if (hash.toLowerCase().startsWith("status=")) {
+    if (hash.toLowerCase().startsWith("status=") || hash.toLowerCase().startsWith("klant=")) {
       const code = codeFromStatusHash(location.hash);
-      if (code) openPersonalStatus(code);
+      const accessToken = tokenFromStatusHash(location.hash);
+      if (accessToken) openCustomerStatus(accessToken);
+      else if (code) openPersonalStatus(code);
       else {
         ++statusRequest;
         currentCode = "";
         $("statusSubmit").disabled = false;
+        currentToken = "";
+        session.set("");
+        storage.remove(ACCESS_KEY);
+        storage.remove(CODE_KEY);
+        updateSavedCode();
         $("serviceCode").value = "";
         $("statusResult").innerHTML = "";
         showCodeForm();
@@ -1015,7 +1263,7 @@
       (_a2 = $(activeScreen).querySelector("h1")) == null ? void 0 : _a2.focus({ preventScroll: true });
     }
     if (activeScreen === "home") loadDates();
-    if (activeScreen === "onderhoud" && currentCode) loadStatus(currentCode);
+    if (activeScreen === "onderhoud" && (currentCode || currentToken)) loadStatus();
     if (activeScreen === "aanvragen") {
       if (!bookingStarted) loadBooking();
       else sendPrefill();
@@ -1029,6 +1277,12 @@
     $("serviceCode").value = savedCode;
     $("rememberCode").checked = true;
   }
+  var savedAccess = session.get() || storage.get(ACCESS_KEY);
+  if (validCustomerToken(savedAccess) && !/^#(?:status|klant)=/i.test(location.hash)) {
+    const originalHash = location.hash;
+    openCustomerStatus(savedAccess);
+    if (originalHash && originalHash !== "#home") history.replaceState(null, "", `${location.pathname}${location.search}${originalHash}`);
+  }
   updateSavedCode();
   function updateConnection() {
     $("offlineNotice").hidden = navigator.onLine;
@@ -1036,18 +1290,27 @@
   }
   window.addEventListener("online", () => {
     updateConnection();
-    if (activeScreen === "onderhoud" && currentCode) loadStatus(currentCode);
+    if (activeScreen === "onderhoud" && (currentCode || currentToken)) loadStatus();
     if (activeScreen === "home") loadDates();
   });
-  window.addEventListener("offline", updateConnection);
+  window.addEventListener("offline", () => {
+    updateConnection();
+    if (activeScreen === "onderhoud" && (currentCode || currentToken)) {
+      ++statusRequest;
+      $("statusSubmit").disabled = false;
+      $("statusResult").innerHTML = fail("Je bent offline. Maak verbinding om je actuele voortgang en betaalverzoek te bekijken.");
+    }
+  });
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && activeScreen === "onderhoud" && currentCode) loadStatus(currentCode);
+    if (!document.hidden && activeScreen === "onderhoud" && (currentCode || currentToken)) loadStatus();
   });
   if (Capacitor.isNativePlatform()) {
     const openAppLink = (url) => {
       const code = codeFromAppLink(url);
-      if (!code) return;
-      openPersonalStatus(code);
+      const accessToken = tokenFromAppLink(url);
+      if (accessToken) openCustomerStatus(accessToken);
+      else if (code) openPersonalStatus(code);
+      else return;
       navigate();
     };
     App.addListener("appUrlOpen", ({ url }) => openAppLink(url));
@@ -1060,7 +1323,7 @@
       else App.exitApp();
     });
     App.addListener("appStateChange", ({ isActive }) => {
-      if (isActive && activeScreen === "onderhoud" && currentCode) loadStatus(currentCode);
+      if (isActive && activeScreen === "onderhoud" && (currentCode || currentToken)) loadStatus();
     });
   }
   updateConnection();
