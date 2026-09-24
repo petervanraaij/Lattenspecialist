@@ -25,6 +25,7 @@
   const formatDate = value => { if (!value || value === 'In overleg') return value || '—'; const date = new Date(`${value}T12:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('nl-NL',{weekday:'short',day:'numeric',month:'long',year:'numeric'}).format(date); };
   const normalizeWhatsAppPhone = value => { let digits = String(value || '').replace(/\D/g,''); if (digits.startsWith('00')) digits = digits.slice(2); if (digits.startsWith('0')) digits = `31${digits.slice(1)}`; return digits; };
   const valueOrDash = value => value ? escapeHtml(value) : '—';
+  const customerStatusUrl = record => /^LS-[A-Z2-9]{6}$/.test(record.serviceCode || '') ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : '';
   const headers = () => ({Authorization:`Bearer ${token}`,'Content-Type':'application/json'});
   const showLoginStatus = message => { loginStatus.textContent = message; loginStatus.className = 'booking-status is-visible is-error'; };
   const suggestWax = record => {
@@ -46,8 +47,8 @@
     if (type === 'status') {
       if (record.note) lines.push('',record.note);
       if (record.expectedReady) lines.push('',`Verwacht klaar: ${formatDate(record.expectedReady)}`);
-      const statusUrl = record.serviceCode ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : 'https://lattenspecialist.nl/app.html#onderhoud';
-      lines.push('',`Servicecode: ${record.serviceCode || 'wordt nog toegekend'}`,'Bekijk direct jouw voortgang in Mijn Lattenspecialist:',statusUrl,'Je hoeft geen code in te voeren.','','Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.','','Groet,','De Lattenspecialist');
+      const statusUrl = customerStatusUrl(record);
+      lines.push('','Bekijk je onderhoudsstatus:',statusUrl,'Deze persoonlijke link opent direct jouw onderhoud. Je hoeft niets te installeren of een code in te voeren.','','Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.','','Groet,','De Lattenspecialist');
     }
     return `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
   };
@@ -118,6 +119,7 @@
         <form class="admin-update-form">
           <h3>Onderhoud registreren</h3>
           <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Nog niet toegekend" readonly><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
+          ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan + klant berichten” gebeurt dit automatisch.</p>'}
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
           <label><span>Wax voor deze beurt</span><select name="waxType">${waxChoices}</select><small class="field-hint">Voorstel op basis van de opgegeven omstandigheden; controleer dit zelf.</small></label>
           <label><span>Verwacht klaar</span><input type="date" name="expectedReady" value="${escapeHtml(record.expectedReady || '')}"></label>
@@ -160,6 +162,21 @@
   });
 
   list.addEventListener('click', async event => {
+    const copyButton = event.target.closest('.copy-customer-link');
+    if (copyButton) {
+      const section = copyButton.closest('.admin-customer-link');
+      const input = section.querySelector('.customer-status-link');
+      const feedback = section.querySelector('.customer-link-message');
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+        await navigator.clipboard.writeText(input.value);
+        feedback.textContent = 'Klantlink gekopieerd. Je kunt hem in het bericht aan deze klant plakken.';
+      } catch {
+        input.focus(); input.select();
+        feedback.textContent = 'De link is geselecteerd. Kies Kopiëren in het menu van je telefoon of gebruik Ctrl+C.';
+      }
+      return;
+    }
     const button = event.target.closest('.generate-code'); if (!button) return;
     const card = button.closest('.admin-record'); const message = card.querySelector('.admin-record-message'); button.disabled = true; message.textContent = 'Servicecode maken…';
     try { const result = await api(`/api/admin/reservations/${encodeURIComponent(card.dataset.reference)}`,{method:'PATCH',body:JSON.stringify({generateServiceCode:true})}); records = records.map(record => record.reference === result.record.reference ? result.record : record); render(); }

@@ -53,6 +53,18 @@ test('invalid personal link cannot load a previously saved customers status',asy
   assert.match(d.getElementById('codeFeedback').textContent,/link is niet geldig/);
   assert.equal(d.getElementById('statusResult').textContent,'');
 });
+
+test('personal link retries a network failure without asking for a code or installing',async t=>{
+  let attempts=0;
+  const {d}=app(t,async()=>{if(++attempts===1)throw new Error('offline');return reply({record});},{hash:'#status=LS-ABC234'});
+  await turn();
+  assert.equal(d.getElementById('statusForm').hidden,true);
+  assert.match(d.getElementById('statusResult').textContent,/Opnieuw proberen/);
+  d.querySelector('#statusResult button').click();await turn();
+  assert.equal(d.getElementById('statusForm').hidden,true);
+  assert.match(d.getElementById('statusResult').textContent,/Onderhoud gestart/);
+  assert.doesNotMatch(d.getElementById('statusIntro').textContent,/wordt opgehaald/);
+});
 test('another incoming personal link supersedes an in-flight status request',async t=>{
   let resolveOld;
   const {w,d}=app(t,url=>url.endsWith('LS-ABC234')?new Promise(done=>{resolveOld=done;}):Promise.resolve(reply({record:{...record,code:'LS-DEF567',status:'Tweede aanvraag'}})),{hash:'#status=LS-ABC234'});
