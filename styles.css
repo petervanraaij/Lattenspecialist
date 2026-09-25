@@ -86,3 +86,8 @@
 .admin-record.is-closed{opacity:.78;border-style:dashed}.admin-record.is-closed .admin-status-pill{background:#e5e2dc;color:#555}.field-hint{color:var(--muted);line-height:1.35}.admin-payment{margin-top:6px;padding-top:16px;border-top:1px solid var(--line)}.admin-payment h3{margin-bottom:10px}.payment-fields{display:grid;grid-template-columns:.5fr 1.5fr;gap:9px;margin-bottom:9px}.admin-close-button{justify-self:start;border:0;background:none;color:#785c19;font:inherit;font-size:.82rem;font-weight:900;text-decoration:underline;cursor:pointer;padding:4px 0}
 @media(max-width:900px){.availability-calendar{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.address-result{grid-column:auto}.availability-admin{padding:20px}.availability-admin-head{align-items:stretch;flex-direction:column}.availability-calendar{grid-template-columns:1fr}.availability-custom{align-items:stretch;flex-direction:column}.availability-custom .btn{width:100%}.payment-fields{grid-template-columns:1fr}}
+
+/* Website development and maintenance credit. */
+.footer-credit{margin-top:16px;margin-bottom:0;font-size:.8rem;line-height:1.6;color:#aaa69f}.footer-credit a{color:#d3cec4;font-weight:600;text-decoration:underline;text-underline-offset:3px}.compact-footer .footer-credit{margin-top:0}
+
+.footer-credit a:hover{color:#fff}.footer-credit a:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:2px}
