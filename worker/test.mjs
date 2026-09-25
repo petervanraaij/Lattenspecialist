@@ -31,8 +31,12 @@ assert.match(createServiceCode(), /^LS-[A-Z2-9]{6}$/);
 assert.equal(normalizeServiceCode(' ls-ab2cde '), 'LS-AB2CDE');
 assert.equal(STATUS_STEPS.length, 8);
 assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, email: 'fout'}), /e-mailadres/);
-assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, addressCity: 'Deest'}), /buiten het gratis servicegebied/);
+assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, addressCity: 'Winssen'}), /buiten het gratis servicegebied/);
 assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, privacyConsent: false}), /toestemming/);
+// All villages in both municipalities qualify for free pickup.
+for (const addressCity of ['Alphen','Altforst','Appeltern','Beneden-Leeuwen','Boven-Leeuwen','Dreumel','Maasbommel','Wamel','Afferden','Deest','Druten','Horssen','Puiflijk']) {
+  assert.equal(readAndValidateLattenspecialist({...lattenPayload,addressCity}).data.addressCity,addressCity);
+}
 
 
 // Requests no longer need checkbox confirmations. Legacy clients still default to one day.
@@ -87,11 +91,12 @@ class MemoryKV {
   }
 }
 const store = new MemoryKV();
+let lookupCity = 'Wamel';
 const nativeFetch = globalThis.fetch;
 globalThis.fetch = async (url, options) => {
   requests.push({url: String(url), options});
   if (String(url).includes('siteverify')) return new Response(JSON.stringify({success: true}), {status: 200, headers: {'Content-Type': 'application/json'}});
-  if (String(url).includes('api.pdok.nl')) return new Response(JSON.stringify({response: {docs: [{postcode: '6659BB', huisnummer: 13, huis_nlt: '13', straatnaam: 'Hollenhof', woonplaatsnaam: 'Wamel'}]}}), {status: 200, headers: {'Content-Type': 'application/json'}});
+  if (String(url).includes('api.pdok.nl')) return new Response(JSON.stringify({response: {docs: [{postcode: '6659BB', huisnummer: 13, huis_nlt: '13', straatnaam: 'Hollenhof', woonplaatsnaam: lookupCity}]}}), {status: 200, headers: {'Content-Type': 'application/json'}});
   return new Response(JSON.stringify({id: 'email-test'}), {status: 200, headers: {'Content-Type': 'application/json'}});
 };
 try {
@@ -106,6 +111,12 @@ try {
   assert.equal(addressResponse.status, 200);
   assert.equal(addressResult.address.address, 'Hollenhof 13, 6659 BB Wamel');
   assert.equal(addressResult.address.freePickup, true);
+  for (const [city,expected] of [['Deest',true],['Puiflijk',true],['Winssen',false]]) {
+    lookupCity=city;
+    const checked=await worker.fetch(new Request('https://worker.example/api/address?postcode=6659BB&houseNumber=13', {headers:{Origin:lattenOrigin}}),testEnv);
+    assert.equal((await checked.json()).address.freePickup,expected,city);
+  }
+  lookupCity='Wamel';
   requests.length = 0;
   const lattenResponse = await worker.fetch(new Request('https://worker.example', {method: 'POST', headers: {Origin: lattenOrigin, 'Content-Type': 'application/json'}, body: JSON.stringify(lattenPayload)}), testEnv);
   const lattenResult = await lattenResponse.json();

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v25-solutions-logo';
+const CACHE_NAME = 'lattenspecialist-v26-servicegebied-gemeenten';
 const APP_SHELL = [
   '/',
   '/index.html',

@@ -25,7 +25,7 @@ const WAX_OPTIONS = [
 
 const FREE_PICKUP_CITIES = [
   'Afferden', 'Alphen', 'Altforst', 'Appeltern', 'Beneden-Leeuwen', 'Boven-Leeuwen',
-  'Dreumel', 'Druten', 'Horssen', 'Maasbommel', 'Wamel'
+  'Deest', 'Dreumel', 'Druten', 'Horssen', 'Maasbommel', 'Puiflijk', 'Wamel'
 ];
 
 const clean = (value, maxLength) => String(value || '')

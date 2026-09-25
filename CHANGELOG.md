@@ -1,3 +1,9 @@
+# Servicegebied — 25 september 2026
+
+- Gratis ophalen en terugbrengen in de volledige gemeenten West Maas en Waal en Druten.
+- Deest en Puiflijk worden nu ook door de adrescontrole en reserveringsservice geaccepteerd.
+- Website, werkwijze, zoekmachinegegevens en offline cache bijgewerkt.
+
 # De Lattenspecialist – WhatsApp-statusupdates v12
 
 - Klanten kunnen bij de aanvraag apart toestemming geven voor statusupdates via WhatsApp.
