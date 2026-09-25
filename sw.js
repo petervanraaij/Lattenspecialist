@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v24-solutions-footer';
+const CACHE_NAME = 'lattenspecialist-v25-solutions-logo';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -16,6 +16,8 @@ const APP_SHELL = [
   '/styles.css?v=13',
   '/styles.css?v=15',
   '/styles.css?v=16',
+  '/styles.css?v=17',
+  '/images/van-raaij-solutions-logo.webp',
   '/script.js?v=10',
   '/booking-config.js?v=2',
   '/booking.js?v=5',
