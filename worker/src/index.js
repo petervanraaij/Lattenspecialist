@@ -1,3 +1,4 @@
+import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
 import {handleMetrics} from './metrics.js';
 
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
@@ -95,7 +96,7 @@ const readAndValidateStuiterbaas = raw => {
     name: clean(raw.name, 80), phone: clean(raw.phone, 30), email: clean(raw.email, 120),
     date: clean(raw.date, 10), location: clean(raw.location, 140), startTime: clean(raw.startTime, 5),
     endTime: clean(raw.endTime, 5), notes: clean(raw.notes, 600), website: clean(raw.website, 120),
-    turnstileToken: clean(raw.turnstileToken, 2048)
+    whatsappConsent: raw.whatsappConsent === true, turnstileToken: clean(raw.turnstileToken, 2048)
   };
   if (data.website) return {data, spam: true};
   if (!data.name || !data.phone || !data.location || !data.date || !data.startTime || !data.endTime) throw new ValidationError('Vul alle verplichte velden in.');
@@ -104,6 +105,7 @@ const readAndValidateStuiterbaas = raw => {
   if (Number.isNaN(requestedDate.getTime()) || requestedDate < new Date()) throw new ValidationError('Kies een datum vanaf vandaag.');
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new ValidationError('Controleer het e-mailadres.');
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(data.startTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(data.endTime)) throw new ValidationError('Controleer de tijden.');
+  if (data.whatsappConsent && !stuiterbaasPhone(data.phone)) throw new ValidationError('Controleer je WhatsApp-nummer. Gebruik voor een buitenlands nummer ook de landcode.');
   Object.assign(data, stuiterbaasRentalDetails(raw));
   if (data.rentalDays === 1 && data.endTime <= data.startTime) throw new ValidationError('De eindtijd moet na de starttijd liggen.');
   if (!data.turnstileToken) throw new ValidationError('Voltooi de beveiligingscontrole.');
@@ -372,20 +374,6 @@ const sendWhatsAppTemplate = async (record, type, env) => {
   return {sent: true};
 };
 
-const sendStuiterbaasEmail = async (data, env) => {
-  const fields = [['Naam', data.name], ['Telefoon', data.phone], ['E-mail', data.email || 'Niet ingevuld'], ['Huurperiode', `${data.rentalDays} ${data.rentalDays === 1 ? 'dag' : 'dagen'}`], ['Van', `${data.date} om ${data.startTime}`], ['Tot', `${data.endDate} om ${data.endTime}`], ['Huur', data.rentalPrice === null ? 'In overleg' : `€${data.rentalPrice}`], ['Borg bovenop de huur', `€${data.deposit}`], ['Totaal inclusief borg', data.total === null ? 'Nog af te spreken; €50 borg bovenop de huur' : `€${data.total}`], ['Locatie', data.location], ['Opmerking', data.notes || 'Geen opmerkingen']];
-  const rows = fields.map(([label, value]) => `<tr><th align="left" style="padding:6px 14px 6px 0;vertical-align:top">${escapeHtml(label)}</th><td style="padding:6px 0">${escapeHtml(value)}</td></tr>`).join('');
-  const message = {
-    from: env.STUITERBAAS_FROM_EMAIL || 'Stuiterbaas Reserveringen <reserveringen@stuiterbaas.nl>',
-    to: [env.STUITERBAAS_TO_EMAIL || 'verhuur@stuiterbaas.nl'],
-    subject: `Reserveringsaanvraag ${data.date} – ${data.name}`,
-    text: ['Nieuwe reserveringsaanvraag via stuiterbaas.nl', '', ...fields.map(([label, value]) => `${label}: ${value}`), '', 'Deze aanvraag is nog geen definitieve reservering.'].join('\n'),
-    html: `<h1 style="font-size:20px">Nieuwe reserveringsaanvraag</h1><table style="border-collapse:collapse">${rows}</table><p><strong>Deze aanvraag is nog geen definitieve reservering.</strong></p>`
-  };
-  if (data.email) message.reply_to = data.email;
-  await sendResendEmail(message, env);
-};
-
 const lattenspecialistFields = data => {
   const common = [['Dienst', data.service], ['Naam', data.name], ['Telefoon', data.phone], ['WhatsApp-statusupdates', data.whatsappConsent ? 'Ja, toestemming gegeven' : 'Nee'], ['E-mail', data.email], ['Ophaal- en terugbrenglocatie', data.address || 'Niet ingevuld']];
   const specific = data.service === 'Onderhoud' ? [
@@ -516,8 +504,8 @@ export default {
       if (!turnstileOk) return json({message: 'De beveiligingscontrole is verlopen. Probeer het opnieuw.'}, 400, origin);
 
       if (site === 'stuiterbaas') {
-        await sendStuiterbaasEmail(result.data, env);
-        return json({ok: true}, 202, origin);
+        const confirmation = await completeStuiterbaasBooking(result.data, env, sendResendEmail);
+        return json(confirmation, 202, origin);
       }
       if (result.data.service === 'Onderhoud' && result.data.pickupDate !== 'In overleg') {
         const availability = await getAvailability(env);
