@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v23-customer-journey';
+const CACHE_NAME = 'lattenspecialist-v24-solutions-footer';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -15,6 +15,7 @@ const APP_SHELL = [
   '/styles.css?v=9',
   '/styles.css?v=13',
   '/styles.css?v=15',
+  '/styles.css?v=16',
   '/script.js?v=10',
   '/booking-config.js?v=2',
   '/booking.js?v=5',
