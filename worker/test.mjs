@@ -16,7 +16,7 @@ const baseEnv = {
   RESEND_API_KEY: 'resend-secret'
 };
 const lattenPayload = {service: 'Onderhoud', material: 'Ski', amount: '1', package: 'Goud', logistics: 'Gratis ophalen & terugbrengen (servicegebied)', pickupDate: '2099-11-28', urgent: 'Nee', destination: 'Sölden', skidate: '2099-12-01', conditions: 'Koud', name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', postcode: '6659 BB', houseNumber: '13', address: 'Hollenhof 13, 6659 BB Wamel', addressCity: 'Wamel', notes: 'Lichte kras', privacyConsent: true, whatsappConsent: true, website: '', turnstileToken: 'verified-token'};
-const stuiterPayload = {name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', date: '2099-06-12', location: 'Wamel', startTime: '10:00', endTime: '18:00', notes: 'Graag bellen.', privateSite: true, powerAvailable: true, adultHelper: true, privacyConsent: true, website: '', turnstileToken: 'verified-token'};
+const stuiterPayload = {name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', date: '2099-06-12', location: 'Wamel', startTime: '10:00', endTime: '18:00', notes: 'Graag bellen.', website: '', turnstileToken: 'verified-token'};
 
 assert.equal(getSite(lattenOrigin, baseEnv), 'lattenspecialist');
 assert.equal(getSite('capacitor://localhost', baseEnv), 'lattenspecialist');
@@ -32,7 +32,25 @@ assert.equal(normalizeServiceCode(' ls-ab2cde '), 'LS-AB2CDE');
 assert.equal(STATUS_STEPS.length, 8);
 assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, email: 'fout'}), /e-mailadres/);
 assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, addressCity: 'Deest'}), /buiten het gratis servicegebied/);
-assert.throws(() => readAndValidateStuiterbaas({...stuiterPayload, privateSite: false}), /voorwaarden/);
+assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, privacyConsent: false}), /toestemming/);
+
+
+// Requests no longer need checkbox confirmations. Legacy clients still default to one day.
+const rentalData = readAndValidateStuiterbaas(stuiterPayload).data;
+assert.equal(rentalData.rentalDays,1);
+assert.equal(rentalData.rentalPrice,95);
+assert.equal(rentalData.total,145);
+assert.equal(rentalData.endDate,stuiterPayload.date);
+for (const key of ['privateSite','powerAvailable','adultHelper','privacyConsent']) assert.equal(readAndValidateStuiterbaas({...stuiterPayload,[key]:false}).data[key],undefined);
+assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,turnstileToken:''}),/beveiligingscontrole/);
+assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,name:''}),/verplichte/);
+for (const rentalDays of ['0','3','2abc',-1]) assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,rentalDays}),/huurdagen/);
+assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,date:'2099-02-30'}),/datum/);
+assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,endTime:'09:00'}),/eindtijd/);
+assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,endTime:'25:00'}),/tijden/);
+assert.equal(readAndValidateStuiterbaas({...stuiterPayload,date:'2100-02-28',rentalDays:2}).data.endDate,'2100-03-01');
+assert.equal(readAndValidateStuiterbaas({...stuiterPayload,date:'2104-02-28',rentalDays:2}).data.endDate,'2104-02-29');
+assert.equal(readAndValidateStuiterbaas({...stuiterPayload,date:'2099-03-29',rentalDays:2}).data.endDate,'2099-03-30');
 
 const blocked = await worker.fetch(new Request('https://worker.example', {method: 'POST', headers: {Origin: 'https://example.com', 'Content-Type': 'application/json'}, body: JSON.stringify(lattenPayload)}), baseEnv);
 assert.equal(blocked.status, 403);
@@ -166,7 +184,16 @@ try {
   const stuiterMessage = JSON.parse(requests[1].options.body);
   assert.deepEqual(stuiterMessage.to, ['verhuur@stuiterbaas.nl']);
   assert.match(stuiterMessage.subject, /Reserveringsaanvraag/);
-  assert.match(stuiterMessage.text, /privéterrein/);
+  assert.doesNotMatch(stuiterMessage.text + stuiterMessage.html, /aanvrager bevestigde/);
+  assert.match(stuiterMessage.text, /Huur: €95/);
+  assert.match(stuiterMessage.text, /Borg bovenop de huur: €50/);
+  assert.match(stuiterMessage.text, /Totaal inclusief borg: €145/);
+  requests.length = 0;
+  const twoDays = await worker.fetch(new Request('https://worker.example', {method:'POST',headers:{Origin:stuiterOrigin,'Content-Type':'application/json'},body:JSON.stringify({...stuiterPayload,date:'2099-12-31',rentalDays:'2',startTime:'18:00',endTime:'10:00',rentalPrice:1,deposit:0,total:1})}),baseEnv);
+  assert.equal(twoDays.status,202);
+  const twoDayMessage = JSON.parse(requests[1].options.body);
+  for (const value of ['Huurperiode: 2 dagen','Van: 2099-12-31 om 18:00','Tot: 2100-01-01 om 10:00','Huur: €150','Borg bovenop de huur: €50','Totaal inclusief borg: €200']) assert.ok(twoDayMessage.text.includes(value),value);
+  assert.doesNotMatch(twoDayMessage.text + twoDayMessage.html, /aanvrager bevestigde/);
 } finally {
   globalThis.fetch = nativeFetch;
 }

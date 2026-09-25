@@ -71,14 +71,23 @@ const verifyTurnstile = async (token, secret, remoteIp) => {
   return result.success === true;
 };
 
+const stuiterbaasRentalDetails = (raw) => {
+  const rentalDays = String(raw.rentalDays ?? '1');
+  if (!['1', '2'].includes(rentalDays)) throw new ValidationError('Kies één of twee huurdagen.');
+  const date = clean(raw.date, 10);
+  const start = new Date(date + 'T12:00:00Z');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(start.getTime()) || start.toISOString().slice(0, 10) !== date) throw new ValidationError('Controleer de datum.');
+  start.setUTCDate(start.getUTCDate() + Number(rentalDays) - 1);
+  const rentalPrice = rentalDays === '2' ? 150 : 95;
+  return {rentalDays: Number(rentalDays), endDate: start.toISOString().slice(0, 10), rentalPrice, deposit: 50, total: rentalPrice + 50};
+};
+
 const readAndValidateStuiterbaas = raw => {
   const data = {
     name: clean(raw.name, 80), phone: clean(raw.phone, 30), email: clean(raw.email, 120),
     date: clean(raw.date, 10), location: clean(raw.location, 140), startTime: clean(raw.startTime, 5),
     endTime: clean(raw.endTime, 5), notes: clean(raw.notes, 600), website: clean(raw.website, 120),
-    turnstileToken: clean(raw.turnstileToken, 2048), privateSite: raw.privateSite === true,
-    powerAvailable: raw.powerAvailable === true, adultHelper: raw.adultHelper === true,
-    privacyConsent: raw.privacyConsent === true
+    turnstileToken: clean(raw.turnstileToken, 2048)
   };
   if (data.website) return {data, spam: true};
   if (!data.name || !data.phone || !data.location || !data.date || !data.startTime || !data.endTime) throw new ValidationError('Vul alle verplichte velden in.');
@@ -86,7 +95,9 @@ const readAndValidateStuiterbaas = raw => {
   const requestedDate = new Date(`${data.date}T23:59:59Z`);
   if (Number.isNaN(requestedDate.getTime()) || requestedDate < new Date()) throw new ValidationError('Kies een datum vanaf vandaag.');
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new ValidationError('Controleer het e-mailadres.');
-  if (!data.privateSite || !data.powerAvailable || !data.adultHelper || !data.privacyConsent) throw new ValidationError('Bevestig alle voorwaarden voor de aanvraag.');
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(data.startTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(data.endTime)) throw new ValidationError('Controleer de tijden.');
+  Object.assign(data, stuiterbaasRentalDetails(raw));
+  if (data.rentalDays === 1 && data.endTime <= data.startTime) throw new ValidationError('De eindtijd moet na de starttijd liggen.');
   if (!data.turnstileToken) throw new ValidationError('Voltooi de beveiligingscontrole.');
   return {data, spam: false};
 };
@@ -354,14 +365,14 @@ const sendWhatsAppTemplate = async (record, type, env) => {
 };
 
 const sendStuiterbaasEmail = async (data, env) => {
-  const fields = [['Naam', data.name], ['Telefoon', data.phone], ['E-mail', data.email || 'Niet ingevuld'], ['Datum', data.date], ['Tijd', `${data.startTime} – ${data.endTime}`], ['Locatie', data.location], ['Opmerking', data.notes || 'Geen opmerkingen']];
+  const fields = [['Naam', data.name], ['Telefoon', data.phone], ['E-mail', data.email || 'Niet ingevuld'], ['Huurperiode', `${data.rentalDays} ${data.rentalDays === 1 ? 'dag' : 'dagen'}`], ['Van', `${data.date} om ${data.startTime}`], ['Tot', `${data.endDate} om ${data.endTime}`], ['Huur', `€${data.rentalPrice}`], ['Borg bovenop de huur', `€${data.deposit}`], ['Totaal inclusief borg', `€${data.total}`], ['Locatie', data.location], ['Opmerking', data.notes || 'Geen opmerkingen']];
   const rows = fields.map(([label, value]) => `<tr><th align="left" style="padding:6px 14px 6px 0;vertical-align:top">${escapeHtml(label)}</th><td style="padding:6px 0">${escapeHtml(value)}</td></tr>`).join('');
   const message = {
     from: env.STUITERBAAS_FROM_EMAIL || 'Stuiterbaas Reserveringen <reserveringen@stuiterbaas.nl>',
     to: [env.STUITERBAAS_TO_EMAIL || 'verhuur@stuiterbaas.nl'],
     subject: `Reserveringsaanvraag ${data.date} – ${data.name}`,
-    text: ['Nieuwe reserveringsaanvraag via stuiterbaas.nl', '', ...fields.map(([label, value]) => `${label}: ${value}`), '', 'De aanvrager bevestigde: privéterrein, geschikt stroompunt, een volwassen helper en toestemming om contact op te nemen.', '', 'Deze aanvraag is nog geen definitieve reservering.'].join('\n'),
-    html: `<h1 style="font-size:20px">Nieuwe reserveringsaanvraag</h1><table style="border-collapse:collapse">${rows}</table><p>De aanvrager bevestigde: privéterrein, geschikt stroompunt, een volwassen helper en toestemming om contact op te nemen.</p><p><strong>Deze aanvraag is nog geen definitieve reservering.</strong></p>`
+    text: ['Nieuwe reserveringsaanvraag via stuiterbaas.nl', '', ...fields.map(([label, value]) => `${label}: ${value}`), '', 'Deze aanvraag is nog geen definitieve reservering.'].join('\n'),
+    html: `<h1 style="font-size:20px">Nieuwe reserveringsaanvraag</h1><table style="border-collapse:collapse">${rows}</table><p><strong>Deze aanvraag is nog geen definitieve reservering.</strong></p>`
   };
   if (data.email) message.reply_to = data.email;
   await sendResendEmail(message, env);
