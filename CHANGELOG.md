@@ -1,5 +1,10 @@
 # Servicegebied — 25 september 2026
 
+## 25 september 2026 — Facebookpagina
+
+- De echte zakelijke pagina De Lattenspecialist gekoppeld in de footer en bedrijfsmetadata.
+- Serviceworkercache vernieuwd voor bestaande bezoekers.
+
 - Gratis ophalen en terugbrengen in de volledige gemeenten West Maas en Waal en Druten.
 - Deest en Puiflijk worden nu ook door de adrescontrole en reserveringsservice geaccepteerd.
 - Website, werkwijze, zoekmachinegegevens en offline cache bijgewerkt.

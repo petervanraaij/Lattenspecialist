@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v26-servicegebied-gemeenten';
+const CACHE_NAME = 'lattenspecialist-v27-facebook-pagina';
 const APP_SHELL = [
   '/',
   '/index.html',
