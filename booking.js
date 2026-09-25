@@ -169,7 +169,8 @@
       document.querySelector('#confirmationDelivery').textContent = result.confirmationSent === true ? 'We hebben je ook een bevestiging per e-mail gestuurd. Nog niet zichtbaar? Kijk ook in je spammap.' : result.confirmationSent === false ? 'Je aanvraag is opgeslagen, maar de bevestigingsmail kon niet worden verstuurd. Bewaar de aanvraagcode hierboven.' : 'Bewaar je aanvraagcode voor vragen over de planning.';
       document.querySelector('#confirmationTracking').textContent = payload.whatsappConsent ? 'Zodra je onderhoud is geregistreerd, ontvang je je persoonlijke statuslink bij een update. Daarmee open je direct je onderhoud, zonder code of installatie.' : 'Zodra je onderhoud is geregistreerd, kun je het volgen via een persoonlijke statuslink. Je hoeft daarvoor geen app te installeren.';
       document.body.classList.add('has-confirmation');
-      form.hidden = true; confirmation.hidden = false; confirmation.focus();
+      form.hidden = true; confirmation.hidden = false; confirmation.focus({preventScroll:true});
+      confirmation.scrollIntoView?.({block:'start', behavior:'instant'});
       resetRequest();
       window.dispatchEvent(new CustomEvent('lattenspecialist:booking-submitted', {detail:{reference:result.reference}}));
     } catch (error) {
