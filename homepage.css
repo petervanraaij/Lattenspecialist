@@ -1,6 +1,6 @@
 /* Homepage and request-page presentation. Shared app/admin styles stay in styles.css. */
-.skip-link { position: fixed; top: 12px; left: 16px; z-index: 200; padding: 12px 18px; background: #fff; color: #111; transform: translateY(-160%); }
-.skip-link:focus { transform: none; }
+.skip-link { position: fixed; top: -200px; left: 16px; z-index: 200; padding: 12px 18px; background: #fff; color: #111; }
+.skip-link:focus { top:12px; }
 .home-page main:focus, .booking-page main:focus { outline: none; }
 .home-page :is(a, button, summary):focus-visible, .booking-page :is(a, button, summary):focus-visible { outline: 3px solid #bc8c26; outline-offset: 5px; }
 .home-page .container, .booking-page .container { width: min(1180px, calc(100% - 64px)); }
@@ -161,3 +161,39 @@
   html { scroll-behavior: auto; }
   .home-page .btn { transition: none; }
 }
+
+/* Compact package selection and the completed request. */
+.home-page .package-card { display:flex; flex-direction:column; cursor:pointer; }
+.home-page .package-card h3 { min-height:2.6em; margin-bottom:10px; }
+.home-page .package-fit { font-size:.9rem; line-height:1.5; min-height:3em; color:#615b52; margin:0 0 18px; }
+.home-page .package-highlights { display:grid; gap:10px; font-size:.9rem; line-height:1.45; margin:20px 0; }
+.home-page .package-highlights span { padding-left:18px; position:relative; }
+.home-page .package-highlights span::before { content:'✓'; position:absolute; left:0; color:var(--metal-ink); font-size:.85rem; }
+.home-page .package-details { border-top:1px solid var(--metal-edge); margin-bottom:16px; }
+.home-page .package-details summary { cursor:pointer; font-size:.85rem; padding:15px 0; font-weight:650; }
+.home-page .package-details ul { margin:0 0 10px; }
+.home-page .package-choice { display:flex; gap:10px; align-items:center; padding:13px 12px; margin-top:auto; border:1px solid var(--metal-edge); border-radius:8px; cursor:pointer; font-size:.9rem; font-weight:750; }
+.home-page .package-choice input { width:18px; height:18px; margin:0; accent-color:#755711; }
+.home-page .package-card.is-selected { outline:2px solid #755711; outline-offset:3px; }
+.home-page .package-card.is-selected .package-choice { background:#eee4cd; }
+.home-page .package-selection { margin:24px 0 0; color:#61480f; font-weight:700; }
+.home-page .craft-copy .craft-personal { margin:26px 0 10px; padding-left:20px; border-left:2px solid #b48d39; font-size:.97rem; line-height:1.7; }
+.craft-personal strong, .craft-personal span { display:block; }
+.craft-personal strong { color:#292722; margin-bottom:8px; }
+.home-page .photo-frame { position:relative; }
+.home-page .image-caption { position:absolute; bottom:10px; right:14px; font-size:.7rem; color:#fff; background:rgba(0,0,0,.6); border-radius:4px; padding:3px 7px; }
+.trip-conditions { grid-column:1 / -1; padding:12px 0; }
+.trip-conditions summary { cursor:pointer; font-size:.9rem; font-weight:650; }
+.trip-conditions label { display:block; margin-top:12px; }
+.booking-confirmation { align-self:start; background:#fffdf9; color:#27251f; border:1px solid #d9c799; border-radius:20px; padding:38px; }
+.booking-confirmation h2 { margin:12px 0 24px; font-size:2.2rem; }
+.booking-confirmation p { line-height:1.65; }
+.booking-confirmation #confirmationReference { display:inline-block; font-size:1.2rem; color:#6c4c0f; }
+.confirmation-actions { display:flex; gap:20px; align-items:center; flex-wrap:wrap; margin-top:24px; }
+.confirmation-actions .quiet-link { border:0; background:none; cursor:pointer; font:inherit; }
+.booking-page [hidden], .home-page [hidden] { display:none !important; }
+@media (max-width:560px) { .booking-confirmation { padding:24px; } .home-page .package-card h3, .home-page .package-fit { min-height:0; } }
+
+.booking-page.has-confirmation .booking-intro { display:none; }
+.booking-page.has-confirmation .booking-shell { grid-template-columns:minmax(0,760px); justify-content:center; }
+.booking-confirmation { scroll-margin-top:120px; }

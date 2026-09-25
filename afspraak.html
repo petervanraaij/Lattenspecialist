@@ -14,18 +14,21 @@
   <meta property="og:title" content="De Lattenspecialist | Ski- & snowboardonderhoud">
   <meta property="og:description" content="Ambachtelijk ski- en snowboardonderhoud vanuit Wamel, met gratis haal- en brengservice in West Maas en Waal, Druten, Afferden en Horssen.">
   <meta property="og:url" content="https://lattenspecialist.nl/afspraak.html">
-  <meta property="og:image" content="https://lattenspecialist.nl/images/hero-workshop.webp">
+  <meta property="og:image" content="https://lattenspecialist.nl/images/social-preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="De Lattenspecialist — ski- en snowboardonderhoud vanuit Wamel">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="De Lattenspecialist | Zorgeloos pisteplezier">
   <meta name="twitter:description" content="Ambachtelijk ski- en snowboardonderhoud vanuit Wamel.">
-  <meta name="twitter:image" content="https://lattenspecialist.nl/images/hero-workshop.webp">
+  <meta name="twitter:image" content="https://lattenspecialist.nl/images/social-preview.png">
   <link rel="icon" href="images/badge.webp" type="image/webp">
   <link rel="apple-touch-icon" href="images/app-icon-192.png">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=15">
-  <link rel="stylesheet" href="homepage.css?v=3">
+  <link rel="stylesheet" href="homepage.css?v=4">
   <link rel="stylesheet" href="customer-booking.css?v=1">
   <script src="customer-booking.js?v=2"></script>
 </head>
@@ -40,7 +43,7 @@
         <a href="/#onderhoud">Vakwerk</a>
         <a href="/#haalbreng">Haal &amp; breng</a>
         <a href="app.html">Mijn onderhoud</a>
-        <a class="nav-cta" href="afspraak.html" aria-current="page">Plan onderhoud</a>
+        <a class="nav-cta" href="afspraak.html" aria-current="page">Onderhoud aanvragen</a>
       </nav>
     </div>
   </header>
@@ -56,7 +59,7 @@
             <a href="https://wa.me/31618327132?text=Hallo%20De%20Lattenspecialist%2C%20ik%20wil%20graag%20een%20afspraak%20aanvragen." target="_blank" rel="noopener">Reserveer via WhatsApp</a>
           </div>
         </div>
-        <form id="requestForm" class="request-form">
+        <form id="requestForm" class="request-form" method="post">
           <div class="form-section">
             <label class="form-label">Je aanvraag</label>
             <div class="choice-buttons">
@@ -68,14 +71,14 @@
           <div id="maintenanceFields">
             <div class="form-grid">
               <label><span>Materiaal</span><select name="material"><option>Ski</option><option>Snowboard</option><option>Meerdere / combinatie</option></select></label>
-              <label><span>Aantal</span><input type="number" name="amount" min="1" max="20" value="1"></label>
-              <label><span>Pakket</span><select name="package"><option>Brons</option><option>Zilver</option><option selected>Goud</option><option>Platinum</option><option>Losse werkzaamheden / advies</option></select></label>
-              <label><span>Halen of brengen</span><select name="logistics"><option>Gratis ophalen & terugbrengen (servicegebied)</option><option>Zelf brengen in Wamel</option><option>Zelf brengen en zelf ophalen</option><option>In overleg</option></select></label>
-              <label><span>Ophaaldatum</span><select name="pickupDate" required><option value="">Beschikbare data laden…</option><option>In overleg</option></select></label>
+              <label><span>Aantal</span><input type="number" name="amount" min="1" max="20" value="1" required></label>
+              <label><span>Pakket</span><select name="package" required><option value="">Kies je pakket</option><option>Brons</option><option>Zilver</option><option>Goud</option><option>Platinum</option><option>Losse werkzaamheden / advies</option></select></label>
+              <label><span>Halen of brengen</span><select name="logistics"><option>Gratis ophalen & terugbrengen (servicegebied)</option><option value="Zelf brengen en zelf ophalen">Zelf brengen en ophalen in Wamel</option><option>In overleg</option></select></label>
+              <label id="pickupDateField"><span>Ophaaldatum</span><select name="pickupDate" required><option value="">Beschikbare data laden…</option><option>In overleg</option></select></label>
               <label><span>Spoed</span><select name="urgent"><option>Nee</option><option>Ja, graag overleggen (+ €10 indien mogelijk)</option></select></label>
               <label><span>Skigebied / bestemming</span><input type="text" name="destination" placeholder="bijv. Sölden, Oostenrijk"></label>
               <label><span>Eerste skidag</span><input type="date" name="skidate"></label>
-              <label><span>Verwachte omstandigheden</span><select name="conditions"><option>Weet ik nog niet</option><option>Zacht / warm</option><option>Rond het vriespunt</option><option>Koud</option><option>Kunstsneeuw / hard / ijzig</option></select></label>
+              <details class="trip-conditions"><summary>Sneeuwomstandigheden (optioneel)</summary><label><span>Verwachte omstandigheden</span><select name="conditions"><option>Weet ik nog niet</option><option>Zacht / warm</option><option>Rond het vriespunt</option><option>Koud</option><option>Kunstsneeuw / hard / ijzig</option></select></label></details>
             </div>
             <p class="field-note">Bestemming en reisdatum helpen ons de juiste wax te kiezen. <a href="service.html">Servicegebied en afspraken</a>.</p>
           </div>
@@ -97,12 +100,16 @@
               <label><span>Naam</span><input type="text" name="name" autocomplete="name" required></label>
               <label><span>Mobiel nummer</span><input type="tel" name="phone" autocomplete="tel" required></label>
               <label><span>E-mailadres</span><input type="email" name="email" autocomplete="email" required></label>
+            </div>
+            <div id="pickupAddressFields">
+            <div class="form-grid">
               <label><span>Postcode</span><input type="text" name="postcode" autocomplete="postal-code" inputmode="text" placeholder="1234 AB"></label>
               <label><span>Huisnummer + toevoeging</span><input type="text" name="houseNumber" autocomplete="address-line2" placeholder="13 of 13A"></label>
               <label class="address-result"><span>Ophaal- en terugbrenglocatie</span><input type="text" name="address" autocomplete="street-address" placeholder="Wordt automatisch ingevuld"></label>
               <input type="hidden" name="addressCity">
             </div>
             <div class="address-status" id="addressStatus" role="status" aria-live="polite">Het adres verschijnt na het invullen van postcode en huisnummer.</div>
+            </div>
             <label class="full-field"><span>Opmerking / schade / bijzonderheden</span><textarea name="notes" rows="4" placeholder="Bijvoorbeeld: lichte kras, gewenste ophaaltijd of vraag over het pakket."></textarea></label>
           </div>
 
@@ -111,10 +118,21 @@
           <label class="privacy-check whatsapp-consent"><input type="checkbox" name="whatsappConsent"><span>Ja, ik wil via WhatsApp statusupdates over deze aanvraag ontvangen van De Lattenspecialist. Afmelden kan in de WhatsApp-chat.</span></label>
           <label class="privacy-check"><input type="checkbox" name="privacyConsent" required><span>Ik geef toestemming om mijn gegevens te gebruiken voor deze aanvraag en heb de <a href="privacy.html" target="_blank">privacy-informatie</a> gelezen.</span></label>
           <div id="turnstileContainer" class="turnstile-container" hidden></div>
-          <button class="btn btn-gold form-submit" type="submit">Aanvraag via website versturen</button>
+          <button class="btn btn-gold form-submit" type="submit" disabled>Aanvraag versturen</button>
+          <noscript><p>Schakel JavaScript in om online een aanvraag te versturen, of neem contact op via <a href="https://wa.me/31618327132">WhatsApp</a>.</p></noscript>
           <div class="booking-status" id="bookingStatus" role="status" aria-live="polite"></div>
           <p class="form-footnote">Je afspraak is definitief zodra wij de planning hebben bevestigd.</p>
         </form>
+        <section id="bookingConfirmation" class="booking-confirmation" aria-labelledby="confirmationTitle" tabindex="-1" hidden>
+          <span class="eyebrow">Bedankt voor je aanvraag</span>
+          <h2 id="confirmationTitle">Je aanvraag is ontvangen.</h2>
+          <p>Je aanvraagcode: <strong id="confirmationReference"></strong></p>
+          <p>We nemen contact met je op om de planning te bevestigen. Daarbij spreken we ook af wanneer je materiaal weer klaar is.</p>
+          <p id="confirmationDelivery"></p>
+          <p id="confirmationTracking"></p>
+          <details class="booking-overview"><summary>Jouw aanvraag bekijken</summary><div id="confirmationSummary" class="request-summary"></div></details>
+          <div class="confirmation-actions"><a class="btn btn-dark" href="/">Terug naar de website</a><button class="quiet-link" type="button" id="newRequest">Nog een aanvraag</button></div>
+        </section>
       </div>
     </section>
   </main>
@@ -124,7 +142,7 @@
         <img src="images/logo-lockup.webp" alt="De Lattenspecialist" class="footer-logo">
         <p>Ambachtelijk ski- en snowboardonderhoud.<br>Zorgeloos pisteplezier.</p>
       </div>
-      <div><strong>Snel naar</strong><a href="/#pakketten">Pakketten</a><a href="/#onderhoud">Onderhoud</a><a href="/#haalbreng">Haal & breng</a><a href="afspraak.html">Afspraak aanvragen</a><a href="app.html">Mijn onderhoud</a></div>
+      <div><strong>Snel naar</strong><a href="/#pakketten">Pakketten</a><a href="/#onderhoud">Onderhoud</a><a href="/#haalbreng">Haal & breng</a><a href="afspraak.html">Onderhoud aanvragen</a><a href="app.html">Mijn onderhoud</a></div>
       <div><strong>Contact & bedrijfsgegevens</strong><a href="mailto:info@lattenspecialist.nl">info@lattenspecialist.nl</a><a href="https://wa.me/31618327132" target="_blank" rel="noopener">WhatsApp · 06 18 32 71 32</a><span>Bezoek uitsluitend op afspraak · Hollenhof 13 · 6659 BB Wamel</span><span>KvK 99668637</span><span>BTW-id NL005403580B64</span></div>
     </div>
     <div class="container footer-legal"><a href="privacy.html">Privacy</a><a href="service.html">Service-informatie</a><a href="ervaring.html">Deel je ervaring</a></div>
@@ -133,6 +151,7 @@
 
   <script src="script.js?v=10"></script>
   <script src="booking-config.js?v=2"></script>
-  <script src="booking.js?v=4"></script>
+  <script src="booking.js?v=5"></script>
+  <script src="website-metrics.js?v=1"></script>
 </body>
 </html>
