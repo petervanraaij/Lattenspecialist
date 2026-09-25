@@ -14,3 +14,9 @@ LATTENSPECIALIST_FROM_EMAIL = "De Lattenspecialist via Stuiterbaas <reserveringe
 [[kv_namespaces]]
 binding = "LATTENSPECIALIST_RESERVATIONS_KV"
 id = "41b0eafd90c64b10bd00a4a7cb12005b"
+
+[[d1_databases]]
+binding = "LATTENSPECIALIST_ANALYTICS_DB"
+database_name = "lattenspecialist-website-statistieken"
+database_id = "1a54873f-d70f-41f4-a43c-2a3c1f011a94"
+migrations_dir = "migrations"

@@ -10,6 +10,7 @@
   <link rel="apple-touch-icon" href="images/app-icon-192.png">
   <link rel="manifest" href="beheer.webmanifest">
   <link rel="stylesheet" href="styles.css?v=15">
+  <link rel="stylesheet" href="admin-metrics.css?v=1">
 </head>
 <body class="admin-body">
   <header class="site-header">
@@ -50,6 +51,7 @@
           <button class="btn btn-dark" id="refreshAdmin" type="button">Vernieuwen</button>
         </div>
       </div>
+      <section class="website-stats" aria-labelledby="websiteStatsTitle"><div class="website-stats-head"><div><span class="eyebrow">Website</span><h2 id="websiteStatsTitle">Van bekijken naar aanvragen</h2></div><label><span>Periode</span><select id="metricsPeriod"><option value="7">Laatste 7 dagen</option><option value="30" selected>Laatste 30 dagen</option><option value="90">Laatste 90 dagen</option></select></label></div><div id="websiteMetrics" class="website-metrics" role="status">Tellingen laden…</div><p>Aantallen acties op de website, geen unieke bezoekers. Herhaalde bezoeken tellen mee; privacy-instellingen kunnen tellingen beperken. Gebruik dit als indicatie, naast de echte aanvragen hieronder.</p></section>
       <section class="availability-admin" aria-labelledby="availabilityTitle">
         <div class="availability-admin-head">
           <div><span class="eyebrow">Ophaalplanning</span><h2 id="availabilityTitle">Beschikbare ophaaldata</h2><p>Vink de concrete data aan die klanten in het aanvraagformulier mogen kiezen.</p></div>
@@ -65,6 +67,6 @@
   </main>
 
   <script src="booking-config.js?v=2"></script>
-  <script src="beheer.js?v=6"></script>
+  <script src="beheer.js?v=7"></script>
 </body>
 </html>

@@ -144,6 +144,25 @@
     applySearch();
   };
 
+  let metricsVersion = 0;
+  const loadMetrics = async () => {
+    const target = document.querySelector('#websiteMetrics');
+    const version = ++metricsVersion;
+    const auth = token;
+    const days = document.querySelector('#metricsPeriod').value;
+    target.textContent = 'Tellingen laden…';
+    try {
+      const result = await api('/api/admin/metrics?days=' + days);
+      if (version !== metricsVersion || token !== auth) return;
+      const labels = {packages_viewed:'Pakketten bekeken',form_opened:'Formulier geopend',form_started:'Invullen gestart',booking_submitted:'Aanvraag verstuurd'};
+      target.replaceChildren(...Object.entries(labels).map(([key,label]) => {
+        const item = document.createElement('div'), value = document.createElement('strong'), caption = document.createElement('span');
+        value.textContent = Number(result.totals?.[key] || 0).toLocaleString('nl-NL');
+        caption.textContent = label; item.append(value,caption); return item;
+      }));
+    } catch { if (version === metricsVersion && token === auth) target.textContent = 'Tellingen tijdelijk niet beschikbaar. Je kunt de reserveringen gewoon beheren.'; }
+  };
+  document.querySelector('#metricsPeriod').addEventListener('change', loadMetrics);
   const loadDashboard = async () => {
     if (!endpoint) throw new Error('De beheerservice is nog niet gekoppeld.');
     refreshButton.disabled = true;
@@ -151,7 +170,7 @@
     try {
       const [reservationResult] = await Promise.all([api('/api/admin/reservations'),loadAvailability()]);
       records = reservationResult.records || [];
-      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render();
+      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render(); void loadMetrics();
     } finally { refreshButton.disabled = false; }
   };
 

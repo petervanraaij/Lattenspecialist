@@ -14,11 +14,14 @@
   <meta property="og:title" content="De Lattenspecialist | Ski- & snowboardonderhoud">
   <meta property="og:description" content="Ambachtelijk ski- en snowboardonderhoud vanuit Wamel, met gratis haal- en brengservice in West Maas en Waal, Druten, Afferden en Horssen.">
   <meta property="og:url" content="https://lattenspecialist.nl/">
-  <meta property="og:image" content="https://lattenspecialist.nl/images/hero-workshop.webp">
+  <meta property="og:image" content="https://lattenspecialist.nl/images/social-preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="De Lattenspecialist — ski- en snowboardonderhoud vanuit Wamel">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="De Lattenspecialist | Zorgeloos pisteplezier">
   <meta name="twitter:description" content="Ambachtelijk ski- en snowboardonderhoud vanuit Wamel.">
-  <meta name="twitter:image" content="https://lattenspecialist.nl/images/hero-workshop.webp">
+  <meta name="twitter:image" content="https://lattenspecialist.nl/images/social-preview.png">
   <link rel="preload" as="image" href="images/hero-workshop.webp" fetchpriority="high">
   <link rel="icon" href="images/badge.webp" type="image/webp">
   <link rel="apple-touch-icon" href="images/app-icon-192.png">
@@ -26,7 +29,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=15">
-  <link rel="stylesheet" href="homepage.css?v=3">
+  <link rel="stylesheet" href="homepage.css?v=4">
   <script src="homepage.js?v=1"></script>
   <script type="application/ld+json">
   {
@@ -37,7 +40,7 @@
     "telephone":"+31618327132",
     "email":"info@lattenspecialist.nl",
     "description":"Ambachtelijk ski- en snowboardonderhoud met gratis haal- en brengservice in West Maas en Waal, Druten, Afferden en Horssen.",
-    "image":"https://lattenspecialist.nl/images/hero-workshop.webp",
+    "image":"https://lattenspecialist.nl/images/social-preview.png",
     "priceRange":"€€",
     "areaServed":["West Maas en Waal","Druten","Afferden","Horssen"],
     "address":{"@type":"PostalAddress","streetAddress":"Hollenhof 13","postalCode":"6659 BB","addressLocality":"Wamel","addressCountry":"NL"},
@@ -56,7 +59,7 @@
         <a href="#onderhoud">Vakwerk</a>
         <a href="#haalbreng">Haal &amp; breng</a>
         <a href="app.html">Mijn onderhoud</a>
-        <a class="nav-cta" href="afspraak.html">Plan onderhoud</a>
+        <a class="nav-cta" href="afspraak.html">Onderhoud aanvragen</a>
       </nav>
     </div>
   </header>
@@ -86,12 +89,13 @@
 
     <section class="section home-craft" id="onderhoud" aria-labelledby="craft-title">
       <div class="container craft-grid">
-        <div class="photo-frame"><img src="images/edge-tuning.webp" alt="Zorgvuldige kantentuning van een ski" width="1100" height="734" loading="lazy" decoding="async"></div>
+        <div class="photo-frame"><img src="images/edge-tuning-logo-v2.webp" alt="Sfeerbeeld van ski-onderhoud" width="1565" height="1005" loading="lazy" decoding="async"><span class="image-caption">Sfeerbeeld</span></div>
         <div class="craft-copy">
           <span class="eyebrow">Aandacht die je voelt</span>
           <h2 id="craft-title">Goed voor je materiaal.<br>Fijn op de piste.</h2>
           <p class="lead">Gericht onderhoud, met oog voor de staat van jouw ski’s of snowboard. Voor grip, glijvermogen en langer plezier van je materiaal.</p>
           <p>We verwijderen vuil en oude waxresten en brengen verse premium warme wax aan. De wax stemmen we af op je bestemming, reisperiode en de verwachte omstandigheden.</p>
+          <p class="craft-personal"><strong>Ik ben Peter, de man achter De Lattenspecialist.</strong><span>Wintersport is een prachtige, maar ook kostbare hobby. Daarom verdient je materiaal echte aandacht. Ik geloof in zorgvuldig vakmanschap en wax die past bij jouw reis. Voor het beste uit je ski’s of snowboard en langdurig plezier op de piste.</span></p>
           <a class="quiet-link" href="service.html">Meer over onze werkwijze <span aria-hidden="true">→</span></a>
         </div>
       </div>
@@ -104,28 +108,37 @@
           <h2 id="packages-title">Kies jouw onderhoud.</h2>
           <p>Van een verse waxlaag tot een complete onderhoudsbeurt.</p>
         </div>
-        <div class="package-grid">
+        <div class="package-grid" role="group" aria-label="Kies je onderhoudspakket">
           <article class="package-card package-card--bronze">
-            <span class="tier bronze-dot">Brons</span><h3>Wax & verzorging</h3>
+            <span class="tier bronze-dot">Brons</span><h3>Wax & verzorging</h3><p class="package-fit">Voor een frisse waxlaag en soepel glijden.</p>
             <div class="price-row"><div><small>Ski</small><strong>€ 19,95</strong></div><div><small>Snowboard</small><strong>€ 24,95</strong></div></div>
-            <ul><li>Belag reinigen en oude waxresten verwijderen</li><li>Verse premium warme wax</li><li>Afkoelen en afschrapen</li><li>Uitborstelen en finish</li></ul>
+            <div class="package-highlights"><span>Belag reinigen</span><span>Premium warme wax</span><span>Uitborstelen en finish</span></div>
+            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Belag reinigen en oude waxresten verwijderen</li><li>Verse premium warme wax</li><li>Afkoelen en afschrapen</li><li>Uitborstelen en finish</li></ul></details>
+            <label class="package-choice"><input type="radio" name="homepagePackage" value="Brons"><span>Kies Brons</span></label>
           </article>
           <article class="package-card package-card--silver">
-            <span class="tier silver-dot">Zilver</span><h3>Grip & glijvermogen</h3>
+            <span class="tier silver-dot">Zilver</span><h3>Grip & glijvermogen</h3><p class="package-fit">Voor grip én een frisse waxlaag.</p>
             <div class="price-row"><div><small>Ski</small><strong>€ 34,95</strong></div><div><small>Snowboard</small><strong>€ 39,95</strong></div></div>
-            <ul><li>Belagcontrole en reiniging</li><li>Kanten slijpen en tunen</li><li>Verse premium warme wax</li><li>Afschrapen, uitborstelen en finish</li></ul>
+            <div class="package-highlights"><span>Belag controleren</span><span>Kanten slijpen en tunen</span><span>Premium warme wax</span></div>
+            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Belagcontrole en reiniging</li><li>Kanten slijpen en tunen</li><li>Verse premium warme wax</li><li>Afschrapen, uitborstelen en finish</li></ul></details>
+            <label class="package-choice"><input type="radio" name="homepagePackage" value="Zilver"><span>Kies Zilver</span></label>
           </article>
           <article class="package-card package-card--gold featured">
-            <span class="featured-badge">Meest gekozen</span><span class="tier gold-dot">Goud</span><h3>Complete onderhoudsbeurt</h3>
+            <span class="featured-badge">Meest gekozen</span><span class="tier gold-dot">Goud</span><h3>Complete onderhoudsbeurt</h3><p class="package-fit">Voor een complete onderhoudsbeurt.</p>
             <div class="price-row"><div><small>Ski</small><strong>€ 44,95</strong></div><div><small>Snowboard</small><strong>€ 49,95</strong></div></div>
-            <ul><li>Volledige inspectie van belag en kanten</li><li>Belag reinigen en oude waxresten verwijderen</li><li>Kanten slijpen en tunen</li><li>Structuur gericht opfrissen waar passend</li><li>Premium warme wax en volledige finish</li></ul>
+            <div class="package-highlights"><span>Belag en kanten inspecteren</span><span>Slijpen en gericht opfrissen</span><span>Premium wax en finish</span></div>
+            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Volledige inspectie van belag en kanten</li><li>Belag reinigen en oude waxresten verwijderen</li><li>Kanten slijpen en tunen</li><li>Structuur gericht opfrissen waar passend</li><li>Premium warme wax en volledige finish</li></ul></details>
+            <label class="package-choice"><input type="radio" name="homepagePackage" value="Goud"><span>Kies Goud</span></label>
           </article>
           <article class="package-card package-card--platinum">
-            <span class="tier platinum-dot">Platinum</span><h3>Compleet + lichte reparaties</h3>
+            <span class="tier platinum-dot">Platinum</span><h3>Compleet + lichte reparaties</h3><p class="package-fit">Voor compleet onderhoud en lichte reparaties.</p>
             <div class="price-row"><div><small>Ski vanaf</small><strong>€ 52,50</strong></div><div><small>Snowboard vanaf</small><strong>€ 57,50</strong></div></div>
-            <ul><li>Alles uit Goud</li><li>Oppervlakkige krassen en kleine beschadigingen</li><li>Grotere schade altijd eerst beoordelen</li></ul>
+            <div class="package-highlights"><span>Alles uit Goud</span><span>Oppervlakkige krassen herstellen</span><span>Grotere schade eerst beoordelen</span></div>
+            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Alles uit Goud</li><li>Oppervlakkige krassen en kleine beschadigingen</li><li>Grotere schade altijd eerst beoordelen</li></ul></details>
+            <label class="package-choice"><input type="radio" name="homepagePackage" value="Platinum"><span>Kies Platinum</span></label>
           </article>
         </div>
+        <p class="package-selection" id="packageSelection" role="status" aria-live="polite" hidden></p>
         <p class="price-note">Alle genoemde consumentenprijzen zijn inclusief btw.</p>
         <details class="price-details">
           <summary>Losse werkzaamheden &amp; spoed</summary>
@@ -142,7 +155,7 @@
         </details>
         <div class="package-action">
           <p>Twijfel je? Wij bekijken je materiaal en adviseren wat nodig is.<br>Extra werk doen we alleen na overleg.</p>
-          <a class="btn btn-dark" href="afspraak.html">Onderhoud aanvragen <span aria-hidden="true">→</span></a>
+          <a class="btn btn-dark" id="packageRequest" href="afspraak.html">Onderhoud aanvragen <span aria-hidden="true">→</span></a>
         </div>
       </div>
     </section>
@@ -155,14 +168,14 @@
           <p>We halen je ski’s of snowboard op en brengen ze na het onderhoud weer terug. Gratis in <strong>West Maas en Waal, Druten, Afferden en Horssen.</strong></p>
           <p class="pickup-note">Liever zelf brengen? Je bent op afspraak welkom in Wamel.</p>
         </div>
-        <div class="photo-frame pickup-photo"><img src="images/pickup-service.webp" alt="Ski’s worden opgehaald voor onderhoud" loading="lazy" decoding="async"></div>
+        <div class="photo-frame pickup-photo"><img src="images/pickup-service-logo-v2.webp" alt="Ski’s worden opgehaald voor onderhoud" loading="lazy" decoding="async"></div>
       </div>
     </section>
 
     <section class="section faq" id="faq" aria-labelledby="faq-title">
       <div class="container narrow">
         <div class="section-head center"><span class="eyebrow">Nog even dit</span><h2 id="faq-title">Goed om te weten.</h2></div>
-        <details><summary>Wanneer is mijn materiaal weer klaar?</summary><p>Normaal gesproken brengen we het materiaal het volgende weekend terug. De beschikbare ophaaldata staan in het aanvraagformulier; de planning bevestigen we persoonlijk.</p></details>
+        <details><summary>Wanneer is mijn materiaal weer klaar?</summary><p>We stemmen het ophaal- of brengmoment én het moment waarop je materiaal weer klaar is persoonlijk met je af. De beschikbare ophaaldata staan in het aanvraagformulier. Vertrek je binnenkort? Vermeld je eerste skidag bij je aanvraag.</p></details>
         <details><summary>Kan het ook met spoed?</summary><p>Als de planning het toelaat, geven we je onderhoud in overleg voorrang voor € 10 extra. Extra haal- of brengritten zijn niet inbegrepen.</p></details>
         <details><summary>Woon ik buiten het servicegebied?</summary><p>Deest en andere plaatsen buiten West Maas en Waal, Druten, Afferden en Horssen vallen buiten de gratis service. Zelf brengen en ophalen in Wamel kan op afspraak.</p></details>
         <details id="verhuur"><summary>Kan ik ook ski’s of een snowboard huren?</summary><p>Verhuur is mogelijk op aanvraag. We bekijken of we een passende set kunnen aanbieden of regelen. Maat, periode, prijs en beschikbaarheid worden eerst persoonlijk bevestigd.</p></details>
@@ -176,7 +189,7 @@
         <img src="images/logo-lockup.webp" alt="De Lattenspecialist" class="footer-logo">
         <p>Ambachtelijk ski- en snowboardonderhoud.<br>Zorgeloos pisteplezier.</p>
       </div>
-      <div><strong>Snel naar</strong><a href="#pakketten">Pakketten</a><a href="#onderhoud">Onderhoud</a><a href="#haalbreng">Haal & breng</a><a href="afspraak.html">Afspraak aanvragen</a><a href="app.html">Mijn onderhoud</a></div>
+      <div><strong>Snel naar</strong><a href="#pakketten">Pakketten</a><a href="#onderhoud">Onderhoud</a><a href="#haalbreng">Haal & breng</a><a href="afspraak.html">Onderhoud aanvragen</a><a href="app.html">Mijn onderhoud</a></div>
       <div><strong>Contact & bedrijfsgegevens</strong><a href="mailto:info@lattenspecialist.nl">info@lattenspecialist.nl</a><a href="https://wa.me/31618327132" target="_blank" rel="noopener">WhatsApp · 06 18 32 71 32</a><span>Bezoek uitsluitend op afspraak · Hollenhof 13 · 6659 BB Wamel</span><span>KvK 99668637</span><span>BTW-id NL005403580B64</span></div>
     </div>
     <div class="container footer-legal"><a href="privacy.html">Privacy</a><a href="service.html">Service-informatie</a><a href="ervaring.html">Deel je ervaring</a></div>
@@ -184,5 +197,8 @@
   </footer>
 
   <script src="script.js?v=10"></script>
+  <script src="package-choice.js?v=1"></script>
+  <script src="booking-config.js?v=2"></script>
+  <script src="website-metrics.js?v=1"></script>
 </body>
 </html>

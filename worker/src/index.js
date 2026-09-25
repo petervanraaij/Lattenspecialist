@@ -1,3 +1,5 @@
+import {handleMetrics} from './metrics.js';
+
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
 
@@ -404,6 +406,10 @@ export default {
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
     if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
+    if (['/api/metrics', '/api/admin/metrics'].includes(url.pathname)) {
+      if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
+      return handleMetrics(request, env, isAdminAuthorized(request, env));
+    }
 
     if (site === 'lattenspecialist' && request.method === 'GET' && url.pathname === '/api/address') {
       try {
