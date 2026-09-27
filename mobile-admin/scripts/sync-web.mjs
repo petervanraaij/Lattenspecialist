@@ -21,7 +21,7 @@ html = html
   .replace('</body>', '  <script src="native.js"></script>\n</body>');
 
 await writeFile(join(webRoot, 'index.html'), html);
-for (const file of ['beheer.js', 'booking-config.js', 'styles.css']) {
+for (const file of ['beheer.js', 'booking-config.js', 'styles.css', 'admin-metrics.css']) {
   await cp(join(siteRoot, file), join(webRoot, file));
 }
 for (const file of ['badge.webp', 'logo-main.webp', 'app-icon-192.png', 'app-icon-512.png']) {

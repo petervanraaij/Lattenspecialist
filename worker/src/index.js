@@ -266,6 +266,8 @@ const updateReservation = async (reference, raw, env) => {
   if (paymentAmount && (!/^\d{1,4}(\.\d{1,2})?$/.test(paymentAmount) || Number(paymentAmount) <= 0)) throw new ValidationError('Vul een geldig bedrag in.');
   const paymentUrl = clean(Object.prototype.hasOwnProperty.call(raw, 'paymentUrl') ? raw.paymentUrl : record.paymentUrl, 500);
   if (paymentUrl && !isHttpsUrl(paymentUrl)) throw new ValidationError('De betaallink moet met https:// beginnen.');
+  const sendsPaymentRequest = raw.sendPaymentEmail === true || (raw.sendWhatsApp === true && raw.notificationType === 'payment');
+  if (sendsPaymentRequest && (!paymentAmount || !paymentUrl)) throw new ValidationError('Vul eerst een bedrag en geldige betaallink in.');
   let serviceCode = normalizeServiceCode(raw.serviceCode || record.serviceCode);
   if ((raw.generateServiceCode === true || raw.sendStatusEmail === true || raw.sendWhatsApp === true) && !serviceCode) serviceCode = await assignUniqueServiceCode(store);
   if (serviceCode && !/^LS-[A-Z2-9]{6}$/.test(serviceCode)) throw new ValidationError('De servicecode heeft geen geldig formaat.');
