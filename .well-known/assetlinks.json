@@ -4,7 +4,10 @@
     "target": {
       "namespace": "android_app",
       "package_name": "nl.lattenspecialist.klanten",
-      "sha256_cert_fingerprints": ["F9:3B:5B:AB:D0:C6:81:0E:1A:8D:F9:70:79:8D:C2:2E:01:20:63:0D:B9:06:D5:0F:8C:58:B1:77:B8:0E:37:BB"]
+      "sha256_cert_fingerprints": [
+        "F9:3B:5B:AB:D0:C6:81:0E:1A:8D:F9:70:79:8D:C2:2E:01:20:63:0D:B9:06:D5:0F:8C:58:B1:77:B8:0E:37:BB",
+        "A1:44:05:CF:27:55:EA:99:37:E1:54:61:12:97:52:20:AD:40:F0:33:ED:51:A3:DB:54:82:4F:15:BD:EE:16:74"
+      ]
     }
   }
 ]
