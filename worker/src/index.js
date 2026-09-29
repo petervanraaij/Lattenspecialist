@@ -1,5 +1,6 @@
 import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
 import {handleMetrics} from './metrics.js';
+import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, ensureTeamRecord, saveOwnerRecord} from './team.js';
 
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
@@ -238,7 +239,7 @@ const listReservations = async env => {
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
   records.sort((left, right) => String(right.createdAt || '').localeCompare(String(left.createdAt || '')));
-  return records;
+  return mergeTeamRecords(records, env);
 };
 
 const assignUniqueServiceCode = async store => {
@@ -252,8 +253,9 @@ const assignUniqueServiceCode = async store => {
 const updateReservation = async (reference, raw, env) => {
   const store = requireReservationStore(env);
   const key = `reservation:${reference}`;
-  const record = await store.get(key, 'json');
+  const record = await teamRecord(reference, env) || await store.get(key, 'json');
   if (!record) return null;
+  if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(record, env);
   const currentStep = Math.max(1, Math.min(STATUS_STEPS.length, Number(raw.currentStep) || Number(record.currentStep) || 1));
   const status = clean(Object.prototype.hasOwnProperty.call(raw, 'status') ? raw.status : record.status, 100) || STATUS_STEPS[currentStep - 1];
   const expectedReady = clean(Object.prototype.hasOwnProperty.call(raw, 'expectedReady') ? raw.expectedReady : record.expectedReady, 40);
@@ -272,15 +274,16 @@ const updateReservation = async (reference, raw, env) => {
   if (serviceCode) {
     const owner = await store.get(`service:${serviceCode}`);
     if (owner && owner !== reference) throw new ValidationError('Deze servicecode is al in gebruik.');
-    await store.put(`service:${serviceCode}`, reference);
   }
   const updated = {
     ...record, serviceCode: serviceCode || null, currentStep, status, expectedReady, note, whatsappConsent,
     waxType, paymentAmount, paymentUrl, closedAt: closed ? (record.closedAt || new Date().toISOString()) : null,
     updatedAt: new Date().toISOString()
   };
-  await store.put(key, JSON.stringify(updated));
-  return updated;
+  const saved = env.LATTENSPECIALIST_TEAM_DB ? await saveOwnerRecord(updated, raw, env) : updated;
+  if (!env.LATTENSPECIALIST_TEAM_DB) await store.put(key, JSON.stringify(saved));
+  if (serviceCode) await store.put(`service:${serviceCode}`, reference);
+  return saved;
 };
 
 const publicStatus = record => ({
@@ -297,10 +300,12 @@ const publicStatus = record => ({
 });
 
 const getReservationByServiceCode = async (code, env) => {
+  const saved = await teamStatusRecord(code, env);
+  if (saved) return saved;
   const store = requireReservationStore(env);
   const reference = await store.get(`service:${code}`);
   if (!reference) return null;
-  return store.get(`reservation:${reference}`, 'json');
+  return await teamRecord(reference, env) || store.get(`reservation:${reference}`, 'json');
 };
 
 const sendResendEmail = async (message, env) => {
@@ -413,6 +418,10 @@ export default {
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
     if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/team/') || url.pathname.startsWith('/api/admin/team/')) {
+      if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
+      return handleTeam(request, env, {owner:isAdminAuthorized(request,env), json, origin, steps:STATUS_STEPS, waxes:WAX_OPTIONS, clean});
+    }
     if (['/api/metrics', '/api/admin/metrics'].includes(url.pathname)) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleMetrics(request, env, isAdminAuthorized(request, env));
@@ -488,7 +497,7 @@ export default {
         return json({ok: true, record, notifications}, 200, origin);
       } catch (error) {
         const validation = error instanceof ValidationError;
-        return json({message: validation ? error.message : 'De aanvraag kon niet worden bijgewerkt.'}, validation ? 400 : 502, origin);
+        return json({message: error instanceof TeamError || validation ? error.message : 'De aanvraag kon niet worden bijgewerkt.'}, error instanceof TeamError ? error.status : validation ? 400 : 502, origin);
       }
     }
 

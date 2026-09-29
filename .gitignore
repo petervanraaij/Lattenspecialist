@@ -1,4 +1,7 @@
 worker/node_modules/
+social-agent/node_modules/
+social-agent/.wrangler/
+social-agent/.dev.vars
 mobile-admin/node_modules/
 mobile-admin/resources/
 mobile-admin/dist/
@@ -28,5 +31,12 @@ worker/.dry-run/
 *.jks
 *.keystore
 *.dpapi
+mobile-staff/node_modules/
+mobile-staff/www/
+mobile-staff/dist/
+mobile-staff/android/app/src/main/res/**/*.png
+mobile-staff/ios/
+worker/.team-preview/
+worker/.team-backups/
 keystore.properties
 .wrangler/

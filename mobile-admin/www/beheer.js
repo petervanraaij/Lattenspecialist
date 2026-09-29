@@ -25,6 +25,7 @@
   const formatDate = value => { if (!value || value === 'In overleg') return value || '—'; const date = new Date(`${value}T12:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('nl-NL',{weekday:'short',day:'numeric',month:'long',year:'numeric'}).format(date); };
   const normalizeWhatsAppPhone = value => { let digits = String(value || '').replace(/\D/g,''); if (digits.startsWith('00')) digits = digits.slice(2); if (digits.startsWith('0')) digits = `31${digits.slice(1)}`; return digits; };
   const valueOrDash = value => value ? escapeHtml(value) : '—';
+  const customerStatusUrl = record => /^LS-[A-Z2-9]{6}$/.test(record.serviceCode || '') ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : '';
   const headers = () => ({Authorization:`Bearer ${token}`,'Content-Type':'application/json'});
   const showLoginStatus = message => { loginStatus.textContent = message; loginStatus.className = 'booking-status is-visible is-error'; };
   const suggestWax = record => {
@@ -46,7 +47,8 @@
     if (type === 'status') {
       if (record.note) lines.push('',record.note);
       if (record.expectedReady) lines.push('',`Verwacht klaar: ${formatDate(record.expectedReady)}`);
-      lines.push('',`Servicecode: ${record.serviceCode || record.reference}`,'Bekijk je voortgang: https://lattenspecialist.nl/app.html','','Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.','','Groet,','De Lattenspecialist');
+      const statusUrl = customerStatusUrl(record);
+      lines.push('','Bekijk je onderhoudsstatus:',statusUrl,'Deze persoonlijke link opent direct jouw onderhoud. Je hoeft niets te installeren of een code in te voeren.','','Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.','','Groet,','De Lattenspecialist');
     }
     return `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
   };
@@ -116,7 +118,11 @@
         <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
         <form class="admin-update-form">
           <h3>Onderhoud registreren</h3>
+          <label><span>Toegewezen medewerker</span><select name="assignedTo">${window.LattenspecialistTeam?.options(record.assignedTo) || '<option value="">Nog niet toegewezen</option>'}</select></label>
+          ${record.workNote ? `<div class="team-work-note"><b>Werknotitie medewerker</b><p>${escapeHtml(record.workNote)}</p></div>` : ''}
+          <button class="btn btn-dark team-history" type="button">Bekijk werklogboek</button><div class="team-audit" hidden></div>
           <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Nog niet toegekend" readonly><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
+          ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan + klant berichten” gebeurt dit automatisch.</p>'}
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
           <label><span>Wax voor deze beurt</span><select name="waxType">${waxChoices}</select><small class="field-hint">Voorstel op basis van de opgegeven omstandigheden; controleer dit zelf.</small></label>
           <label><span>Verwacht klaar</span><input type="date" name="expectedReady" value="${escapeHtml(record.expectedReady || '')}"></label>
@@ -141,14 +147,33 @@
     applySearch();
   };
 
+  let metricsVersion = 0;
+  const loadMetrics = async () => {
+    const target = document.querySelector('#websiteMetrics');
+    const version = ++metricsVersion;
+    const auth = token;
+    const days = document.querySelector('#metricsPeriod').value;
+    target.textContent = 'Tellingen laden…';
+    try {
+      const result = await api('/api/admin/metrics?days=' + days);
+      if (version !== metricsVersion || token !== auth) return;
+      const labels = {packages_viewed:'Pakketten bekeken',form_opened:'Formulier geopend',form_started:'Invullen gestart',booking_submitted:'Aanvraag verstuurd'};
+      target.replaceChildren(...Object.entries(labels).map(([key,label]) => {
+        const item = document.createElement('div'), value = document.createElement('strong'), caption = document.createElement('span');
+        value.textContent = Number(result.totals?.[key] || 0).toLocaleString('nl-NL');
+        caption.textContent = label; item.append(value,caption); return item;
+      }));
+    } catch { if (version === metricsVersion && token === auth) target.textContent = 'Tellingen tijdelijk niet beschikbaar. Je kunt de reserveringen gewoon beheren.'; }
+  };
+  document.querySelector('#metricsPeriod').addEventListener('change', loadMetrics);
   const loadDashboard = async () => {
     if (!endpoint) throw new Error('De beheerservice is nog niet gekoppeld.');
     refreshButton.disabled = true;
     list.innerHTML = '<div class="admin-empty"><strong>Reserveringen laden…</strong></div>';
     try {
-      const [reservationResult] = await Promise.all([api('/api/admin/reservations'),loadAvailability()]);
+      const [reservationResult] = await Promise.all([api('/api/admin/reservations'),loadAvailability(),window.LattenspecialistTeam?.init(api,render)]);
       records = reservationResult.records || [];
-      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render();
+      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render(); void loadMetrics();
     } finally { refreshButton.disabled = false; }
   };
 
@@ -159,9 +184,26 @@
   });
 
   list.addEventListener('click', async event => {
+    const historyButton=event.target.closest('.team-history');
+    if(historyButton){const card=historyButton.closest('.admin-record'),target=card.querySelector('.team-audit');target.hidden=false;target.textContent='Logboek laden…';try{const result=await api('/api/admin/team/audit?reference='+encodeURIComponent(card.dataset.reference));target.textContent=result.events.map(item=>`${formatDateTime(item.created_at)} · ${item.actor==='owner'?'Beheer':'Medewerker'} · ${steps[item.current_step-1] || ''} · ${item.wax_type || ''}${item.work_note?'\n'+item.work_note:''}`).join('\n\n') || 'Nog geen wijzigingen geregistreerd.';}catch(error){target.textContent=error.message;}return;}
+    const copyButton = event.target.closest('.copy-customer-link');
+    if (copyButton) {
+      const section = copyButton.closest('.admin-customer-link');
+      const input = section.querySelector('.customer-status-link');
+      const feedback = section.querySelector('.customer-link-message');
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+        await navigator.clipboard.writeText(input.value);
+        feedback.textContent = 'Klantlink gekopieerd. Je kunt hem in het bericht aan deze klant plakken.';
+      } catch {
+        input.focus(); input.select();
+        feedback.textContent = 'De link is geselecteerd. Kies Kopiëren in het menu van je telefoon of gebruik Ctrl+C.';
+      }
+      return;
+    }
     const button = event.target.closest('.generate-code'); if (!button) return;
     const card = button.closest('.admin-record'); const message = card.querySelector('.admin-record-message'); button.disabled = true; message.textContent = 'Servicecode maken…';
-    try { const result = await api(`/api/admin/reservations/${encodeURIComponent(card.dataset.reference)}`,{method:'PATCH',body:JSON.stringify({generateServiceCode:true})}); records = records.map(record => record.reference === result.record.reference ? result.record : record); render(); }
+    try { const result = await api(`/api/admin/reservations/${encodeURIComponent(card.dataset.reference)}`,{method:'PATCH',body:JSON.stringify({generateServiceCode:true,revision:records.find(r=>r.reference===card.dataset.reference)?.revision ?? 0})}); records = records.map(record => record.reference === result.record.reference ? result.record : record); render(); }
     catch (error) { message.textContent = error.message; message.className = 'admin-record-message is-error'; button.disabled = false; }
   });
 
@@ -170,6 +212,7 @@
     const card = form.closest('.admin-record'); const message = form.querySelector('.admin-record-message'); const buttons = [...form.querySelectorAll('button')];
     const action = event.submitter?.dataset.action || 'save'; const existing = records.find(record => record.reference === card.dataset.reference); const values = Object.fromEntries(new FormData(form)); const currentStep = Number(values.currentStep);
     const payload = {serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,note:values.note,waxType:values.waxType,whatsappConsent:form.elements.whatsappConsent.checked,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl};
+    payload.revision=existing?.revision ?? 0;payload.assignedTo=values.assignedTo || '';
     if (action === 'notify') { payload.sendStatusEmail = true; payload.sendWhatsApp = true; payload.notificationType = 'status'; }
     if (action === 'payment') { payload.sendPaymentEmail = true; payload.sendWhatsApp = true; payload.notificationType = 'payment'; }
     if (action === 'close') payload.closed = !existing?.closedAt;
@@ -195,7 +238,7 @@
   addAvailabilityButton.addEventListener('click',() => { const date = customAvailabilityDate.value; if (!date) return; availableDates.add(date); renderAvailability(); customAvailabilityDate.value = ''; });
   search.addEventListener('input',applySearch);
   refreshButton.addEventListener('click',() => loadDashboard().catch(error => { list.innerHTML = `<div class="admin-empty"><strong>Laden mislukt</strong><p>${escapeHtml(error.message)}</p></div>`; }));
-  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[]; dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false; });
+  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];list.replaceChildren();window.LattenspecialistTeam?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false; });
 
   let installPrompt; const installButton = document.querySelector('#installAdmin');
   window.addEventListener('beforeinstallprompt',event => { event.preventDefault(); installPrompt=event; installButton.hidden=false; });
