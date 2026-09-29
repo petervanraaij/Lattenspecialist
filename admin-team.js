@@ -1,5 +1,5 @@
 (() => {
- let members=[],api,refresh;
+ let members=[],api,refresh,generation=0;
  const escape=value=>String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const panel=()=>document.querySelector('#teamPanel');
  function render(){
@@ -10,22 +10,24 @@
   document.querySelector('#hideTeamKey').onclick=()=>{document.querySelector('#teamKey input').value='';document.querySelector('#teamKey').hidden=true;};
  }
  function reveal(result){if(!result.accessKey)return;const box=document.querySelector('#teamKey');box.hidden=false;box.querySelector('input').value=result.accessKey;document.querySelector('#teamMessage').textContent=`Toegang aangemaakt voor ${result.name} (${result.login}).`;}
- async function load(){try{members=(await api('/api/admin/team/members')).members;render();}catch(error){members=[];panel().textContent=error.message;} }
+ async function load(expected=generation){try{const result=await api('/api/admin/team/members');if(expected!==generation)return;members=result.members;render();}catch(error){if(expected!==generation)return;members=[];panel().textContent=error.message;} }
  window.LattenspecialistTeam={
   async init(client,onChange){api=client;refresh=onChange;await load();},
-  options(selected){return '<option value="">Nog niet toegewezen</option>'+members.filter(m=>m.active || m.id===selected).map(m=>`<option value="${escape(m.id)}"${m.id===selected?' selected':''}>${escape(m.name)}${m.active?'':' (ingetrokken)'}</option>`).join('');},
-  clear(){members=[];if(panel())panel().replaceChildren();}
+  options(selected){return '<option value="">Nog niet toegewezen</option>'+(selected&&!members.some(m=>m.id===selected)?`<option value="${escape(selected)}" selected>Huidige toewijzing (naam niet beschikbaar)</option>`:'')+members.filter(m=>m.active || m.id===selected).map(m=>`<option value="${escape(m.id)}"${m.id===selected?' selected':''}>${escape(m.name)}${m.active?'':' (ingetrokken)'}</option>`).join('');},
+  clear(){generation++;members=[];if(panel())panel().replaceChildren();}
  };
  document.addEventListener('submit',async event=>{
   if(event.target.id!=='createMember')return;event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;
-  try{const result=await api('/api/admin/team/members',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(event.target)))});await load();reveal(result);refresh();}
-  catch(error){document.querySelector('#teamMessage').textContent=error.message;button.disabled=false;}
+  const expected=generation;
+  try{const result=await api('/api/admin/team/members',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(event.target)))});if(expected!==generation)return;await load(expected);if(expected!==generation)return;reveal(result);refresh();}
+  catch(error){if(expected!==generation)return;const message=document.querySelector('#teamMessage');if(message)message.textContent=error.message;button.disabled=false;}
  });
  document.addEventListener('click',async event=>{
   const button=event.target.closest('[data-member]');if(!button)return;
   if(!confirm(button.dataset.action==='revoke'?'Toegang van deze medewerker direct intrekken?':'Een nieuwe sleutel maken? De oude sleutel en alle bestaande sessies vervallen.'))return;
   button.disabled=true;
-  try{const result=await api('/api/admin/team/members/'+encodeURIComponent(button.dataset.member),{method:'PATCH',body:JSON.stringify({action:button.dataset.action})});await load();reveal(result);refresh();}
-  catch(error){document.querySelector('#teamMessage').textContent=error.message;button.disabled=false;}
+  const expected=generation;
+  try{const result=await api('/api/admin/team/members/'+encodeURIComponent(button.dataset.member),{method:'PATCH',body:JSON.stringify({action:button.dataset.action})});if(expected!==generation)return;await load(expected);if(expected!==generation)return;reveal(result);refresh();}
+  catch(error){if(expected!==generation)return;const message=document.querySelector('#teamMessage');if(message)message.textContent=error.message;button.disabled=false;}
  });
 })();
