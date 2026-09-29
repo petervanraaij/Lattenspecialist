@@ -14,8 +14,8 @@ In Android Studio kies je de `debug`-variant voor ontwikkelen en `release` voor 
 
 ## Eerst nodig in het eigen Play Console-account
 
-1. Maak/verifieer het ontwikkelaarsaccount en vul de eigenaar-/bedrijfsgegevens zelf correct in. Dit project heeft geen account of betaling aangemaakt.
-2. Maak **Mijn Lattenspecialist** als app aan, met pakketnaam `nl.lattenspecialist.klanten`.
+1. Het organisatieaccount **Van Raaij Services** (`beheer@vanraaijservice.nl`, account-ID `6558417675951251751`) is aangemaakt en betaald door Peter. Op 29 september 2026 zijn de afgeronde identiteitsverificatie en beide geverifieerde telefoonnummers in Play Console gecontroleerd.
+2. **Mijn Lattenspecialist** is geregistreerd in Play Console (Play app-ID `4972188105715999991`); het appdashboard is op 29 september 2026 gecontroleerd. Het formulier was voorbereid als gratis Nederlandstalige app met pakketnaam `nl.lattenspecialist.klanten`. Er is nog geen release geüpload of gepubliceerd. Medewerkers en beheer krijgen aparte apps; zie [de afgesproken indeling](../PLATFORM.md#drie-afzonderlijke-apps).
 3. Stel Play App Signing en een uploadsleutel in. De bestaande lokale releasesleutel staat buiten Git in `%LOCALAPPDATA%\Lattenspecialist\Signing`. Bewaar die en een herstelkopie. De bestaande DPAPI-beveiliging vereist hetzelfde Windows-profiel. Kies bewust of dezelfde app-signingsleutel via Google's voorgeschreven import wordt behouden of dat Google een nieuwe beheert; een andere sleutel is geen directe update voor oude losse APK-installaties.
 4. Onderteken de AAB lokaal met de geregistreerde uploadsleutel via Android Studio **Build → Generate Signed Bundle / APK → Android App Bundle** of de officiële `jarsigner`-route. Zet nooit de sleutel, het wachtwoord of de beheercode in Git of artifacts. Controleer de handtekening en het versienummer vóór uploaden. `apksigner` is voor APK's, niet voor AAB's.
 5. Upload eerst naar **Intern testen** en nodig eigen testers uit. Gebruik daarna de vereiste test-/productietoegang van het account. Nieuwe persoonlijke accounts kunnen een gesloten test met 12 testers gedurende 14 aaneengesloten dagen moeten doorlopen.

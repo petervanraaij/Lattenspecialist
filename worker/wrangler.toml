@@ -20,3 +20,9 @@ binding = "LATTENSPECIALIST_ANALYTICS_DB"
 database_name = "lattenspecialist-website-statistieken"
 database_id = "1a54873f-d70f-41f4-a43c-2a3c1f011a94"
 migrations_dir = "migrations"
+
+[[d1_databases]]
+binding = "LATTENSPECIALIST_TEAM_DB"
+database_name = "lattenspecialist-team"
+database_id = "a6ac1b03-844f-40ab-ba7b-e8d76cc3b045"
+migrations_dir = "team-migrations"

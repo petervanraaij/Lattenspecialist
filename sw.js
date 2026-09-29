@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v27-facebook-pagina';
+const CACHE_NAME = 'lattenspecialist-v28-medewerkers';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -26,7 +26,9 @@ const APP_SHELL = [
   '/customer-app.css?v=1',
   '/customer-app.js?v=3',
   '/pwa-install.js?v=1',
-  '/beheer.js?v=7',
+  '/beheer.js?v=8',
+  '/admin-team.js?v=1',
+  '/team.css?v=1',
   '/admin-metrics.css?v=1',
   '/review.js?v=9',
   '/manifest.webmanifest',
