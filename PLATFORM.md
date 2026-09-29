@@ -8,11 +8,11 @@ Op 29 september 2026 heeft Peter gekozen voor drie aparte apps onder het ontwikk
 
 | App | Android-pakketnaam | Doel | Huidige staat |
 | --- | --- | --- | --- |
-| Mijn Lattenspecialist | `nl.lattenspecialist.klanten` | Klanten: aanvragen en eigen onderhoudsstatus bekijken. Persoonlijke webstatuslink blijft beschikbaar. | Bestaand project `mobile-customer`; appregistratie in Google Play aangemaakt, nog niet gepubliceerd. |
-| Lattenspecialist Medewerkers | `nl.lattenspecialist.medewerkers` | Medewerkers: toegewezen werk, werkzaamheden en wax registreren, toegestane voortgang bijwerken. | Webapp `medewerkers.html`, Android-project `mobile-staff`; als concept geregistreerd in Google Play. |
-| Lattenspecialist Beheer | `nl.lattenspecialist.beheer` | Peter: aanvragen, planning, betalingen, medewerkers en toewijzingen beheren. | Project `mobile-admin` met dezelfde schermen als webbeheer; als concept geregistreerd in Google Play. |
+| Mijn Lattenspecialist | `nl.lattenspecialist.klanten` | Klanten: aanvragen en eigen onderhoudsstatus bekijken. Persoonlijke webstatuslink blijft beschikbaar. | `mobile-customer`; versie 1.1.0 (3) beschikbaar voor interne Google Play-test. |
+| Lattenspecialist Medewerkers | `nl.lattenspecialist.medewerkers` | Medewerkers: toegewezen werk, werkzaamheden en wax registreren, toegestane voortgang bijwerken. | Webapp `medewerkers.html` live; `mobile-staff` 1.0.0 (1) beschikbaar voor interne Google Play-test. |
+| Lattenspecialist Beheer | `nl.lattenspecialist.beheer` | Peter: aanvragen, planning, betalingen, medewerkers en toewijzingen beheren. | Webbeheer live; `mobile-admin` 1.1.0 (2) beschikbaar voor interne Google Play-test. |
 
-Het Play Console-account en beide telefoonnummers zijn geverifieerd. Op 29 september 2026 zijn de drie registraties gecontroleerd in het appoverzicht: alle drie hebben status **Draft**, zonder publicatie. Peter heeft expliciet toestemming gegeven de beleids- en exportverklaringen voor medewerkers en beheer te accepteren en hun registraties af te ronden.
+Het Play Console-account en beide telefoonnummers zijn geverifieerd. Op 29 september 2026 zijn drie ondertekende AAB's geaccepteerd en uitgerold naar intern testen. De lijst **Peter – Lattenspecialist test** is gekoppeld; de apps zijn niet publiek uitgebracht. Google toont voorlopig een technische naam met **unreviewed** tot de appinrichting en beoordeling zijn afgerond. Een praktijktest op een echt Android-toestel staat nog open.
 
 | App | Play app-ID | Console |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ Het Play Console-account en beide telefoonnummers zijn geverifieerd. Op 29 septe
 | Medewerkers | `4976227964173634169` | [Dashboard medewerkers](https://play.google.com/console/u/1/developers/6558417675951251751/app/4976227964173634169/app-dashboard) |
 | Beheer | `4976474646127870835` | [Dashboard beheer](https://play.google.com/console/u/1/developers/6558417675951251751/app/4976474646127870835/app-dashboard) |
 
-Elke app krijgt een eigen versie, bouwbestand, testtraject en winkelvermelding. Er zijn nog geen releasebestanden geüpload tijdens deze registratie. De medewerkers- en beheerapp krijgen eerst een beperkte testdistributie; toegang tot klantgegevens vereist daarnaast altijd controle door de server.
+Elke app heeft een eigen versie, bouwbestand, testtraject en winkelvermelding. Interne testlinks (Google-account moet in de testlijst staan): [klanten](https://play.google.com/apps/internaltest/4701567766370931615), [medewerkers](https://play.google.com/apps/internaltest/4701352554204115701), [beheer](https://play.google.com/apps/internaltest/4701344778796450203). Toegang tot gegevens vereist daarnaast de persoonlijke klantlink, medewerkersaanmelding of eigenaarssleutel.
 
 ## Wat werkt nu
 
