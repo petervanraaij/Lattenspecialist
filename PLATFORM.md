@@ -4,13 +4,13 @@ Deze repository is de gezamenlijke ontwikkelomgeving. Het klantportaal, de Andro
 
 ## Drie afzonderlijke apps
 
-Op 29 september 2026 heeft Peter gekozen voor drie aparte apps onder het ontwikkelaarsaccount **Van Raaij Services**. Ze gebruiken dezelfde onderhoudsdienst, met afzonderlijke toegang per gebruiker en rol. Die rollenverdeling is het doel; medewerkersaccounts en serverzijdige rollencontrole zijn nog niet gerealiseerd.
+Op 29 september 2026 heeft Peter gekozen voor drie aparte apps onder het ontwikkelaarsaccount **Van Raaij Services**. Ze gebruiken dezelfde onderhoudsdienst. Medewerkers hebben een eigen intrekbare toegangssleutel, een sessie van maximaal twaalf uur en serverzijdige controle op werktoewijzing. Beheer houdt de bestaande eigenaarstoegang. Klanten gebruiken hun persoonlijke statuslink.
 
 | App | Android-pakketnaam | Doel | Huidige staat |
 | --- | --- | --- | --- |
 | Mijn Lattenspecialist | `nl.lattenspecialist.klanten` | Klanten: aanvragen en eigen onderhoudsstatus bekijken. Persoonlijke webstatuslink blijft beschikbaar. | Bestaand project `mobile-customer`; appregistratie in Google Play aangemaakt, nog niet gepubliceerd. |
-| Lattenspecialist Medewerkers | `nl.lattenspecialist.medewerkers` | Medewerkers: toegewezen werk, werkzaamheden en wax registreren, toegestane voortgang bijwerken. | Als concept geregistreerd in Google Play; de app en persoonlijke aanmelding moeten nog worden gebouwd. |
-| Lattenspecialist Beheer | `nl.lattenspecialist.beheer` | Peter: aanvragen, planning, betalingen en uiteindelijk gebruikersrechten beheren. | Bestaand project `mobile-admin`; als concept geregistreerd in Google Play. Persoonlijke gebruikers- en rechtenadministratie moet nog worden gebouwd. |
+| Lattenspecialist Medewerkers | `nl.lattenspecialist.medewerkers` | Medewerkers: toegewezen werk, werkzaamheden en wax registreren, toegestane voortgang bijwerken. | Webapp `medewerkers.html`, Android-project `mobile-staff`; als concept geregistreerd in Google Play. |
+| Lattenspecialist Beheer | `nl.lattenspecialist.beheer` | Peter: aanvragen, planning, betalingen, medewerkers en toewijzingen beheren. | Project `mobile-admin` met dezelfde schermen als webbeheer; als concept geregistreerd in Google Play. |
 
 Het Play Console-account en beide telefoonnummers zijn geverifieerd. Op 29 september 2026 zijn de drie registraties gecontroleerd in het appoverzicht: alle drie hebben status **Draft**, zonder publicatie. Peter heeft expliciet toestemming gegeven de beleids- en exportverklaringen voor medewerkers en beheer te accepteren en hun registraties af te ronden.
 
@@ -38,19 +38,19 @@ Op Windows kun je ook dubbelklikken op `Start-ontwikkelplatform.cmd`. Node.js mo
 
 `npm run check` controleert klantinteracties, klantlinks, de preview en de reserveringsdienst. `npm run android:open` opent het Android-project na synchronisatie (Android Studio moet geïnstalleerd zijn). `npm run android:dev` bouwt de interne testapp; `npm run android:bundle` bouwt de AAB. Java 21, Android SDK en de bestaande Pillow-assetsgenerator zijn hiervoor nodig. De GitHub-workflow levert dezelfde Android-bestanden zonder lokale SDK-installatie.
 
-## Uitbreiding met medewerkers en accounts
+## Medewerkers en accounts
 
-Individuele gebruikersaccounts en medewerkersrechten zijn **nog niet gebouwd**. De huidige beheercode is één eigenaarstoegang en is niet geschikt als gedeeld medewerkerswachtwoord. De persoonlijke onderhoudslink is beperkte toegang tot één onderhoudsstatus, geen volledig klantaccount.
+Persoonlijke medewerkersaanmelding en werktoewijzing zijn gebouwd. De eigenaar maakt in beheer een naam en gebruikersnaam aan; de server genereert een willekeurige sleutel die maar één keer wordt getoond. Alleen de hash wordt opgeslagen. Nieuwe sleutel of toegang intrekken maakt alle bestaande sessies ongeldig. De beheercode blijft uitsluitend voor de eigenaar. Een persoonlijk klantaccount met wachtwoord is niet toegevoegd: de bestaande statuslink blijft beperkte toegang tot één onderhoudsstatus.
 
-Volgende uitbreiding: een aparte medewerkersapp en servercontrole van rollen. Gewenste rolverdeling:
+De server controleert deze rolverdeling:
 
 | Rol | Gewenste toegang |
 | --- | --- |
-| Klant | Alleen eigen aanvragen en materiaal; persoonlijke link blijft beschikbaar voor status. |
-| Medewerker | Toegewezen onderhoud, registreren van werkzaamheden en wax, toegestane statuswijzigingen. |
-| Beheerder | Planning, aanvragen, betalingen, medewerkers uitnodigen en rechten intrekken. |
+| Klant | Alleen de beperkte onderhoudsstatus via de persoonlijke link; geen medewerkergegevens of interne notities. |
+| Medewerker | Alleen toegewezen, open onderhoud: voornaam, materiaal, pakket, omstandigheden, verwachte gereeddatum, werknotitie en wax. Geen contactgegevens, betaallinks, bedragen of klantstatuscodes. |
+| Beheerder | Planning, aanvragen, betalingen, medewerkers aanmaken, toewijzen, toegang intrekken en het werklogboek bekijken. |
 
-Vóór activeren: individuele aanmelding, serverzijdige autorisatie per aanvraag en bedrijf, sessies en herstelprocedure, logboek van wijzigingen, aparte testopslag en tests voor ingetrokken toegang. Welke medewerkers gegevens mogen inzien en betalingen mogen beheren moet bij die uitbreiding worden vastgesteld. Het verbergen van een scherm in de app geeft op zichzelf geen toegangsbeveiliging.
+SQL-controle op medewerker, sessie, werktoewijzing en versienummer voorkomt ongeautoriseerde wijzigingen en overschrijven van een inmiddels gewijzigde opdracht. Een SQL-trigger schrijft het werklogboek in dezelfde transactie. De omgeving is uitsluitend voor Lattenspecialist; er is geen gedeelde toegang tot Stuiterbaas. Zie [TEAM.md](TEAM.md) voor bediening, opslag, testen en herstel. Algemene rollen op maat, meerdere eigenaarsaccounts, biometrie en pushmeldingen zijn geen onderdeel van deze versie.
 
 ## Latere applicaties
 
