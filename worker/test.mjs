@@ -161,6 +161,14 @@ try {
   const paymentResult = await paymentResponse.json();
   assert.equal(paymentResult.notifications.paymentEmail.sent, true);
 
+  const emptyPaymentReference = 'LS-2609-EMPTY2';
+  await store.put(`reservation:${emptyPaymentReference}`, JSON.stringify({...adminResult.records[0], reference:emptyPaymentReference, paymentAmount:'', paymentUrl:''}));
+  requests.length = 0;
+  const emptyPaymentResponse = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${emptyPaymentReference}`, {method:'PATCH',headers:adminHeaders,body:JSON.stringify({sendPaymentEmail:true,sendWhatsApp:true,notificationType:'payment'})}),testEnv);
+  assert.equal(emptyPaymentResponse.status,400);
+  assert.match((await emptyPaymentResponse.json()).message,/bedrag en geldige betaallink/);
+  assert.equal(requests.some(request => request.url.includes('api.resend.com') || request.url.includes('graph.facebook.com')),false);
+
   const closeResponse = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${lattenResult.reference}`, {method: 'PATCH', headers: adminHeaders, body: JSON.stringify({closed: true})}), testEnv);
   assert.ok((await closeResponse.json()).record.closedAt);
 
