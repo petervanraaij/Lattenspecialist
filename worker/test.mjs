@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import worker, {STATUS_STEPS, createReference, createServiceCode, escapeHtml, getSite, normalizeServiceCode, readAndValidateLattenspecialist, readAndValidateStuiterbaas} from './src/index.js';
+import worker, {STATUS_STEPS, createReference, createServiceCode, escapeHtml, getSite, normalizeServiceCode, readAndValidateLattenspecialist, readAndValidateStuiterbaas, saveLattenspecialistReservation} from './src/index.js';
 
 const stuiterOrigin = 'https://stuiterbaas.nl';
 const lattenOrigin = 'https://lattenspecialist.nl';
@@ -91,6 +91,15 @@ class MemoryKV {
   }
 }
 const store = new MemoryKV();
+let euRecord;
+const euDb = {prepare(sql) { return {bind(...values) { return {
+  async run() { if (sql.startsWith('INSERT OR IGNORE INTO records')) euRecord={reference:values[0],payload:values[1],revision:0,assigned_to:null}; return {success:true}; },
+  async first() { return sql.startsWith('SELECT * FROM records') ? euRecord : null; }
+}; }}; }};
+const unusedKv = new MemoryKV();
+await saveLattenspecialistReservation(lattenPayload, 'LS-2609-EUONLY', {LATTENSPECIALIST_TEAM_DB:euDb,LATTENSPECIALIST_RESERVATIONS_KV:unusedKv});
+assert.equal(JSON.parse(euRecord.payload).email,lattenPayload.email);
+assert.equal((await unusedKv.list({prefix:'reservation:'})).keys.length,0);
 let lookupCity = 'Wamel';
 const nativeFetch = globalThis.fetch;
 globalThis.fetch = async (url, options) => {

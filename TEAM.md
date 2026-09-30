@@ -13,10 +13,11 @@ De medewerker mag geen betalingen, klantcontact, toewijzing, planning of afmeldi
 
 ## Opslag en API
 
-- `LATTENSPECIALIST_TEAM_DB`: D1 `lattenspecialist-team`, ID `a6ac1b03-844f-40ab-ba7b-e8d76cc3b045`, regio WEUR.
+- `LATTENSPECIALIST_TEAM_DB`: D1 `lattenspecialist-team-eu`, ID `1b56c1db-5ab9-4b1d-80c9-f9ab4189988b`, met de vaste Cloudflare-jurisdictie `eu`. De eerdere database `lattenspecialist-team` blijft tijdens de gecontroleerde migratie beschikbaar als terugvalkopie.
 - `members`: gebruikersnaam, naam, hash van een willekeurige 256-bit toegangssleutel en actief-status.
 - `sessions`: uitsluitend hashes van sessietokens, medewerker en verloopmoment.
-- `records`: volledige actuele aanvraag, toewijzing en versienummer. Bestaande KV-aanvragen worden pas bij de eerste beheerwijziging overgenomen. Daarna is D1 de bron voor die aanvraag. Ongewijzigde en nieuwe aanvragen blijven leesbaar uit KV. KV is geen actuele herstelkopie van gewijzigde aanvragen.
+- `records`: volledige actuele aanvraag, toewijzing en versienummer. Eventuele oudere KV-aanvragen worden bij de eerste beheerwijziging overgenomen. Daarna is D1 de bron voor die aanvraag. KV is geen actuele herstelkopie van gewijzigde aanvragen.
+- Nieuwe klantaanvragen worden direct in de EU-D1-database opgeslagen. KV bevat alleen niet-persoonlijke instellingen en servicecodeverwijzingen en blijft uitsluitend een compatibiliteitsbron voor eventuele oudere aanvragen.
 - `team_audit`: actor, voortgang, wax, werknotitie, toewijzing, afmelding en tijd bij elke wijziging. Geen sleutels in het logboek.
 - `login_limits`: tijdgebonden hash van IP-adres en tijdvak; maximaal twintig aanmeldpogingen per vijftien minuten. Verlopen sessies en limieten worden bij succesvolle aanmelding opgeruimd.
 - `/api/team/login`, `/session`, `/logout`, `/tasks`, `/tasks/:reference`: medewerkersfuncties.

@@ -405,12 +405,15 @@ const sendLattenspecialistEmail = async (data, reference, env) => {
 };
 
 const saveLattenspecialistReservation = async (data, reference, env) => {
-  if (!env.LATTENSPECIALIST_RESERVATIONS_KV) return;
+  if (!env.LATTENSPECIALIST_TEAM_DB && !env.LATTENSPECIALIST_RESERVATIONS_KV) return;
   const now = new Date().toISOString();
   const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], currentStep: 1, expectedReady: '', note: '', serviceCode: null, waxType: 'Nog te bepalen', paymentAmount: '', paymentUrl: '', closedAt: null};
   delete stored.turnstileToken;
   delete stored.website;
-  await env.LATTENSPECIALIST_RESERVATIONS_KV.put(`reservation:${reference}`, JSON.stringify(stored));
+  // Personal reservation data belongs in the EU-jurisdiction D1 database. KV is
+  // retained only as a compatibility fallback when no D1 binding is configured.
+  if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(stored, env);
+  else await env.LATTENSPECIALIST_RESERVATIONS_KV.put(`reservation:${reference}`, JSON.stringify(stored));
 };
 
 export default {
@@ -535,4 +538,4 @@ export default {
   }
 };
 
-export {STATUS_STEPS, clean, createReference, createServiceCode, escapeHtml, getSite, isAdminAuthorized, normalizeServiceCode, publicStatus, readAndValidateLattenspecialist, readAndValidateStuiterbaas};
+export {STATUS_STEPS, clean, createReference, createServiceCode, escapeHtml, getSite, isAdminAuthorized, normalizeServiceCode, publicStatus, readAndValidateLattenspecialist, readAndValidateStuiterbaas, saveLattenspecialistReservation};
