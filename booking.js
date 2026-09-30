@@ -123,8 +123,12 @@
   const today = new Date();
   const minimum = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
   ['skidate','rentfrom','rentto'].forEach(name => { form.elements[name].min = minimum; });
-  const packageChoice = new URLSearchParams(location.search).get('pakket');
+  const params = new URLSearchParams(location.search);
+  const packageChoice = params.get('pakket');
   if ([...form.elements.package.options].some(option => option.value && option.value === packageChoice)) form.elements.package.value = packageChoice;
+  if (params.get('wax') === 'performance' && form.elements.performanceWax) {
+    form.elements.performanceWax.value = 'Holmenkol Performance Purple (+ €7,50)';
+  }
   const loadTurnstile = () => {
     if (!config.turnstileSiteKey) return;
     turnstileContainer.hidden = false;
