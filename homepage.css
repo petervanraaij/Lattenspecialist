@@ -237,3 +237,53 @@
 .home-page .package-upgrade a{color:#755711;font-weight:750;font-size:.86rem;text-decoration:underline;text-underline-offset:4px}
 @media(max-width:820px){.home-page .wax-grid{grid-template-columns:1fr}.home-page .performance-upgrade{grid-template-columns:1fr;gap:22px}.home-page .performance-price{text-align:left;border-left:0;border-top:1px solid rgba(214,173,80,.3);padding:18px 0 0}}
 @media(max-width:560px){.home-page .wax-card,.home-page .performance-upgrade{padding:22px}.home-page .wax-temp-list>div{grid-template-columns:1fr auto;gap:6px 12px}.home-page .wax-temp-list small{grid-column:1/-1}.home-page .wax-temp-list .is-standard::after{display:none}.home-page .package-upgrade{align-items:flex-start;flex-direction:column}}
+
+
+/* Holmenkol wax explanation and Performance upgrade. */
+.home-page .wax-section { background:#0e0f11; color:#f5f1e9; }
+.home-page .wax-grid { display:grid; grid-template-columns:1.02fr .98fr; gap:64px; align-items:start; }
+.home-page .wax-copy .lead { color:#f2eadb; }
+.home-page .wax-copy > p:not(.lead) { color:#c9c3b8; max-width:650px; }
+.home-page .wax-standard { margin-top:28px; padding:20px 22px; border:1px solid rgba(240,207,117,.32); border-radius:14px; background:rgba(255,255,255,.035); }
+.home-page .wax-standard span,.home-page .wax-standard strong,.home-page .wax-standard small { display:block; }
+.home-page .wax-standard span { color:var(--gold2); text-transform:uppercase; letter-spacing:.12em; font-size:.7rem; font-weight:900; }
+.home-page .wax-standard strong { margin:6px 0 3px; font-size:1.28rem; }
+.home-page .wax-standard small { color:#bbb4a9; }
+.home-page .wax-temperature-card { border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:26px; background:linear-gradient(145deg,rgba(255,255,255,.06),rgba(255,255,255,.025)); }
+.home-page .wax-card-kicker { display:block; margin-bottom:12px; color:var(--gold2); font-weight:850; }
+.home-page .wax-temperature-row { display:grid; grid-template-columns:1fr auto; gap:20px; align-items:center; padding:17px 0; border-bottom:1px solid rgba(255,255,255,.1); }
+.home-page .wax-temperature-row div strong,.home-page .wax-temperature-row div span { display:block; }
+.home-page .wax-temperature-row div span { color:#bbb5aa; font-size:.86rem; margin-top:2px; }
+.home-page .wax-temperature-row > b { white-space:nowrap; color:#f6e3ad; font-size:.94rem; }
+.home-page .wax-temperature-row.is-standard strong { color:var(--gold2); }
+.home-page .wax-temperature-row.is-performance { margin-top:4px; padding:17px 14px; border:1px solid rgba(240,207,117,.22); border-radius:12px; background:rgba(201,154,46,.09); }
+.home-page .wax-temperature-note { margin:18px 0 0; color:#aaa49a; font-size:.82rem; line-height:1.55; }
+.home-page .performance-upgrade { margin-top:34px; display:grid; grid-template-columns:1fr auto; gap:36px; align-items:center; padding:28px 30px; border-radius:18px; background:linear-gradient(135deg,#faf4e6,#e9d49e); color:#1d1a15; }
+.home-page .performance-label { display:block; color:#755711; text-transform:uppercase; letter-spacing:.12em; font-size:.7rem; font-weight:900; }
+.home-page .performance-upgrade h3 { margin:6px 0 7px; font-size:1.45rem; }
+.home-page .performance-upgrade p { margin:0; max-width:760px; color:#4e4637; }
+.home-page .performance-price { min-width:210px; text-align:right; }
+.home-page .performance-price > span,.home-page .performance-price > strong { display:block; }
+.home-page .performance-price > span { font-size:.76rem; color:#6f644f; }
+.home-page .performance-price > strong { font-size:1.7rem; margin:2px 0 12px; }
+.home-page .performance-price .btn { min-height:44px; padding:0 17px; font-size:.86rem; }
+.home-page .package-performance-note { margin:26px 0 0; display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:20px; padding:17px 20px; border:1px solid #d8c48f; border-radius:12px; background:#f8f2e4; }
+.home-page .package-performance-note strong,.home-page .package-performance-note span { display:block; }
+.home-page .package-performance-note span { color:#6d6559; font-size:.87rem; }
+.home-page .package-performance-note b { color:#684d0f; font-size:1.15rem; white-space:nowrap; }
+.home-page .package-performance-note a { color:#755711; font-weight:750; text-decoration:underline; text-underline-offset:4px; white-space:nowrap; }
+@media (max-width:820px) {
+  .home-page .wax-grid { grid-template-columns:1fr; gap:34px; }
+  .home-page .performance-upgrade { grid-template-columns:1fr; gap:20px; }
+  .home-page .performance-price { text-align:left; min-width:0; }
+  .home-page .package-performance-note { grid-template-columns:1fr auto; }
+  .home-page .package-performance-note a { grid-column:1 / -1; }
+}
+@media (max-width:560px) {
+  .home-page .wax-temperature-card { padding:20px; }
+  .home-page .wax-temperature-row { gap:12px; }
+  .home-page .wax-temperature-row div span { font-size:.8rem; }
+  .home-page .performance-upgrade { padding:22px; }
+  .home-page .package-performance-note { grid-template-columns:1fr; gap:8px; }
+  .home-page .package-performance-note a { grid-column:auto; }
+}
