@@ -229,6 +229,7 @@
 .home-page .performance-price small{color:#a9a39a;font-size:.72rem}
 .home-page .performance-price strong{color:#e6c56e;font-size:2rem;margin:4px 0}
 .home-page .performance-price span{color:#e8e1d5;font-size:.83rem}
+.home-page .wax-story .performance-link{color:#e6c56e;margin-top:10px;justify-content:flex-end}
 .home-page .package-upgrade{margin-top:26px;display:flex;justify-content:space-between;align-items:center;gap:22px;padding:18px 20px;border:1px solid #d7c18e;border-radius:12px;background:#f8f1df}
 .home-page .package-upgrade>div{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .home-page .package-upgrade strong{color:#5f4611}
