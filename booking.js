@@ -35,7 +35,7 @@
     const service = selectedService();
     const lines = [`Dienst: ${service}`];
     if (service === 'Onderhoud') {
-      lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`, `Halen of brengen: ${getValue('logistics')}`);
+      lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`, `Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix (standaard inbegrepen)'}`, `Halen of brengen: ${getValue('logistics')}`);
       if (usesPickup()) lines.push(`Ophaaldatum: ${formatDate(getValue('pickupDate'))}`, `Ophaal- en terugbrenglocatie: ${getValue('address') || 'Nog invullen'}`);
       lines.push(`Spoed: ${getValue('urgent')}`);
       if (getValue('destination')) lines.push(`Bestemming: ${getValue('destination')}`);
@@ -153,6 +153,10 @@
     const payload = Object.fromEntries(formData.entries());
     payload.privacyConsent = formData.get('privacyConsent') === 'on';
     payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
+    if (selectedService() === 'Onderhoud') {
+      const waxChoice = getValue('performanceWax') || 'Holmenkol BetaMix (standaard inbegrepen)';
+      payload.notes = [String(payload.notes || '').trim(), `Waxkeuze: ${waxChoice}`].filter(Boolean).join('\n');
+    }
     payload.turnstileToken = turnstileToken;
     if (selectedService() === 'Onderhoud' && !usesPickup()) payload.pickupDate = 'In overleg';
     const submittedSummary = buildSummary();
