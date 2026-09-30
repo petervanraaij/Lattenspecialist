@@ -628,7 +628,7 @@
 
   // src/domain.js
   var SITE = true ? window.location.origin : "https://lattenspecialist.nl";
-  var STEPS = ["Aanvraag ontvangen", "Ophalen of brengen gepland", "Materiaal ontvangen", "Inspectie uitgevoerd", "Onderhoud gestart", "Wax koelt af", "Finish en eindcontrole", "Klaar voor ophalen of terugbrengen"];
+  var STEPS = ["Aanvraag ontvangen", "Afspraak bevestigd", "Onderweg om op te halen", "Materiaal ontvangen", "Klaar om opgehaald te worden", "Onderweg terugbrengen", "Afgeleverd/afgerond"];
   var CONDITIONS = ["Weet ik nog niet", "Zacht / warm", "Rond het vriespunt", "Koud", "Kunstsneeuw / hard / ijzig"];
   var normalizeCode = (value) => String(value || "").trim().toUpperCase().replace(/\s+/g, "");
   var validCode = (value) => /^LS-[A-Z2-9]{6}$/.test(value);
@@ -671,9 +671,13 @@
     return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric" }).format(date);
   }
   function renderStatus(record) {
-    const step = Math.max(1, Math.min(STEPS.length, Number(record.currentStep) || 1));
-    const progress = record.closed ? '<p class="status-note">Deze aanvraag is afgemeld. Neem bij vragen contact met ons op.</p>' : `<ol class="status-steps">${STEPS.map((label, i) => `<li class="${i + 1 < step ? "done" : i + 1 === step ? "current" : ""}"><span>${i + 1 < step ? "\u2713" : i + 1}</span>${escape2(label)}</li>`).join("")}</ol>`;
-    return `<article class="card"><div class="status-label"><span>${escape2(record.code)}</span><span>${record.closed ? "Afgemeld" : `Stap ${step} van ${STEPS.length}`}</span></div><h2>${escape2(record.material || "Jouw materiaal")}</h2><p>${escape2(record.status || STEPS[step - 1])}</p>${progress}<dl class="status-details"><div><dt>Pakket</dt><dd>${escape2(record.package || "In overleg")}</dd></div><div><dt>Verwacht klaar</dt><dd>${escape2(record.expectedReady ? formatDate(record.expectedReady) : "Nog niet gepland")}</dd></div><div><dt>Gekozen wax</dt><dd>${escape2(record.waxType || "Nog te bepalen")}</dd></div><div><dt>Laatst bijgewerkt</dt><dd>${escape2(record.updatedAt ? formatDate(record.updatedAt) : "Nog niet bekend")}</dd></div></dl>${record.note ? `<p class="status-note">${escape2(record.note)}</p>` : ""}<button class="text-button" type="button" id="refreshStatus">Voortgang vernieuwen</button></article>`;
+    const status = STEPS.includes(record.status) ? record.status : STEPS[Math.max(0, Math.min(3, Number(record.currentStep || 1) - 1))];
+    const route = status === "Onderweg terugbrengen" || status === "Afgeleverd/afgerond" ? [...STEPS.slice(0, 4), "Onderweg terugbrengen", "Afgeleverd/afgerond"] : STEPS.filter((step2) => step2 !== "Onderweg terugbrengen");
+    const step = Math.max(0, route.indexOf(status));
+    const progress = record.closed && status !== "Afgeleverd/afgerond" ? '<p class="status-note">Deze aanvraag is afgemeld. Neem bij vragen contact met ons op.</p>' : `<ol class="status-steps">${route.map((label, index) => `<li class="${index < step ? "done" : index === step ? "current" : ""}"><span>${index < step ? "\u2713" : index + 1}</span>${escape2(label)}</li>`).join("")}</ol>`;
+    const scoreOptions = `<option value="">Kies 1\u20135</option>${[5, 4, 3, 2, 1].map((value) => `<option>${value}</option>`).join("")}`;
+    const feedback = status === "Afgeleverd/afgerond" ? `<form id="feedbackForm" class="feedback-form"><h3>Hoe tevreden ben je?</h3><label>Algemene beoordeling<select name="overall" required>${scoreOptions}</select></label><label>Kwaliteit<select name="quality">${scoreOptions}</select></label><label>Communicatie<select name="communication">${scoreOptions}</select></label><label>Ophalen en terugbrengen<select name="pickup">${scoreOptions}</select></label><label>Snelheid<select name="speed">${scoreOptions}</select></label><label>Opmerking (optioneel)<textarea name="comment" rows="3" maxlength="1000"></textarea></label><button class="button gold" type="submit">Beoordeling versturen</button><p id="feedbackMessage" class="muted"></p></form>` : "";
+    return `<article class="card"><div class="status-label"><span>${escape2(record.code)}</span><span>${escape2(status)}</span></div><h2>${escape2(record.material || "Jouw materiaal")}</h2><p class="customer-current-status">${escape2(status)}</p>${progress}<dl class="status-details"><div><dt>Pakket</dt><dd>${escape2(record.package || "In overleg")}</dd></div><div><dt>Verwacht klaar</dt><dd>${escape2(record.expectedReady ? formatDate(record.expectedReady) : "Nog niet gepland")}</dd></div><div><dt>Gekozen wax</dt><dd>${escape2(record.waxType || "Nog te bepalen")}</dd></div><div><dt>Laatst bijgewerkt</dt><dd>${escape2(record.updatedAt ? formatDate(record.updatedAt) : "Nog niet bekend")}</dd></div></dl>${record.note ? `<p class="status-note">${escape2(record.note)}</p>` : ""}<button class="text-button" type="button" id="refreshStatus">Status vernieuwen</button>${feedback}</article>`;
   }
 
   // src/customer.js
@@ -708,7 +712,7 @@
   var currentCode = "";
   var statusRequest = 0;
   var offersRequest = 0;
-  var activeScreen = "home";
+  var activeScreen = "onderhoud";
   var bookingStarted = false;
   var bookingReady = false;
   var bookingTimer;
@@ -737,6 +741,7 @@
     $("savedCodeLabel").textContent = validCode(saved) ? `Bewaard op dit toestel: ${saved}` : "";
   }
   async function loadStatus(code) {
+    var _a2;
     const request = ++statusRequest;
     $("statusResult").innerHTML = '<div class="empty"><p>Je actuele voortgang wordt opgehaald\u2026</p></div>';
     $("statusSubmit").disabled = true;
@@ -749,6 +754,7 @@
       $("statusResult").innerHTML = renderStatus(data.record);
       if ($("statusForm").hidden) $("statusIntro").textContent = "Hier zie je de actuele voortgang van jouw onderhoud. Je hoeft niets te installeren.";
       $("refreshStatus").addEventListener("click", () => loadStatus(currentCode));
+      (_a2 = $("feedbackForm")) == null ? void 0 : _a2.addEventListener("submit", submitFeedback);
       if ($("rememberCode").checked) {
         const ok = storage.set(CODE_KEY, code);
         $("codeFeedback").textContent = ok ? "" : "Je toestel kon de code niet bewaren. De status is wel opgehaald.";
@@ -770,6 +776,21 @@
       }
     } finally {
       if (request === statusRequest) $("statusSubmit").disabled = false;
+    }
+  }
+  async function submitFeedback(event) {
+    event.preventDefault();
+    const form = event.target, message = $("feedbackMessage"), button = form.querySelector("button");
+    button.disabled = true;
+    message.textContent = "Beoordeling versturen\u2026";
+    try {
+      const response = await fetch(`${endpoint}/api/feedback/${encodeURIComponent(currentCode)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(form))) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || "Versturen mislukt.");
+      form.replaceChildren(Object.assign(document.createElement("p"), { textContent: "Bedankt voor je beoordeling!" }));
+    } catch (error) {
+      message.textContent = error.message;
+      button.disabled = false;
     }
   }
   function showCodeForm() {
@@ -1004,7 +1025,7 @@
       hash = "onderhoud";
     }
     const page = { status: "onderhoud", waxplanner: "reis" }[hash] || hash;
-    activeScreen = pages.includes(page) ? page : "home";
+    activeScreen = pages.includes(page) ? page : "onderhoud";
     for (const id of pages) $(id).hidden = id !== activeScreen;
     for (const link of document.querySelectorAll(".bottom-nav a")) {
       if (link.hash === `#${activeScreen}`) link.setAttribute("aria-current", "page");
@@ -1056,7 +1077,7 @@
     }).catch(() => {
     });
     App.addListener("backButton", () => {
-      if (activeScreen !== "home") location.hash = "home";
+      if (activeScreen !== "onderhoud") location.hash = "onderhoud";
       else App.exitApp();
     });
     App.addListener("appStateChange", ({ isActive }) => {

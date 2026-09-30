@@ -1,6 +1,7 @@
 import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
 import {handleMetrics} from './metrics.js';
 import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, ensureTeamRecord, saveOwnerRecord} from './team.js';
+import {handleOperations} from './operations.js';
 
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
@@ -258,6 +259,9 @@ const updateReservation = async (reference, raw, env) => {
   if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(record, env);
   const currentStep = Math.max(1, Math.min(STATUS_STEPS.length, Number(raw.currentStep) || Number(record.currentStep) || 1));
   const status = clean(Object.prototype.hasOwnProperty.call(raw, 'status') ? raw.status : record.status, 100) || STATUS_STEPS[currentStep - 1];
+  const customerStatus = currentStep !== Number(record.currentStep || 1)
+    ? (currentStep <= 1 ? 'Aanvraag ontvangen' : currentStep === 2 ? 'Afspraak bevestigd' : currentStep >= 8 ? 'Klaar om opgehaald te worden' : 'Materiaal ontvangen')
+    : (record.customerStatus || customerVisibleStatus(record));
   const expectedReady = clean(Object.prototype.hasOwnProperty.call(raw, 'expectedReady') ? raw.expectedReady : record.expectedReady, 40);
   const note = clean(Object.prototype.hasOwnProperty.call(raw, 'note') ? raw.note : record.note, 320);
   const whatsappConsent = Object.prototype.hasOwnProperty.call(raw, 'whatsappConsent') ? raw.whatsappConsent === true : record.whatsappConsent === true;
@@ -278,7 +282,7 @@ const updateReservation = async (reference, raw, env) => {
     if (owner && owner !== reference) throw new ValidationError('Deze servicecode is al in gebruik.');
   }
   const updated = {
-    ...record, serviceCode: serviceCode || null, currentStep, status, expectedReady, note, whatsappConsent,
+    ...record, serviceCode: serviceCode || null, currentStep, status, customerStatus, expectedReady, note, whatsappConsent,
     waxType, paymentAmount, paymentUrl, closedAt: closed ? (record.closedAt || new Date().toISOString()) : null,
     updatedAt: new Date().toISOString()
   };
@@ -288,12 +292,13 @@ const updateReservation = async (reference, raw, env) => {
   return saved;
 };
 
+const customerVisibleStatus = record => record.customerStatus || (Number(record.currentStep || 1) <= 1 ? 'Aanvraag ontvangen' : Number(record.currentStep) === 2 ? 'Afspraak bevestigd' : Number(record.currentStep) >= 8 ? 'Klaar om opgehaald te worden' : 'Materiaal ontvangen');
 const publicStatus = record => ({
   code: record.serviceCode,
   material: record.service === 'Verhuur' ? record.rentaltype : `${record.amount || 1}× ${record.material || 'materiaal'}`,
   package: record.package || (record.service === 'Verhuur' ? 'Verhuur op aanvraag' : 'In overleg'),
   currentStep: Number(record.currentStep) || 1,
-  status: record.status || STATUS_STEPS[0],
+  status: customerVisibleStatus(record),
   updatedAt: record.updatedAt || record.createdAt,
   expectedReady: record.expectedReady || '',
   note: record.note || '',
@@ -405,12 +410,15 @@ const sendLattenspecialistEmail = async (data, reference, env) => {
 };
 
 const saveLattenspecialistReservation = async (data, reference, env) => {
-  if (!env.LATTENSPECIALIST_RESERVATIONS_KV) return;
+  if (!env.LATTENSPECIALIST_TEAM_DB && !env.LATTENSPECIALIST_RESERVATIONS_KV) return;
   const now = new Date().toISOString();
-  const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], currentStep: 1, expectedReady: '', note: '', serviceCode: null, waxType: 'Nog te bepalen', paymentAmount: '', paymentUrl: '', closedAt: null};
+  const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], customerStatus: 'Aanvraag ontvangen', currentStep: 1, expectedReady: '', note: '', serviceCode: null, waxType: 'Nog te bepalen', paymentAmount: '', paymentUrl: '', closedAt: null};
   delete stored.turnstileToken;
   delete stored.website;
-  await env.LATTENSPECIALIST_RESERVATIONS_KV.put(`reservation:${reference}`, JSON.stringify(stored));
+  // Personal reservation data belongs in the EU-jurisdiction D1 database. KV is
+  // retained only as a compatibility fallback when no D1 binding is configured.
+  if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(stored, env);
+  else await env.LATTENSPECIALIST_RESERVATIONS_KV.put(`reservation:${reference}`, JSON.stringify(stored));
 };
 
 export default {
@@ -418,8 +426,12 @@ export default {
     const origin = request.headers.get('Origin') || '';
     const site = getSite(origin, env);
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
-    if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
+    if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-HRM-PIN', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/team/operations') || url.pathname.startsWith('/api/admin/operations') || url.pathname.startsWith('/api/team/hrm') || url.pathname.startsWith('/api/admin/hrm') || url.pathname.startsWith('/api/feedback/')) {
+      if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
+      return handleOperations(request, env, {owner:isAdminAuthorized(request,env), json, origin});
+    }
     if (url.pathname.startsWith('/api/team/') || url.pathname.startsWith('/api/admin/team/')) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleTeam(request, env, {owner:isAdminAuthorized(request,env), json, origin, steps:STATUS_STEPS, waxes:WAX_OPTIONS, clean});
@@ -535,4 +547,4 @@ export default {
   }
 };
 
-export {STATUS_STEPS, clean, createReference, createServiceCode, escapeHtml, getSite, isAdminAuthorized, normalizeServiceCode, publicStatus, readAndValidateLattenspecialist, readAndValidateStuiterbaas};
+export {STATUS_STEPS, clean, createReference, createServiceCode, escapeHtml, getSite, isAdminAuthorized, normalizeServiceCode, publicStatus, readAndValidateLattenspecialist, readAndValidateStuiterbaas, saveLattenspecialistReservation};
