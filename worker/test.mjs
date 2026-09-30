@@ -184,7 +184,7 @@ try {
   const statusResponse = await worker.fetch(new Request(`https://worker.example/api/status/${updateResult.record.serviceCode}`, {method: 'GET', headers: {Origin: lattenOrigin}}), testEnv);
   const statusResult = await statusResponse.json();
   assert.equal(statusResponse.status, 200);
-  assert.equal(statusResult.record.status, STATUS_STEPS[3]);
+  assert.equal(statusResult.record.status, 'Materiaal ontvangen');
   assert.equal(statusResult.record.email, undefined);
   assert.equal(statusResult.record.phone, undefined);
   assert.equal(statusResult.record.waxType, 'Premium koudweerwax');

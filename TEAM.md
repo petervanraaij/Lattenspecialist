@@ -41,6 +41,15 @@ Voer migraties vóór de Worker-update uit. Maak bij productiewijzigingen een D1
 
 Eigenaarssleutel en ondertekenmateriaal blijven buiten Git. Bij een verloren medewerkerssleutel vernieuwt Peter die in beheer. Het terughalen van een oude sleutel is niet mogelijk. Definitief verwijderen van klant- of medewerkersgegevens uit D1, audit en KV vraagt een gecontroleerde beheerstap; er is geen publieke verwijderknop.
 
-Automatische WhatsApp-bezorging, automatische betalingstransacties, instelbare rollen, pushmeldingen en meerdere beheeraccounts zijn niet toegevoegd met deze versie. Bestaande bericht- en betaalverzoekfuncties in beheer blijven aanwezig; een medewerkerswijziging verstuurt zelf geen klantbericht.
+Automatische betalingstransacties, instelbare rollen, pushmeldingen en meerdere beheeraccounts zijn nog niet toegevoegd. Bestaande bericht- en betaalverzoekfuncties in beheer blijven aanwezig; logistieke QR-scans versturen alleen een WhatsApp-template wanneer de klant toestemming gaf en de Meta-configuratie actief is.
+
+## Materiaal, routes en HRM
+
+- Iedere fysieke ski-/snowboardeenheid krijgt in `materials` een eigen willekeurige scansleutel en leesbare `LSM-`-code. De QR bevat alleen een app-link met die sleutel, nooit naam, adres of onderhoudsgegevens.
+- Scans registreren ophalen, ontvangst, actieve onderhoudstijd, pauze, gereed, terugbrengen en aflevering. Logistieke klantstatussen kunnen bij toestemming automatisch via de bestaande WhatsApp-template worden verstuurd.
+- Routes worden vanuit geselecteerde aanvragen via PDOK geocodeerd en lokaal op dichtstbijzijnde volgende stop geordend. Start, aankomst, vertrek en afronding worden geregistreerd; de kaart opent in Google Maps.
+- Medewerkers beheren hun eigen beschikbaarheid. Beheer ziet de ingevulde dagen bij het maken van routes.
+- HRM gebruikt een aparte pincode boven op de normale sessie. Profiel, IBAN, loonafspraken en contracttekst worden met AES-GCM versleuteld; `HRM_DATA_KEY` staat uitsluitend als Worker-secret. Beheer wijzigt loon en voorwaarden, medewerkers alleen hun eigen profiel en bankrekening.
+- Het bedrijfsdashboard toont actieve materialen, gemiddelde en mediane onderhoudstijd, vergelijking met de vorige 30 dagen, op-tijd-percentage, routetijd, productie en klanttevredenheid.
 
 Technische referentie: [Cloudflare D1-transacties](https://developers.cloudflare.com/d1/worker-api/d1-database/).

@@ -1,0 +1,14 @@
+Third-party software used by the De Lattenspecialist apps
+
+qrcode-generator 1.4.4
+Copyright (c) 2009 Kazuhiko Arase
+License: MIT
+Source: https://github.com/kazuhikoarase/qrcode-generator
+
+html5-qrcode 2.3.8
+Copyright (c) Minhaz Av
+License: Apache License 2.0
+Source: https://github.com/mebjas/html5-qrcode
+
+The complete license texts remain available from the source projects and the
+corresponding installed npm packages.

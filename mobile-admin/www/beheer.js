@@ -122,6 +122,7 @@
           ${record.workNote ? `<div class="team-work-note"><b>Werknotitie medewerker</b><p>${escapeHtml(record.workNote)}</p></div>` : ''}
           <button class="btn btn-dark team-history" type="button">Bekijk werklogboek</button><div class="team-audit" hidden></div>
           <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Nog niet toegekend" readonly><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
+          <div><button class="btn btn-dark create-material-labels" type="button">Maak / bekijk QR-stickers</button><div class="material-labels" role="status"></div></div>
           ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan + klant berichten” gebeurt dit automatisch.</p>'}
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
           <label><span>Wax voor deze beurt</span><select name="waxType">${waxChoices}</select><small class="field-hint">Voorstel op basis van de opgegeven omstandigheden; controleer dit zelf.</small></label>
@@ -173,7 +174,7 @@
     try {
       const [reservationResult] = await Promise.all([api('/api/admin/reservations'),loadAvailability(),window.LattenspecialistTeam?.init(api,render)]);
       records = reservationResult.records || [];
-      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render(); void loadMetrics();
+      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render(); await window.LattenspecialistOperations?.init(api,()=>records); void loadMetrics();
     } finally { refreshButton.disabled = false; }
   };
 
@@ -238,7 +239,7 @@
   addAvailabilityButton.addEventListener('click',() => { const date = customAvailabilityDate.value; if (!date) return; availableDates.add(date); renderAvailability(); customAvailabilityDate.value = ''; });
   search.addEventListener('input',applySearch);
   refreshButton.addEventListener('click',() => loadDashboard().catch(error => { list.innerHTML = `<div class="admin-empty"><strong>Laden mislukt</strong><p>${escapeHtml(error.message)}</p></div>`; }));
-  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];list.replaceChildren();window.LattenspecialistTeam?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false; });
+  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];list.replaceChildren();window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false; });
 
   let installPrompt; const installButton = document.querySelector('#installAdmin');
   window.addEventListener('beforeinstallprompt',event => { event.preventDefault(); installPrompt=event; installButton.hidden=false; });

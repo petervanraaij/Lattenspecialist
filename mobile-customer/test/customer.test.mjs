@@ -39,7 +39,8 @@ test('personal WhatsApp link opens only its status without input or silently rem
   await turn();
   assert.equal(d.getElementById('onderhoud').hidden,false);
   assert.equal(d.getElementById('statusForm').hidden,true);
-  assert.match(d.getElementById('statusResult').textContent,/Onderhoud gestart/);
+  assert.match(d.getElementById('statusResult').textContent,/Materiaal ontvangen/);
+  assert.doesNotMatch(d.getElementById('statusResult').textContent,/Onderhoud gestart|Wax koelt af|Inspectie/);
   assert.deepEqual(requests,['https://api.example/api/status/LS-ABC234']);
   assert.equal(w.location.hash,'#onderhoud');
   assert.equal(w.localStorage.getItem('lattenspecialist-customer-code'),null);
@@ -63,15 +64,15 @@ test('personal link retries a network failure without asking for a code or insta
   assert.match(d.getElementById('statusResult').textContent,/Opnieuw proberen/);
   d.querySelector('#statusResult button').click();await turn();
   assert.equal(d.getElementById('statusForm').hidden,true);
-  assert.match(d.getElementById('statusResult').textContent,/Onderhoud gestart/);
+  assert.match(d.getElementById('statusResult').textContent,/Materiaal ontvangen/);
   assert.doesNotMatch(d.getElementById('statusIntro').textContent,/wordt opgehaald/);
 });
 test('another incoming personal link supersedes an in-flight status request',async t=>{
   let resolveOld;
-  const {w,d}=app(t,url=>url.endsWith('LS-ABC234')?new Promise(done=>{resolveOld=done;}):Promise.resolve(reply({record:{...record,code:'LS-DEF567',status:'Tweede aanvraag'}})),{hash:'#status=LS-ABC234'});
+  const {w,d}=app(t,url=>url.endsWith('LS-ABC234')?new Promise(done=>{resolveOld=done;}):Promise.resolve(reply({record:{...record,code:'LS-DEF567',status:'Onderweg terugbrengen'}})),{hash:'#status=LS-ABC234'});
   w.location.hash='status=LS-DEF567';await turn();
   resolveOld(reply({record}));await turn();
-  assert.match(d.getElementById('statusResult').textContent,/Tweede aanvraag/);
+  assert.match(d.getElementById('statusResult').textContent,/Onderweg terugbrengen/);
   assert.doesNotMatch(d.getElementById('statusResult').textContent,/LS-ABC234/);
 });
 test('native app accepts only exact official HTTPS personal app links',()=>{
@@ -81,8 +82,8 @@ test('native app accepts only exact official HTTPS personal app links',()=>{
 test('status renders only escaped public fields, selected wax, and closure without false completion',()=>{
   const output=renderStatus({...record,material:'<img onerror=alert(1)>',note:'<script>x</script>',closed:true});
   assert.match(output,/Premium koud/);
-  assert.match(output,/Afgemeld/);
-  assert.doesNotMatch(output,/<script>|<img|status-steps/);
+  assert.match(output,/afgemeld/i);
+  assert.doesNotMatch(output,/<script>|<img|Onderhoud gestart|Wax koelt af|Inspectie/);
 });
 test('customer can fetch status without an admin code and explicitly remember or forget it',async t=>{
   const {w,d,requests}=app(t,async()=>reply({record}));
