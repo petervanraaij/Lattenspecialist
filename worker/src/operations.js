@@ -202,20 +202,32 @@ async function createRoute(db, raw) {
 async function routeDetails(db,id){const route=await db.prepare('SELECT * FROM routes WHERE id=?').bind(id).first();if(!route)return null;return {...route,stops:(await db.prepare('SELECT * FROM route_stops WHERE route_id=? ORDER BY stop_order').bind(id).all()).results};}
 
 async function dashboard(db) {
-  const [materials,times,feedback,members,routes,recentSessions,delivery]=await Promise.all([
+  const [materials,times,feedback,members,routes,recentSessions,delivery,receivedDaily,completedDaily,turnaroundDaily,production,queue,turnaroundComparison]=await Promise.all([
     db.prepare(`SELECT COUNT(*) total,SUM(internal_status='ready') ready,SUM(internal_status='delivered') delivered,SUM(internal_status NOT IN ('ready','delivered','label_created')) active FROM materials`).first(),
     db.prepare(`SELECT COUNT(*) sessions,COALESCE(AVG(duration_seconds),0) average_seconds,COALESCE(SUM(duration_seconds),0) total_seconds FROM work_sessions WHERE activity='maintenance' AND ended_at IS NOT NULL`).first(),
     db.prepare(`SELECT COUNT(*) responses,COALESCE(AVG(overall),0) overall,COALESCE(AVG(quality),0) quality,COALESCE(AVG(communication),0) communication,COALESCE(AVG(speed),0) speed FROM customer_feedback`).first(),
     db.prepare(`SELECT m.id,m.name,COUNT(DISTINCT ma.id) items,COALESCE(SUM(ws.duration_seconds),0) seconds FROM members m LEFT JOIN materials ma ON ma.assigned_to=m.id LEFT JOIN work_sessions ws ON ws.member_id=m.id AND ws.ended_at IS NOT NULL WHERE m.active=1 GROUP BY m.id,m.name ORDER BY m.name`).all(),
     db.prepare(`SELECT COUNT(*) completed,COALESCE(AVG((julianday(ended_at)-julianday(started_at))*86400),0) average_seconds,COALESCE(SUM((SELECT SUM(item_count) FROM route_stops s WHERE s.route_id=routes.id)),0) items FROM routes WHERE ended_at IS NOT NULL`).first(),
     db.prepare("SELECT duration_seconds,started_at FROM work_sessions WHERE activity='maintenance' AND ended_at IS NOT NULL AND started_at>=datetime('now','-60 days')").all(),
-    db.prepare(`SELECT COUNT(*) ready_count,SUM(CASE WHEN m.ready_at IS NOT NULL AND json_extract(r.payload,'$.expectedReady') IS NOT NULL AND date(m.ready_at)<=date(json_extract(r.payload,'$.expectedReady')) THEN 1 ELSE 0 END) on_time FROM materials m JOIN records r ON r.reference=m.reference WHERE m.ready_at IS NOT NULL`).first()
+    db.prepare(`SELECT COUNT(*) ready_count,SUM(CASE WHEN m.ready_at IS NOT NULL AND json_extract(r.payload,'$.expectedReady') IS NOT NULL AND date(m.ready_at)<=date(json_extract(r.payload,'$.expectedReady')) THEN 1 ELSE 0 END) on_time FROM materials m JOIN records r ON r.reference=m.reference WHERE m.ready_at IS NOT NULL`).first(),
+    db.prepare(`SELECT date(received_at) day,COUNT(*) count FROM materials WHERE received_at IS NOT NULL AND received_at>=datetime('now','-90 days') GROUP BY date(received_at) ORDER BY day`).all(),
+    db.prepare(`SELECT date(ready_at) day,COUNT(*) count FROM materials WHERE ready_at IS NOT NULL AND ready_at>=datetime('now','-90 days') GROUP BY date(ready_at) ORDER BY day`).all(),
+    db.prepare(`SELECT date(ready_at) day,AVG((julianday(ready_at)-julianday(received_at))*86400) seconds FROM materials WHERE received_at IS NOT NULL AND ready_at IS NOT NULL AND ready_at>=received_at AND ready_at>=datetime('now','-90 days') GROUP BY date(ready_at) ORDER BY day`).all(),
+    db.prepare(`SELECT COUNT(*) completed,COUNT(DISTINCT date(ready_at)) production_days FROM materials WHERE ready_at IS NOT NULL AND ready_at>=datetime('now','-30 days')`).first(),
+    db.prepare(`SELECT COUNT(*) backlog FROM materials WHERE internal_status IN ('received','maintenance','paused')`).first(),
+    db.prepare(`SELECT AVG(CASE WHEN ready_at>=datetime('now','-30 days') THEN (julianday(ready_at)-julianday(received_at))*86400 END) current_seconds,AVG(CASE WHEN ready_at<datetime('now','-30 days') AND ready_at>=datetime('now','-60 days') THEN (julianday(ready_at)-julianday(received_at))*86400 END) previous_seconds FROM materials WHERE received_at IS NOT NULL AND ready_at IS NOT NULL AND ready_at>=received_at`).first()
   ]);
   const cutoff=Date.now()-30*86400000,current=[],previous=[];for(const item of recentSessions.results){(new Date(item.started_at).getTime()>=cutoff?current:previous).push(Number(item.duration_seconds)||0);}
   const average=list=>list.length?list.reduce((sum,value)=>sum+value,0)/list.length:0,median=list=>{if(!list.length)return 0;const sorted=[...list].sort((a,b)=>a-b),middle=Math.floor(sorted.length/2);return sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2;};
   const currentAverage=average(current),baseline=average(previous),delta=baseline?((currentAverage-baseline)/baseline)*100:0;
   const trend={average_seconds:currentAverage,median_seconds:median(current),baseline_seconds:baseline,delta_percent:Number(delta.toFixed(1)),label:!baseline?'Nog geen vergelijkingsperiode':delta<-5?'Sneller dan normaal':delta>5?'Langzamer dan normaal':'Volgens normaal tempo'};
-  return {materials,times,feedback,routes,trend,onTime:{ready:delivery.ready_count||0,percentage:delivery.ready_count?Math.round((delivery.on_time||0)/delivery.ready_count*100):0},members:members.results};
+  const dailyRate=production.production_days?production.completed/production.production_days:0;
+  const estimatedDays=dailyRate&&queue.backlog?Math.ceil(queue.backlog/dailyRate):0;
+  const currentTurnaround=Number(turnaroundComparison.current_seconds)||0,previousTurnaround=Number(turnaroundComparison.previous_seconds)||0;
+  const turnaroundDelta=previousTurnaround?((currentTurnaround-previousTurnaround)/previousTurnaround)*100:0;
+  return {materials,times,feedback,routes,trend,onTime:{ready:delivery.ready_count||0,percentage:delivery.ready_count?Math.round((delivery.on_time||0)/delivery.ready_count*100):0},members:members.results,
+    flow:{received:receivedDaily.results,completed:completedDaily.results,turnaround:turnaroundDaily.results},
+    forecast:{backlog:queue.backlog||0,dailyRate:Number(dailyRate.toFixed(1)),estimatedProductionDays:estimatedDays,currentTurnaroundSeconds:currentTurnaround,previousTurnaroundSeconds:previousTurnaround,turnaroundDeltaPercent:Number(turnaroundDelta.toFixed(1)),label:!previousTurnaround?'Nog geen vergelijkingsperiode':turnaroundDelta<-5?'Sneller dan de vorige periode':turnaroundDelta>5?'Langzamer dan de vorige periode':'Ongeveer even snel als normaal'}};
 }
 
 async function adminHrm(request,env,db,path) {
