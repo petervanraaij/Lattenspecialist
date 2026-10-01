@@ -9,8 +9,8 @@ Op 29 september 2026 heeft Peter gekozen voor drie aparte apps onder het ontwikk
 | App | Android-pakketnaam | Doel | Huidige staat |
 | --- | --- | --- | --- |
 | Mijn Lattenspecialist | `nl.lattenspecialist.klanten` | Klanten: aanvragen en eigen onderhoudsstatus bekijken. Persoonlijke webstatuslink blijft beschikbaar. | `mobile-customer`; versie 1.2.0 (4) voorbereid voor de interne Google Play-test. |
-| Lattenspecialist Medewerkers | `nl.lattenspecialist.medewerkers` | Medewerkers: toegewezen werk, werkzaamheden en wax registreren, toegestane voortgang bijwerken. | Webapp `medewerkers.html` live; `mobile-staff` 1.1.0 (2) voorbereid voor de interne Google Play-test. |
-| Lattenspecialist Beheer | `nl.lattenspecialist.beheer` | Peter: aanvragen, planning, betalingen, medewerkers en toewijzingen beheren. | Webbeheer live; `mobile-admin` 1.2.0 (3) voorbereid voor de interne Google Play-test. |
+| Lattenspecialist Medewerkers | `nl.lattenspecialist.medewerkers` | Medewerkers: toegewezen werk, werkzaamheden en wax registreren, toegestane voortgang bijwerken. | Webapp `medewerkers.html` live; `mobile-staff` 1.1.1 (3) voorbereid voor de interne Google Play-test. De QR-camera is optioneel zodat handmatige invoer op apparaten zonder camera beschikbaar blijft. |
+| Lattenspecialist Beheer | `nl.lattenspecialist.beheer` | Peter: aanvragen, planning, betalingen, medewerkers en toewijzingen beheren. | Webbeheer live; `mobile-admin` 1.2.1 (4) voorbereid voor de interne Google Play-test. De QR-camera is optioneel zodat handmatige invoer op apparaten zonder camera beschikbaar blijft. |
 
 Het Play Console-account en beide telefoonnummers zijn geverifieerd. Op 29 september 2026 zijn drie ondertekende AAB's geaccepteerd en uitgerold naar intern testen. De lijst **Peter – Lattenspecialist test** is gekoppeld; de apps zijn niet publiek uitgebracht. Google toont voorlopig een technische naam met **unreviewed** tot de appinrichting en beoordeling zijn afgerond. Een praktijktest op een echt Android-toestel staat nog open.
 
