@@ -37,22 +37,30 @@ async function pinValue(pin) {
   return value;
 }
 
-async function createPinHash(pin) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(await pinValue(pin)), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:120000}, key, 256);
-  return `${hex(salt)}:${hex(new Uint8Array(bits))}`;
+async function pinSigningKey(env) {
+  const encoded = String(env.HRM_DATA_KEY || '');
+  if (!encoded) throw new OperationsError('HRM-versleuteling is nog niet geactiveerd.', 503);
+  const raw = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
+  if (raw.length !== 32) throw new OperationsError('HRM-versleuteling is verkeerd ingesteld.', 503);
+  return crypto.subtle.importKey('raw', raw, {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
 }
 
-async function verifyPin(pin, stored) {
-  if (!stored || !stored.includes(':')) return false;
-  const [saltHex, expected] = stored.split(':');
-  const salt = Uint8Array.from(saltHex.match(/.{2}/g) || [], byte => parseInt(byte, 16));
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(clean(pin,20)), 'PBKDF2', false, ['deriveBits']);
-  const bits = hex(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:120000}, key, 256)));
-  if (bits.length !== expected.length) return false;
+async function createPinHash(pin, env) {
+  const salt = randomHex(16);
+  const message = new TextEncoder().encode(`lattenspecialist-hrm-pin:${salt}:${await pinValue(pin)}`);
+  const signature = await crypto.subtle.sign('HMAC', await pinSigningKey(env), message);
+  return `hmac1:${salt}:${hex(new Uint8Array(signature))}`;
+}
+
+async function verifyPin(pin, stored, env) {
+  const [version,salt,expected] = String(stored || '').split(':');
+  if (version !== 'hmac1' || !/^[a-f0-9]{32}$/.test(salt || '') || !/^[a-f0-9]{64}$/.test(expected || '')) return false;
+  const message = new TextEncoder().encode(`lattenspecialist-hrm-pin:${salt}:${clean(pin,20)}`);
+  const signature = await crypto.subtle.sign('HMAC', await pinSigningKey(env), message);
+  const actual = hex(new Uint8Array(signature));
+  if (actual.length !== expected.length) return false;
   let difference = 0;
-  for (let i=0;i<bits.length;i+=1) difference |= bits.charCodeAt(i) ^ expected.charCodeAt(i);
+  for (let i=0;i<actual.length;i+=1) difference |= actual.charCodeAt(i) ^ expected.charCodeAt(i);
   return difference === 0;
 }
 
@@ -214,12 +222,12 @@ async function adminHrm(request,env,db,path) {
   const raw=request.method==='GET'?{}:await body(request),pin=request.headers.get('X-HRM-PIN') || raw.pin || '';
   let setting=await db.prepare("SELECT setting_value FROM hrm_settings WHERE setting_key='admin_pin'").first();
   if(path==='/api/admin/hrm/setup'&&request.method==='POST'){
-    if(setting)throw new OperationsError('De HRM-pincode is al ingesteld.',409);const pinHash=await createPinHash(raw.pin);
+    if(setting)throw new OperationsError('De HRM-pincode is al ingesteld.',409);const pinHash=await createPinHash(raw.pin,env);
     await db.prepare("INSERT INTO hrm_settings(setting_key,setting_value,updated_at) VALUES('admin_pin',?,?)").bind(pinHash,now()).run();
     return {ok:true};
   }
   if(!setting)throw new OperationsError('Stel eerst een aparte HRM-pincode in.',428);
-  if(!await verifyPin(pin,setting.setting_value))throw new OperationsError('HRM-pincode onjuist.',403);
+  if(!await verifyPin(pin,setting.setting_value,env))throw new OperationsError('HRM-pincode onjuist.',403);
   if(path==='/api/admin/hrm/members'&&request.method==='GET'){
     const rows=(await db.prepare('SELECT m.id,m.name,m.login,h.profile_ciphertext,h.terms_ciphertext,h.updated_at FROM members m LEFT JOIN member_hrm h ON h.member_id=m.id ORDER BY m.name').all()).results;
     const result=[];for(const row of rows)result.push({id:row.id,name:row.name,login:row.login,profile:await open(row.profile_ciphertext,env,{}),terms:await open(row.terms_ciphertext,env,{}),updatedAt:row.updated_at});return {members:result};
@@ -237,10 +245,10 @@ async function adminHrm(request,env,db,path) {
 async function staffHrm(request,env,db,path,member) {
   const raw=request.method==='GET'?{}:await body(request),current=await db.prepare('SELECT * FROM member_hrm WHERE member_id=?').bind(member.id).first();
   if(path==='/api/team/hrm/setup'&&request.method==='POST'){
-    if(current?.pin_hash)throw new OperationsError('Je HRM-pincode is al ingesteld.',409);const pinHash=await createPinHash(raw.pin);
+    if(current?.pin_hash)throw new OperationsError('Je HRM-pincode is al ingesteld.',409);const pinHash=await createPinHash(raw.pin,env);
     await db.prepare(`INSERT INTO member_hrm(member_id,pin_hash,updated_at) VALUES(?,?,?) ON CONFLICT(member_id) DO UPDATE SET pin_hash=excluded.pin_hash,updated_at=excluded.updated_at`).bind(member.id,pinHash,now()).run();return {ok:true};
   }
-  const pin=request.headers.get('X-HRM-PIN')||raw.pin||'';if(!current?.pin_hash)throw new OperationsError('Stel eerst je persoonlijke HRM-pincode in.',428);if(!await verifyPin(pin,current.pin_hash))throw new OperationsError('HRM-pincode onjuist.',403);
+  const pin=request.headers.get('X-HRM-PIN')||raw.pin||'';if(!current?.pin_hash)throw new OperationsError('Stel eerst je persoonlijke HRM-pincode in.',428);if(!await verifyPin(pin,current.pin_hash,env))throw new OperationsError('HRM-pincode onjuist.',403);
   if(path==='/api/team/hrm'&&request.method==='GET'){
     const profile=await open(current.profile_ciphertext,env,{}),terms=await open(current.terms_ciphertext,env,{});
     const totals=await db.prepare("SELECT COUNT(DISTINCT material_id) items,COALESCE(SUM(duration_seconds),0) seconds FROM work_sessions WHERE member_id=? AND ended_at IS NOT NULL").bind(member.id).first();
