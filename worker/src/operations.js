@@ -202,7 +202,7 @@ async function createRoute(db, raw) {
 async function routeDetails(db,id){const route=await db.prepare('SELECT * FROM routes WHERE id=?').bind(id).first();if(!route)return null;return {...route,stops:(await db.prepare('SELECT * FROM route_stops WHERE route_id=? ORDER BY stop_order').bind(id).all()).results};}
 
 async function dashboard(db) {
-  const [materials,times,feedback,members,routes,recentSessions,delivery,receivedDaily,completedDaily,turnaroundDaily,production,queue,turnaroundComparison]=await Promise.all([
+  const [materials,times,feedback,members,routes,recentSessions,delivery,receivedDaily,completedDaily,turnaroundDaily,production,queue,turnaroundComparison,planning]=await Promise.all([
     db.prepare(`SELECT COUNT(*) total,SUM(internal_status='ready') ready,SUM(internal_status='delivered') delivered,SUM(internal_status NOT IN ('ready','delivered','label_created')) active FROM materials`).first(),
     db.prepare(`SELECT COUNT(*) sessions,COALESCE(AVG(duration_seconds),0) average_seconds,COALESCE(SUM(duration_seconds),0) total_seconds FROM work_sessions WHERE activity='maintenance' AND ended_at IS NOT NULL`).first(),
     db.prepare(`SELECT COUNT(*) responses,COALESCE(AVG(overall),0) overall,COALESCE(AVG(quality),0) quality,COALESCE(AVG(communication),0) communication,COALESCE(AVG(speed),0) speed FROM customer_feedback`).first(),
@@ -215,7 +215,8 @@ async function dashboard(db) {
     db.prepare(`SELECT date(ready_at) day,AVG((julianday(ready_at)-julianday(received_at))*86400) seconds FROM materials WHERE received_at IS NOT NULL AND ready_at IS NOT NULL AND ready_at>=received_at AND ready_at>=datetime('now','-90 days') GROUP BY date(ready_at) ORDER BY day`).all(),
     db.prepare(`SELECT COUNT(*) completed,COUNT(DISTINCT date(ready_at)) production_days FROM materials WHERE ready_at IS NOT NULL AND ready_at>=datetime('now','-30 days')`).first(),
     db.prepare(`SELECT COUNT(*) backlog FROM materials WHERE internal_status IN ('received','maintenance','paused')`).first(),
-    db.prepare(`SELECT AVG(CASE WHEN ready_at>=datetime('now','-30 days') THEN (julianday(ready_at)-julianday(received_at))*86400 END) current_seconds,AVG(CASE WHEN ready_at<datetime('now','-30 days') AND ready_at>=datetime('now','-60 days') THEN (julianday(ready_at)-julianday(received_at))*86400 END) previous_seconds FROM materials WHERE received_at IS NOT NULL AND ready_at IS NOT NULL AND ready_at>=received_at`).first()
+    db.prepare(`SELECT AVG(CASE WHEN ready_at>=datetime('now','-30 days') THEN (julianday(ready_at)-julianday(received_at))*86400 END) current_seconds,AVG(CASE WHEN ready_at<datetime('now','-30 days') AND ready_at>=datetime('now','-60 days') THEN (julianday(ready_at)-julianday(received_at))*86400 END) previous_seconds FROM materials WHERE received_at IS NOT NULL AND ready_at IS NOT NULL AND ready_at>=received_at`).first(),
+    db.prepare(`SELECT COUNT(*) requests,COALESCE(SUM(COALESCE(CAST(json_extract(payload,'$.plannedMinutes') AS INTEGER),CASE WHEN json_extract(payload,'$.service')='Onderhoud' THEN MAX(1,CAST(COALESCE(json_extract(payload,'$.amount'),1) AS INTEGER))*60 ELSE 0 END)),0) reserved_minutes FROM records WHERE json_extract(payload,'$.closedAt') IS NULL AND COALESCE(CAST(json_extract(payload,'$.currentStep') AS INTEGER),1)<8`).first()
   ]);
   const cutoff=Date.now()-30*86400000,current=[],previous=[];for(const item of recentSessions.results){(new Date(item.started_at).getTime()>=cutoff?current:previous).push(Number(item.duration_seconds)||0);}
   const average=list=>list.length?list.reduce((sum,value)=>sum+value,0)/list.length:0,median=list=>{if(!list.length)return 0;const sorted=[...list].sort((a,b)=>a-b),middle=Math.floor(sorted.length/2);return sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2;};
@@ -227,7 +228,7 @@ async function dashboard(db) {
   const turnaroundDelta=previousTurnaround?((currentTurnaround-previousTurnaround)/previousTurnaround)*100:0;
   return {materials,times,feedback,routes,trend,onTime:{ready:delivery.ready_count||0,percentage:delivery.ready_count?Math.round((delivery.on_time||0)/delivery.ready_count*100):0},members:members.results,
     flow:{received:receivedDaily.results,completed:completedDaily.results,turnaround:turnaroundDaily.results},
-    forecast:{backlog:queue.backlog||0,dailyRate:Number(dailyRate.toFixed(1)),estimatedProductionDays:estimatedDays,currentTurnaroundSeconds:currentTurnaround,previousTurnaroundSeconds:previousTurnaround,turnaroundDeltaPercent:Number(turnaroundDelta.toFixed(1)),label:!previousTurnaround?'Nog geen vergelijkingsperiode':turnaroundDelta<-5?'Sneller dan de vorige periode':turnaroundDelta>5?'Langzamer dan de vorige periode':'Ongeveer even snel als normaal'}};
+    forecast:{backlog:queue.backlog||0,openRequests:planning.requests||0,reservedMinutes:planning.reserved_minutes||0,dailyRate:Number(dailyRate.toFixed(1)),estimatedProductionDays:estimatedDays,currentTurnaroundSeconds:currentTurnaround,previousTurnaroundSeconds:previousTurnaround,turnaroundDeltaPercent:Number(turnaroundDelta.toFixed(1)),label:!previousTurnaround?'Nog geen vergelijkingsperiode':turnaroundDelta<-5?'Sneller dan de vorige periode':turnaroundDelta>5?'Langzamer dan de vorige periode':'Ongeveer even snel als normaal'}};
 }
 
 async function adminHrm(request,env,db,path) {
@@ -292,14 +293,27 @@ export async function handleOperations(request,env,{owner,json,origin}) {
       if(adminAction&&request.method==='POST'){const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(adminAction[1]).first();if(!material)throw new OperationsError('Materiaal niet gevonden.',404);const raw=await body(request),action=clean(raw.action,40);if(!['pickup_depart','receive','ready','delivery_depart','delivered'].includes(action))throw new OperationsError('Gebruik voor onderhoud de medewerkersapp.');return json({material:await workAction(db,material,action,{id:'owner',env})},200,origin);}
       if(path==='/api/admin/operations/routes'&&request.method==='POST')return json({route:await createRoute(db,await body(request))},201,origin);
       if(path==='/api/admin/operations/routes'&&request.method==='GET'){const rows=(await db.prepare('SELECT * FROM routes ORDER BY route_date DESC,created_at DESC LIMIT 50').all()).results;const routes=[];for(const route of rows)routes.push(await routeDetails(db,route.id));return json({routes},200,origin);}
-      if(path==='/api/admin/operations/availability'&&request.method==='GET'){const rows=await db.prepare(`SELECT a.member_id,m.name,a.work_date,a.preference,a.note FROM member_availability a JOIN members m ON m.id=a.member_id WHERE a.work_date>=date('now') AND m.active=1 ORDER BY a.work_date,m.name`).all();return json({availability:rows.results},200,origin);}
+      if(path==='/api/admin/operations/availability'&&request.method==='GET'){const rows=await db.prepare(`SELECT a.member_id,m.name,a.work_date,a.preference,a.start_time,a.end_time,a.note FROM member_availability a JOIN members m ON m.id=a.member_id WHERE a.work_date>=date('now') AND m.active=1 ORDER BY a.work_date,m.name`).all();return json({availability:rows.results},200,origin);}
       throw new OperationsError('Niet gevonden.',404);
     }
     if(path.startsWith('/api/team/operations')||path.startsWith('/api/team/hrm')){
       const member=await memberIdentity(request,db);
       if(path.startsWith('/api/team/hrm'))return json(await staffHrm(request,env,db,path,member),200,origin);
-      if(path==='/api/team/operations/availability'&&request.method==='GET'){const rows=await db.prepare('SELECT work_date,preference,note FROM member_availability WHERE member_id=? AND work_date>=date(\'now\') ORDER BY work_date LIMIT 120').bind(member.id).all();return json({dates:rows.results},200,origin);}
-      if(path==='/api/team/operations/availability'&&request.method==='PATCH'){const raw=await body(request),dates=Array.isArray(raw.dates)?raw.dates.slice(0,120):[];await db.prepare('DELETE FROM member_availability WHERE member_id=? AND work_date>=date(\'now\')').bind(member.id).run();for(const item of dates){if(/^\d{4}-\d{2}-\d{2}$/.test(item.date)&&['available','preferred','unavailable'].includes(item.preference))await db.prepare('INSERT INTO member_availability(member_id,work_date,preference,note,updated_at) VALUES(?,?,?,?,?)').bind(member.id,item.date,item.preference,clean(item.note,200),now()).run();}return json({ok:true},200,origin);}
+      if(path==='/api/team/operations/availability'&&request.method==='GET'){const rows=await db.prepare('SELECT work_date,preference,start_time,end_time,note FROM member_availability WHERE member_id=? AND work_date>=date(\'now\') ORDER BY work_date LIMIT 180').bind(member.id).all();return json({dates:rows.results},200,origin);}
+      if(path==='/api/team/operations/availability'&&request.method==='PATCH'){
+        const raw=await body(request),dates=Array.isArray(raw.dates)?raw.dates.slice(0,180):[],valid=[];
+        for(const item of dates){
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(item.date)||!['available','preferred','unavailable'].includes(item.preference))continue;
+          let start=clean(item.startTime,5),end=clean(item.endTime,5),hasTimes=start||end;
+          if(item.preference!=='unavailable'&&!hasTimes){start='09:00';end='17:00';hasTimes=true;}
+          if(item.preference!=='unavailable'&&(!/^([01]\d|2[0-3]):[0-5]\d$/.test(start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(end)||end<=start))throw new OperationsError(`Controleer de beschikbaarheidstijden voor ${item.date}.`);
+          if(item.preference==='unavailable'&&hasTimes&&!(/^([01]\d|2[0-3]):[0-5]\d$/.test(start)&&/^([01]\d|2[0-3]):[0-5]\d$/.test(end)&&end>start))throw new OperationsError(`Controleer de tijden voor ${item.date}.`);
+          valid.push({...item,start:item.preference==='unavailable'?'':start,end:item.preference==='unavailable'?'':end});
+        }
+        await db.prepare('DELETE FROM member_availability WHERE member_id=? AND work_date>=date(\'now\')').bind(member.id).run();
+        for(const item of valid)await db.prepare('INSERT INTO member_availability(member_id,work_date,preference,start_time,end_time,note,updated_at) VALUES(?,?,?,?,?,?,?)').bind(member.id,item.date,item.preference,item.start||null,item.end||null,clean(item.note,200),now()).run();
+        return json({ok:true},200,origin);
+      }
       if(path==='/api/team/operations/routes'&&request.method==='GET'){const rows=(await db.prepare('SELECT id FROM routes WHERE assigned_to=? ORDER BY route_date DESC LIMIT 20').bind(member.id).all()).results,routes=[];for(const row of rows)routes.push(await routeDetails(db,row.id));return json({routes},200,origin);}
       const routeAction=path.match(/^\/api\/team\/operations\/routes\/([a-f0-9-]{36})\/action$/);
       if(routeAction&&request.method==='POST'){

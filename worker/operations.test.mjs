@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import worker from './src/index.js';
 
 class D1 {
-  constructor(){this.sql=new DatabaseSync(':memory:');this.sql.exec(readFileSync(new URL('./team-migrations/0001_team.sql',import.meta.url),'utf8'));this.sql.exec(readFileSync(new URL('./team-migrations/0002_operations.sql',import.meta.url),'utf8'));}
+  constructor(){this.sql=new DatabaseSync(':memory:');this.sql.exec(readFileSync(new URL('./team-migrations/0001_team.sql',import.meta.url),'utf8'));this.sql.exec(readFileSync(new URL('./team-migrations/0002_operations.sql',import.meta.url),'utf8'));this.sql.exec(readFileSync(new URL('./team-migrations/0003_availability_times.sql',import.meta.url),'utf8'));}
   prepare(query){const sql=this.sql;let values=[];const statement={bind(...args){values=args;return statement;},async first(){return sql.prepare(query).get(...values)||null;},async all(){return {results:sql.prepare(query).all(...values)};},async run(){return {meta:sql.prepare(query).run(...values)};},exec(){const s=sql.prepare(query);return s.columns().length?{results:s.all(...values)}:{results:[],meta:s.run(...values)};}};return statement;}
   async batch(statements){this.sql.exec('BEGIN');try{const result=statements.map(statement=>statement.exec());this.sql.exec('COMMIT');return result;}catch(error){this.sql.exec('ROLLBACK');throw error;}}
 }
@@ -37,8 +37,8 @@ assert.equal((await call(`/api/team/operations/materials/${material.id}/action`,
 assert.equal((await call(`/api/team/operations/materials/${material.id}/action`,'POST',{action:'work_complete'},staffToken)).data.material.customerStatus,'Klaar om opgehaald te worden');
 assert.equal(db.sql.prepare("SELECT json_extract(payload,'$.customerStatus') status FROM records WHERE reference=?").get(reference).status,'Klaar om opgehaald te worden');
 
-assert.equal((await call('/api/team/operations/availability','PATCH',{dates:[{date:'2099-12-01',preference:'preferred',note:'Hele dag'}]},staffToken)).status,200);
-assert.equal((await call('/api/team/operations/availability','GET',undefined,staffToken)).data.dates.length,1);
+assert.equal((await call('/api/team/operations/availability','PATCH',{dates:[{date:'2099-12-01',preference:'preferred',startTime:'10:00',endTime:'16:30',note:'Overdag'}]},staffToken)).status,200);
+const availability=await call('/api/team/operations/availability','GET',undefined,staffToken);assert.equal(availability.data.dates.length,1);assert.equal(availability.data.dates[0].start_time,'10:00');assert.equal(availability.data.dates[0].end_time,'16:30');
 
 assert.equal((await call('/api/team/hrm/setup','POST',{pin:'2468'},staffToken)).status,200);
 assert.equal((await call('/api/team/hrm','PATCH',{profile:{email:'robin@example.test',iban:'NL91ABNA0417164300'}},staffToken,{'X-HRM-PIN':'2468'})).status,200);

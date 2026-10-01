@@ -272,6 +272,9 @@ const updateReservation = async (reference, raw, env) => {
   if (paymentAmount && (!/^\d{1,4}(\.\d{1,2})?$/.test(paymentAmount) || Number(paymentAmount) <= 0)) throw new ValidationError('Vul een geldig bedrag in.');
   const paymentUrl = clean(Object.prototype.hasOwnProperty.call(raw, 'paymentUrl') ? raw.paymentUrl : record.paymentUrl, 500);
   if (paymentUrl && !isHttpsUrl(paymentUrl)) throw new ValidationError('De betaallink moet met https:// beginnen.');
+  const defaultPlannedMinutes = record.service === 'Onderhoud' ? Math.max(1, Math.min(20, Number(record.amount) || 1)) * 60 : 0;
+  const plannedMinutes = Object.prototype.hasOwnProperty.call(raw, 'plannedMinutes') ? Number(raw.plannedMinutes) : Number(record.plannedMinutes ?? defaultPlannedMinutes);
+  if (!Number.isInteger(plannedMinutes) || plannedMinutes < 0 || plannedMinutes > 2400 || (plannedMinutes > 0 && plannedMinutes < 15)) throw new ValidationError('Plan tussen 15 minuten en 40 uur voor deze aanvraag.');
   const sendsPaymentRequest = raw.sendPaymentEmail === true || (raw.sendWhatsApp === true && raw.notificationType === 'payment');
   if (sendsPaymentRequest && (!paymentAmount || !paymentUrl)) throw new ValidationError('Vul eerst een bedrag en geldige betaallink in.');
   let serviceCode = normalizeServiceCode(raw.serviceCode || record.serviceCode);
@@ -283,7 +286,7 @@ const updateReservation = async (reference, raw, env) => {
   }
   const updated = {
     ...record, serviceCode: serviceCode || null, currentStep, status, customerStatus, expectedReady, note, whatsappConsent,
-    waxType, paymentAmount, paymentUrl, closedAt: closed ? (record.closedAt || new Date().toISOString()) : null,
+    waxType, plannedMinutes, paymentAmount, paymentUrl, closedAt: closed ? (record.closedAt || new Date().toISOString()) : null,
     updatedAt: new Date().toISOString()
   };
   const saved = env.LATTENSPECIALIST_TEAM_DB ? await saveOwnerRecord(updated, raw, env) : updated;
@@ -412,7 +415,8 @@ const sendLattenspecialistEmail = async (data, reference, env) => {
 const saveLattenspecialistReservation = async (data, reference, env) => {
   if (!env.LATTENSPECIALIST_TEAM_DB && !env.LATTENSPECIALIST_RESERVATIONS_KV) return;
   const now = new Date().toISOString();
-  const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], customerStatus: 'Aanvraag ontvangen', currentStep: 1, expectedReady: '', note: '', serviceCode: null, waxType: 'Nog te bepalen', paymentAmount: '', paymentUrl: '', closedAt: null};
+  const plannedMinutes = data.service === 'Onderhoud' ? Math.max(1, Math.min(20, Number(data.amount) || 1)) * 60 : 0;
+  const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], customerStatus: 'Aanvraag ontvangen', currentStep: 1, expectedReady: '', plannedMinutes, note: '', serviceCode: null, waxType: 'Nog te bepalen', paymentAmount: '', paymentUrl: '', closedAt: null};
   delete stored.turnstileToken;
   delete stored.website;
   // Personal reservation data belongs in the EU-jurisdiction D1 database. KV is

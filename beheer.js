@@ -23,6 +23,8 @@
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[character]);
   const formatDateTime = value => { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value || '-') : new Intl.DateTimeFormat('nl-NL',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(date); };
   const formatDate = value => { if (!value || value === 'In overleg') return value || '—'; const date = new Date(`${value}T12:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('nl-NL',{weekday:'short',day:'numeric',month:'long',year:'numeric'}).format(date); };
+  const plannedMinutes = record => Number.isInteger(Number(record.plannedMinutes)) ? Number(record.plannedMinutes) : (record.service === 'Onderhoud' ? Math.max(1,Number(record.amount)||1)*60 : 0);
+  const formatPlannedTime = minutes => { const value=Math.max(0,Number(minutes)||0),hours=Math.floor(value/60),rest=value%60;return hours&&rest?`${hours} u ${rest} min`:hours?`${hours} uur`:`${rest} min`; };
   const normalizeWhatsAppPhone = value => { let digits = String(value || '').replace(/\D/g,''); if (digits.startsWith('00')) digits = digits.slice(2); if (digits.startsWith('0')) digits = `31${digits.slice(1)}`; return digits; };
   const valueOrDash = value => value ? escapeHtml(value) : '—';
   const customerStatusUrl = record => /^LS-[A-Z2-9]{6}$/.test(record.serviceCode || '') ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : '';
@@ -112,9 +114,10 @@
     const waxChoices = waxOptions.map(option => `<option${option === wax ? ' selected' : ''}>${escapeHtml(option)}</option>`).join('');
     const searchText = [record.reference,record.serviceCode,record.name,record.phone,record.email,record.postcode,record.address,record.material,record.package,record.rentaltype,record.status].filter(Boolean).join(' ').toLowerCase();
     const closed = Boolean(record.closedAt);
+    const minutes=plannedMinutes(record);
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
-      <div class="admin-record-head"><div><span class="admin-request-code">${escapeHtml(record.reference)}</span><h2>${escapeHtml(record.name || 'Naam onbekend')}</h2><p>${escapeHtml(record.service || 'Aanvraag')} · ontvangen ${escapeHtml(formatDateTime(record.createdAt))}${closed ? ` · afgemeld ${escapeHtml(formatDateTime(record.closedAt))}` : ''}</p></div><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div>
-      <div class="admin-record-grid">
+      <div class="admin-record-head"><div><span class="admin-request-code">${escapeHtml(record.reference)}</span><h2>${escapeHtml(record.name || 'Naam onbekend')}</h2><p>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</p></div><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} gepland</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div></div>
+      <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-grid">
         <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
         <form class="admin-update-form">
           <h3>Onderhoud registreren</h3>
@@ -127,6 +130,7 @@
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
           <label><span>Wax voor deze beurt</span><select name="waxType">${waxChoices}</select><small class="field-hint">Voorstel op basis van de opgegeven omstandigheden; controleer dit zelf.</small></label>
           <label><span>Verwacht klaar</span><input type="date" name="expectedReady" value="${escapeHtml(record.expectedReady || '')}"></label>
+          <label><span>Gereserveerde werktijd</span><input type="number" name="plannedMinutes" min="15" max="2400" step="15" value="${minutes}"><small class="field-hint">Totaal voor deze aanvraag in minuten. Automatisch 60 minuten per paar.</small></label>
           <label><span>Bericht voor klant</span><textarea name="note" rows="3" maxlength="320" placeholder="Bijvoorbeeld: de kanten zijn gecontroleerd.">${escapeHtml(record.note || '')}</textarea></label>
           <label class="admin-consent-confirm"><input type="checkbox" name="whatsappConsent"${record.whatsappConsent ? ' checked' : ''}><span>Klant heeft toestemming gegeven voor WhatsApp-statusupdates</span><small>Alleen aanvinken na mondelinge of schriftelijke toestemming.</small></label>
           <div class="admin-save-actions"><button class="btn btn-gold save-record" type="submit" data-action="notify">Opslaan + klant berichten</button><button class="btn btn-dark save-record" type="submit" data-action="save">Alleen opslaan</button></div>
@@ -134,7 +138,7 @@
           <button class="admin-close-button" type="submit" data-action="close">${closed ? 'Aanvraag opnieuw openen' : 'Aanvraag afmelden'}</button>
           <div class="admin-record-message" role="status" aria-live="polite"></div>
         </form>
-      </div>
+      </div></details>
     </article>`;
   };
 
@@ -143,7 +147,8 @@
     const open = records.filter(record => !record.closedAt).length;
     const active = records.filter(record => !record.closedAt && Number(record.currentStep || 1) < steps.length).length;
     const withoutCode = records.filter(record => !record.closedAt && !record.serviceCode).length;
-    summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${active}</b> in behandeling</span><span><b>${withoutCode}</b> zonder servicecode</span>`;
+    const reservedMinutes=records.filter(record=>!record.closedAt&&Number(record.currentStep||1)<steps.length).reduce((total,record)=>total+plannedMinutes(record),0);
+    summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> gepland werk</span><span><b>${active}</b> in behandeling</span><span><b>${withoutCode}</b> zonder servicecode</span>`;
     list.innerHTML = records.length ? records.map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
     applySearch();
   };
@@ -212,7 +217,7 @@
     const form = event.target.closest('.admin-update-form'); if (!form) return; event.preventDefault();
     const card = form.closest('.admin-record'); const message = form.querySelector('.admin-record-message'); const buttons = [...form.querySelectorAll('button')];
     const action = event.submitter?.dataset.action || 'save'; const existing = records.find(record => record.reference === card.dataset.reference); const values = Object.fromEntries(new FormData(form)); const currentStep = Number(values.currentStep);
-    const payload = {serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,note:values.note,waxType:values.waxType,whatsappConsent:form.elements.whatsappConsent.checked,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl};
+    const payload = {serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,plannedMinutes:Number(values.plannedMinutes),note:values.note,waxType:values.waxType,whatsappConsent:form.elements.whatsappConsent.checked,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl};
     payload.revision=existing?.revision ?? 0;payload.assignedTo=values.assignedTo || '';
     if (action === 'notify') { payload.sendStatusEmail = true; payload.sendWhatsApp = true; payload.notificationType = 'status'; }
     if (action === 'payment') { payload.sendPaymentEmail = true; payload.sendWhatsApp = true; payload.notificationType = 'payment'; }
