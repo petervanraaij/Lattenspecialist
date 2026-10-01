@@ -5,6 +5,8 @@
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
   const maintenanceFields = document.querySelector('#maintenanceFields');
   const rentalFields = document.querySelector('#rentalFields');
+  const maintenancePlanningFields = document.querySelector('#maintenancePlanningFields');
+  const rentalPlanningFields = document.querySelector('#rentalPlanningFields');
   const addressFields = document.querySelector('#pickupAddressFields');
   const pickupDateField = document.querySelector('#pickupDateField');
   const summary = document.querySelector('#requestSummary');
@@ -13,6 +15,9 @@
   const submitButton = form.querySelector('.form-submit');
   const confirmation = document.querySelector('#bookingConfirmation');
   const turnstileContainer = document.querySelector('#turnstileContainer');
+  const steps = [...form.querySelectorAll('[data-form-step]')];
+  const progressSteps = [...form.querySelectorAll('[data-progress-step]')];
+  let currentStep = 1;
   let turnstileWidgetId = null, addressTimer, addressController;
   let addressVersion = 0, lastAddressQuery = '', outsidePickupArea = false, submitting = false;
   const getValue = name => String(form.elements[name]?.value || '').trim();
@@ -31,11 +36,36 @@
     container.hidden = !visible;
     container.querySelectorAll('input, select, textarea').forEach(input => { input.disabled = !visible; });
   };
+  const showStep = (step, focus = true) => {
+    currentStep = Math.min(3, Math.max(1, step));
+    steps.forEach(panel => { panel.hidden = Number(panel.dataset.formStep) !== currentStep; });
+    progressSteps.forEach(item => {
+      const number = Number(item.dataset.progressStep);
+      item.classList.toggle('is-active', number === currentStep);
+      item.classList.toggle('is-complete', number < currentStep);
+      if (number === currentStep) item.setAttribute('aria-current', 'step'); else item.removeAttribute('aria-current');
+    });
+    if (focus) {
+      const legend = steps.find(panel => Number(panel.dataset.formStep) === currentStep)?.querySelector('legend');
+      legend?.setAttribute('tabindex', '-1');
+      legend?.focus({preventScroll:true});
+      form.scrollIntoView?.({block:'start', behavior:'smooth'});
+    }
+  };
+  const validateCurrentStep = () => {
+    const panel = steps.find(item => Number(item.dataset.formStep) === currentStep);
+    const fields = [...panel.querySelectorAll('input, select, textarea')].filter(field => !field.disabled && field.type !== 'hidden');
+    const invalid = fields.find(field => !field.checkValidity());
+    if (!invalid) return true;
+    invalid.reportValidity();
+    invalid.focus();
+    return false;
+  };
   const buildSummary = () => {
     const service = selectedService();
     const lines = [`Dienst: ${service}`];
     if (service === 'Onderhoud') {
-      lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`, `Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix (standaard inbegrepen)'}`, `Halen of brengen: ${getValue('logistics')}`);
+      lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`, `Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`, `Halen of brengen: ${getValue('logistics')}`);
       if (usesPickup()) lines.push(`Ophaaldatum: ${formatDate(getValue('pickupDate'))}`, `Ophaal- en terugbrenglocatie: ${getValue('address') || 'Nog invullen'}`);
       lines.push(`Spoed: ${getValue('urgent')}`);
       if (getValue('destination')) lines.push(`Bestemming: ${getValue('destination')}`);
@@ -51,6 +81,8 @@
   const updateForm = () => {
     toggleFields(maintenanceFields, selectedService() === 'Onderhoud');
     toggleFields(rentalFields, selectedService() === 'Verhuur');
+    toggleFields(maintenancePlanningFields, selectedService() === 'Onderhoud');
+    toggleFields(rentalPlanningFields, selectedService() === 'Verhuur');
     toggleFields(addressFields, usesPickup());
     toggleFields(pickupDateField, usesPickup());
     ['postcode','houseNumber','address','pickupDate'].forEach(name => { form.elements[name].required = usesPickup(); });
@@ -118,7 +150,7 @@
     addressController?.abort(); addressVersion += 1; window.clearTimeout(addressTimer);
     form.reset(); lastAddressQuery = ''; outsidePickupArea = false;
     setAddressStatus('Het adres verschijnt na het invullen van postcode en huisnummer.');
-    clearStatus(); updateForm(); loadAvailability();
+    clearStatus(); updateForm(); loadAvailability(); showStep(1, false);
   };
   const today = new Date();
   const minimum = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
@@ -127,7 +159,12 @@
   const packageChoice = params.get('pakket');
   if ([...form.elements.package.options].some(option => option.value && option.value === packageChoice)) form.elements.package.value = packageChoice;
   if (params.get('wax') === 'performance' && form.elements.performanceWax) {
-    form.elements.performanceWax.value = 'Holmenkol Performance Purple (+ €7,50)';
+    form.elements.performanceWax.value = 'Performance Wax (+ € 7,50)';
+  }
+  if (params.get('dienst') === 'verhuur') {
+    form.querySelector('input[name="service"][value="Verhuur"]').checked = true;
+    const requestedRental = params.get('type');
+    if (requestedRental && [...form.elements.rentaltype.options].some(option => option.value === requestedRental)) form.elements.rentaltype.value = requestedRental;
   }
   const loadTurnstile = () => {
     if (!config.turnstileSiteKey) return;
@@ -144,11 +181,20 @@
     updateForm();
   });
   form.addEventListener('change', () => { updateForm(); if (usesPickup()) lookupAddress(); });
+  form.querySelectorAll('.step-next').forEach(button => button.addEventListener('click', () => {
+    clearStatus(); updateForm();
+    if (validateCurrentStep()) showStep(currentStep + 1);
+  }));
+  form.querySelectorAll('.step-back').forEach(button => button.addEventListener('click', () => showStep(currentStep - 1)));
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (submitting) return;
     clearStatus(); updateForm();
-    if (!form.checkValidity()) { form.reportValidity(); return; }
+    if (!form.checkValidity()) {
+      const invalid = form.querySelector(':invalid');
+      const invalidStep = Number(invalid?.closest('[data-form-step]')?.dataset.formStep || 3);
+      showStep(invalidStep, false); form.reportValidity(); invalid?.focus(); return;
+    }
     if (form.elements.website.value) { resetRequest(); showStatus('Bedankt. Je aanvraag is ontvangen.', 'success'); return; }
     if (!endpoint || !config.turnstileSiteKey) { showStatus('Het formulier is tijdelijk niet beschikbaar. Gebruik “Reserveer via WhatsApp” of mail naar info@lattenspecialist.nl.', 'error'); return; }
     const turnstileToken = window.turnstile && turnstileWidgetId !== null ? window.turnstile.getResponse(turnstileWidgetId) : '';
@@ -158,7 +204,7 @@
     payload.privacyConsent = formData.get('privacyConsent') === 'on';
     payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
     if (selectedService() === 'Onderhoud') {
-      const waxChoice = getValue('performanceWax') || 'Holmenkol BetaMix (standaard inbegrepen)';
+      const waxChoice = getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)';
       payload.notes = [String(payload.notes || '').trim(), `Waxkeuze: ${waxChoice}`].filter(Boolean).join('\n');
     }
     payload.turnstileToken = turnstileToken;
@@ -192,7 +238,8 @@
   document.querySelector('#newRequest')?.addEventListener('click', () => {
     confirmation.hidden = true; form.hidden = false; document.body.classList.remove('has-confirmation');
     ['confirmationReference','confirmationSummary','confirmationDelivery','confirmationTracking'].forEach(id => { document.getElementById(id).textContent = ''; });
-    form.elements.package.focus();
+    showStep(1, false);
+    (selectedService() === 'Onderhoud' ? form.elements.package : form.elements.rentaltype).focus();
   });
-  updateForm(); loadAvailability(); loadTurnstile(); submitButton.disabled = false;
+  updateForm(); showStep(1, false); loadAvailability(); loadTurnstile(); submitButton.disabled = false;
 })();

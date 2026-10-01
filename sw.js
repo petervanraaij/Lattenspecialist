@@ -1,10 +1,11 @@
-const CACHE_NAME = 'lattenspecialist-v29-operations';
+const CACHE_NAME = 'lattenspecialist-v30-site-update';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
-  '/homepage.css?v=4',
-  '/homepage.js?v=1',
+  '/verhuur.html',
+  '/homepage.css?v=7',
+  '/homepage.js?v=2',
   '/package-choice.js?v=1',
   '/website-metrics.js?v=1',
   '/app.html',
@@ -17,10 +18,11 @@ const APP_SHELL = [
   '/styles.css?v=15',
   '/styles.css?v=16',
   '/styles.css?v=17',
+  '/styles.css?v=18',
   '/images/van-raaij-solutions-logo.webp',
   '/script.js?v=10',
   '/booking-config.js?v=2',
-  '/booking.js?v=5',
+  '/booking.js?v=8',
   '/customer-booking.css?v=1',
   '/customer-booking.js?v=2',
   '/customer-app.css?v=1',
