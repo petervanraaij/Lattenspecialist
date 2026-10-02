@@ -34,6 +34,8 @@ assert.equal(scan.status,200);assert.equal(scan.data.work.package,'Goud');
 assert.equal((await call('/api/team/operations/scan/'+material.displayCode,'GET',undefined,staffToken)).data.material.id,material.id);
 assert.equal((await call(`/api/team/operations/materials/${material.id}/action`,'POST',{action:'receive'},staffToken)).data.material.customerStatus,'Materiaal ontvangen');
 assert.equal((await call(`/api/team/operations/materials/${material.id}/action`,'POST',{action:'work_start'},staffToken)).status,200);
+const activeDashboard=await call('/api/admin/operations/dashboard');
+assert.equal(activeDashboard.data.activeWork.length,1);assert.equal(activeDashboard.data.activeWork[0].display_code,material.displayCode);assert.equal(activeDashboard.data.activeWork[0].planned_seconds,3600);
 assert.equal((await call(`/api/team/operations/materials/${material.id}/action`,'POST',{action:'work_complete'},staffToken)).data.material.customerStatus,'Klaar om opgehaald te worden');
 assert.equal(db.sql.prepare("SELECT json_extract(payload,'$.customerStatus') status FROM records WHERE reference=?").get(reference).status,'Klaar om opgehaald te worden');
 
