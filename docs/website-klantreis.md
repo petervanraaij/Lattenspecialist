@@ -5,14 +5,14 @@
 - Eén pakketkeuze gaat via de parameter pakket naar afspraak.html. Het formulier kiest zelf geen standaardpakket.
 - Alleen bij gratis ophalen zijn ophaaldatum, postcode, huisnummer en ophaal- en terugbrenglocatie zichtbaar en verplicht. Zelf brengen en ophalen in Wamel is één optie. Inactieve velden worden niet meegestuurd.
 - Ophaaldata komen uit de bestaande beheerplanning. Een klant kiest expliciet een datum; bij ontbrekende data kan In overleg worden gekozen. De planning en het moment waarop het materiaal klaar is worden persoonlijk bevestigd.
-- Het verhaal van Peter is gebaseerd op zijn eigen toelichting. De werkplaatsfoto blijft een sfeerbeeld, geen portret van Peter. Echte onderhoudsfoto’s en klantreviews ontbreken nog en zijn niet nagebootst.
+- De merkpresentatie spreekt vanuit De Lattenspecialist: vakmanschap en persoonlijke aandacht. Onderhoud, verhuur en webshop staan naast elkaar; webshopvragen lopen via contact zolang online bestellen ontbreekt. Geen persoonlijke oprichterstekst of kleinschalige positionering.
 - Na een succesvolle aanvraag verschijnt de aanvraagcode en een controleerbaar overzicht. Een mislukte bevestigingsmail wordt eerlijk vermeld. De persoonlijke statuslink ontstaat nog steeds bij de onderhoudsregistratie in beheer.
 - Navigatielabels zijn gelijkgetrokken naar Onderhoud aanvragen. De deelafbeelding gebruikt het originele logo.
 
 ## Bestanden
 | Onderdeel | Bestanden |
 | --- | --- |
-| Homepage, persoonlijke intro en pakketten | index.html, homepage.css, package-choice.js |
+| Homepage, merkintro, aanbod en pakketten | index.html, homepage.css, package-choice.js |
 | Formulier en bevestiging | afspraak.html, booking.js |
 | Bestaande klantenapp / formulierkoppeling | customer-booking.js, mobile-customer/src/customer.js (ongewijzigd) |
 | Dagtotalen en beheerweergave | website-metrics.js, beheer.html, beheer.js, admin-metrics.css |

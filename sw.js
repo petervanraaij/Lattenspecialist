@@ -1,10 +1,10 @@
-const CACHE_NAME = 'lattenspecialist-v31-rental-live';
+const CACHE_NAME = 'lattenspecialist-v32-brand-offer';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=8',
+  '/homepage.css?v=9',
   '/homepage.js?v=2',
   '/package-choice.js?v=1',
   '/website-metrics.js?v=1',
