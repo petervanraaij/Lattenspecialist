@@ -45,6 +45,7 @@ const availability=await call('/api/team/operations/availability','GET',undefine
 assert.equal((await call('/api/team/hrm/setup','POST',{pin:'2468'},staffToken)).status,200);
 assert.equal((await call('/api/team/hrm','PATCH',{profile:{email:'robin@example.test',iban:'NL91ABNA0417164300'}},staffToken,{'X-HRM-PIN':'2468'})).status,200);
 assert.equal((await call('/api/admin/hrm/setup','POST',{pin:'8642'})).status,200);
+assert.equal((await call('/api/admin/hrm/status')).data.configured,true);
 assert.equal((await call(`/api/admin/hrm/members/${created.data.id}`,'PATCH',{terms:{payType:'hourly',hourlyRate:18.5,contract:'Testcontract'}},owner,{'X-HRM-PIN':'8642'})).status,200);
 const ownHrm=await call('/api/team/hrm','GET',undefined,staffToken,{'X-HRM-PIN':'2468'});
 assert.equal(ownHrm.data.profile.iban,'NL91ABNA0417164300');assert.equal(ownHrm.data.terms.hourlyRate,18.5);

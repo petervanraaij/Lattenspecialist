@@ -20,6 +20,8 @@ async function call(path,method='GET',body,token=owner,ip='127.0.0.1') {const re
 async function create(login){const response=await call('/api/admin/team/members','POST',{name:'Medewerker '+login,login});assert.equal(response.status,201);return response.data;}
 async function login(m){const response=await call('/api/team/login','POST',{login:m.login,accessKey:m.accessKey},'');assert.equal(response.status,200);return response.data.token;}
 const a=await create('robin'),b=await create('sam'),ta=await login(a),tb=await login(b);
+const customKey='Mijn-Eigen-Sleutel-2026',custom=await call('/api/admin/team/members','POST',{name:'Medewerker eigen',login:'eigen',accessKey:customKey});assert.equal(custom.status,201);assert.equal(custom.data.accessKey,customKey);assert.equal((await call('/api/team/login','POST',{login:'eigen',accessKey:customKey},'')).status,200);
+assert.equal((await call('/api/admin/team/members','POST',{name:'Te kort',login:'tekort',accessKey:'kort'})).status,400);
 assert.equal((await call('/api/admin/team/members','GET',undefined,ta)).status,401);
 assert.equal((await call('/api/admin/reservations','GET',undefined,ta)).status,401);
 assert.equal((await call('/api/admin/availability','PATCH',{dates:[]},ta)).status,401);
@@ -49,8 +51,8 @@ assert.equal((await call('/api/team/tasks','GET',undefined,tb)).data.records.len
 assert.equal((await call('/api/admin/team/members/'+b.id,'PATCH',{action:'revoke'})).status,200);
 assert.equal((await call('/api/team/tasks','GET',undefined,tb)).status,401);
 assert.equal((await call('/api/team/login','POST',{login:b.login,accessKey:b.accessKey},'')).status,401);
-const rotated=(await call('/api/admin/team/members/'+b.id,'PATCH',{action:'rotate'})).data;
-assert.notEqual(rotated.accessKey,b.accessKey);assert.equal((await call('/api/team/login','POST',{login:b.login,accessKey:b.accessKey},'')).status,401);
+const rotated=(await call('/api/admin/team/members/'+b.id,'PATCH',{action:'rotate',accessKey:'Nieuwe-Sleutel-2026'})).data;
+assert.equal(rotated.accessKey,'Nieuwe-Sleutel-2026');assert.equal((await call('/api/team/login','POST',{login:b.login,accessKey:b.accessKey},'')).status,401);
 const newToken=await login(rotated);assert.equal((await call('/api/team/tasks','GET',undefined,newToken)).status,200);
 await call('/api/admin/reservations/'+reference,'PATCH',{closed:true,revision:3});
 assert.equal((await call('/api/team/tasks','GET',undefined,newToken)).data.records.length,0);

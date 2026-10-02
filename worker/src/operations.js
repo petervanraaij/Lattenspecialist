@@ -239,6 +239,7 @@ async function dashboard(db) {
 async function adminHrm(request,env,db,path) {
   const raw=request.method==='GET'?{}:await body(request),pin=request.headers.get('X-HRM-PIN') || raw.pin || '';
   let setting=await db.prepare("SELECT setting_value FROM hrm_settings WHERE setting_key='admin_pin'").first();
+  if(path==='/api/admin/hrm/status'&&request.method==='GET')return {configured:Boolean(setting)};
   if(path==='/api/admin/hrm/setup'&&request.method==='POST'){
     if(setting)throw new OperationsError('De HRM-pincode is al ingesteld.',409);const pinHash=await createPinHash(raw.pin,env);
     await db.prepare("INSERT INTO hrm_settings(setting_key,setting_value,updated_at) VALUES('admin_pin',?,?)").bind(pinHash,now()).run();
