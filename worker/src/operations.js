@@ -247,6 +247,12 @@ async function adminHrm(request,env,db,path) {
   }
   if(!setting)throw new OperationsError('Stel eerst een aparte HRM-pincode in.',428);
   if(!await verifyPin(pin,setting.setting_value,env))throw new OperationsError('HRM-pincode onjuist.',403);
+  if(path==='/api/admin/hrm/change-pin'&&request.method==='POST'){
+    const pinHash=await createPinHash(raw.newPin,env);
+    await db.prepare("UPDATE hrm_settings SET setting_value=?,updated_at=? WHERE setting_key='admin_pin'").bind(pinHash,now()).run();
+    await db.prepare('INSERT INTO hrm_audit(member_id,actor,action,created_at) VALUES(?,?,?,?)').bind(null,'owner','admin_pin_changed',now()).run();
+    return {ok:true};
+  }
   if(path==='/api/admin/hrm/members'&&request.method==='GET'){
     const rows=(await db.prepare('SELECT m.id,m.name,m.login,h.profile_ciphertext,h.terms_ciphertext,h.updated_at FROM members m LEFT JOIN member_hrm h ON h.member_id=m.id ORDER BY m.name').all()).results;
     const result=[];for(const row of rows){const terms=await open(row.terms_ciphertext,env,{}),totals=await db.prepare("SELECT COUNT(DISTINCT material_id) items,COALESCE(SUM(duration_seconds),0) seconds,COUNT(DISTINCT CASE WHEN started_at>=date('now','start of month') THEN material_id END) month_items,COALESCE(SUM(CASE WHEN started_at>=date('now','start of month') THEN duration_seconds ELSE 0 END),0) month_seconds FROM work_sessions WHERE member_id=? AND activity='maintenance' AND ended_at IS NOT NULL").bind(row.id).first(),hourly=Number(terms.hourlyRate)||0,itemRate=Number(terms.itemRate)||0,earnings=terms.payType==='item'?totals.items*itemRate:(totals.seconds/3600)*hourly,monthEarnings=terms.payType==='item'?totals.month_items*itemRate:(totals.month_seconds/3600)*hourly;result.push({id:row.id,name:row.name,login:row.login,profile:await open(row.profile_ciphertext,env,{}),terms,totals:{...totals,earnings:Number(earnings.toFixed(2)),monthEarnings:Number(monthEarnings.toFixed(2))},updatedAt:row.updated_at});}return {members:result};
