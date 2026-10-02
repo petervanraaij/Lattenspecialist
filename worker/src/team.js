@@ -58,7 +58,9 @@ export async function handleTeam(request,env,{owner,json,origin,steps,waxes,clea
     const raw=await readBody(request),name=clean(raw.name,80),login=clean(raw.login,120).toLowerCase();
     if(!name || !/^[a-z0-9][a-z0-9.@_+-]{2,119}$/.test(login))throw new TeamError('Vul een naam en een geldige gebruikersnaam in (minimaal 3 tekens).');
     if(await db.prepare('SELECT id FROM members WHERE login=?').bind(login).first())throw new TeamError('Deze gebruikersnaam bestaat al.',409);
-    const key=secret(),id=crypto.randomUUID();
+    const customKey=String(raw.accessKey||'').trim();
+    if(customKey&&(customKey.length<10||customKey.length>80))throw new TeamError('Kies een toegangssleutel van minimaal 10 en maximaal 80 tekens.');
+    const key=customKey||secret(),id=crypto.randomUUID();
     await db.prepare('INSERT INTO members(id,name,login,key_hash,created_at) VALUES(?,?,?,?,?)').bind(id,name,login,await hash(key),now()).run();
     return json({id,name,login,accessKey:key},201,origin);
    }
@@ -66,7 +68,9 @@ export async function handleTeam(request,env,{owner,json,origin,steps,waxes,clea
    if(memberMatch && request.method==='PATCH') {
     const raw=await readBody(request),id=memberMatch[1];
     if(!['revoke','rotate'].includes(raw.action))throw new TeamError('Kies intrekken of nieuwe toegang.');
-    const key=secret();
+    const customKey=String(raw.accessKey||'').trim();
+    if(raw.action==='rotate'&&customKey&&(customKey.length<10||customKey.length>80))throw new TeamError('Kies een toegangssleutel van minimaal 10 en maximaal 80 tekens.');
+    const key=customKey||secret();
     const results=await db.batch([
      db.prepare('UPDATE members SET active=?,key_hash=? WHERE id=? RETURNING id,name,login,active').bind(raw.action==='rotate'?1:0,await hash(key),id),
      db.prepare('DELETE FROM sessions WHERE member_id=?').bind(id)

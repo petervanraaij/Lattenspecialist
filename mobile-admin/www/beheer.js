@@ -116,7 +116,7 @@
     const closed = Boolean(record.closedAt);
     const minutes=plannedMinutes(record);
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
-      <div class="admin-record-head"><div><span class="admin-request-code">${escapeHtml(record.reference)}</span><h2>${escapeHtml(record.name || 'Naam onbekend')}</h2><p>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</p></div><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} gepland</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div></div>
+      <div class="admin-record-head"><div><span class="admin-request-code">${escapeHtml(record.reference)}</span><h2>${escapeHtml(record.name || 'Naam onbekend')}</h2><p>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</p></div><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div></div>
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-grid">
         <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
         <form class="admin-update-form">
@@ -148,7 +148,7 @@
     const active = records.filter(record => !record.closedAt && Number(record.currentStep || 1) < steps.length).length;
     const withoutCode = records.filter(record => !record.closedAt && !record.serviceCode).length;
     const reservedMinutes=records.filter(record=>!record.closedAt&&Number(record.currentStep||1)<steps.length).reduce((total,record)=>total+plannedMinutes(record),0);
-    summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> gepland werk</span><span><b>${active}</b> in behandeling</span><span><b>${withoutCode}</b> zonder servicecode</span>`;
+    summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> benodigde tijd</span><span><b>${active}</b> in behandeling</span><span><b>${withoutCode}</b> zonder servicecode</span>`;
     list.innerHTML = records.length ? records.map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
     applySearch();
   };
