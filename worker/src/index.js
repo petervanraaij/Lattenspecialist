@@ -1,7 +1,7 @@
 import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
 import {handleMetrics} from './metrics.js';
 import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, ensureTeamRecord, saveOwnerRecord} from './team.js';
-import {handleOperations} from './operations.js';
+import {handleOperations, verifyAdminAccessCode} from './operations.js';
 
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
@@ -174,14 +174,24 @@ const normalizeWhatsAppPhone = value => {
   return digits;
 };
 
-const isAdminAuthorized = (request, env) => {
-  const expected = String(env.LATTENSPECIALIST_ADMIN_TOKEN || '');
-  const authorization = request.headers.get('Authorization') || '';
-  const supplied = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+const constantTimeEqual=(expected,supplied)=>{
   if (!expected || expected.length !== supplied.length) return false;
   let difference = 0;
   for (let index = 0; index < expected.length; index += 1) difference |= expected.charCodeAt(index) ^ supplied.charCodeAt(index);
   return difference === 0;
+};
+
+const isAdminAuthorized = async (request, env) => {
+  const expected = String(env.LATTENSPECIALIST_ADMIN_TOKEN || '');
+  const authorization = request.headers.get('Authorization') || '';
+  const supplied = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+  if(env.LATTENSPECIALIST_TEAM_DB){
+    try{
+      const setting=await env.LATTENSPECIALIST_TEAM_DB.prepare("SELECT setting_value FROM hrm_settings WHERE setting_key='admin_access_hash'").first();
+      if(setting)return verifyAdminAccessCode(supplied,setting.setting_value,env);
+    }catch{return false;}
+  }
+  return constantTimeEqual(expected,supplied);
 };
 
 const requireReservationStore = env => {
@@ -432,17 +442,17 @@ export default {
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
     if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-HRM-PIN', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
-    if (url.pathname.startsWith('/api/team/operations') || url.pathname.startsWith('/api/admin/operations') || url.pathname.startsWith('/api/team/hrm') || url.pathname.startsWith('/api/admin/hrm') || url.pathname.startsWith('/api/feedback/')) {
+    if (url.pathname.startsWith('/api/team/operations') || url.pathname.startsWith('/api/admin/operations') || url.pathname.startsWith('/api/team/hrm') || url.pathname.startsWith('/api/admin/hrm') || url.pathname.startsWith('/api/admin/settings') || url.pathname.startsWith('/api/feedback/')) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
-      return handleOperations(request, env, {owner:isAdminAuthorized(request,env), json, origin});
+      return handleOperations(request, env, {owner:await isAdminAuthorized(request,env), json, origin});
     }
     if (url.pathname.startsWith('/api/team/') || url.pathname.startsWith('/api/admin/team/')) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
-      return handleTeam(request, env, {owner:isAdminAuthorized(request,env), json, origin, steps:STATUS_STEPS, waxes:WAX_OPTIONS, clean});
+      return handleTeam(request, env, {owner:await isAdminAuthorized(request,env), json, origin, steps:STATUS_STEPS, waxes:WAX_OPTIONS, clean});
     }
     if (['/api/metrics', '/api/admin/metrics'].includes(url.pathname)) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
-      return handleMetrics(request, env, isAdminAuthorized(request, env));
+      return handleMetrics(request, env, await isAdminAuthorized(request, env));
     }
 
     if (site === 'lattenspecialist' && request.method === 'GET' && url.pathname === '/api/address') {
@@ -464,7 +474,7 @@ export default {
     }
 
     if (site === 'lattenspecialist' && url.pathname === '/api/admin/availability' && ['GET', 'PATCH'].includes(request.method)) {
-      if (!isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
+      if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
       try {
         const availability = request.method === 'PATCH' ? await saveAvailability(await request.json(), env) : await getAvailability(env);
         return json({ok: true, ...availability}, 200, origin);
@@ -486,7 +496,7 @@ export default {
     }
 
     if (site === 'lattenspecialist' && url.pathname === '/api/admin/reservations' && request.method === 'GET') {
-      if (!isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
+      if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
       try {
         return json({ok: true, records: await listReservations(env)}, 200, origin);
       } catch {
@@ -495,7 +505,7 @@ export default {
     }
 
     if (site === 'lattenspecialist' && url.pathname.startsWith('/api/admin/reservations/') && request.method === 'PATCH') {
-      if (!isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
+      if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
       const reference = clean(decodeURIComponent(url.pathname.slice('/api/admin/reservations/'.length)), 32).toUpperCase();
       if (!/^LS-\d{4}-[A-Z2-9]{6}$/.test(reference)) return json({message: 'Aanvraagcode ongeldig.'}, 400, origin);
       try {

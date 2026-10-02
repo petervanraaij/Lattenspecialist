@@ -20,6 +20,13 @@
   let records = [];
   let availableDates = new Set();
 
+  window.addEventListener('lattenspecialist:admin-code-changed',event=>{
+    const next=String(event.detail?.code||'');if(!next)return;
+    const remembered=localStorage.getItem('lattenspecialist-admin-token')===token;
+    token=next;sessionStorage.setItem('lattenspecialist-admin-token',token);
+    if(remembered)localStorage.setItem('lattenspecialist-admin-token',token);else localStorage.removeItem('lattenspecialist-admin-token');
+  });
+
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[character]);
   const formatDateTime = value => { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value || '-') : new Intl.DateTimeFormat('nl-NL',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(date); };
   const formatDate = value => { if (!value || value === 'In overleg') return value || '—'; const date = new Date(`${value}T12:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('nl-NL',{weekday:'short',day:'numeric',month:'long',year:'numeric'}).format(date); };

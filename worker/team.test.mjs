@@ -5,7 +5,7 @@ import worker from './src/index.js';
 
 // Real SQLite executes the migration, conditional updates, constraints and audit triggers.
 class D1 {
- constructor(){this.sql=new DatabaseSync(':memory:');this.sql.exec(readFileSync(new URL('./team-migrations/0001_team.sql',import.meta.url),'utf8'));}
+ constructor(){this.sql=new DatabaseSync(':memory:');this.sql.exec(readFileSync(new URL('./team-migrations/0001_team.sql',import.meta.url),'utf8'));this.sql.exec(readFileSync(new URL('./team-migrations/0002_operations.sql',import.meta.url),'utf8'));}
  prepare(query){const sql=this.sql;let values=[];const statement={bind(...args){values=args;return statement;},async first(){return sql.prepare(query).get(...values) || null;},async all(){return {results:sql.prepare(query).all(...values)};},async run(){return {meta:sql.prepare(query).run(...values)};},exec(){const s=sql.prepare(query);return s.columns().length?{results:s.all(...values)}:{results:[],meta:s.run(...values)};}};return statement;}
  async batch(statements){this.sql.exec('BEGIN');try{const result=statements.map(s=>s.exec());this.sql.exec('COMMIT');return result;}catch(error){this.sql.exec('ROLLBACK');throw error;}}
 }
