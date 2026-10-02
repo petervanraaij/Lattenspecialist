@@ -48,7 +48,9 @@ assert.equal((await call('/api/admin/hrm/setup','POST',{pin:'8642'})).status,200
 assert.equal((await call(`/api/admin/hrm/members/${created.data.id}`,'PATCH',{terms:{payType:'hourly',hourlyRate:18.5,contract:'Testcontract'}},owner,{'X-HRM-PIN':'8642'})).status,200);
 const ownHrm=await call('/api/team/hrm','GET',undefined,staffToken,{'X-HRM-PIN':'2468'});
 assert.equal(ownHrm.data.profile.iban,'NL91ABNA0417164300');assert.equal(ownHrm.data.terms.hourlyRate,18.5);
-assert.ok(ownHrm.data.totals.earnings>=0);
+assert.ok(ownHrm.data.totals.earnings>=0);assert.ok(ownHrm.data.totals.monthEarnings>=0);
+const adminHrm=await call('/api/admin/hrm/members','GET',undefined,owner,{'X-HRM-PIN':'8642'});
+assert.equal(adminHrm.status,200);assert.equal(adminHrm.data.members[0].totals.items,1);assert.ok(adminHrm.data.members[0].totals.seconds>=1);assert.ok(adminHrm.data.members[0].totals.monthEarnings>=0);
 
 assert.equal((await call('/api/feedback/LS-OPS234','POST',{overall:5,quality:5,communication:4,pickup:5,speed:4,comment:'Prima'},'')).status,201);
 const dashboard=await call('/api/admin/operations/dashboard');

@@ -21,7 +21,7 @@ html = html
   .replace('</body>', '  <script src="native.js"></script>\n</body>');
 
 await writeFile(join(webRoot, 'index.html'), html);
-for (const file of ['beheer.js', 'admin-team.js', 'admin-operations.js', 'team.css', 'admin-metrics.css', 'admin-operations.css', 'admin-operations-extra.css', 'booking-config.js', 'styles.css']) {
+for (const file of ['beheer.js', 'admin-team.js', 'admin-operations.js', 'team.css', 'admin-metrics.css', 'admin-operations.css', 'admin-operations-extra.css', 'admin-wallboard.css', 'booking-config.js', 'styles.css']) {
   await cp(join(siteRoot, file), join(webRoot, file));
 }
 for (const file of ['qrcode.js','html5-qrcode.min.js']) await cp(join(siteRoot,'vendor',file),join(webRoot,'vendor',file));
