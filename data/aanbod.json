@@ -1,4 +1,23 @@
 {
-  "updated": "2026-09-18",
-  "items": []
+  "updated": "2026-10-02",
+  "items": [
+    {
+      "type": "Complete skiset",
+      "title": "Ski’s, skischoenen en stokken",
+      "details": "€ 15 per dag · € 35 per weekend · € 69 per week",
+      "available": true
+    },
+    {
+      "type": "Ski’s met stokken",
+      "title": "Voor wintersporters met eigen skischoenen",
+      "details": "€ 10 per dag · € 25 per weekend · € 49 per week",
+      "available": true
+    },
+    {
+      "type": "Dakkoffer met daksteunen",
+      "title": "Extra bagageruimte voor onderweg",
+      "details": "€ 10 per dag · € 15 per weekend · € 20 per week",
+      "available": true
+    }
+  ]
 }

@@ -299,7 +299,7 @@ const customerVisibleStatus = record => record.customerStatus || (Number(record.
 const publicStatus = record => ({
   code: record.serviceCode,
   material: record.service === 'Verhuur' ? record.rentaltype : `${record.amount || 1}× ${record.material || 'materiaal'}`,
-  package: record.package || (record.service === 'Verhuur' ? 'Verhuur op aanvraag' : 'In overleg'),
+  package: record.package || (record.service === 'Verhuur' ? 'Verhuur' : 'In overleg'),
   currentStep: Number(record.currentStep) || 1,
   status: customerVisibleStatus(record),
   updatedAt: record.updatedAt || record.createdAt,
