@@ -64,6 +64,23 @@ async function verifyPin(pin, stored, env) {
   return difference === 0;
 }
 
+async function createAdminAccessHash(code, env) {
+  const value=clean(code,128);
+  if(value.length<8)throw new OperationsError('Gebruik een beheercode van minimaal 8 tekens.');
+  const message=new TextEncoder().encode(`lattenspecialist-admin-access:${value}`);
+  const signature=await crypto.subtle.sign('HMAC',await pinSigningKey(env),message);
+  return `hmac1:${hex(new Uint8Array(signature))}`;
+}
+
+export async function verifyAdminAccessCode(code,stored,env) {
+  const [version,expected]=String(stored||'').split(':');
+  if(version!=='hmac1'||!/^[a-f0-9]{64}$/.test(expected||''))return false;
+  const value=clean(code,128);if(!value)return false;
+  const actual=(await createAdminAccessHash(value,env)).slice(6);
+  let difference=0;for(let index=0;index<actual.length;index+=1)difference|=actual.charCodeAt(index)^expected.charCodeAt(index);
+  return difference===0;
+}
+
 async function encryptionKey(env) {
   const encoded = String(env.HRM_DATA_KEY || '');
   if (!encoded) throw new OperationsError('HRM-versleuteling is nog niet geactiveerd.', 503);
@@ -293,8 +310,17 @@ export async function handleOperations(request,env,{owner,json,origin}) {
   const path=new URL(request.url).pathname,db=env.LATTENSPECIALIST_TEAM_DB;
   try {
     if(!db)throw new OperationsError('Bedrijfsdatabase niet beschikbaar.',503);
-    if(path.startsWith('/api/admin/operations')||path.startsWith('/api/admin/hrm')){
+    if(path.startsWith('/api/admin/operations')||path.startsWith('/api/admin/hrm')||path.startsWith('/api/admin/settings')){
       if(!owner)throw new OperationsError('Geen toegang tot beheer.',401);
+      if(path==='/api/admin/settings/access-code'&&request.method==='POST'){
+        const raw=await body(request),stored=await db.prepare("SELECT setting_value FROM hrm_settings WHERE setting_key='admin_access_hash'").first();
+        const currentValid=stored?await verifyAdminAccessCode(raw.currentCode,stored.setting_value,env):clean(raw.currentCode,128)===String(env.LATTENSPECIALIST_ADMIN_TOKEN||'');
+        if(!currentValid)throw new OperationsError('De huidige beheercode is niet juist.',403);
+        const nextHash=await createAdminAccessHash(raw.newCode,env);
+        await db.prepare("INSERT INTO hrm_settings(setting_key,setting_value,updated_at) VALUES('admin_access_hash',?,?) ON CONFLICT(setting_key) DO UPDATE SET setting_value=excluded.setting_value,updated_at=excluded.updated_at").bind(nextHash,now()).run();
+        await db.prepare('INSERT INTO hrm_audit(member_id,actor,action,created_at) VALUES(?,?,?,?)').bind(null,'owner','admin_access_changed',now()).run();
+        return json({ok:true},200,origin);
+      }
       if(path.startsWith('/api/admin/hrm'))return json(await adminHrm(request,env,db,path),200,origin);
       if(path==='/api/admin/operations/dashboard'&&request.method==='GET')return json(await dashboard(db),200,origin);
       if(path==='/api/admin/operations/materials'&&request.method==='POST'){const raw=await body(request);return json({materials:await createMaterials(db,clean(raw.reference,30))},201,origin);}

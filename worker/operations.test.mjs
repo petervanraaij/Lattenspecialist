@@ -57,6 +57,11 @@ assert.ok(ownHrm.data.totals.earnings>=0);assert.ok(ownHrm.data.totals.monthEarn
 const adminHrm=await call('/api/admin/hrm/members','GET',undefined,owner,{'X-HRM-PIN':'8642'});
 assert.equal(adminHrm.status,200);assert.equal(adminHrm.data.members[0].totals.items,1);assert.ok(adminHrm.data.members[0].totals.seconds>=1);assert.ok(adminHrm.data.members[0].totals.monthEarnings>=0);
 
+assert.equal((await call('/api/admin/settings/access-code','POST',{currentCode:owner,newCode:'nieuwe-beheercode'},owner)).status,200);
+assert.equal((await call('/api/admin/operations/dashboard','GET',undefined,owner)).status,401);
+assert.equal((await call('/api/admin/operations/dashboard','GET',undefined,'nieuwe-beheercode')).status,200);
+assert.equal((await call('/api/admin/settings/access-code','POST',{currentCode:'nieuwe-beheercode',newCode:owner},'nieuwe-beheercode')).status,200);
+
 assert.equal((await call('/api/feedback/LS-OPS234','POST',{overall:5,quality:5,communication:4,pickup:5,speed:4,comment:'Prima'},'')).status,201);
 const dashboard=await call('/api/admin/operations/dashboard');
 assert.equal(dashboard.status,200);assert.equal(dashboard.data.materials.total,2);assert.equal(dashboard.data.feedback.responses,1);
