@@ -8,8 +8,8 @@ In `mobile-admin` staat de native beheerapp voor Android en iPhone. De app bevat
 
 ## Kerngegevens
 
-- Ski- en snowboardonderhoud in West Maas en Waal en omgeving
-- Gratis haal- en brengservice in West Maas en Waal, Druten, Afferden en Horssen
+- Ski- en snowboardonderhoud voor klanten uit Nederland en Europa
+- Gratis haal- en brengservice in de gemeenten West Maas en Waal en Druten
 - Zelf brengen en ophalen in Wamel, uitsluitend op afspraak
 - WhatsApp: 06 18 32 71 32
 - Betaling via betaalverzoek na onderhoud
@@ -24,6 +24,7 @@ In `mobile-admin` staat de native beheerapp voor Android en iPhone. De app bevat
 - `app.html`: installeerbare klantenapp met aanvragen, status, waxkeuze, aanbod en reisgegevens
 - `ervaring.html`: neutraal verzoek om een ervaring te delen
 - `service.html`: uitleg over onderhoud, servicegebied en verhuur op aanvraag
+- `verhuur.html`: aparte verhuurpagina voor ski-uitrusting en een dakkoffer met daksteunen op aanvraag
 - `privacy.html`: privacy-informatie, waaronder ervaringen en servicecodes
 - `data/status.json`: statusrecords zonder persoonsgegevens
 - `data/aanbod.json`: actueel aanbod of een lege lijst bij verhuur op aanvraag

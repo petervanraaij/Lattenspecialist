@@ -1,29 +1,51 @@
-name: Android beheerapp
-
+name: Android apps klanten medewerkers beheer
 on:
   workflow_dispatch:
   pull_request:
     paths:
-      - "mobile-admin/**"
-      - "beheer.html"
-      - "beheer.js"
-      - "styles.css"
-      - "booking-config.js"
-      - ".github/workflows/android-app.yml"
-
+      - 'mobile-*/**'
+      - 'worker/**'
+      - 'beheer.*'
+      - 'admin-team.js'
+      - 'admin-operations*.js'
+      - 'admin-operations*.css'
+      - 'vendor/**'
+      - 'team.css'
+      - 'medewerkers.*'
+      - 'booking-config.js'
+      - 'styles.css'
+      - 'admin-metrics.css'
+      - '.github/workflows/android-app.yml'
+permissions:
+  contents: read
 jobs:
-  build-apk:
+  verify:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mobile-admin
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: mobile-admin/package-lock.json
+          node-version: 24
+      - run: npm ci --prefix mobile-customer
+      - run: npm --prefix mobile-customer run build
+      - run: npm --prefix mobile-customer test
+      - run: npm ci --prefix worker
+      - run: npm --prefix worker test
+  build:
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [mobile-customer, mobile-admin, mobile-staff]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -32,9 +54,17 @@ jobs:
       - run: npm run sync
       - run: python -m pip install Pillow==12.3.0
       - run: npm run prepare:assets
-      - run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug
+      - run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug bundleRelease
+      - name: Package verified build outputs
+        run: |
+          mkdir -p dist/play
+          cp android/app/build/outputs/bundle/release/app-release.aab dist/play/${{ matrix.app }}-unsigned.aab
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/play/${{ matrix.app }}-DEV.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk > dist/play/dev-identity.txt
+          grep -E "package: name='nl.lattenspecialist.(klanten|beheer|medewerkers).dev'" dist/play/dev-identity.txt
+          cd dist/play && sha256sum *.aab *.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: lattenspecialist-beheer-android
-          path: mobile-admin/android/app/build/outputs/apk/debug/app-debug.apk
+          name: ${{ matrix.app }}-play-test
+          path: ${{ matrix.app }}/dist/play/
           if-no-files-found: error

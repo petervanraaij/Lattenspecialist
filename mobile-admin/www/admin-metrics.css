@@ -1,0 +1,11 @@
+.website-stats { padding:28px; margin:0 0 28px; background:#fffdfa; border:1px solid #d9c799; border-radius:18px; }
+.website-stats-head { display:flex; align-items:center; justify-content:space-between; gap:18px; }
+.website-stats h2 { margin:8px 0 20px; }
+.website-stats label span { display:block; font-size:.85rem; margin-bottom:6px; }
+.website-stats select { padding:10px; font-size:16px; max-width:100%; border:1px solid #c8c1b5; border-radius:6px; background:white; }
+.website-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+.website-metrics > div { display:grid; gap:6px; padding:18px; background:#f3efe6; border-radius:10px; }
+.website-metrics strong { font-size:2rem; color:#735516; }
+.website-metrics span { font-size:.86rem; line-height:1.4; }
+.website-stats > p { font-size:.85rem; color:#5b574f; line-height:1.6; margin-bottom:0; }
+@media (max-width:700px) { .website-stats { padding:20px; } .website-stats-head { align-items:start; flex-direction:column; margin-bottom:20px; } .website-metrics { grid-template-columns:1fr 1fr; } }

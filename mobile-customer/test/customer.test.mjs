@@ -7,6 +7,7 @@ import {normalizeCode, validCode, validDate, readTrip, renderStatus, codeFromApp
 const html=await readFile(new URL('../www/index.html',import.meta.url),'utf8');
 const bundle=await readFile(new URL('../www/customer.js',import.meta.url),'utf8');
 const site=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const bookingPage=await readFile(new URL('../../afspraak.html',import.meta.url),'utf8');
 const embed=await readFile(new URL('../../customer-booking.js',import.meta.url),'utf8');
 const turn=()=>new Promise(resolve=>setTimeout(resolve,20));
 const reply=(body,status=200)=>({ok:status>=200&&status<300,status,json:async()=>body,text:async()=>String(body)});
@@ -38,7 +39,8 @@ test('personal WhatsApp link opens only its status without input or silently rem
   await turn();
   assert.equal(d.getElementById('onderhoud').hidden,false);
   assert.equal(d.getElementById('statusForm').hidden,true);
-  assert.match(d.getElementById('statusResult').textContent,/Onderhoud gestart/);
+  assert.match(d.getElementById('statusResult').textContent,/Materiaal ontvangen/);
+  assert.doesNotMatch(d.getElementById('statusResult').textContent,/Onderhoud gestart|Wax koelt af|Inspectie/);
   assert.deepEqual(requests,['https://api.example/api/status/LS-ABC234']);
   assert.equal(w.location.hash,'#onderhoud');
   assert.equal(w.localStorage.getItem('lattenspecialist-customer-code'),null);
@@ -62,15 +64,15 @@ test('personal link retries a network failure without asking for a code or insta
   assert.match(d.getElementById('statusResult').textContent,/Opnieuw proberen/);
   d.querySelector('#statusResult button').click();await turn();
   assert.equal(d.getElementById('statusForm').hidden,true);
-  assert.match(d.getElementById('statusResult').textContent,/Onderhoud gestart/);
+  assert.match(d.getElementById('statusResult').textContent,/Materiaal ontvangen/);
   assert.doesNotMatch(d.getElementById('statusIntro').textContent,/wordt opgehaald/);
 });
 test('another incoming personal link supersedes an in-flight status request',async t=>{
   let resolveOld;
-  const {w,d}=app(t,url=>url.endsWith('LS-ABC234')?new Promise(done=>{resolveOld=done;}):Promise.resolve(reply({record:{...record,code:'LS-DEF567',status:'Tweede aanvraag'}})),{hash:'#status=LS-ABC234'});
+  const {w,d}=app(t,url=>url.endsWith('LS-ABC234')?new Promise(done=>{resolveOld=done;}):Promise.resolve(reply({record:{...record,code:'LS-DEF567',status:'Onderweg terugbrengen'}})),{hash:'#status=LS-ABC234'});
   w.location.hash='status=LS-DEF567';await turn();
   resolveOld(reply({record}));await turn();
-  assert.match(d.getElementById('statusResult').textContent,/Tweede aanvraag/);
+  assert.match(d.getElementById('statusResult').textContent,/Onderweg terugbrengen/);
   assert.doesNotMatch(d.getElementById('statusResult').textContent,/LS-ABC234/);
 });
 test('native app accepts only exact official HTTPS personal app links',()=>{
@@ -80,8 +82,8 @@ test('native app accepts only exact official HTTPS personal app links',()=>{
 test('status renders only escaped public fields, selected wax, and closure without false completion',()=>{
   const output=renderStatus({...record,material:'<img onerror=alert(1)>',note:'<script>x</script>',closed:true});
   assert.match(output,/Premium koud/);
-  assert.match(output,/Afgemeld/);
-  assert.doesNotMatch(output,/<script>|<img|status-steps/);
+  assert.match(output,/afgemeld/i);
+  assert.doesNotMatch(output,/<script>|<img|Onderhoud gestart|Wax koelt af|Inspectie/);
 });
 test('customer can fetch status without an admin code and explicitly remember or forget it',async t=>{
   const {w,d,requests}=app(t,async()=>reply({record}));
@@ -139,7 +141,7 @@ test('trip transfers only after user action and only to verified booking frame',
   assert.equal(w.localStorage.getItem('lattenspecialist-customer-trip'),null);
 });
 test('website form stays unchanged without app flag and embed rejects untrusted prefill',async t=>{
-  const dom=new JSDOM(site,{url:'https://lattenspecialist.nl/?app=klant',runScripts:'outside-only'});
+  const dom=new JSDOM(bookingPage,{url:'https://lattenspecialist.nl/afspraak.html?app=klant',runScripts:'outside-only'});
   t.after(()=>dom.window.close());const w=dom.window;
   w.ResizeObserver=class {observe(){}};
   w.eval(embed);w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
@@ -156,6 +158,6 @@ test('website form stays unchanged without app flag and embed rejects untrusted 
   w.dispatchEvent(new w.MessageEvent('message',{origin:w.location.origin,source:w.parent,data:{type:'lattenspecialist:hello'}}));
   w.dispatchEvent(new w.MessageEvent('message',{origin:w.location.origin,source:w.parent,data:{type:'lattenspecialist:prefill',values:{destination:'Davos'}}}));
   assert.equal(w.document.querySelector('[name=destination]').value,'Davos');
-  const plain=new JSDOM(site,{url:'https://lattenspecialist.nl/',runScripts:'outside-only'});t.after(()=>plain.window.close());plain.window.eval(embed);
+  const plain=new JSDOM(bookingPage,{url:'https://lattenspecialist.nl/afspraak.html',runScripts:'outside-only'});t.after(()=>plain.window.close());plain.window.eval(embed);
   assert.equal(plain.window.document.documentElement.classList.contains('customer-booking'),false);
 });

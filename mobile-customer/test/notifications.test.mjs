@@ -76,3 +76,23 @@ test('background push is generic and notification click opens only a valid perso
   await run('notificationclick',{notification:{close:()=>{},data:{url:'https://evil.test'}}});
   assert.equal(opened.length,1);
 });
+
+test('one browser keeps different orders visible and only replaces an update for the same order',async()=>{
+  const source=await readFile(new URL('../../sw.js',import.meta.url),'utf8');
+  const handlers={}, visible=new Map(), shown=[], opened=[];
+  const self={
+    addEventListener:(type,handler)=>{handlers[type]=handler;},
+    registration:{showNotification:async(title,options)=>{shown.push(options);visible.set(options.tag,options);}},
+    clients:{matchAll:async()=>[],openWindow:async url=>opened.push(url)}
+  };
+  vm.runInNewContext(source,{self,URL});
+  const run=async(type,extra)=>{let pending;handlers[type]({...extra,waitUntil:value=>{pending=value;}});await pending;};
+  const first=`https://lattenspecialist.nl/app.html#klant=${token}`;
+  const second=`https://lattenspecialist.nl/app.html#klant=${'b'.repeat(64)}`;
+  for(const url of [first,second,first])await run('push',{data:{json:()=>({url})}});
+  assert.notEqual(shown[0].tag,shown[1].tag);
+  assert.equal(shown[0].tag,shown[2].tag);
+  assert.equal(visible.size,2);
+  for(const notification of visible.values())await run('notificationclick',{notification:{...notification,close:()=>{}}});
+  assert.deepEqual(opened,[first,second]);
+});

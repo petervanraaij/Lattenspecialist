@@ -58,10 +58,10 @@ test('incoming links cannot reuse another customer or restore a late forgotten r
   assert.equal(invalid.w.localStorage.getItem(key),null);
   assert.equal(invalid.w.sessionStorage.getItem(key),null);
   let resolveOld;
-  const {w,d}=await app(t,{fetcher:async(url,options)=>options.headers.Authorization===`Bearer ${token}`?new Promise(resolve=>{resolveOld=resolve;}):reply({...record,code:'LS-DEF567',status:'Andere klant'})});
+  const {w,d}=await app(t,{fetcher:async(url,options)=>options.headers.Authorization===`Bearer ${token}`?new Promise(resolve=>{resolveOld=resolve;}):reply({...record,code:'LS-DEF567',status:'Onderweg terugbrengen'})});
   w.location.hash=`klant=${other}`;await turn();
   resolveOld(reply(record));await turn();
-  assert.match(d.getElementById('statusResult').textContent,/Andere klant/);
+  assert.match(d.getElementById('statusResult').textContent,/Onderweg terugbrengen/);
   assert.doesNotMatch(d.getElementById('statusResult').textContent,/LS-ABC234/);
   d.getElementById('forgetMaintenance').click();
   assert.equal(d.getElementById('customerPayment'),null);

@@ -1,0 +1,13 @@
+import {mkdir,copyFile,readFile,writeFile} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import {dirname,resolve,join} from 'node:path';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),site=resolve(root,'..'),out=join(root,'www');
+await mkdir(join(out,'images'),{recursive:true});
+await mkdir(join(out,'vendor'),{recursive:true});
+await copyFile(join(site,'medewerkers.html'),join(out,'index.html'));
+for(const file of ['medewerkers.js','medewerkers.css','medewerkers-extra.css','booking-config.js'])await copyFile(join(site,file),join(out,file));
+await copyFile(join(site,'images/badge.webp'),join(out,'images/badge.webp'));
+await copyFile(join(site,'vendor/html5-qrcode.min.js'),join(out,'vendor/html5-qrcode.min.js'));
+const js=await readFile(join(out,'medewerkers.js'),'utf8');
+if(/\/api\/admin\/|lattenspecialist-admin-token|paymentUrl|RESEND_API_KEY/.test(js))throw new Error('Beheercode of betaalfunctionaliteit in medewerkersapp.');
+console.log('Medewerkersapp gebouwd zonder beheerfuncties of ingebouwde sleutels.');

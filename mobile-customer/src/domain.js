@@ -1,6 +1,6 @@
 // The web app and its booking form share an origin; native apps use the public site.
 export const SITE = typeof __WEB_APP__ !== 'undefined' && __WEB_APP__ ? window.location.origin : 'https://lattenspecialist.nl';
-export const STEPS = ['Aanvraag ontvangen', 'Ophalen of brengen gepland', 'Materiaal ontvangen', 'Inspectie uitgevoerd', 'Onderhoud gestart', 'Wax koelt af', 'Finish en eindcontrole', 'Klaar voor ophalen of terugbrengen'];
+export const STEPS = ['Aanvraag ontvangen', 'Afspraak bevestigd', 'Onderweg om op te halen', 'Materiaal ontvangen', 'Klaar om opgehaald te worden', 'Onderweg terugbrengen', 'Afgeleverd/afgerond'];
 export const CONDITIONS = ['Weet ik nog niet', 'Zacht / warm', 'Rond het vriespunt', 'Koud', 'Kunstsneeuw / hard / ijzig'];
 export const normalizeCode = value => String(value || '').trim().toUpperCase().replace(/\s+/g, '');
 export const validCode = value => /^LS-[A-Z2-9]{6}$/.test(value);
@@ -54,13 +54,20 @@ export function formatDate(value) {
   return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat('nl-NL', {day:'numeric',month:'long',year:'numeric'}).format(date);
 }
 export function renderStatus(record) {
-  const step = Math.max(1, Math.min(STEPS.length, Math.trunc(Number(record.currentStep)) || 1));
+  const status=STEPS.includes(record.status)?record.status:STEPS[Math.max(0,Math.min(3,Number(record.currentStep||1)-1))];
+  const route=status==='Onderweg terugbrengen'||status==='Afgeleverd/afgerond'?[...STEPS.slice(0,4),'Onderweg terugbrengen','Afgeleverd/afgerond']:STEPS.filter(step=>step!=='Onderweg terugbrengen');
+  const step=Math.max(0,route.indexOf(status));
   const next = record.closed ? 'Deze aanvraag is afgemeld. Neem bij vragen contact met ons op.'
-    : step === 1 ? 'We nemen contact met je op om de planning te bevestigen. Je aanvraag is nog geen definitieve afspraak.'
-    : step === 2 ? 'Houd je materiaal klaar voor de afgesproken ophaal- of brengafspraak.'
-    : step === 8 ? 'Je materiaal is klaar. We stemmen het ophalen of terugbrengen met je af.'
+    : status === 'Aanvraag ontvangen' ? 'We nemen contact met je op om de planning te bevestigen. Je aanvraag is nog geen definitieve afspraak.'
+    : status === 'Afspraak bevestigd' ? 'Houd je materiaal klaar voor de afgesproken ophaal- of brengafspraak.'
+    : status === 'Onderweg om op te halen' ? 'We zijn onderweg om je materiaal op te halen.'
+    : status === 'Klaar om opgehaald te worden' ? 'Je materiaal is klaar. We stemmen het ophalen met je af.'
+    : status === 'Onderweg terugbrengen' ? 'We zijn onderweg om je materiaal terug te brengen.'
+    : status === 'Afgeleverd/afgerond' ? 'Je onderhoud is afgerond. Veel plezier op de piste!'
     : 'Je materiaal is bij ons in behandeling. Je hoeft nu niets te doen; hier zie je de laatste stand.';
-  const progress = record.closed ? '' : `<details class="progress-details"><summary>Bekijk alle onderhoudsstappen</summary><ol class="status-steps">${STEPS.map((label,i) => `<li class="${i+1<step?'done':i+1===step?'current':''}"${i+1===step?' aria-current="step"':''}><span aria-hidden="true">${i+1<step?'✓':i+1}</span>${escape(label)}</li>`).join('')}</ol></details>`;
+  const progress = record.closed && status !== 'Afgeleverd/afgerond' ? '' : `<details class="progress-details"><summary>Bekijk alle onderhoudsstappen</summary><ol class="status-steps">${route.map((label,i) => `<li class="${i<step?'done':i===step?'current':''}"${i===step?' aria-current="step"':''}><span aria-hidden="true">${i<step?'✓':i+1}</span>${escape(label)}</li>`).join('')}</ol></details>`;
+  const scoreOptions=`<option value="">Kies 1–5</option>${[5,4,3,2,1].map(value=>`<option>${value}</option>`).join('')}`;
+  const feedback=status==='Afgeleverd/afgerond'?`<form id="feedbackForm" class="feedback-form"><h3>Hoe tevreden ben je?</h3><label>Algemene beoordeling<select name="overall" required>${scoreOptions}</select></label><label>Kwaliteit<select name="quality">${scoreOptions}</select></label><label>Communicatie<select name="communication">${scoreOptions}</select></label><label>Ophalen en terugbrengen<select name="pickup">${scoreOptions}</select></label><label>Snelheid<select name="speed">${scoreOptions}</select></label><label>Opmerking (optioneel)<textarea name="comment" rows="3" maxlength="1000"></textarea></label><button class="button gold" type="submit">Beoordeling versturen</button><p id="feedbackMessage" class="muted"></p></form>`:'';
   const waxChosen = record.waxType && record.waxType !== 'Nog te bepalen';
   let payment;
   const amount = String(record.payment?.amount || '');
@@ -75,10 +82,10 @@ export function renderStatus(record) {
     payment = `<span class="tag">Betaling</span><h2>${record.closed?'Geen actief betaalverzoek':record.payment?'Nog geen betaalverzoek':'Je betaalverzoek bekijken'}</h2><p>${record.closed?'Neem bij een vraag over betaling contact met ons op.':record.payment?'Zodra je betaalverzoek klaarstaat, vind je het hier.':'Open de persoonlijke link uit je nieuwste bericht om je betaalverzoek te bekijken.'}</p>`;
   }
   return `<div class="maintenance-overview">
-    <article class="card maintenance-summary"><div class="status-label"><span>${escape(record.code)}</span><span>${record.closed?'Afgemeld':`Stap ${step} van ${STEPS.length}`}</span></div><h2>${escape(record.closed ? 'Aanvraag afgemeld' : record.status || STEPS[step-1])}</h2><p>${escape(record.material || 'Jouw materiaal')} · ${escape(record.package || 'In overleg')}</p><div class="next-step"><h3>Wat gebeurt er nu?</h3><p>${next}</p></div></article>
+    <article class="card maintenance-summary"><div class="status-label"><span>${escape(record.code)}</span><span>${record.closed?'Afgemeld':`Stap ${step+1} van ${route.length}`}</span></div><h2>${escape(record.closed ? 'Aanvraag afgemeld' : status)}</h2><p>${escape(record.material || 'Jouw materiaal')} · ${escape(record.package || 'In overleg')}</p><div class="next-step"><h3>Wat gebeurt er nu?</h3><p>${next}</p></div></article>
     <dl class="status-details"><div><dt>Verwacht klaar</dt><dd>${escape(record.expectedReady ? formatDate(record.expectedReady) : 'We stemmen dit met je af')}</dd></div><div><dt>Laatst bijgewerkt</dt><dd>${escape(record.updatedAt && !Number.isNaN(new Date(record.updatedAt).getTime()) ? new Intl.DateTimeFormat('nl-NL',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Amsterdam'}).format(new Date(record.updatedAt)) : 'Nog niet bekend')}</dd></div>${record.pickupDate?`<div><dt>Aangevraagde ophaaldatum</dt><dd>${escape(record.pickupDate==='In overleg'?'In overleg':formatDate(record.pickupDate))}</dd></div>`:''}</dl>
     ${record.note?`<article class="card"><span class="eyebrow">Bericht van De Lattenspecialist</span><p class="status-note">${escape(record.note)}</p></article>`:''}
     <div class="maintenance-grid"><article class="card wax-card"><span class="tag">Wax voor jouw beurt</span><h2>${escape(waxChosen ? record.waxType : 'Waxkeuze volgt')}</h2><p>${waxChosen?'Dit is de wax die voor deze onderhoudsbeurt is geselecteerd.':'We kiezen de wax bij het onderhoud. Je bestemming, reisdatum en verwachte sneeuwcondities helpen daarbij.'}</p></article><article class="card payment-card">${payment}</article></div>
-    ${progress}<div class="status-actions"><button class="text-button" type="button" id="refreshStatus">Voortgang vernieuwen</button><a class="text-link" href="https://wa.me/31618327132">Vraag over je onderhoud? →</a></div>
+    ${progress}${feedback}<div class="status-actions"><button class="text-button" type="button" id="refreshStatus">Voortgang vernieuwen</button><a class="text-link" href="https://wa.me/31618327132">Vraag over je onderhoud? →</a></div>
   </div>`;
 }

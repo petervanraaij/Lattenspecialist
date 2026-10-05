@@ -15,7 +15,7 @@ async function admin(t, serviceCode = 'LS-ABC234') {
   const requests = [];
   w.fetch = async (url, options) => {
     requests.push({url, options});
-    return {ok:true, status:200, json:async () => url.endsWith('/reservations') ? {records:[{reference:'LS-2609-ABC234', name:'Testklant', serviceCode, createdAt:'2026-09-24T10:00:00Z'}]} : {dates:[]}};
+    return {ok:true, status:200, json:async () => url.endsWith('/reservations') ? {records:[{reference:'LS-2609-ABC234', name:'Testklant', service:'Onderhoud', plannedMinutes:60, revision:3, serviceCode, createdAt:'2026-09-24T10:00:00Z'}]} : {dates:[]}};
   };
   w.eval(script); await turn();
   return {w, d:w.document, requests};
@@ -62,6 +62,8 @@ test('admin publishes payments only to the app and reports notification availabi
   d.querySelector('[name="paymentUrl"]').value='https://example.test/pay';
   d.querySelector('[data-action="payment"]').click(); await turn();
   assert.equal(payloads[0].publishPayment,true);
+  assert.equal(payloads[0].plannedMinutes,60);
+  assert.equal(payloads[0].revision,3);
   assert.equal(payloads[0].paymentAmount,'44.95');
   for (const flag of ['sendStatusEmail','sendPaymentEmail','sendWhatsApp']) assert.equal(payloads[0][flag],undefined);
   assert.match(d.querySelector('#adminList .admin-record-message').textContent,/nog geen telefoonmeldingen/);

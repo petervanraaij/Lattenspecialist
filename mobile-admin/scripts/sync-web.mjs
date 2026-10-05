@@ -1,4 +1,4 @@
-import {cp, mkdir, readFile, rm, writeFile} from 'node:fs/promises';
+import {cp, mkdir, readFile, writeFile} from 'node:fs/promises';
 import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -7,8 +7,8 @@ const appRoot = resolve(here, '..');
 const siteRoot = resolve(appRoot, '..');
 const webRoot = join(appRoot, 'www');
 
-await rm(webRoot, {recursive: true, force: true});
 await mkdir(join(webRoot, 'images'), {recursive: true});
+await mkdir(join(webRoot, 'vendor'), {recursive: true});
 
 let html = await readFile(join(siteRoot, 'beheer.html'), 'utf8');
 html = html
@@ -21,9 +21,10 @@ html = html
   .replace('</body>', '  <script src="native.js"></script>\n</body>');
 
 await writeFile(join(webRoot, 'index.html'), html);
-for (const file of ['beheer.js', 'booking-config.js', 'styles.css']) {
+for (const file of ['beheer.js', 'admin-team.js', 'admin-operations.js', 'team.css', 'admin-metrics.css', 'admin-operations.css', 'admin-operations-extra.css', 'admin-wallboard.css', 'booking-config.js', 'styles.css']) {
   await cp(join(siteRoot, file), join(webRoot, file));
 }
+for (const file of ['qrcode.js','html5-qrcode.min.js']) await cp(join(siteRoot,'vendor',file),join(webRoot,'vendor',file));
 for (const file of ['badge.webp', 'logo-main.webp', 'app-icon-192.png', 'app-icon-512.png']) {
   await cp(join(siteRoot, 'images', file), join(webRoot, 'images', file));
 }

@@ -1,4 +1,9 @@
 import {PushValidationError, pushConfigured, manageSubscription, customerChanged, notifyCustomer} from './push.js';
+import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
+import {handleMetrics} from './metrics.js';
+import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, ensureTeamRecord, saveOwnerRecord} from './team.js';
+import {handleOperations, verifyAdminAccessCode} from './operations.js';
+
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
 
@@ -23,7 +28,7 @@ const WAX_OPTIONS = [
 
 const FREE_PICKUP_CITIES = [
   'Afferden', 'Alphen', 'Altforst', 'Appeltern', 'Beneden-Leeuwen', 'Boven-Leeuwen',
-  'Dreumel', 'Druten', 'Horssen', 'Maasbommel', 'Wamel'
+  'Deest', 'Dreumel', 'Druten', 'Horssen', 'Maasbommel', 'Puiflijk', 'Wamel'
 ];
 
 const clean = (value, maxLength) => String(value || '')
@@ -70,14 +75,31 @@ const verifyTurnstile = async (token, secret, remoteIp) => {
   return result.success === true;
 };
 
+const stuiterbaasRentalDetails = (raw) => {
+  const rentalDays = String(raw.rentalDays ?? '1');
+  if (!['1', '2', 'longer'].includes(rentalDays)) throw new ValidationError('Kies één of twee huurdagen, of langer huren in overleg.');
+  const date = clean(raw.date, 10);
+  const start = new Date(date + 'T12:00:00Z');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(start.getTime()) || start.toISOString().slice(0, 10) !== date) throw new ValidationError('Controleer de datum.');
+  if (rentalDays === 'longer') {
+    const endDate = clean(raw.endDate, 10);
+    const end = new Date(endDate + 'T12:00:00Z');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate) || Number.isNaN(end.getTime()) || end.toISOString().slice(0, 10) !== endDate) throw new ValidationError('Kies een geldige einddatum voor de langere huurperiode.');
+    const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+    if (days < 3) throw new ValidationError('Kies bij langer huren een periode van minimaal drie dagen.');
+    return {rentalDays: days, endDate, rentalPrice: null, deposit: 50, total: null};
+  }
+  start.setUTCDate(start.getUTCDate() + Number(rentalDays) - 1);
+  const rentalPrice = rentalDays === '2' ? 150 : 95;
+  return {rentalDays: Number(rentalDays), endDate: start.toISOString().slice(0, 10), rentalPrice, deposit: 50, total: rentalPrice + 50};
+};
+
 const readAndValidateStuiterbaas = raw => {
   const data = {
     name: clean(raw.name, 80), phone: clean(raw.phone, 30), email: clean(raw.email, 120),
     date: clean(raw.date, 10), location: clean(raw.location, 140), startTime: clean(raw.startTime, 5),
     endTime: clean(raw.endTime, 5), notes: clean(raw.notes, 600), website: clean(raw.website, 120),
-    turnstileToken: clean(raw.turnstileToken, 2048), privateSite: raw.privateSite === true,
-    powerAvailable: raw.powerAvailable === true, adultHelper: raw.adultHelper === true,
-    privacyConsent: raw.privacyConsent === true
+    whatsappConsent: raw.whatsappConsent === true, turnstileToken: clean(raw.turnstileToken, 2048)
   };
   if (data.website) return {data, spam: true};
   if (!data.name || !data.phone || !data.location || !data.date || !data.startTime || !data.endTime) throw new ValidationError('Vul alle verplichte velden in.');
@@ -85,7 +107,10 @@ const readAndValidateStuiterbaas = raw => {
   const requestedDate = new Date(`${data.date}T23:59:59Z`);
   if (Number.isNaN(requestedDate.getTime()) || requestedDate < new Date()) throw new ValidationError('Kies een datum vanaf vandaag.');
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new ValidationError('Controleer het e-mailadres.');
-  if (!data.privateSite || !data.powerAvailable || !data.adultHelper || !data.privacyConsent) throw new ValidationError('Bevestig alle voorwaarden voor de aanvraag.');
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(data.startTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(data.endTime)) throw new ValidationError('Controleer de tijden.');
+  if (data.whatsappConsent && !stuiterbaasPhone(data.phone)) throw new ValidationError('Controleer je WhatsApp-nummer. Gebruik voor een buitenlands nummer ook de landcode.');
+  Object.assign(data, stuiterbaasRentalDetails(raw));
+  if (data.rentalDays === 1 && data.endTime <= data.startTime) throw new ValidationError('De eindtijd moet na de starttijd liggen.');
   if (!data.turnstileToken) throw new ValidationError('Voltooi de beveiligingscontrole.');
   return {data, spam: false};
 };
@@ -150,14 +175,24 @@ const customerKey = async token => {
   return `customer:${Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')}`;
 };
 
-const isAdminAuthorized = (request, env) => {
-  const expected = String(env.LATTENSPECIALIST_ADMIN_TOKEN || '');
-  const authorization = request.headers.get('Authorization') || '';
-  const supplied = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+const constantTimeEqual=(expected,supplied)=>{
   if (!expected || expected.length !== supplied.length) return false;
   let difference = 0;
   for (let index = 0; index < expected.length; index += 1) difference |= expected.charCodeAt(index) ^ supplied.charCodeAt(index);
   return difference === 0;
+};
+
+const isAdminAuthorized = async (request, env) => {
+  const expected = String(env.LATTENSPECIALIST_ADMIN_TOKEN || '');
+  const authorization = request.headers.get('Authorization') || '';
+  const supplied = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+  if(env.LATTENSPECIALIST_TEAM_DB){
+    try{
+      const setting=await env.LATTENSPECIALIST_TEAM_DB.prepare("SELECT setting_value FROM hrm_settings WHERE setting_key='admin_access_hash'").first();
+      if(setting)return verifyAdminAccessCode(supplied,setting.setting_value,env);
+    }catch{return false;}
+  }
+  return constantTimeEqual(expected,supplied);
 };
 
 const requireReservationStore = env => {
@@ -216,7 +251,7 @@ const listReservations = async env => {
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
   records.sort((left, right) => String(right.createdAt || '').localeCompare(String(left.createdAt || '')));
-  return records;
+  return mergeTeamRecords(records, env);
 };
 
 const assignUniqueServiceCode = async store => {
@@ -230,10 +265,14 @@ const assignUniqueServiceCode = async store => {
 const updateReservation = async (reference, raw, env) => {
   const store = requireReservationStore(env);
   const key = `reservation:${reference}`;
-  const record = await store.get(key, 'json');
+  const record = await teamRecord(reference, env) || await store.get(key, 'json');
   if (!record) return null;
+  if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(record, env);
   const currentStep = Math.max(1, Math.min(STATUS_STEPS.length, Number(raw.currentStep) || Number(record.currentStep) || 1));
   const status = clean(Object.prototype.hasOwnProperty.call(raw, 'status') ? raw.status : record.status, 100) || STATUS_STEPS[currentStep - 1];
+  const customerStatus = currentStep !== Number(record.currentStep || 1)
+    ? (currentStep <= 1 ? 'Aanvraag ontvangen' : currentStep === 2 ? 'Afspraak bevestigd' : currentStep >= 8 ? 'Klaar om opgehaald te worden' : 'Materiaal ontvangen')
+    : (record.customerStatus || customerVisibleStatus(record));
   const expectedReady = clean(Object.prototype.hasOwnProperty.call(raw, 'expectedReady') ? raw.expectedReady : record.expectedReady, 40);
   const note = clean(Object.prototype.hasOwnProperty.call(raw, 'note') ? raw.note : record.note, 320);
   const whatsappConsent = Object.prototype.hasOwnProperty.call(raw, 'whatsappConsent') ? raw.whatsappConsent === true : record.whatsappConsent === true;
@@ -257,32 +296,37 @@ const updateReservation = async (reference, raw, env) => {
     if (!paymentRequestedAt) throw new ValidationError('Zet eerst een betaalverzoek klaar voordat je betaling registreert.');
     paymentPaidAt ||= new Date().toISOString();
   } else if (raw.paymentPaid === false) paymentPaidAt = null;
+  const defaultPlannedMinutes = record.service === 'Onderhoud' ? Math.max(1, Math.min(20, Number(record.amount) || 1)) * 60 : 0;
+  const plannedMinutes = Object.prototype.hasOwnProperty.call(raw, 'plannedMinutes') ? Number(raw.plannedMinutes) : Number(record.plannedMinutes ?? defaultPlannedMinutes);
+  if (!Number.isInteger(plannedMinutes) || plannedMinutes < 0 || plannedMinutes > 2400 || (plannedMinutes > 0 && plannedMinutes < 15)) throw new ValidationError('Plan tussen 15 minuten en 40 uur voor deze aanvraag.');
   let serviceCode = normalizeServiceCode(raw.serviceCode || record.serviceCode);
   if (!serviceCode) serviceCode = await assignUniqueServiceCode(store);
   if (serviceCode && !/^LS-[A-Z2-9]{6}$/.test(serviceCode)) throw new ValidationError('De servicecode heeft geen geldig formaat.');
   if (serviceCode) {
     const owner = await store.get(`service:${serviceCode}`);
     if (owner && owner !== reference) throw new ValidationError('Deze servicecode is al in gebruik.');
-    await store.put(`service:${serviceCode}`, reference);
   }
   const updated = {
-    ...record, serviceCode: serviceCode || null, currentStep, status, expectedReady, note, whatsappConsent,
+    ...record, serviceCode: serviceCode || null, currentStep, status, customerStatus, expectedReady, note, whatsappConsent,
     customerToken: validCustomerToken(record.customerToken) ? record.customerToken : createCustomerToken(),
     paymentRequestedAt, paymentPaidAt,
-    waxType, paymentAmount, paymentUrl, closedAt: closed ? (record.closedAt || new Date().toISOString()) : null,
+    waxType, plannedMinutes, paymentAmount, paymentUrl, closedAt: closed ? (record.closedAt || new Date().toISOString()) : null,
     updatedAt: new Date().toISOString()
   };
-  await store.put(key, JSON.stringify(updated));
-  await store.put(await customerKey(updated.customerToken), reference);
-  return updated;
+  const saved = env.LATTENSPECIALIST_TEAM_DB ? await saveOwnerRecord(updated, raw, env) : updated;
+  if (!env.LATTENSPECIALIST_TEAM_DB) await store.put(key, JSON.stringify(saved));
+  if (serviceCode) await store.put(`service:${serviceCode}`, reference);
+  await store.put(await customerKey(saved.customerToken), reference);
+  return saved;
 };
 
+const customerVisibleStatus = record => record.customerStatus || (Number(record.currentStep || 1) <= 1 ? 'Aanvraag ontvangen' : Number(record.currentStep) === 2 ? 'Afspraak bevestigd' : Number(record.currentStep) >= 8 ? 'Klaar om opgehaald te worden' : 'Materiaal ontvangen');
 const publicStatus = record => ({
   code: record.serviceCode,
   material: record.service === 'Verhuur' ? record.rentaltype : `${record.amount || 1}× ${record.material || 'materiaal'}`,
-  package: record.package || (record.service === 'Verhuur' ? 'Verhuur op aanvraag' : 'In overleg'),
+  package: record.package || (record.service === 'Verhuur' ? 'Verhuur' : 'In overleg'),
   currentStep: Number(record.currentStep) || 1,
-  status: record.status || STATUS_STEPS[0],
+  status: customerVisibleStatus(record),
   updatedAt: record.updatedAt || record.createdAt,
   expectedReady: record.expectedReady || '',
   note: record.note || '',
@@ -291,10 +335,12 @@ const publicStatus = record => ({
 });
 
 const getReservationByServiceCode = async (code, env) => {
+  const saved = await teamStatusRecord(code, env);
+  if (saved) return saved;
   const store = requireReservationStore(env);
   const reference = await store.get(`service:${code}`);
   if (!reference) return null;
-  const record = await store.get(`reservation:${reference}`, 'json');
+  const record = await teamRecord(reference, env) || await store.get(`reservation:${reference}`, 'json');
   return record?.serviceCode === code ? record : null;
 };
 
@@ -325,20 +371,6 @@ const sendResendEmail = async (message, env) => {
   }
 };
 
-const sendStuiterbaasEmail = async (data, env) => {
-  const fields = [['Naam', data.name], ['Telefoon', data.phone], ['E-mail', data.email || 'Niet ingevuld'], ['Datum', data.date], ['Tijd', `${data.startTime} – ${data.endTime}`], ['Locatie', data.location], ['Opmerking', data.notes || 'Geen opmerkingen']];
-  const rows = fields.map(([label, value]) => `<tr><th align="left" style="padding:6px 14px 6px 0;vertical-align:top">${escapeHtml(label)}</th><td style="padding:6px 0">${escapeHtml(value)}</td></tr>`).join('');
-  const message = {
-    from: env.STUITERBAAS_FROM_EMAIL || 'Stuiterbaas Reserveringen <reserveringen@stuiterbaas.nl>',
-    to: [env.STUITERBAAS_TO_EMAIL || 'verhuur@stuiterbaas.nl'],
-    subject: `Reserveringsaanvraag ${data.date} – ${data.name}`,
-    text: ['Nieuwe reserveringsaanvraag via stuiterbaas.nl', '', ...fields.map(([label, value]) => `${label}: ${value}`), '', 'De aanvrager bevestigde: privéterrein, geschikt stroompunt, een volwassen helper en toestemming om contact op te nemen.', '', 'Deze aanvraag is nog geen definitieve reservering.'].join('\n'),
-    html: `<h1 style="font-size:20px">Nieuwe reserveringsaanvraag</h1><table style="border-collapse:collapse">${rows}</table><p>De aanvrager bevestigde: privéterrein, geschikt stroompunt, een volwassen helper en toestemming om contact op te nemen.</p><p><strong>Deze aanvraag is nog geen definitieve reservering.</strong></p>`
-  };
-  if (data.email) message.reply_to = data.email;
-  await sendResendEmail(message, env);
-};
-
 const lattenspecialistFields = data => {
   const common = [['Dienst', data.service], ['Naam', data.name], ['Telefoon', data.phone], ['E-mail', data.email], ['Ophaal- en terugbrenglocatie', data.address || 'Niet ingevuld']];
   const specific = data.service === 'Onderhoud' ? [
@@ -365,12 +397,16 @@ const sendLattenspecialistEmail = async (data, reference, env) => {
 const saveLattenspecialistReservation = async (data, reference, env) => {
   const store = requireReservationStore(env);
   const now = new Date().toISOString();
-  const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], currentStep: 1, expectedReady: '', note: '', serviceCode: null, waxType: 'Nog te bepalen', paymentAmount: '', paymentUrl: '', closedAt: null};
+  const plannedMinutes = data.service === 'Onderhoud' ? Math.max(1, Math.min(20, Number(data.amount) || 1)) * 60 : 0;
+  const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], customerStatus: 'Aanvraag ontvangen', currentStep: 1, expectedReady: '', plannedMinutes, note: '', serviceCode: null, waxType: 'Nog te bepalen', paymentAmount: '', paymentUrl: '', closedAt: null};
   delete stored.turnstileToken;
   delete stored.website;
   stored.customerToken = createCustomerToken();
   stored.serviceCode = await assignUniqueServiceCode(store);
-  await store.put(`reservation:${reference}`, JSON.stringify(stored));
+  // Personal reservation data belongs in the EU-jurisdiction D1 database. KV is
+  // retained only as a compatibility fallback when no D1 binding is configured.
+  if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(stored, env);
+  else await store.put(`reservation:${reference}`, JSON.stringify(stored));
   await store.put(`service:${stored.serviceCode}`, reference);
   await store.put(await customerKey(stored.customerToken), reference);
   return stored;
@@ -381,8 +417,20 @@ export default {
     const origin = request.headers.get('Origin') || '';
     const site = getSite(origin, env);
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
-    if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
+    if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-HRM-PIN', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/team/operations') || url.pathname.startsWith('/api/admin/operations') || url.pathname.startsWith('/api/team/hrm') || url.pathname.startsWith('/api/admin/hrm') || url.pathname.startsWith('/api/admin/settings') || url.pathname.startsWith('/api/feedback/')) {
+      if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
+      return handleOperations(request, env, {owner:await isAdminAuthorized(request,env), json, origin});
+    }
+    if (url.pathname.startsWith('/api/team/') || url.pathname.startsWith('/api/admin/team/')) {
+      if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
+      return handleTeam(request, env, {owner:await isAdminAuthorized(request,env), json, origin, steps:STATUS_STEPS, waxes:WAX_OPTIONS, clean});
+    }
+    if (['/api/metrics', '/api/admin/metrics'].includes(url.pathname)) {
+      if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
+      return handleMetrics(request, env, await isAdminAuthorized(request, env));
+    }
 
     if (site === 'lattenspecialist' && request.method === 'GET' && url.pathname === '/api/push/config') {
       const configured = pushConfigured(env);
@@ -395,7 +443,7 @@ export default {
       try {
         const store = requireReservationStore(env);
         const reference = await store.get(await customerKey(token));
-        const record = reference ? await store.get(`reservation:${reference}`, 'json') : null;
+        const record = reference ? await teamRecord(reference, env) || await store.get(`reservation:${reference}`, 'json') : null;
         if (record?.customerToken !== token) return json({message: 'Persoonlijke link niet gevonden.'}, 404, origin);
         const body = await request.text();
         if (body.length > 8192) return json({message: 'Te groot verzoek.'}, 413, origin);
@@ -413,7 +461,7 @@ export default {
       try {
         const store = requireReservationStore(env);
         const reference = await store.get(await customerKey(token));
-        const record = reference ? await store.get(`reservation:${reference}`, 'json') : null;
+        const record = reference ? await teamRecord(reference, env) || await store.get(`reservation:${reference}`, 'json') : null;
         return record?.customerToken === token
           ? json({ok: true, record: customerStatus(record)}, 200, origin)
           : json({message: 'Persoonlijke link niet gevonden.'}, 404, origin);
@@ -439,7 +487,7 @@ export default {
     }
 
     if (site === 'lattenspecialist' && url.pathname === '/api/admin/availability' && ['GET', 'PATCH'].includes(request.method)) {
-      if (!isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
+      if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
       try {
         const availability = request.method === 'PATCH' ? await saveAvailability(await request.json(), env) : await getAvailability(env);
         return json({ok: true, ...availability}, 200, origin);
@@ -461,7 +509,7 @@ export default {
     }
 
     if (site === 'lattenspecialist' && url.pathname === '/api/admin/reservations' && request.method === 'GET') {
-      if (!isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
+      if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
       try {
         return json({ok: true, records: await listReservations(env)}, 200, origin);
       } catch {
@@ -470,29 +518,29 @@ export default {
     }
 
     if (site === 'lattenspecialist' && url.pathname.startsWith('/api/admin/reservations/') && request.method === 'PATCH') {
-      if (!isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
+      if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
       const reference = clean(decodeURIComponent(url.pathname.slice('/api/admin/reservations/'.length)), 32).toUpperCase();
       if (!/^LS-\d{4}-[A-Z2-9]{6}$/.test(reference)) return json({message: 'Aanvraagcode ongeldig.'}, 400, origin);
       try {
-          const raw = await request.json();
-          const store = requireReservationStore(env);
-          const before = await store.get(`reservation:${reference}`, 'json');
-          const record = await updateReservation(reference, raw, env);
+        const raw = await request.json();
+        const store = requireReservationStore(env);
+        const before = await teamRecord(reference, env) || await store.get(`reservation:${reference}`, 'json');
+        const record = await updateReservation(reference, raw, env);
         if (!record) return json({message: 'Aanvraag niet gevonden.'}, 404, origin);
         // Older installed admin apps may still request email/WhatsApp delivery.
         // Keep their save/publish operations working without contacting customers.
-          const notifications = {app:{published:true}};
-          if (customerChanged(before, record)) {
-            try { notifications.push = await notifyCustomer(store, record, env); }
-            catch { notifications.push = {accepted:0, reason:'failed'}; }
-          } else notifications.push = {accepted:0, reason:'unchanged'};
+        const notifications = {app:{published:true}};
+        if (customerChanged(before, record)) {
+          try { notifications.push = await notifyCustomer(store, record, env); }
+          catch { notifications.push = {accepted:0, reason:'failed'}; }
+        } else notifications.push = {accepted:0, reason:'unchanged'};
         if (raw.sendStatusEmail === true) notifications.email = {sent:false,reason:'app_only'};
         if (raw.sendPaymentEmail === true) notifications.paymentEmail = {sent:false,reason:'app_only'};
         if (raw.sendWhatsApp === true) notifications.whatsapp = {sent:false,reason:'app_only'};
         return json({ok: true, record, notifications}, 200, origin);
       } catch (error) {
         const validation = error instanceof ValidationError;
-        return json({message: validation ? error.message : 'De aanvraag kon niet worden bijgewerkt.'}, validation ? 400 : 502, origin);
+        return json({message: error instanceof TeamError || validation ? error.message : 'De aanvraag kon niet worden bijgewerkt.'}, error instanceof TeamError ? error.status : validation ? 400 : 502, origin);
       }
     }
 
@@ -508,8 +556,8 @@ export default {
       if (!turnstileOk) return json({message: 'De beveiligingscontrole is verlopen. Probeer het opnieuw.'}, 400, origin);
 
       if (site === 'stuiterbaas') {
-        await sendStuiterbaasEmail(result.data, env);
-        return json({ok: true}, 202, origin);
+        const confirmation = await completeStuiterbaasBooking(result.data, env, sendResendEmail);
+        return json(confirmation, 202, origin);
       }
       if (result.data.service === 'Onderhoud' && result.data.pickupDate !== 'In overleg') {
         const availability = await getAvailability(env);
@@ -526,4 +574,4 @@ export default {
   }
 };
 
-export {STATUS_STEPS, clean, createReference, createServiceCode, escapeHtml, getSite, isAdminAuthorized, normalizeServiceCode, publicStatus, readAndValidateLattenspecialist, readAndValidateStuiterbaas};
+export {STATUS_STEPS, clean, createReference, createServiceCode, escapeHtml, getSite, isAdminAuthorized, normalizeServiceCode, publicStatus, readAndValidateLattenspecialist, readAndValidateStuiterbaas, saveLattenspecialistReservation};

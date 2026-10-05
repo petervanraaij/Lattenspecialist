@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {createECDH, hkdfSync, createDecipheriv} from 'node:crypto';
 import {validateEndpoint} from './src/push.js';
-import worker, {STATUS_STEPS, createReference, createServiceCode, escapeHtml, getSite, normalizeServiceCode, readAndValidateLattenspecialist, readAndValidateStuiterbaas} from './src/index.js';
+import worker, {STATUS_STEPS, createReference, createServiceCode, escapeHtml, getSite, normalizeServiceCode, readAndValidateLattenspecialist, readAndValidateStuiterbaas, saveLattenspecialistReservation} from './src/index.js';
 
 const stuiterOrigin = 'https://stuiterbaas.nl';
 const lattenOrigin = 'https://lattenspecialist.nl';
@@ -18,7 +18,7 @@ const baseEnv = {
   RESEND_API_KEY: 'resend-secret'
 };
 const lattenPayload = {service: 'Onderhoud', material: 'Ski', amount: '1', package: 'Goud', logistics: 'Gratis ophalen & terugbrengen (servicegebied)', pickupDate: '2099-11-28', urgent: 'Nee', destination: 'Sölden', skidate: '2099-12-01', conditions: 'Koud', name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', postcode: '6659 BB', houseNumber: '13', address: 'Hollenhof 13, 6659 BB Wamel', addressCity: 'Wamel', notes: 'Lichte kras', privacyConsent: true, whatsappConsent: true, website: '', turnstileToken: 'verified-token'};
-const stuiterPayload = {name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', date: '2099-06-12', location: 'Wamel', startTime: '10:00', endTime: '18:00', notes: 'Graag bellen.', privateSite: true, powerAvailable: true, adultHelper: true, privacyConsent: true, website: '', turnstileToken: 'verified-token'};
+const stuiterPayload = {name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', date: '2099-06-12', location: 'Wamel', startTime: '10:00', endTime: '18:00', notes: 'Graag bellen.', website: '', turnstileToken: 'verified-token'};
 
 assert.equal(getSite(lattenOrigin, baseEnv), 'lattenspecialist');
 assert.equal(getSite('capacitor://localhost', baseEnv), 'lattenspecialist');
@@ -33,8 +33,43 @@ assert.match(createServiceCode(), /^LS-[A-Z2-9]{6}$/);
 assert.equal(normalizeServiceCode(' ls-ab2cde '), 'LS-AB2CDE');
 assert.equal(STATUS_STEPS.length, 8);
 assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, email: 'fout'}), /e-mailadres/);
-assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, addressCity: 'Deest'}), /buiten het gratis servicegebied/);
-assert.throws(() => readAndValidateStuiterbaas({...stuiterPayload, privateSite: false}), /voorwaarden/);
+assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, addressCity: 'Winssen'}), /buiten het gratis servicegebied/);
+assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, privacyConsent: false}), /toestemming/);
+// All villages in both municipalities qualify for free pickup.
+for (const addressCity of ['Alphen','Altforst','Appeltern','Beneden-Leeuwen','Boven-Leeuwen','Dreumel','Maasbommel','Wamel','Afferden','Deest','Druten','Horssen','Puiflijk']) {
+  assert.equal(readAndValidateLattenspecialist({...lattenPayload,addressCity}).data.addressCity,addressCity);
+}
+
+
+// Requests no longer need checkbox confirmations. Legacy clients still default to one day.
+const rentalData = readAndValidateStuiterbaas(stuiterPayload).data;
+assert.equal(rentalData.rentalDays,1);
+assert.equal(rentalData.rentalPrice,95);
+assert.equal(rentalData.total,145);
+assert.equal(rentalData.endDate,stuiterPayload.date);
+for (const key of ['privateSite','powerAvailable','adultHelper','privacyConsent']) assert.equal(readAndValidateStuiterbaas({...stuiterPayload,[key]:false}).data[key],undefined);
+assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,turnstileToken:''}),/beveiligingscontrole/);
+assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,name:''}),/verplichte/);
+for (const rentalDays of ['0','3','2abc',-1]) assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,rentalDays}),/huurdagen/);
+assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,date:'2099-02-30'}),/datum/);
+assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,endTime:'09:00'}),/eindtijd/);
+assert.throws(()=>readAndValidateStuiterbaas({...stuiterPayload,endTime:'25:00'}),/tijden/);
+assert.equal(readAndValidateStuiterbaas({...stuiterPayload,date:'2100-02-28',rentalDays:2}).data.endDate,'2100-03-01');
+assert.equal(readAndValidateStuiterbaas({...stuiterPayload,date:'2104-02-28',rentalDays:2}).data.endDate,'2104-02-29');
+assert.equal(readAndValidateStuiterbaas({...stuiterPayload,date:'2099-03-29',rentalDays:2}).data.endDate,'2099-03-30');
+
+// Longer rentals are requests for a quote, never a fixed or client-supplied price.
+const longerPayload = {...stuiterPayload, date:'2099-12-31', rentalDays:'longer', endDate:'2100-01-03', rentalPrice:1, total:1};
+const longerData = readAndValidateStuiterbaas(longerPayload).data;
+assert.equal(longerData.rentalDays,4);
+assert.equal(longerData.endDate,'2100-01-03');
+assert.equal(longerData.rentalPrice,null);
+assert.equal(longerData.total,null);
+assert.equal(longerData.deposit,50);
+for(const endDate of ['', '2100-02-30', '<invalid>']) assert.throws(()=>readAndValidateStuiterbaas({...longerPayload,endDate}),/einddatum/);
+for(const endDate of ['2099-12-30','2099-12-31','2100-01-01']) assert.throws(()=>readAndValidateStuiterbaas({...longerPayload,endDate}),/minimaal drie dagen/);
+assert.equal(readAndValidateStuiterbaas({...longerPayload,endDate:'2100-01-02'}).data.rentalDays,3);
+assert.equal(readAndValidateStuiterbaas({...stuiterPayload,endDate:'2100-01-03'}).data.endDate,stuiterPayload.date);
 
 const blocked = await worker.fetch(new Request('https://worker.example', {method: 'POST', headers: {Origin: 'https://example.com', 'Content-Type': 'application/json'}, body: JSON.stringify(lattenPayload)}), baseEnv);
 assert.equal(blocked.status, 403);
@@ -59,11 +94,21 @@ class MemoryKV {
   }
 }
 const store = new MemoryKV();
+let euRecord;
+const euDb = {prepare(sql) { return {bind(...values) { return {
+  async run() { if (sql.startsWith('INSERT OR IGNORE INTO records')) euRecord={reference:values[0],payload:values[1],revision:0,assigned_to:null}; return {success:true}; },
+  async first() { return sql.startsWith('SELECT * FROM records') ? euRecord : null; }
+}; }}; }};
+const unusedKv = new MemoryKV();
+await saveLattenspecialistReservation(lattenPayload, 'LS-2609-EUONLY', {LATTENSPECIALIST_TEAM_DB:euDb,LATTENSPECIALIST_RESERVATIONS_KV:unusedKv});
+assert.equal(JSON.parse(euRecord.payload).email,lattenPayload.email);
+assert.equal((await unusedKv.list({prefix:'reservation:'})).keys.length,0);
+let lookupCity = 'Wamel';
 const nativeFetch = globalThis.fetch;
 globalThis.fetch = async (url, options) => {
   requests.push({url: String(url), options});
   if (String(url).includes('siteverify')) return new Response(JSON.stringify({success: true}), {status: 200, headers: {'Content-Type': 'application/json'}});
-  if (String(url).includes('api.pdok.nl')) return new Response(JSON.stringify({response: {docs: [{postcode: '6659BB', huisnummer: 13, huis_nlt: '13', straatnaam: 'Hollenhof', woonplaatsnaam: 'Wamel'}]}}), {status: 200, headers: {'Content-Type': 'application/json'}});
+  if (String(url).includes('api.pdok.nl')) return new Response(JSON.stringify({response: {docs: [{postcode: '6659BB', huisnummer: 13, huis_nlt: '13', straatnaam: 'Hollenhof', woonplaatsnaam: lookupCity}]}}), {status: 200, headers: {'Content-Type': 'application/json'}});
   return new Response(JSON.stringify({id: 'email-test'}), {status: 200, headers: {'Content-Type': 'application/json'}});
 };
 try {
@@ -78,6 +123,12 @@ try {
   assert.equal(addressResponse.status, 200);
   assert.equal(addressResult.address.address, 'Hollenhof 13, 6659 BB Wamel');
   assert.equal(addressResult.address.freePickup, true);
+  for (const [city,expected] of [['Deest',true],['Puiflijk',true],['Winssen',false]]) {
+    lookupCity=city;
+    const checked=await worker.fetch(new Request('https://worker.example/api/address?postcode=6659BB&houseNumber=13', {headers:{Origin:lattenOrigin}}),testEnv);
+    assert.equal((await checked.json()).address.freePickup,expected,city);
+  }
+  lookupCity='Wamel';
   requests.length = 0;
   const lattenResponse = await worker.fetch(new Request('https://worker.example', {method: 'POST', headers: {Origin: lattenOrigin, 'Content-Type': 'application/json'}, body: JSON.stringify(lattenPayload)}), testEnv);
   const lattenResult = await lattenResponse.json();
@@ -150,6 +201,14 @@ try {
   assert.equal((await patchPayment({paymentUrl:'javascript:alert(1)'})).status,400);
   assert.equal((await patchPayment({sendPaymentEmail:true})).status,200);
 
+  const emptyPaymentReference = 'LS-2609-EMPTY2';
+  await store.put(`reservation:${emptyPaymentReference}`, JSON.stringify({...adminResult.records[0], reference:emptyPaymentReference, paymentAmount:'', paymentUrl:''}));
+  requests.length = 0;
+  const emptyPaymentResponse = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${emptyPaymentReference}`, {method:'PATCH',headers:adminHeaders,body:JSON.stringify({sendPaymentEmail:true,sendWhatsApp:true,notificationType:'payment'})}),testEnv);
+  assert.equal(emptyPaymentResponse.status,400);
+  assert.match((await emptyPaymentResponse.json()).message,/bedrag en geldige betaallink/);
+  assert.equal(requests.some(request => request.url.includes('api.resend.com') || request.url.includes('graph.facebook.com')),false);
+
   const closeResponse = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${lattenResult.reference}`, {method: 'PATCH', headers: adminHeaders, body: JSON.stringify({closed: true})}), testEnv);
   assert.ok((await closeResponse.json()).record.closedAt);
   assert.deepEqual((await customerRecord(lattenResult.customerToken)).payment,{state:'withdrawn'});
@@ -158,7 +217,7 @@ try {
   const statusResponse = await worker.fetch(new Request(`https://worker.example/api/status/${updateResult.record.serviceCode}`, {method: 'GET', headers: {Origin: lattenOrigin}}), testEnv);
   const statusResult = await statusResponse.json();
   assert.equal(statusResponse.status, 200);
-  assert.equal(statusResult.record.status, STATUS_STEPS[3]);
+  assert.equal(statusResult.record.status, 'Materiaal ontvangen');
   assert.equal(statusResult.record.email, undefined);
   assert.equal(statusResult.record.phone, undefined);
   assert.equal(statusResult.record.waxType, 'Premium koudweerwax');
@@ -184,7 +243,7 @@ try {
   assert.equal((await customerRecord(lattenResult.customerToken)).code,updateResult.record.serviceCode);
   assert.equal(firstResult.notifications.email.reason, 'app_only');
   assert.equal(firstResult.notifications.whatsapp.reason, 'app_only');
-  assert.equal(requests.filter(request => request.url.includes('api.resend.com')).length, 1, 'Updates and payments never email a customer');
+  assert.equal(requests.filter(request => request.url.includes('api.resend.com')).length, 0, 'No email since resetting the request log before the payment validation');
   const followup = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${newReference}`, {method:'PATCH',headers:adminHeaders,body:JSON.stringify({sendWhatsApp:true})}),whatsappEnv);
   assert.equal((await followup.json()).record.serviceCode,personalCode);
   const directStatus = await worker.fetch(new Request(`https://worker.example/api/status/${personalCode}`,{headers:{Origin:lattenOrigin}}),testEnv);
@@ -258,7 +317,7 @@ try {
   await pushApi(token,{action:'subscribe',subscription});
   assert.equal(await statusFor(token,'unsubscribe'),false);
   assert.equal((await (await pushUpdate({note:'Geen melding meer'})).json()).notifications.push.reason,'not_subscribed');
-  assert.equal(requests.filter(request=>request.url.includes('api.resend.com')).length,1,'No email fallback when push is unavailable');
+  assert.equal(requests.filter(request=>request.url.includes('api.resend.com')).length,0,'No email fallback when push is unavailable');
 
   requests.length = 0;
   const stuiterResponse = await worker.fetch(new Request('https://worker.example', {method: 'POST', headers: {Origin: stuiterOrigin, 'Content-Type': 'application/json'}, body: JSON.stringify(stuiterPayload)}), baseEnv);
@@ -266,7 +325,24 @@ try {
   const stuiterMessage = JSON.parse(requests[1].options.body);
   assert.deepEqual(stuiterMessage.to, ['verhuur@stuiterbaas.nl']);
   assert.match(stuiterMessage.subject, /Reserveringsaanvraag/);
-  assert.match(stuiterMessage.text, /privéterrein/);
+  assert.doesNotMatch(stuiterMessage.text + stuiterMessage.html, /aanvrager bevestigde/);
+  assert.match(stuiterMessage.text, /Huur: €95/);
+  assert.match(stuiterMessage.text, /Borg bovenop de huur: €50/);
+  assert.match(stuiterMessage.text, /Totaal inclusief borg: €145/);
+  requests.length = 0;
+  const twoDays = await worker.fetch(new Request('https://worker.example', {method:'POST',headers:{Origin:stuiterOrigin,'Content-Type':'application/json'},body:JSON.stringify({...stuiterPayload,date:'2099-12-31',rentalDays:'2',startTime:'18:00',endTime:'10:00',rentalPrice:1,deposit:0,total:1})}),baseEnv);
+  assert.equal(twoDays.status,202);
+  const twoDayMessage = JSON.parse(requests[1].options.body);
+  for (const value of ['Huurperiode: 2 dagen','Van: 2099-12-31 om 18:00','Tot: 2100-01-01 om 10:00','Huur: €150','Borg bovenop de huur: €50','Totaal inclusief borg: €200']) assert.ok(twoDayMessage.text.includes(value),value);
+  assert.doesNotMatch(twoDayMessage.text + twoDayMessage.html, /aanvrager bevestigde/);
+
+  requests.length = 0;
+  const longerResponse = await worker.fetch(new Request('https://worker.example', {method:'POST',headers:{Origin:stuiterOrigin,'Content-Type':'application/json'},body:JSON.stringify(longerPayload)}),baseEnv);
+  assert.equal(longerResponse.status,202);
+  const longerMessage = JSON.parse(requests[1].options.body);
+  for(const text of ['Huurperiode: 4 dagen','Huur: In overleg','Borg bovenop de huur: €50','Totaal inclusief borg: Nog af te spreken','Tot: 2100-01-03']) assert.ok(longerMessage.text.includes(text),text);
+  assert.match(longerMessage.html,/In overleg/);
+  assert.doesNotMatch(longerMessage.text + longerMessage.html,/€null|€undefined|€150|€95|€200|€145/);
 } finally {
   globalThis.fetch = nativeFetch;
 }

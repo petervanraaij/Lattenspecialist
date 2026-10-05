@@ -22,7 +22,7 @@ const session = {
 };
 let statusRequest = 0;
 let offersRequest = 0;
-let activeScreen = 'home';
+let activeScreen = 'onderhoud';
 let bookingStarted = false;
 let bookingReady = false;
 let bookingTimer;
@@ -67,6 +67,7 @@ async function loadStatus(code = currentCode, accessToken = currentToken) {
     $('statusResult').innerHTML = renderStatus(data.record);
     if ($('statusForm').hidden) $('statusIntro').textContent = 'Hier zie je de actuele voortgang van jouw onderhoud. Je hoeft niets te installeren.';
     $('refreshStatus').addEventListener('click', () => loadStatus());
+    $('feedbackForm')?.addEventListener('submit', submitFeedback);
     if (!accessToken && $('rememberCode').checked) {
       const ok = storage.set(CODE_KEY, code);
       $('codeFeedback').textContent = ok ? '' : 'Je toestel kon de code niet bewaren. De status is wel opgehaald.';
@@ -86,6 +87,13 @@ async function loadStatus(code = currentCode, accessToken = currentToken) {
       $('statusResult').append(retry);
     }
   } finally { if (request === statusRequest) $('statusSubmit').disabled=false; }
+}
+
+async function submitFeedback(event) {
+  event.preventDefault();
+  const form=event.target,message=$('feedbackMessage'),button=form.querySelector('button');button.disabled=true;message.textContent='Beoordeling versturen…';
+  try {const response=await fetch(`${endpoint}/api/feedback/${encodeURIComponent(currentCode)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(form)))});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.message||'Versturen mislukt.');form.replaceChildren(Object.assign(document.createElement('p'),{textContent:'Bedankt voor je beoordeling!'}));}
+  catch(error){message.textContent=error.message;button.disabled=false;}
 }
 
 function showCodeForm() {
@@ -315,7 +323,7 @@ function navigate(focus = true) {
     hash='onderhoud';
   }
   const page=({status:'onderhoud',waxplanner:'reis'})[hash] || hash;
-  activeScreen=pages.includes(page)?page:'home';
+  activeScreen=pages.includes(page)?page:'onderhoud';
   for(const id of pages)$(id).hidden=id!==activeScreen;
   for(const link of document.querySelectorAll('.bottom-nav a')) {
     if(link.hash===`#${activeScreen}`)link.setAttribute('aria-current','page'); else link.removeAttribute('aria-current');
@@ -351,7 +359,7 @@ if(Capacitor.isNativePlatform()) {
   };
   App.addListener('appUrlOpen', ({url}) => openAppLink(url));
   App.getLaunchUrl().then(result => { if(result?.url)openAppLink(result.url); }).catch(() => {});
-  App.addListener('backButton',() => { if(activeScreen!=='home')location.hash='home';else App.exitApp(); });
+  App.addListener('backButton',() => { if(activeScreen!=='onderhoud')location.hash='onderhoud';else App.exitApp(); });
   App.addListener('appStateChange',({isActive}) => {if(isActive&&activeScreen==='onderhoud'&&(currentCode||currentToken))loadStatus();});
 }
 updateConnection();navigate(false);

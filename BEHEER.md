@@ -56,7 +56,7 @@ Zet alleen materiaal dat werkelijk beschikbaar is in `data/aanbod.json`. Een leg
 1. Voeg `lattenspecialist.nl` als domeinproperty toe in Google Search Console en plaats de door Google gegeven DNS-verificatie bij de domeinbeheerder.
 2. Dien na verificatie `https://lattenspecialist.nl/sitemap.xml` in.
 3. Vraag via URL-inspectie indexering aan voor `/`, `/service.html`, `/app.html` en `/ervaring.html`.
-4. Maak of claim het Google Bedrijfsprofiel. Gebruik het servicegebied West Maas en Waal, Druten, Afferden en Horssen en toon het woonadres alleen als klanten daar zonder afspraak ontvangen worden.
+4. Maak of claim het Google Bedrijfsprofiel. Gebruik het servicegebied de gemeenten West Maas en Waal en Druten en toon het woonadres alleen als klanten daar zonder afspraak ontvangen worden.
 5. Voeg actuele openingstijden, telefoonnummer, website, diensten en later echte werkfoto’s toe.
 
 De technische bestanden voor Google staan al in de website. Account- en DNS-verificatie moeten in de eigen Google- en domeinaccounts worden uitgevoerd.

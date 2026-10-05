@@ -16,9 +16,10 @@
   <meta name="apple-mobile-web-app-title" content="Lattenspecialist">
   <link rel="icon" href="images/app-icon-512.png">
   <link rel="stylesheet" href="customer-app.css?v=2">
+  <link rel="stylesheet" href="customer-status.css">
 </head>
 <body>
-  <header class="topbar"><a href="#home" aria-label="Mijn Lattenspecialist, start"><img src="images/logo-main.webp" alt="De Lattenspecialist"></a><span>Mijn<br><strong>Lattenspecialist</strong></span></header>
+  <header class="topbar"><a href="#onderhoud" aria-label="Mijn Lattenspecialist, status"><img src="images/logo-main.webp" alt="De Lattenspecialist"></a><span>Mijn<br><strong>Lattenspecialist</strong></span></header>
   <div id="offlineNotice" class="connection-notice" role="status" hidden>Je bent offline. Voor actuele voortgang, aanbod en aanvragen is internet nodig.</div>
   <main id="main">
     <section id="home" class="screen" aria-labelledby="homeTitle">
@@ -66,7 +67,7 @@
     </section>
     <section id="aanbod" class="screen" aria-labelledby="offerTitle" hidden>
       <div class="page-content"><span class="eyebrow">Aandacht voor je materiaal</span><h1 id="offerTitle" tabindex="-1">Pakketten & aanbod</h1><p>De actuele pakketten, prijzen en beschikbaarheid komen rechtstreeks van onze website.</p><button class="text-button" type="button" id="refreshOffers">Aanbod vernieuwen</button><div id="packages" class="stack" aria-live="polite"></div>
-        <div class="section-heading"><span class="eyebrow">Een passende set</span><h2>Verhuur op aanvraag</h2></div><div id="inventory" class="stack" aria-live="polite"></div><button class="button dark" type="button" id="requestRental">Verhuur aanvragen</button><p class="muted">Maat, periode, beschikbaarheid en prijs worden persoonlijk bevestigd.</p>
+        <div class="section-heading"><span class="eyebrow">Voordelig op wintersport</span><h2>Direct huren</h2></div><div id="inventory" class="stack" aria-live="polite"></div><button class="button dark" type="button" id="requestRental">Verhuur reserveren</button><p class="muted">Kies je materiaal en huurperiode. We zetten alles passend en gebruiksklaar voor je klaar.</p>
       </div>
     </section>
     <section id="reis" class="screen" aria-labelledby="tripTitle" hidden>
@@ -79,11 +80,11 @@
     <footer class="page-content"><a href="https://lattenspecialist.nl/privacy.html">Privacy</a><span> · </span><a href="https://lattenspecialist.nl/service.html">Service-informatie</a><p>De Lattenspecialist · Wamel</p></footer>
   </main>
   <nav class="bottom-nav" aria-label="Appnavigatie">
-    <a href="#home" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/></svg><span>Start</span></a>
-    <a href="#onderhoud"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg><span>Onderhoud</span></a>
+    <a href="#onderhoud" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg><span>Status</span></a>
     <a href="#aanvragen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 2v6m8-6v6M4 11h16m-8 3v4m-2-2h4"/></svg><span>Aanvragen</span></a>
     <a href="#aanbod"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8l10 10-8 8L3 11Z"/><circle cx="7.5" cy="7.5" r="1"/></svg><span>Aanbod</span></a>
     <a href="#reis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 20 7-14 5 9 3-5 5 10H2Zm4-8 3 2 2-4"/></svg><span>Mijn reis</span></a>
+    <a href="#home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/></svg><span>Meer</span></a>
   </nav>
   <script src="booking-config.js?v=2"></script><script src="customer-app.js?v=4"></script>
   <script src="pwa-install.js?v=1"></script>

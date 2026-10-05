@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
-const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../../afspraak.html',import.meta.url),'utf8');
 const script=await readFile(new URL('../../booking.js',import.meta.url),'utf8');
 const turn=()=>new Promise(resolve=>setTimeout(resolve,20));
 test('website booking exposes its own maintenance link and does not promise customer email',async t=>{
@@ -21,7 +21,7 @@ test('website booking exposes its own maintenance link and does not promise cust
   form.checkValidity=()=>true;
   form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true})); await turn();
   assert.equal(submitted.length,1); assert.equal(submitted[0].customerToken,token);
-  assert.equal(d.querySelector('#bookingStatus a').href,`https://lattenspecialist.nl/app.html#klant=${token}`);
-  assert.match(d.getElementById('bookingStatus').textContent,/bevestiging, voortgang en betaalverzoek staan in je klantenapp/);
-  assert.doesNotMatch(d.getElementById('bookingStatus').textContent,/e-mail/);
+  assert.equal(d.querySelector('#confirmationCustomerLink').href,`https://lattenspecialist.nl/app.html#klant=${token}`);
+  assert.match(d.getElementById('confirmationDelivery').textContent,/bevestiging, voortgang en betaalverzoek staan in je klantenapp/);
+  assert.doesNotMatch(d.getElementById('confirmationDelivery').textContent,/e-mail/);
 });

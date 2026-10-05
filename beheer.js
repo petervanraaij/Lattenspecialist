@@ -20,9 +20,18 @@
   let records = [];
   let availableDates = new Set();
 
+  window.addEventListener('lattenspecialist:admin-code-changed',event=>{
+    const next=String(event.detail?.code||'');if(!next)return;
+    const remembered=localStorage.getItem('lattenspecialist-admin-token')===token;
+    token=next;sessionStorage.setItem('lattenspecialist-admin-token',token);
+    if(remembered)localStorage.setItem('lattenspecialist-admin-token',token);else localStorage.removeItem('lattenspecialist-admin-token');
+  });
+
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[character]);
   const formatDateTime = value => { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value || '-') : new Intl.DateTimeFormat('nl-NL',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(date); };
   const formatDate = value => { if (!value || value === 'In overleg') return value || '—'; const date = new Date(`${value}T12:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('nl-NL',{weekday:'short',day:'numeric',month:'long',year:'numeric'}).format(date); };
+  const plannedMinutes = record => Number.isInteger(Number(record.plannedMinutes)) ? Number(record.plannedMinutes) : (record.service === 'Onderhoud' ? Math.max(1,Number(record.amount)||1)*60 : 0);
+  const formatPlannedTime = minutes => { const value=Math.max(0,Number(minutes)||0),hours=Math.floor(value/60),rest=value%60;return hours&&rest?`${hours} u ${rest} min`:hours?`${hours} uur`:`${rest} min`; };
   const valueOrDash = value => value ? escapeHtml(value) : '—';
   const customerStatusUrl = record => /^[a-f0-9]{64}$/.test(record.customerToken || '') ? `https://lattenspecialist.nl/app.html#klant=${record.customerToken}` : /^LS-[A-Z2-9]{6}$/.test(record.serviceCode || '') ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : '';
   const headers = () => ({Authorization:`Bearer ${token}`,'Content-Type':'application/json'});
@@ -95,24 +104,30 @@
     const waxChoices = waxOptions.map(option => `<option${option === wax ? ' selected' : ''}>${escapeHtml(option)}</option>`).join('');
     const searchText = [record.reference,record.serviceCode,record.name,record.phone,record.email,record.postcode,record.address,record.material,record.package,record.rentaltype,record.status].filter(Boolean).join(' ').toLowerCase();
     const closed = Boolean(record.closedAt);
+    const minutes=plannedMinutes(record);
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
-      <div class="admin-record-head"><div><span class="admin-request-code">${escapeHtml(record.reference)}</span><h2>${escapeHtml(record.name || 'Naam onbekend')}</h2><p>${escapeHtml(record.service || 'Aanvraag')} · ontvangen ${escapeHtml(formatDateTime(record.createdAt))}${closed ? ` · afgemeld ${escapeHtml(formatDateTime(record.closedAt))}` : ''}</p></div><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div>
-      <div class="admin-record-grid">
+      <div class="admin-record-head"><div><span class="admin-request-code">${escapeHtml(record.reference)}</span><h2>${escapeHtml(record.name || 'Naam onbekend')}</h2><p>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</p></div><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div></div>
+      <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-grid">
         <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
         <form class="admin-update-form">
           <h3>Onderhoud registreren</h3>
+          <label><span>Toegewezen medewerker</span><select name="assignedTo">${window.LattenspecialistTeam?.options(record.assignedTo) || '<option value="">Nog niet toegewezen</option>'}</select></label>
+          ${record.workNote ? `<div class="team-work-note"><b>Werknotitie medewerker</b><p>${escapeHtml(record.workNote)}</p></div>` : ''}
+          <button class="btn btn-dark team-history" type="button">Bekijk werklogboek</button><div class="team-audit" hidden></div>
           <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Nog niet toegekend" readonly><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
+          <div><button class="btn btn-dark create-material-labels" type="button">Maak / bekijk QR-stickers</button><div class="material-labels" role="status"></div></div>
           ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan voor klant” gebeurt dit automatisch.</p>'}
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
           <label><span>Wax voor deze beurt</span><select name="waxType">${waxChoices}</select><small class="field-hint">Voorstel op basis van de opgegeven omstandigheden; controleer dit zelf.</small></label>
           <label><span>Verwacht klaar</span><input type="date" name="expectedReady" value="${escapeHtml(record.expectedReady || '')}"></label>
+          <label><span>Gereserveerde werktijd</span><input type="number" name="plannedMinutes" min="15" max="2400" step="15" value="${minutes}"><small class="field-hint">Totaal voor deze aanvraag in minuten. Automatisch 60 minuten per paar.</small></label>
           <label><span>Bericht voor klant</span><textarea name="note" rows="3" maxlength="320" placeholder="Bijvoorbeeld: de kanten zijn gecontroleerd.">${escapeHtml(record.note || '')}</textarea></label>
           <div class="admin-save-actions"><button class="btn btn-gold save-record" type="submit" data-action="save">Opslaan voor klant</button></div><p class="field-hint">Bij een gewijzigde status krijgt de klant een appmelding als die op het toestel is ingeschakeld.</p>
           <section class="admin-payment"><h3>Betaalverzoek</h3><div class="payment-fields"><label><span>Bedrag (€)</span><input name="paymentAmount" inputmode="decimal" placeholder="44,95" value="${escapeHtml(String(record.paymentAmount || '').replace('.',','))}"></label><label><span>Betaallink</span><input name="paymentUrl" type="url" placeholder="https://…" value="${escapeHtml(record.paymentUrl || '')}"></label></div><p class="field-hint">${record.paymentRequestedAt ? 'Dit verzoek staat in de klantomgeving. Na wijziging van bedrag of link moet je het opnieuw klaarzetten.' : 'Bedrag en link zijn een concept tot je het betaalverzoek klaarzet.'}</p><label class="admin-consent-confirm"><input type="checkbox" name="paymentPaid"${record.paymentPaidAt ? ' checked' : ''}><span>Betaling ontvangen en gecontroleerd</span><small>Alleen aanvinken na controle bij je bank. Klik daarna op Opslaan voor klant.</small></label><button class="btn btn-dark save-record" type="submit" data-action="payment"${closed ? ' disabled' : ''}>Betaalverzoek klaarzetten in klantapp</button></section>
           <button class="admin-close-button" type="submit" data-action="close">${closed ? 'Aanvraag opnieuw openen' : 'Aanvraag afmelden'}</button>
           <div class="admin-record-message" role="status" aria-live="polite"></div>
         </form>
-      </div>
+      </div></details>
     </article>`;
   };
 
@@ -121,19 +136,39 @@
     const open = records.filter(record => !record.closedAt).length;
     const active = records.filter(record => !record.closedAt && Number(record.currentStep || 1) < steps.length).length;
     const withoutCode = records.filter(record => !record.closedAt && !record.serviceCode).length;
-    summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${active}</b> in behandeling</span><span><b>${withoutCode}</b> zonder servicecode</span>`;
+    const reservedMinutes=records.filter(record=>!record.closedAt&&Number(record.currentStep||1)<steps.length).reduce((total,record)=>total+plannedMinutes(record),0);
+    summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> benodigde tijd</span><span><b>${active}</b> in behandeling</span><span><b>${withoutCode}</b> zonder servicecode</span>`;
     list.innerHTML = records.length ? records.map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
     applySearch();
   };
 
+  let metricsVersion = 0;
+  const loadMetrics = async () => {
+    const target = document.querySelector('#websiteMetrics');
+    const version = ++metricsVersion;
+    const auth = token;
+    const days = document.querySelector('#metricsPeriod').value;
+    target.textContent = 'Tellingen laden…';
+    try {
+      const result = await api('/api/admin/metrics?days=' + days);
+      if (version !== metricsVersion || token !== auth) return;
+      const labels = {packages_viewed:'Pakketten bekeken',form_opened:'Formulier geopend',form_started:'Invullen gestart',booking_submitted:'Aanvraag verstuurd'};
+      target.replaceChildren(...Object.entries(labels).map(([key,label]) => {
+        const item = document.createElement('div'), value = document.createElement('strong'), caption = document.createElement('span');
+        value.textContent = Number(result.totals?.[key] || 0).toLocaleString('nl-NL');
+        caption.textContent = label; item.append(value,caption); return item;
+      }));
+    } catch { if (version === metricsVersion && token === auth) target.textContent = 'Tellingen tijdelijk niet beschikbaar. Je kunt de reserveringen gewoon beheren.'; }
+  };
+  document.querySelector('#metricsPeriod').addEventListener('change', loadMetrics);
   const loadDashboard = async () => {
     if (!endpoint) throw new Error('De beheerservice is nog niet gekoppeld.');
     refreshButton.disabled = true;
     list.innerHTML = '<div class="admin-empty"><strong>Reserveringen laden…</strong></div>';
     try {
-      const [reservationResult] = await Promise.all([api('/api/admin/reservations'),loadAvailability()]);
+      const [reservationResult] = await Promise.all([api('/api/admin/reservations'),loadAvailability(),window.LattenspecialistTeam?.init(api,render)]);
       records = reservationResult.records || [];
-      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render();
+      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render(); await window.LattenspecialistOperations?.init(api,()=>records); void loadMetrics();
     } finally { refreshButton.disabled = false; }
   };
 
@@ -144,6 +179,8 @@
   });
 
   list.addEventListener('click', async event => {
+    const historyButton=event.target.closest('.team-history');
+    if(historyButton){const card=historyButton.closest('.admin-record'),target=card.querySelector('.team-audit');target.hidden=false;target.textContent='Logboek laden…';try{const result=await api('/api/admin/team/audit?reference='+encodeURIComponent(card.dataset.reference));target.textContent=result.events.map(item=>`${formatDateTime(item.created_at)} · ${item.actor==='owner'?'Beheer':'Medewerker'} · ${steps[item.current_step-1] || ''} · ${item.wax_type || ''}${item.work_note?'\n'+item.work_note:''}`).join('\n\n') || 'Nog geen wijzigingen geregistreerd.';}catch(error){target.textContent=error.message;}return;}
     const copyButton = event.target.closest('.copy-customer-link');
     if (copyButton) {
       const section = copyButton.closest('.admin-customer-link');
@@ -161,7 +198,7 @@
     }
     const button = event.target.closest('.generate-code'); if (!button) return;
     const card = button.closest('.admin-record'); const message = card.querySelector('.admin-record-message'); button.disabled = true; message.textContent = 'Servicecode maken…';
-    try { const result = await api(`/api/admin/reservations/${encodeURIComponent(card.dataset.reference)}`,{method:'PATCH',body:JSON.stringify({generateServiceCode:true})}); records = records.map(record => record.reference === result.record.reference ? result.record : record); render(); }
+    try { const result = await api(`/api/admin/reservations/${encodeURIComponent(card.dataset.reference)}`,{method:'PATCH',body:JSON.stringify({generateServiceCode:true,revision:records.find(r=>r.reference===card.dataset.reference)?.revision ?? 0})}); records = records.map(record => record.reference === result.record.reference ? result.record : record); render(); }
     catch (error) { message.textContent = error.message; message.className = 'admin-record-message is-error'; button.disabled = false; }
   });
 
@@ -169,8 +206,9 @@
     const form = event.target.closest('.admin-update-form'); if (!form) return; event.preventDefault();
     const card = form.closest('.admin-record'); const message = form.querySelector('.admin-record-message'); const buttons = [...form.querySelectorAll('button')];
     const action = event.submitter?.dataset.action || 'save'; const existing = records.find(record => record.reference === card.dataset.reference); const values = Object.fromEntries(new FormData(form)); const currentStep = Number(values.currentStep);
-    const payload = {serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,note:values.note,waxType:values.waxType,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl,paymentPaid:form.elements.paymentPaid.checked};
+    const payload = {serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,plannedMinutes:Number(values.plannedMinutes),note:values.note,waxType:values.waxType,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl,paymentPaid:form.elements.paymentPaid.checked};
     if (action === 'payment') payload.publishPayment = true;
+    payload.revision=existing?.revision ?? 0;payload.assignedTo=values.assignedTo || '';
     if (action === 'close') payload.closed = !existing?.closedAt;
     buttons.forEach(button => { button.disabled = true; }); message.textContent = action === 'payment' ? 'Betaalverzoek versturen…' : 'Opslaan…'; message.className = 'admin-record-message';
     try {
@@ -194,7 +232,7 @@
   addAvailabilityButton.addEventListener('click',() => { const date = customAvailabilityDate.value; if (!date) return; availableDates.add(date); renderAvailability(); customAvailabilityDate.value = ''; });
   search.addEventListener('input',applySearch);
   refreshButton.addEventListener('click',() => loadDashboard().catch(error => { list.innerHTML = `<div class="admin-empty"><strong>Laden mislukt</strong><p>${escapeHtml(error.message)}</p></div>`; }));
-  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[]; dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false; });
+  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];list.replaceChildren();window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false; });
 
   let installPrompt; const installButton = document.querySelector('#installAdmin');
   window.addEventListener('beforeinstallprompt',event => { event.preventDefault(); installPrompt=event; installButton.hidden=false; });

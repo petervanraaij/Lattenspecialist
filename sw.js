@@ -1,29 +1,47 @@
-const CACHE_NAME = 'lattenspecialist-v20';
+const CACHE_NAME = 'lattenspecialist-v33-maintenance';
 const APP_SHELL = [
   '/',
   '/index.html',
+  '/afspraak.html',
+  '/verhuur.html',
+  '/homepage.css?v=9',
+  '/homepage.js?v=2',
+  '/package-choice.js?v=1',
+  '/website-metrics.js?v=1',
   '/app.html',
   '/beheer.html',
   '/ervaring.html',
   '/privacy.html',
   '/service.html',
-  '/styles.css?v=9',
-  '/styles.css?v=13',
-  '/styles.css?v=15',
+  '/styles.css?v=19',
+  '/images/van-raaij-solutions-logo.webp',
   '/script.js?v=10',
   '/booking-config.js?v=2',
-  '/booking.js?v=5',
+  '/booking.js?v=10',
   '/customer-booking.css?v=1',
   '/customer-booking.js?v=3',
   '/customer-app.css?v=2',
+  '/customer-status.css',
   '/customer-app.js?v=4',
   '/pwa-install.js?v=1',
-  '/beheer.js?v=7',
+  '/beheer.js?v=12',
+  '/admin-team.js?v=2',
+  '/team.css?v=1',
+  '/admin-metrics.css?v=1',
+  '/admin-operations.js?v=11',
+  '/admin-operations.css?v=1',
+  '/admin-operations-extra.css?v=1',
+  '/vendor/qrcode.js',
+  '/vendor/html5-qrcode.min.js',
   '/review.js?v=9',
   '/manifest.webmanifest',
   '/beheer.webmanifest',
   '/images/badge.webp',
   '/images/logo-main.webp',
+  '/images/stock-workshop.webp',
+  '/images/rental-complete-set.webp',
+  '/images/rental-skis-stokken.webp',
+  '/images/rental-dakkoffer.webp',
   '/images/app-icon-192.png',
   '/images/app-icon-512.png',
   '/images/family-ready.webp'
@@ -44,7 +62,7 @@ self.addEventListener('push', event => {
     await self.registration.showNotification('Mijn Lattenspecialist', {
       body: 'Er staat een update voor je klaar. Bekijk je onderhoud.',
       icon: '/images/app-icon-192.png', badge: '/images/app-icon-192.png',
-      tag: 'lattenspecialist-onderhoud', data: {url: url.href}
+      tag: `lattenspecialist-onderhoud-${url.hash.slice('#klant='.length)}`, data: {url: url.href}
     });
   })());
 });
