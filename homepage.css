@@ -1,4 +1,12 @@
 /* Homepage and request-page presentation. Shared app/admin styles stay in styles.css. */
+.brand-offer { padding: 48px 0; background: #fff; }
+.brand-offer h2 { margin: 0 0 28px; font-size: clamp(1.7rem, 3vw, 2.4rem); }
+.brand-offer-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.brand-offer-grid article { display: flex; flex-direction: column; align-items: flex-start; border-top: 2px solid #bc8c26; padding-top: 22px; scroll-margin-top: 110px; }
+.brand-offer-grid h3 { margin: 12px 0 10px; font-size: 1.3rem; }
+.brand-offer-grid p { margin: 0 0 22px; line-height: 1.6; }
+.brand-offer-grid .quiet-link { margin-top: auto; }
+@media (max-width: 700px) { .brand-offer-grid { grid-template-columns: 1fr; gap: 28px; } }
 .skip-link { position: fixed; top: -200px; left: 16px; z-index: 200; padding: 12px 18px; background: #fff; color: #111; }
 .skip-link:focus { top:12px; }
 .home-page main:focus, .booking-page main:focus { outline: none; }
