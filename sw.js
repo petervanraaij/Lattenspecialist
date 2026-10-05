@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v32-brand-offer';
+const CACHE_NAME = 'lattenspecialist-v33-maintenance';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -17,18 +17,18 @@ const APP_SHELL = [
   '/images/van-raaij-solutions-logo.webp',
   '/script.js?v=10',
   '/booking-config.js?v=2',
-  '/booking.js?v=9',
+  '/booking.js?v=10',
   '/customer-booking.css?v=1',
-  '/customer-booking.js?v=2',
-  '/customer-app.css?v=1',
+  '/customer-booking.js?v=3',
+  '/customer-app.css?v=2',
   '/customer-status.css',
-  '/customer-app.js?v=3',
+  '/customer-app.js?v=4',
   '/pwa-install.js?v=1',
-  '/beheer.js?v=8',
-  '/admin-team.js?v=1',
+  '/beheer.js?v=12',
+  '/admin-team.js?v=2',
   '/team.css?v=1',
   '/admin-metrics.css?v=1',
-  '/admin-operations.js?v=1',
+  '/admin-operations.js?v=11',
   '/admin-operations.css?v=1',
   '/admin-operations-extra.css?v=1',
   '/vendor/qrcode.js',
@@ -50,6 +50,34 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
   self.skipWaiting();
+});
+
+self.addEventListener('push', event => {
+  event.waitUntil((async () => {
+    let data;
+    try { data = event.data?.json(); } catch { return; }
+    let url;
+    try { url = new URL(data?.url); } catch { return; }
+    if (url.origin !== 'https://lattenspecialist.nl' || url.pathname !== '/app.html' || url.search || url.username || url.password || !/^#klant=[a-f0-9]{64}$/.test(url.hash)) return;
+    await self.registration.showNotification('Mijn Lattenspecialist', {
+      body: 'Er staat een update voor je klaar. Bekijk je onderhoud.',
+      icon: '/images/app-icon-192.png', badge: '/images/app-icon-192.png',
+      tag: `lattenspecialist-onderhoud-${url.hash.slice('#klant='.length)}`, data: {url: url.href}
+    });
+  })());
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    let url;
+    try { url = new URL(event.notification.data?.url); } catch { return; }
+    if (url.origin !== 'https://lattenspecialist.nl' || url.pathname !== '/app.html' || url.search || url.username || url.password || !/^#klant=[a-f0-9]{64}$/.test(url.hash)) return;
+    const windows = await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    const existing = windows.find(client => { const current = new URL(client.url); return current.origin === url.origin && current.pathname === '/app.html'; });
+    if (existing) { await existing.navigate(url.href); await existing.focus(); }
+    else await self.clients.openWindow(url.href);
+  })());
 });
 
 self.addEventListener('activate', event => {

@@ -40,6 +40,13 @@
   });
   window.addEventListener('lattenspecialist:booking-submitted',event=>{
     const reference=event.detail?.reference;
-    if(/^LS-\d{4}-[A-Z2-9]{6}$/.test(reference || ''))post({type:'lattenspecialist:booked',reference});
+    if(/^LS-\d{4}-[A-Z2-9]{6}$/.test(reference || ''))post({type:'lattenspecialist:booked',reference,customerToken:/^[a-f0-9]{64}$/.test(event.detail?.customerToken || '')?event.detail.customerToken:undefined});
+  });
+  document.addEventListener('click', event => {
+    const link = event.target.closest('a[href^="app.html#klant="]');
+    if (!link || !parentOrigin) return;
+    const customerToken = link.getAttribute('href').slice('app.html#klant='.length);
+    if (!/^[a-f0-9]{64}$/.test(customerToken)) return;
+    event.preventDefault(); post({type:'lattenspecialist:open-maintenance',customerToken});
   });
 })();

@@ -29,6 +29,7 @@ jobs:
       - run: npm ci --prefix mobile-customer
       - run: npm --prefix mobile-customer run build
       - run: npm --prefix mobile-customer test
+      - run: npm ci --prefix worker
       - run: npm --prefix worker test
   build:
     needs: verify

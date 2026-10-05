@@ -15,7 +15,7 @@ const assets = new Map([
   ['/images/app-icon-512.png', ['images/app-icon-512.png', 'image/png']],
   ['/images/app-icon-192.png', ['images/app-icon-192.png', 'image/png']],
 ]);
-const scenarios = new Set(['active', 'ready', 'closed', 'missing', 'offline']);
+const scenarios = new Set(['active', 'pending', 'ready', 'payment', 'paid', 'closed', 'missing', 'offline']);
 const fixture = {
   code: 'LS-DEMO23', material: '1× Ski (voorbeeld)', package: 'Demo', currentStep: 5,
   status: 'Onderhoud gestart', waxType: 'Premium universele wax',
@@ -34,7 +34,7 @@ export function createPreviewServer() {
       if (req.method !== 'GET' && req.method !== 'HEAD') return send(405, 'text/plain', 'Demo: schrijven en berichten versturen zijn uitgeschakeld.');
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname === '/booking-config.js') return send(200, 'text/javascript', `(() => {
-        const allowed = ['active','ready','closed','missing','offline'];
+        const allowed = ['active','pending','ready','payment','paid','closed','missing','offline'];
         const requested = new URLSearchParams(location.search).get('scenario');
         const scenario = allowed.includes(requested) ? requested : 'active';
         window.LATTENSPECIALIST_BOOKING = {endpoint: location.origin + '/demo/' + scenario};
@@ -46,16 +46,26 @@ export function createPreviewServer() {
       // No service worker or installation prompt in the development preview.
       if (url.pathname === '/pwa-install.js') return send(200, 'text/javascript', "document.getElementById('installCard').hidden = true;");
       if (url.pathname === '/manifest.webmanifest') return send(200, 'application/manifest+json', '{}');
+      if (/^\/demo\/[^/]+\/api\/push\/config$/.test(url.pathname)) return send(200, 'application/json', JSON.stringify({configured:false,publicKey:''}));
       if (url.pathname === '/' && url.searchParams.get('app') === 'klant') return send(200, 'text/html', '<!doctype html><html lang="nl"><meta charset="utf-8"><h1>Demo-aanvraagformulier</h1><p>In deze preview worden geen echte aanvragen, e-mails of WhatsApp-berichten verstuurd. Het echte aanvraagformulier test je afzonderlijk met een herkenbare testaanvraag.</p></html>');
-      const route = url.pathname.match(/^\/demo\/([^/]+)\/api\/(availability|status\/([^/]+))$/);
+      const route = url.pathname.match(/^\/demo\/([^/]+)\/api\/(availability|customer\/status|status\/([^/]+))$/);
       if (route && scenarios.has(route[1])) {
         const [, scenario, operation, code] = route;
         if (operation === 'availability') return send(200, 'application/json', JSON.stringify({dates: []}));
         if (scenario === 'offline') return send(503, 'application/json', JSON.stringify({message: 'Demo: verbinding niet beschikbaar'}));
-        if (code !== fixture.code || scenario === 'missing') return send(404, 'application/json', JSON.stringify({message: 'Demo: onderhoud niet gevonden'}));
+        const personal = operation === 'customer/status';
+        if (personal && req.headers.authorization !== `Bearer ${'d'.repeat(64)}`) return send(401, 'application/json', JSON.stringify({message: 'Demo: persoonlijke link ongeldig'}));
+        if ((!personal && code !== fixture.code) || scenario === 'missing') return send(404, 'application/json', JSON.stringify({message: 'Demo: onderhoud niet gevonden'}));
         const record = {...fixture, updatedAt: new Date().toISOString()};
         if (scenario === 'ready') Object.assign(record, {currentStep: 8, status: 'Klaar voor ophalen of terugbrengen'});
         if (scenario === 'closed') Object.assign(record, {closed: true, status: 'Afgemeld'});
+        if (scenario === 'pending') Object.assign(record, {currentStep:1,status:'Aanvraag ontvangen',waxType:'Nog te bepalen'});
+        if (personal) {
+          record.payment = {state:'none'};
+          if (scenario === 'payment') record.payment = {state:'open',amount:'44.95',url:'https://example.invalid/demo-betaling'};
+          if (scenario === 'paid') record.payment = {state:'paid',amount:'44.95'};
+          record.pickupDate = 'In overleg';
+        }
         return send(200, 'application/json', JSON.stringify({record}));
       }
       if (url.pathname === '/data/aanbod.json') return send(200, 'application/json', JSON.stringify({items: []}));

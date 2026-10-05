@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
-import worker from './src/index.js';
+import worker, {saveLattenspecialistReservation} from './src/index.js';
 
 // Real SQLite executes the migration, conditional updates, constraints and audit triggers.
 class D1 {
@@ -29,7 +29,7 @@ assert.equal((await call('/api/admin/team/members','POST',{name:'Again',login:'r
 const stored=db.sql.prepare('SELECT key_hash FROM members WHERE id=?').get(a.id);assert.notEqual(stored.key_hash,a.accessKey);
 let response=await call('/api/admin/reservations/'+reference,'PATCH',{assignedTo:a.id,revision:0});assert.equal(response.status,200,JSON.stringify(response));assert.equal(response.data.record.revision,1);
 response=await call('/api/team/tasks','GET',undefined,ta);assert.equal(response.data.records.length,1);
-for(const field of ['email','phone','address','paymentAmount','paymentUrl','serviceCode','note'])assert.equal(response.data.records[0][field],undefined,field);
+for(const field of ['email','phone','address','paymentAmount','paymentUrl','serviceCode','note','customerToken','paymentRequestedAt','paymentPaidAt'])assert.equal(response.data.records[0][field],undefined,field);
 assert.equal((await call('/api/team/tasks','GET',undefined,tb)).data.records.length,0);
 let update={revision:1,currentStep:4,waxType:'Premium universele wax',workNote:'Kanten gecontroleerd'};
 assert.equal((await call('/api/team/tasks/'+reference,'PATCH',update,tb)).status,404);
@@ -62,3 +62,31 @@ db.sql.prepare('UPDATE sessions SET expires_at=0').run();assert.equal((await cal
 for(let i=0;i<20;i++)assert.equal((await call('/api/team/login','POST',{login:'nobody',accessKey:'wrong'},'','198.51.100.1')).status,401);
 assert.equal((await call('/api/team/login','POST',{login:'nobody',accessKey:'wrong'},'','198.51.100.1')).status,429);
 console.log('Team security: assignment, privacy, role isolation, stale writes, audit, closure, rotation, expiry, revocation and rate limits passed.');
+
+// Personal links must use the authoritative D1 record, not a stale KV copy.
+const freshReference='LS-2610-DATA23';
+const fresh=await saveLattenspecialistReservation({...record,serviceCode:null},freshReference,env);
+assert.equal(await kv.get('reservation:'+freshReference),null,'No personal reservation payload in KV when D1 is configured');
+const personal=()=>call('/api/customer/status','GET',undefined,fresh.customerToken);
+response=await personal();assert.equal(response.status,200);assert.equal(response.data.record.code,fresh.serviceCode);
+assert.deepEqual(response.data.record.payment,{state:'none'});
+for(const field of ['email','phone','address','customerToken','reference'])assert.equal(response.data.record[field],undefined,field);
+response=await call('/api/customer/push','POST',{action:'status',endpoint:'https://fcm.googleapis.com/fcm/send/test-only'},fresh.customerToken);
+assert.equal(response.status,200);assert.equal(response.data.subscribed,false);
+// Even an older copy must not mask current payment state, notes or revisions.
+await kv.put('reservation:'+freshReference,JSON.stringify(fresh));
+const paymentUpdate={revision:0,paymentAmount:'44.95',paymentUrl:'https://example.test/payment',publishPayment:true,plannedMinutes:90,note:'Actueel uit D1'};
+response=await call('/api/admin/reservations/'+freshReference,'PATCH',paymentUpdate);
+assert.equal(response.status,200,JSON.stringify(response));assert.equal(response.data.record.plannedMinutes,90);
+assert.equal(response.data.record.customerToken,fresh.customerToken);
+response=await personal();assert.equal(response.data.record.note,'Actueel uit D1');
+assert.deepEqual(response.data.record.payment,{state:'open',amount:'44.95',url:'https://example.test/payment'});
+assert.equal((await call('/api/status/'+fresh.serviceCode,'GET',undefined,'')).data.record.payment,undefined);
+assert.equal((await call('/api/admin/reservations/'+freshReference,'PATCH',{revision:0,paymentPaid:true})).status,409);
+assert.equal((await personal()).data.record.payment.state,'open');
+response=await call('/api/admin/reservations/'+freshReference,'PATCH',{revision:1,paymentPaid:true});
+assert.equal(response.status,200);assert.equal((await personal()).data.record.payment.state,'paid');
+response=await call('/api/admin/reservations/'+freshReference,'PATCH',{revision:2,paymentPaid:true});
+assert.equal(response.status,200);assert.equal(response.data.notifications.push.reason,'unchanged','Compare the D1 state before deciding to push again');
+assert.deepEqual(await kv.get('reservation:'+freshReference,'json'),fresh,'D1 saves do not copy personal data into KV');
+console.log('Customer links and payments: D1 authority, stale KV isolation, revision checks and unchanged notification suppression passed.');

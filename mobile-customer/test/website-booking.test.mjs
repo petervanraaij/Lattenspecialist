@@ -5,13 +5,13 @@ import {JSDOM} from 'jsdom';
 const read = name => readFile(new URL('../../'+name,import.meta.url),'utf8');
 const [html,code,home,choice,metrics] = await Promise.all(['afspraak.html','booking.js','index.html','package-choice.js','website-metrics.js'].map(read));
 const turn=()=>new Promise(resolve=>setTimeout(resolve,25));
-async function setup(t, {url='https://lattenspecialist.nl/afspraak.html',confirmationSent=true,fail=false}={}) {
+async function setup(t, {url='https://lattenspecialist.nl/afspraak.html',customerToken="a".repeat(64),fail=false}={}) {
  const dom=new JSDOM(html,{url,runScripts:'outside-only'});t.after(()=>dom.window.close());
  const w=dom.window,d=w.document,posts=[];
  w.LATTENSPECIALIST_BOOKING={endpoint:'https://api.example',turnstileSiteKey:'public-test'};
  w.turnstile={render:()=>1,getResponse:()=> 'test-token',reset:()=>{}};
  w.fetch=async (url,options={})=>{
-  if(options.method==='POST') {posts.push(JSON.parse(options.body)); await turn();return {ok:!fail,json:async()=>fail?{message:'Tijdelijk niet beschikbaar'}:{ok:true,reference:'LS-2609-ABC234',confirmationSent}};}
+  if(options.method==='POST') {posts.push(JSON.parse(options.body)); await turn();return {ok:!fail,json:async()=>fail?{message:'Tijdelijk niet beschikbaar'}:{ok:true,reference:'LS-2609-ABC234',customerToken}};}
   return {ok:true,json:async()=>({dates:['2099-12-12','2099-12-13']})};
  };
  w.eval(code);d.querySelector('script[src*="turnstile/v0"]').dispatchEvent(new w.Event('load'));await turn();
@@ -34,13 +34,13 @@ test('all homepage package selections transfer explicitly; no package is silentl
  assert.equal((await setup(t,{url:'https://lattenspecialist.nl/afspraak.html?pakket=Onbekend'})).f.elements.package.value,'');
 });
 test('dropoff does not send hidden address, pickup date or stale rental fields; success is clear and duplicate clicks are ignored',async t=>{
- const {w,d,f,posts}=await setup(t,{confirmationSent:false});complete(w,f);
+ const {w,d,f,posts}=await setup(t,{customerToken:null});complete(w,f);
  f.elements.address.value='Should not be sent';f.elements.rentfrom.value='2020-01-02';f.elements.rentto.value='2020-01-01';
  assert.equal(d.querySelector('#pickupAddressFields').hidden,true);assert.equal(f.elements.pickupDate.disabled,true);
  assert.equal(f.checkValidity(),true);submit(w,f);submit(w,f);await turn();await turn();
  assert.equal(posts.length,1);assert.equal(posts[0].pickupDate,'In overleg');assert.equal(posts[0].address,undefined);assert.equal(posts[0].rentfrom,undefined);
  assert.equal(d.querySelector('#bookingConfirmation').hidden,false);assert.equal(f.hidden,true);
- assert.match(d.querySelector('#confirmationDelivery').textContent,/kon niet worden verstuurd/);assert.doesNotMatch(d.querySelector('#confirmationDelivery').textContent,/spam/);
+ assert.match(d.querySelector('#confirmationDelivery').textContent,/Bewaar je aanvraagcode/);assert.doesNotMatch(d.querySelector('#confirmationDelivery').textContent,/spam/);
  d.querySelector('#newRequest').click();assert.equal(f.hidden,false);assert.equal(d.querySelector('#confirmationReference').textContent,'');
 });
 test('pickup requires an explicit date and address, rental excludes maintenance, failed send preserves entered data',async t=>{

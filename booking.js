@@ -81,7 +81,7 @@
     } else {
       lines.push(`Verhuur: ${rentalLabels[getValue('rentaltype')] || getValue('rentaltype')}`, `Huurprijs: ${rentalPrices[getValue('rentaltype')] || '-'}`, `Lengte persoon: ${getValue('height') ? `${getValue('height')} cm` : '-'}`, `Schoenmaat: ${getValue('shoesize') || '-'}`, `Niveau: ${getValue('level')}`, `Periode: ${formatDate(getValue('rentfrom'))} t/m ${formatDate(getValue('rentto'))}`);
     }
-    lines.push('', `Naam: ${getValue('name') || '-'}`, `Mobiel: ${getValue('phone') || '-'}`, `E-mail: ${getValue('email') || '-'}`, `WhatsApp-updates: ${form.elements.whatsappConsent.checked ? 'Ja' : 'Nee'}`);
+    lines.push('', `Naam: ${getValue('name') || '-'}`, `Mobiel: ${getValue('phone') || '-'}`, `E-mail: ${getValue('email') || '-'}`);
     if (getValue('notes')) lines.push(`Opmerking: ${getValue('notes')}`);
     return lines.join('\n');
   };
@@ -210,7 +210,6 @@
     const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
     payload.privacyConsent = formData.get('privacyConsent') === 'on';
-    payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
     if (selectedService() === 'Onderhoud') {
       const waxChoice = getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)';
       payload.notes = [String(payload.notes || '').trim(), `Waxkeuze: ${waxChoice}`].filter(Boolean).join('\n');
@@ -228,15 +227,20 @@
       if (!result.ok || !/^LS-\d{4}-[A-Z2-9]{6}$/.test(result.reference || '')) throw new Error('We kunnen de ontvangst nog niet bevestigen. Neem contact met ons op voordat je opnieuw verstuurt.');
       document.querySelector('#confirmationReference').textContent = result.reference;
       document.querySelector('#confirmationSummary').textContent = submittedSummary;
-      document.querySelector('#confirmationDelivery').textContent = result.confirmationSent === true ? 'We hebben je ook een bevestiging per e-mail gestuurd. Nog niet zichtbaar? Kijk ook in je spammap.' : result.confirmationSent === false ? 'Je aanvraag is opgeslagen, maar de bevestigingsmail kon niet worden verstuurd. Bewaar de aanvraagcode hierboven.' : 'Bewaar je aanvraagcode voor vragen over de planning.';
-      document.querySelector('#confirmationTracking').textContent = payload.whatsappConsent ? 'Zodra je onderhoud is geregistreerd, ontvang je je persoonlijke statuslink bij een update. Daarmee open je direct je onderhoud, zonder code of installatie.' : 'Zodra je onderhoud is geregistreerd, kun je het volgen via een persoonlijke statuslink. Je hoeft daarvoor geen app te installeren.';
+      const hasCustomerLink = /^[a-f0-9]{64}$/.test(result.customerToken || '');
+      document.querySelector('#confirmationDelivery').textContent = hasCustomerLink ? 'Je bevestiging, voortgang en betaalverzoek staan in je klantenapp.' : 'Bewaar je aanvraagcode voor vragen over de planning.';
+      document.querySelector('#confirmationTracking').textContent = hasCustomerLink ? 'Open en bewaar je onderhoud via de knop hieronder. Je hoeft geen app te installeren.' : 'Neem contact met ons op voor je persoonlijke onderhoudslink.';
+      const customerLink = document.querySelector('#confirmationCustomerLink');
+      customerLink.hidden = !hasCustomerLink;
+      if (hasCustomerLink) customerLink.href = `app.html#klant=${result.customerToken}`;
+      else customerLink.removeAttribute('href');
       document.body.classList.add('has-confirmation');
       form.hidden = true; confirmation.hidden = false; confirmation.focus({preventScroll:true});
       confirmation.scrollIntoView?.({block:'start', behavior:'instant'});
       resetRequest();
-      window.dispatchEvent(new CustomEvent('lattenspecialist:booking-submitted', {detail:{reference:result.reference}}));
+      window.dispatchEvent(new CustomEvent('lattenspecialist:booking-submitted', {detail:{reference:result.reference,customerToken:result.customerToken}}));
     } catch (error) {
-      showStatus(error.name === 'AbortError' ? 'De ontvangst kon niet op tijd worden bevestigd. Controleer je e-mail of neem contact op voordat je opnieuw verstuurt, om een dubbele aanvraag te voorkomen.' : error.message, 'error');
+      showStatus(error.name === 'AbortError' ? 'De ontvangst kon niet op tijd worden bevestigd. Neem contact op voordat je opnieuw verstuurt, om een dubbele aanvraag te voorkomen.' : error.message, 'error');
     } finally {
       window.clearTimeout(timeout); submitting = false;
       submitButton.disabled = false; submitButton.textContent = 'Aanvraag versturen';
@@ -246,6 +250,8 @@
   document.querySelector('#newRequest')?.addEventListener('click', () => {
     confirmation.hidden = true; form.hidden = false; document.body.classList.remove('has-confirmation');
     ['confirmationReference','confirmationSummary','confirmationDelivery','confirmationTracking'].forEach(id => { document.getElementById(id).textContent = ''; });
+    const customerLink = document.querySelector('#confirmationCustomerLink');
+    customerLink.hidden = true; customerLink.removeAttribute('href');
     showStep(1, false);
     (selectedService() === 'Onderhoud' ? form.elements.package : form.elements.rentaltype).focus();
   });

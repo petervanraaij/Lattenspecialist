@@ -30,7 +30,7 @@
   <link rel="stylesheet" href="styles.css?v=19">
   <link rel="stylesheet" href="homepage.css?v=8">
   <link rel="stylesheet" href="customer-booking.css?v=1">
-  <script src="customer-booking.js?v=2"></script>
+  <script src="customer-booking.js?v=3"></script>
 </head>
 <body class="booking-page">
   <a class="skip-link" href="#main">Naar de inhoud</a>
@@ -141,7 +141,7 @@
 
           <details class="booking-overview"><summary>Bekijk je aanvraag</summary><div class="request-summary" id="requestSummary"></div></details>
           <label class="website-field" aria-hidden="true"><span>Website</span><input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-          <label class="privacy-check whatsapp-consent"><input type="checkbox" name="whatsappConsent"><span>Ja, ik wil via WhatsApp statusupdates over deze aanvraag ontvangen van De Lattenspecialist. Afmelden kan in de WhatsApp-chat.</span></label>
+          <p class="form-footnote">Na je aanvraag open je direct je onderhoud, voortgang en betaalverzoek in de klantenapp.</p>
           <label class="privacy-check"><input type="checkbox" name="privacyConsent" required><span>Ik geef toestemming om mijn gegevens te gebruiken voor deze aanvraag en heb de <a href="privacy.html" target="_blank">privacy-informatie</a> gelezen.</span></label>
           <div id="turnstileContainer" class="turnstile-container" hidden></div>
           <div class="form-step-actions submit-actions"><button class="quiet-step step-back" type="button">← Terug</button><button class="btn btn-gold form-submit" type="submit" disabled>Aanvraag versturen</button></div>
@@ -158,7 +158,7 @@
           <p id="confirmationDelivery"></p>
           <p id="confirmationTracking"></p>
           <details class="booking-overview"><summary>Jouw aanvraag bekijken</summary><div id="confirmationSummary" class="request-summary"></div></details>
-          <div class="confirmation-actions"><a class="btn btn-dark" href="/">Terug naar de website</a><button class="quiet-link" type="button" id="newRequest">Nog een aanvraag</button></div>
+          <div class="confirmation-actions"><a class="btn btn-gold" id="confirmationCustomerLink" hidden>Bekijk mijn onderhoud</a><a class="btn btn-dark" href="/">Terug naar de website</a><button class="quiet-link" type="button" id="newRequest">Nog een aanvraag</button></div>
         </section>
       </div>
     </section>
@@ -179,7 +179,7 @@
 
   <script src="script.js?v=10"></script>
   <script src="booking-config.js?v=2"></script>
-  <script src="booking.js?v=9"></script>
+  <script src="booking.js?v=10"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>
 </html>
