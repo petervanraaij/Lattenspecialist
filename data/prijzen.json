@@ -4,7 +4,7 @@
     {
       "id": "brons",
       "name": "Brons",
-      "tagline": "Wax & verzorging",
+      "tagline": "Waxen",
       "ski": 19.95,
       "snowboard": 24.95,
       "items": [
@@ -16,7 +16,7 @@
     {
       "id": "zilver",
       "name": "Zilver",
-      "tagline": "Grip & glijvermogen",
+      "tagline": "Waxen en slijpen",
       "ski": 34.95,
       "snowboard": 39.95,
       "items": [
@@ -28,7 +28,7 @@
     {
       "id": "goud",
       "name": "Goud",
-      "tagline": "Complete onderhoudsbeurt",
+      "tagline": "Waxen, slijpen en structuur opfrissen",
       "ski": 44.95,
       "snowboard": 49.95,
       "featured": true,
@@ -43,7 +43,7 @@
     {
       "id": "platinum",
       "name": "Platinum",
-      "tagline": "Compleet + lichte reparaties",
+      "tagline": "Slijpen, structuur opfrissen en lichte reparaties",
       "ski_from": 52.5,
       "snowboard_from": 57.5,
       "items": [
