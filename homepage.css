@@ -177,7 +177,6 @@
 .home-page .package-highlights { display:grid; gap:10px; list-style:none; padding:0; font-size:.9rem; line-height:1.45; margin:20px 0 24px; }
 .home-page .package-highlights li { padding-left:18px; margin:0; position:relative; }
 .home-page .package-highlights li::before { content:'✓'; position:absolute; left:0; color:var(--metal-ink); font-size:.85rem; }
-.home-page .package-highlights li.not-included::before { content:'×'; color:#a13d31; font-weight:700; }
 .home-page .package-choice { display:flex; gap:10px; align-items:center; padding:13px 12px; margin-top:auto; border:1px solid var(--metal-edge); border-radius:8px; cursor:pointer; font-size:.9rem; font-weight:750; }
 .home-page .package-choice input { width:18px; height:18px; margin:0; accent-color:#755711; }
 .home-page .package-card.is-selected { outline:2px solid #755711; outline-offset:3px; }

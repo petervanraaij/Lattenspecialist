@@ -57,8 +57,7 @@
         "Kleine, oppervlakkige belagreparaties",
         "Holmenkol hotwax naar keuze",
         "Afkoelen en afschrapen",
-        "Uitborstelen en finish",
-        "Grotere of complexere reparaties bespreken en prijzen we altijd vooraf"
+        "Uitborstelen en finish"
       ]
     }
   ],
@@ -71,6 +70,10 @@
     {
       "name": "Kleine, oppervlakkige belagreparaties",
       "from": 7.5
+    },
+    {
+      "name": "Grotere of complexere reparaties",
+      "price_note": "Prijs na beoordeling en overleg"
     },
     {
       "name": "Snowboardbindingen demonteren + monteren",
