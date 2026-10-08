@@ -1,12 +1,12 @@
-const CACHE_NAME = 'lattenspecialist-v33-package-choice';
+const CACHE_NAME = 'lattenspecialist-v34-wax-choice';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=10',
+  '/homepage.css?v=11',
   '/homepage.js?v=2',
-  '/package-choice.js?v=2',
+  '/package-choice.js?v=3',
   '/website-metrics.js?v=1',
   '/app.html',
   '/beheer.html',
@@ -17,7 +17,7 @@ const APP_SHELL = [
   '/images/van-raaij-solutions-logo.webp',
   '/script.js?v=10',
   '/booking-config.js?v=2',
-  '/booking.js?v=9',
+  '/booking.js?v=10',
   '/customer-booking.css?v=1',
   '/customer-booking.js?v=2',
   '/customer-app.css?v=1',

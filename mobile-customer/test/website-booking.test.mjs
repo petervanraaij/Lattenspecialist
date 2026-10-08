@@ -33,39 +33,54 @@ test('all homepage package selections transfer explicitly; no package is silentl
  assert.equal((await setup(t)).f.elements.package.value,'');
  assert.equal((await setup(t,{url:'https://lattenspecialist.nl/afspraak.html?pakket=Onbekend'})).f.elements.package.value,'');
 });
-test('performance selects its package and carries both choices into the request; switching packages clears the upgrade',async t=>{
+const waxChoices = {
+ beta:'Holmenkol BetaMix Red (standaard inbegrepen)',
+ alpha:'Holmenkol AlphaMix Yellow (inbegrepen)',
+ ultra:'Holmenkol UltraMix Blue (inbegrepen)',
+ performance:'Performance Wax (+ € 7,50)'
+};
+test('every wax type can be selected for each package and reaches the request form',async t=>{
  const dom=new JSDOM(home,{url:'https://lattenspecialist.nl',runScripts:'outside-only'});t.after(()=>dom.window.close());
- const d=dom.window.document;dom.window.eval(choice);
+ const {window:w}=dom,d=w.document;w.eval(choice);
  assert.equal(d.querySelectorAll('#pakketten').length,1);
  assert.equal(d.querySelector('.hero').nextElementSibling.id,'pakketten');
+ assert.equal(d.querySelector('#pakketten').nextElementSibling.id,'wax');
+ assert.equal(d.querySelectorAll('#wax').length,1);
  assert.equal(d.querySelector('.quick-booking'),null);
  assert.equal(d.querySelectorAll('#pakketten input:checked').length,0);
  for(const name of ['Brons','Zilver','Goud','Platinum']) {
-  const upgrade=d.querySelector(`input[name="homepagePerformance"][value="${name}"]`);
-  upgrade.click();
-  assert.equal(d.querySelector('input[name="homepagePackage"]:checked').value,name);
-  assert.equal(d.querySelectorAll('input[name="homepagePerformance"]:checked').length,1);
-  assert.equal(d.querySelectorAll('.package-card.is-selected').length,1);
-  const url=`https://lattenspecialist.nl/afspraak.html?pakket=${name}&wax=performance`;
-  assert.equal(d.querySelector('#packageRequest').href,url);
-  assert.equal(d.querySelector('.mobile-sticky-cta').href,url);
-  assert.match(d.querySelector('#packageSelection').textContent,/Performance Wax \(\+ € 7,50\)/);
-  const {f,d:request}=await setup(t,{url});
-  assert.equal(f.elements.package.value,name);
-  assert.equal(f.elements.performanceWax.value,'Performance Wax (+ € 7,50)');
-  assert.match(request.querySelector('#requestSummary').textContent,/Wax: Performance Wax/);
-  upgrade.click();
-  assert.equal(d.querySelector('#packageRequest').href,`https://lattenspecialist.nl/afspraak.html?pakket=${name}`);
-  assert.match(d.querySelector('#packageSelection').textContent,/standaard wax inbegrepen/);
+  const card=d.querySelector(`input[name="homepagePackage"][value="${name}"]`).closest('.package-card');
+  const wax=card.querySelector('select[name="homepageWax"]');
+  for(const [value,label] of Object.entries(waxChoices)) {
+   change(w,wax,value);
+   assert.equal(d.querySelector('input[name="homepagePackage"]:checked').value,name);
+   assert.equal(d.querySelectorAll('.package-card.is-selected').length,1);
+   const url=`https://lattenspecialist.nl/afspraak.html?pakket=${name}${value==='beta'?'':'&wax='+value}`;
+   assert.equal(d.querySelector('#packageRequest').href,url);
+   assert.equal(d.querySelector('.mobile-sticky-cta').href,url);
+   assert.ok(d.querySelector('#packageSelection').textContent.includes(wax.selectedOptions[0].textContent));
+   const {f,d:request}=await setup(t,{url});
+   assert.equal(f.elements.package.value,name);
+   assert.equal(f.elements.performanceWax.value,label);
+   assert.ok(request.querySelector('#requestSummary').textContent.includes(`Wax: ${label}`));
+  }
  }
- d.querySelector('input[name="homepagePerformance"][value="Brons"]').click();
- d.querySelector('input[name="homepagePackage"][value="Goud"]').click();
- assert.equal(d.querySelectorAll('input[name="homepagePerformance"]:checked').length,0);
- assert.equal(d.querySelector('#packageRequest').href,'https://lattenspecialist.nl/afspraak.html?pakket=Goud');
- d.querySelector('input[name="homepagePerformance"][value="Zilver"]').click();
- d.querySelector('input[name="homepagePerformance"][value="Platinum"]').click();
- assert.equal(d.querySelectorAll('input[name="homepagePerformance"]:checked').length,1);
- assert.equal(d.querySelector('#packageRequest').href,'https://lattenspecialist.nl/afspraak.html?pakket=Platinum&wax=performance');
+ d.querySelector('input[name="homepagePackage"][value="Brons"]').click();
+ assert.equal(d.querySelector('#packageRequest').href,'https://lattenspecialist.nl/afspraak.html?pakket=Brons');
+ assert.equal(d.querySelectorAll('select[name="homepageWax"] option:checked').length,4);
+ assert.ok([...d.querySelectorAll('select[name="homepageWax"]')].every(select=>select.value==='beta'));
+});
+test('wax choices survive submission, invalid URL choices stay on the included default',async t=>{
+ for(const [value,label] of Object.entries(waxChoices)) {
+  const {w,f,posts}=await setup(t,{url:`https://lattenspecialist.nl/afspraak.html?pakket=Goud&wax=${value}`});
+  complete(w,f);change(w,f.elements.package,'Goud');submit(w,f);await turn();await turn();
+  assert.equal(posts.length,1);assert.equal(posts[0].package,'Goud');
+  assert.ok(posts[0].notes.includes(`Waxkeuze: ${label}`));
+ }
+ for(const query of ['','?wax=unknown','?wax=constructor']) {
+  const {f}=await setup(t,{url:'https://lattenspecialist.nl/afspraak.html'+query});
+  assert.equal(f.elements.performanceWax.value,waxChoices.beta);
+ }
 });
 test('dropoff does not send hidden address, pickup date or stale rental fields; success is clear and duplicate clicks are ignored',async t=>{
  const {w,d,f,posts}=await setup(t,{confirmationSent:false});complete(w,f);

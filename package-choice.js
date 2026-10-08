@@ -9,23 +9,24 @@
     const selected = selectedCard?.querySelector('input[name="homepagePackage"]');
     cards.forEach(card => {
       card.classList.toggle('is-selected', card === selectedCard);
-      if (card !== selectedCard) card.querySelector('input[name="homepagePerformance"]').checked = false;
+      if (card !== selectedCard) card.querySelector('select[name="homepageWax"]').value = 'beta';
     });
-    const performance = Boolean(selectedCard?.querySelector('input[name="homepagePerformance"]')?.checked);
-    const href = selected ? `afspraak.html?pakket=${encodeURIComponent(selected.value)}${performance ? '&wax=performance' : ''}` : 'afspraak.html';
+    const wax = selectedCard?.querySelector('select[name="homepageWax"]');
+    const waxQuery = wax && wax.value !== 'beta' ? `&wax=${encodeURIComponent(wax.value)}` : '';
+    const href = selected ? `afspraak.html?pakket=${encodeURIComponent(selected.value)}${waxQuery}` : 'afspraak.html';
     requestLinks.forEach(link => { link.href = href; });
     message.hidden = !selected;
-    message.textContent = selected ? `Gekozen: ${selected.value} · ${performance ? 'Performance Wax (+ € 7,50)' : 'standaard wax inbegrepen'}. Je keuze staat alvast in het aanvraagformulier.` : '';
+    message.textContent = selected ? `Gekozen: ${selected.value} · ${wax.selectedOptions[0].textContent}. Je keuze staat alvast in het aanvraagformulier.` : '';
   };
   cards.forEach(card => {
     card.addEventListener('change', event => {
-      if (event.target.name === 'homepagePerformance' && event.target.checked) {
+      if (event.target.name === 'homepageWax') {
         card.querySelector('input[name="homepagePackage"]').checked = true;
       }
       update();
     });
     card.addEventListener('click', event => {
-      if (event.target.closest('a, button, input, label, details')) return;
+      if (event.target.closest('a, button, input, select, option, label, details')) return;
       const input = card.querySelector('input[name="homepagePackage"]');
       if (input) { input.checked = true; input.focus({preventScroll: true}); update(); }
     });
