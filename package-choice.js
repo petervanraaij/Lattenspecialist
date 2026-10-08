@@ -9,18 +9,22 @@
     const selected = selectedCard?.querySelector('input[name="homepagePackage"]');
     cards.forEach(card => {
       card.classList.toggle('is-selected', card === selectedCard);
-      if (card !== selectedCard) card.querySelector('select[name="homepageWax"]').value = 'beta';
+      if (card !== selectedCard) {
+        card.querySelector('select[name="homepageWax"]').value = 'beta';
+        card.querySelector('input[name="homepageUrgent"]').checked = false;
+      }
     });
     const wax = selectedCard?.querySelector('select[name="homepageWax"]');
     const waxQuery = wax && wax.value !== 'beta' ? `&wax=${encodeURIComponent(wax.value)}` : '';
-    const href = selected ? `afspraak.html?pakket=${encodeURIComponent(selected.value)}${waxQuery}` : 'afspraak.html';
+    const urgent = selectedCard?.querySelector('input[name="homepageUrgent"]').checked;
+    const href = selected ? `afspraak.html?pakket=${encodeURIComponent(selected.value)}${waxQuery}${urgent ? '&spoed=1' : ''}` : 'afspraak.html';
     requestLinks.forEach(link => { link.href = href; });
     message.hidden = !selected;
-    message.textContent = selected ? `Gekozen: ${selected.value} · ${wax.selectedOptions[0].textContent}. Je keuze staat alvast in het aanvraagformulier.` : '';
+    message.textContent = selected ? `Gekozen: ${selected.value} · ${wax.selectedOptions[0].textContent}${urgent ? ' · Spoedonderhoud + € 10,00 (indien mogelijk, in overleg)' : ''}. Je keuze staat alvast in het aanvraagformulier.` : '';
   };
   cards.forEach(card => {
     card.addEventListener('change', event => {
-      if (event.target.name === 'homepageWax') {
+      if (event.target.name === 'homepageWax' || event.target.name === 'homepageUrgent') {
         card.querySelector('input[name="homepagePackage"]').checked = true;
       }
       update();

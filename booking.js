@@ -168,6 +168,7 @@
   if ([...form.elements.package.options].some(option => option.value && option.value === packageChoice)) form.elements.package.value = packageChoice;
   const waxChoice = [...form.elements.performanceWax.options].find(option => option.dataset.wax === params.get('wax'));
   if (waxChoice) form.elements.performanceWax.value = waxChoice.value;
+  if (params.get('spoed') === '1') form.elements.urgent.value = form.elements.urgent.querySelector('[data-urgent="yes"]').value;
   if (params.get('dienst') === 'verhuur') {
     form.querySelector('input[name="service"][value="Verhuur"]').checked = true;
     const requestedRental = params.get('type');

@@ -82,6 +82,58 @@ test('wax choices survive submission, invalid URL choices stay on the included d
   assert.equal(f.elements.performanceWax.value,waxChoices.beta);
  }
 });
+const urgentChoice='Ja, graag overleggen (+ € 10,00 indien mogelijk)';
+test('rush is opt-in for every package and survives wax selection, navigation and submission',async t=>{
+ const dom=new JSDOM(home,{url:'https://lattenspecialist.nl',runScripts:'outside-only'});t.after(()=>dom.window.close());
+ const {window:w}=dom,d=w.document;w.eval(choice);
+ assert.equal(d.querySelectorAll('[name="homepageUrgent"]').length,4);
+ assert.equal(d.querySelectorAll('[name="homepageUrgent"]:checked').length,0);
+ for(const name of ['Brons','Zilver','Goud','Platinum']) {
+  const card=d.querySelector(`input[name="homepagePackage"][value="${name}"]`).closest('.package-card');
+  const urgent=card.querySelector('[name="homepageUrgent"]');
+  urgent.click();
+  assert.equal(d.querySelector('[name="homepagePackage"]:checked').value,name);
+  assert.equal(d.querySelector('#packageRequest').href,`https://lattenspecialist.nl/afspraak.html?pakket=${name}&spoed=1`);
+  change(w,card.querySelector('[name="homepageWax"]'),'performance');
+  const url=`https://lattenspecialist.nl/afspraak.html?pakket=${name}&wax=performance&spoed=1`;
+  assert.equal(d.querySelector('#packageRequest').href,url);
+  assert.equal(d.querySelector('.mobile-sticky-cta').href,url);
+  assert.match(d.querySelector('#packageSelection').textContent,/Spoedonderhoud \+ € 10,00 \(indien mogelijk, in overleg\)/);
+  const {w:requestWindow,d:request,f,posts}=await setup(t,{url});
+  assert.equal(f.elements.urgent.value,urgentChoice);
+  assert.ok(request.querySelector('#requestSummary').textContent.includes(`Spoed: ${urgentChoice}`));
+  complete(requestWindow,f);change(requestWindow,f.elements.package,name);submit(requestWindow,f);await turn();await turn();
+  assert.equal(posts[0].package,name);assert.equal(posts[0].urgent,urgentChoice);
+  assert.ok(posts[0].notes.includes('Waxkeuze: Performance Wax (+ € 7,50)'));
+  assert.ok(request.querySelector('#confirmationSummary').textContent.includes(`Spoed: ${urgentChoice}`));
+  urgent.click();
+  assert.equal(d.querySelector('#packageRequest').href,`https://lattenspecialist.nl/afspraak.html?pakket=${name}&wax=performance`);
+  assert.doesNotMatch(d.querySelector('#packageSelection').textContent,/Spoedonderhoud/);
+ }
+ const bronze=d.querySelector('.package-card--bronze');
+ bronze.querySelector('[name="homepageUrgent"]').click();
+ d.querySelector('[name="homepagePackage"][value="Zilver"]').click();
+ assert.equal(d.querySelectorAll('[name="homepageUrgent"]:checked').length,0);
+ assert.equal(d.querySelector('#packageRequest').href,'https://lattenspecialist.nl/afspraak.html?pakket=Zilver');
+});
+test('rush can be declined in the form and does not leak into rentals or invalid URL choices',async t=>{
+ for(const query of ['','?spoed=0','?spoed=false','?spoed=unknown']) {
+  const {f}=await setup(t,{url:'https://lattenspecialist.nl/afspraak.html'+query});
+  assert.equal(f.elements.urgent.value,'Nee');
+ }
+ const url='https://lattenspecialist.nl/afspraak.html?pakket=Goud&spoed=1';
+ const {w,d,f,posts}=await setup(t,{url});
+ complete(w,f);change(w,f.elements.urgent,'Nee');submit(w,f);await turn();await turn();
+ assert.equal(posts[0].urgent,'Nee');
+ assert.match(d.querySelector('#confirmationSummary').textContent,/Spoed: Nee/);
+ const rental=await setup(t,{url:url+'&dienst=verhuur'});
+ complete(rental.w,rental.f);
+ assert.equal(rental.f.elements.urgent.disabled,true);
+ submit(rental.w,rental.f);await turn();await turn();
+ assert.equal(rental.posts[0].urgent,undefined);
+ assert.doesNotMatch(rental.d.querySelector('#confirmationSummary').textContent,/Spoed:/);
+});
+
 test('dropoff does not send hidden address, pickup date or stale rental fields; success is clear and duplicate clicks are ignored',async t=>{
  const {w,d,f,posts}=await setup(t,{confirmationSent:false});complete(w,f);
  f.elements.address.value='Should not be sent';f.elements.rentfrom.value='2020-01-02';f.elements.rentto.value='2020-01-01';

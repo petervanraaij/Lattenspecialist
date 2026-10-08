@@ -278,7 +278,12 @@
 .home-page .snow-temperature-note { margin:20px 0 0; color:#aaa399; font-size:.88rem; }
 .home-page .package-wax { display:grid; gap:8px; margin:auto 0 14px; padding:12px 10px; border:1px solid #d7c18e; border-radius:7px; color:#654b13; background:#fbf5e7; font-size:.82rem; font-weight:700; }
 .home-page .package-wax select { width:100%; min-width:0; min-height:44px; padding:8px 4px; border:1px solid #d7c18e; border-radius:5px; background:#fffdf9; color:#3c3019; font:inherit; font-size:.8rem; cursor:pointer; }
-.home-page .package-wax:focus-within, .home-page .package-choice:focus-within { outline:3px solid #bc8c26; outline-offset:3px; }
+.home-page .package-urgent { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:start; gap:10px; margin:0 0 14px; padding:12px 10px; border:1px solid var(--metal-edge); border-radius:7px; cursor:pointer; }
+.home-page .package-urgent input { width:18px; height:18px; margin:2px 0 0; accent-color:#755711; }
+.home-page .package-urgent strong { display:block; font-size:.82rem; line-height:1.4; }
+.home-page .package-urgent small { display:block; margin-top:4px; color:#615b52; font-size:.75rem; line-height:1.4; }
+.home-page .package-urgent:has(input:checked) { background:#eee4cd; }
+.home-page .package-wax:focus-within, .home-page .package-urgent:focus-within, .home-page .package-choice:focus-within { outline:3px solid #bc8c26; outline-offset:3px; }
 .home-page .package-card .package-choice { margin-top:0; }
 .home-page .maintenance-tracking { background:#e9dfc9; }
 .home-page .tracking-shell,.home-page .reviews-shell { display:flex; align-items:center; justify-content:space-between; gap:56px; }

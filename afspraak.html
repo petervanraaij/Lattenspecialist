@@ -28,7 +28,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=19">
-  <link rel="stylesheet" href="homepage.css?v=14">
+  <link rel="stylesheet" href="homepage.css?v=15">
   <link rel="stylesheet" href="customer-booking.css?v=1">
   <script src="customer-booking.js?v=2"></script>
 </head>
@@ -106,7 +106,7 @@
               <div class="form-grid">
                 <label><span>Halen of brengen</span><select name="logistics"><option>Gratis ophalen &amp; terugbrengen (gemeenten West Maas en Waal en Druten)</option><option value="Zelf brengen en zelf ophalen">Zelf brengen en ophalen in Wamel</option></select></label>
                 <label id="pickupDateField"><span>Ophaaldatum</span><select name="pickupDate" required><option value="">Beschikbare data laden…</option><option>In overleg</option></select></label>
-                <label><span>Spoed</span><select name="urgent"><option>Nee</option><option>Ja, graag overleggen (+ € 10,00 indien mogelijk)</option></select></label>
+                <label><span>Spoed</span><select name="urgent"><option>Nee</option><option data-urgent="yes">Ja, graag overleggen (+ € 10,00 indien mogelijk)</option></select></label>
                 <label><span>Skigebied / bestemming</span><input type="text" name="destination" placeholder="bijv. Sölden, Oostenrijk"></label>
                 <label><span>Eerste skidag</span><input type="date" name="skidate"></label>
                 <details class="trip-conditions"><summary>Sneeuwomstandigheden (optioneel)</summary><label><span>Verwachte omstandigheden</span><select name="conditions"><option>Weet ik nog niet</option><option>Zacht / warm</option><option>Rond het vriespunt</option><option>Koud</option><option>Kunstsneeuw / hard / ijzig</option></select></label></details>
@@ -179,7 +179,7 @@
 
   <script src="script.js?v=10"></script>
   <script src="booking-config.js?v=2"></script>
-  <script src="booking.js?v=10"></script>
+  <script src="booking.js?v=11"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>
 </html>
