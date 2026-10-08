@@ -10,6 +10,10 @@
   const addressFields = document.querySelector('#pickupAddressFields');
   const pickupDateField = document.querySelector('#pickupDateField');
   const summary = document.querySelector('#requestSummary');
+  const selectionModel = window.LATTEN_SELECTION;
+  let maintenanceSelection = null;
+  const selectionPanel = document.querySelector('#maintenanceSelection');
+  const singleMaintenanceFields = document.querySelector('#singleMaintenanceFields');
   const status = document.querySelector('#bookingStatus');
   const addressStatus = document.querySelector('#addressStatus');
   const submitButton = form.querySelector('.form-submit');
@@ -72,9 +76,11 @@
     const service = selectedService();
     const lines = [`Dienst: ${service}`];
     if (service === 'Onderhoud') {
-      lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`, `Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`, `Halen of brengen: ${getValue('logistics')}`);
+      if (maintenanceSelection) lines.push(...selectionModel.describe(maintenanceSelection));
+      else lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`, `Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`);
+      lines.push(`Halen of brengen: ${getValue('logistics')}`);
       if (usesPickup()) lines.push(`Ophaaldatum: ${formatDate(getValue('pickupDate'))}`, `Ophaal- en terugbrenglocatie: ${getValue('address') || 'Nog invullen'}`);
-      lines.push(`Spoed: ${getValue('urgent')}`);
+      if (!maintenanceSelection) lines.push(`Spoed: ${getValue('urgent')}`);
       if (getValue('destination')) lines.push(`Bestemming: ${getValue('destination')}`);
       if (getValue('skidate')) lines.push(`Eerste skidag: ${formatDate(getValue('skidate'))}`);
       if (getValue('conditions') !== 'Weet ik nog niet') lines.push(`Omstandigheden: ${getValue('conditions')}`);
@@ -85,17 +91,31 @@
     if (getValue('notes')) lines.push(`Opmerking: ${getValue('notes')}`);
     return lines.join('\n');
   };
+  const selectionNotes = () => selectedService() !== 'Onderhoud' ? '' : maintenanceSelection ? selectionModel.notes(maintenanceSelection) : `Waxkeuze: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`;
   const updateForm = () => {
     toggleFields(maintenanceFields, selectedService() === 'Onderhoud');
     toggleFields(rentalFields, selectedService() === 'Verhuur');
     toggleFields(maintenancePlanningFields, selectedService() === 'Onderhoud');
     toggleFields(rentalPlanningFields, selectedService() === 'Verhuur');
+    singleMaintenanceFields.hidden = !!maintenanceSelection;
+    selectionPanel.hidden = !maintenanceSelection;
+    form.elements.urgent.closest('label').hidden = !!maintenanceSelection;
+    if (maintenanceSelection) {
+      const values = selectionModel.legacy(maintenanceSelection);
+      for (const name of ['package','material','amount']) form.elements[name].value = values[name];
+      form.elements.urgent.value = values.urgent === 'Nee' ? 'Nee' : form.elements.urgent.querySelector('[data-urgent="yes"]').value;
+    }
     if (rentalPrice && selectedService() === 'Verhuur') rentalPrice.textContent = `${rentalLabels[getValue('rentaltype')] || getValue('rentaltype')}: ${rentalPrices[getValue('rentaltype')] || ''}. Prijzen zijn inclusief btw.`;
     toggleFields(addressFields, usesPickup());
     toggleFields(pickupDateField, usesPickup());
     ['postcode','houseNumber','address','pickupDate'].forEach(name => { form.elements[name].required = usesPickup(); });
     form.elements.address.setCustomValidity(usesPickup() && outsidePickupArea ? 'Deze plaats valt buiten het gratis servicegebied. Kies zelf brengen in Wamel of in overleg.' : '');
     form.elements.rentto.setCustomValidity(selectedService() === 'Verhuur' && getValue('rentfrom') && getValue('rentto') && getValue('rentto') < getValue('rentfrom') ? 'Kies een einddatum op of na de begindatum.' : '');
+    const reservedNotes = selectionNotes();
+    const noteLimit = 800 - reservedNotes.length - (reservedNotes ? 1 : 0);
+    form.elements.notes.maxLength = Math.max(0,noteLimit);
+    form.elements.notes.setCustomValidity(getValue('notes').length > noteLimit ? `Maak je opmerking korter: er is ruimte voor ${noteLimit} tekens.` : '');
+    document.querySelector('#notesRemaining').textContent = `Nog ${Math.max(0,noteLimit - form.elements.notes.value.length)} tekens voor je opmerking.`;
     summary.textContent = buildSummary();
   };
   const loadAvailability = async () => {
@@ -156,6 +176,7 @@
   };
   const resetRequest = () => {
     addressController?.abort(); addressVersion += 1; window.clearTimeout(addressTimer);
+    maintenanceSelection = null;
     form.reset(); lastAddressQuery = ''; outsidePickupArea = false;
     setAddressStatus('Het adres verschijnt na het invullen van postcode en huisnummer.');
     clearStatus(); updateForm(); loadAvailability(); showStep(1, false);
@@ -164,6 +185,13 @@
   const minimum = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
   ['skidate','rentfrom','rentto'].forEach(name => { form.elements[name].min = minimum; });
   const params = new URLSearchParams(location.search);
+  const requestedSelection = selectionModel?.parse(params.get('keuze'));
+  if (requestedSelection && selectionModel.hasItems(requestedSelection)) {
+    maintenanceSelection = requestedSelection;
+    const list = document.querySelector('#maintenanceSelectionItems');
+    selectionModel.describe(maintenanceSelection).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
+    document.querySelector('#editMaintenanceSelection').href = `/?keuze=${encodeURIComponent(JSON.stringify(maintenanceSelection))}#pakketten`;
+  }
   const packageChoice = params.get('pakket');
   if ([...form.elements.package.options].some(option => option.value && option.value === packageChoice)) form.elements.package.value = packageChoice;
   const waxChoice = [...form.elements.performanceWax.options].find(option => option.dataset.wax === params.get('wax'));
@@ -212,8 +240,7 @@
     payload.privacyConsent = formData.get('privacyConsent') === 'on';
     payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
     if (selectedService() === 'Onderhoud') {
-      const waxChoice = getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)';
-      payload.notes = [String(payload.notes || '').trim(), `Waxkeuze: ${waxChoice}`].filter(Boolean).join('\n');
+      payload.notes = [selectionNotes(),String(payload.notes || '').trim()].filter(Boolean).join('\n');
     }
     payload.turnstileToken = turnstileToken;
     if (selectedService() === 'Onderhoud' && !usesPickup()) payload.pickupDate = 'In overleg';
@@ -250,4 +277,5 @@
     (selectedService() === 'Onderhoud' ? form.elements.package : form.elements.rentaltype).focus();
   });
   updateForm(); showStep(1, false); loadAvailability(); loadTurnstile(); submitButton.disabled = false;
+  if (params.has('keuze') && !requestedSelection) showStatus('Je keuze kon niet worden overgenomen. Kies je pakketten opnieuw via de website of vul hieronder je aanvraag in.', 'error');
 })();

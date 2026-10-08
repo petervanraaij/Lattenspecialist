@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 const read = name => readFile(new URL('../../'+name,import.meta.url),'utf8');
-const [html,code,home,choice,metrics] = await Promise.all(['afspraak.html','booking.js','index.html','package-choice.js','website-metrics.js'].map(read));
+const [html,code,home,choice,metrics,selection] = await Promise.all(['afspraak.html','booking.js','index.html','package-choice.js','website-metrics.js','maintenance-selection.js'].map(read));
 const turn=()=>new Promise(resolve=>setTimeout(resolve,25));
 async function setup(t, {url='https://lattenspecialist.nl/afspraak.html',confirmationSent=true,fail=false}={}) {
  const dom=new JSDOM(html,{url,runScripts:'outside-only'});t.after(()=>dom.window.close());
@@ -14,7 +14,7 @@ async function setup(t, {url='https://lattenspecialist.nl/afspraak.html',confirm
   if(options.method==='POST') {posts.push(JSON.parse(options.body)); await turn();return {ok:!fail,json:async()=>fail?{message:'Tijdelijk niet beschikbaar'}:{ok:true,reference:'LS-2609-ABC234',confirmationSent}};}
   return {ok:true,json:async()=>({dates:['2099-12-12','2099-12-13']})};
  };
- w.eval(code);d.querySelector('script[src*="turnstile/v0"]').dispatchEvent(new w.Event('load'));await turn();
+ w.eval(selection);w.eval(code);d.querySelector('script[src*="turnstile/v0"]').dispatchEvent(new w.Event('load'));await turn();
  return {w,d,f:d.querySelector('form'),posts};
 }
 const change=(w,input,value)=>{input.value=value;input.dispatchEvent(new w.Event('change',{bubbles:true}));};
@@ -23,53 +23,116 @@ function complete(w,f) {
  f.elements.name.value='Voorbeeld';f.elements.phone.value='0612345678';f.elements.email.value='test@example.com';f.elements.privacyConsent.checked=true;
 }
 const submit=(w,f)=>f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
-test('all homepage package selections transfer explicitly; no package is silently preselected',async t=>{
- const dom=new JSDOM(home,{url:'https://lattenspecialist.nl',runScripts:'outside-only'});t.after(()=>dom.window.close());dom.window.eval(choice);
+function homepage(t,url='https://lattenspecialist.nl/') {
+ const dom=new JSDOM(home,{url,runScripts:'outside-only'});t.after(()=>dom.window.close());
+ const w=dom.window,d=w.document;w.eval(selection);w.eval(choice);
+ return {w,d,model:w.LATTEN_SELECTION};
+}
+const chosen=d=>JSON.parse(new URL(d.querySelector('#packageRequest').href).searchParams.get('keuze'));
+const waxChoices={beta:'Holmenkol BetaMix Red (standaard inbegrepen)',alpha:'Holmenkol AlphaMix Yellow (inbegrepen)',ultra:'Holmenkol UltraMix Blue (inbegrepen)',performance:'Performance Wax (+ € 7,50)'};
+test('old package links still work and no package is silently preselected',async t=>{
  for(const name of ['Brons','Zilver','Goud','Platinum']) {
-  dom.window.document.querySelector(`input[name="homepagePackage"][value="${name}"]`).click();
-  assert.equal(dom.window.document.querySelector('#packageRequest').href,`https://lattenspecialist.nl/afspraak.html?pakket=${name}`);
   const {f}=await setup(t,{url:`https://lattenspecialist.nl/afspraak.html?pakket=${name}`});assert.equal(f.elements.package.value,name);
  }
  assert.equal((await setup(t)).f.elements.package.value,'');
  assert.equal((await setup(t,{url:'https://lattenspecialist.nl/afspraak.html?pakket=Onbekend'})).f.elements.package.value,'');
-});
-const waxChoices = {
- beta:'Holmenkol BetaMix Red (standaard inbegrepen)',
- alpha:'Holmenkol AlphaMix Yellow (inbegrepen)',
- ultra:'Holmenkol UltraMix Blue (inbegrepen)',
- performance:'Performance Wax (+ € 7,50)'
-};
-test('every wax type can be selected for each package and reaches the request form',async t=>{
- const dom=new JSDOM(home,{url:'https://lattenspecialist.nl',runScripts:'outside-only'});t.after(()=>dom.window.close());
- const {window:w}=dom,d=w.document;w.eval(choice);
+ const {d}=homepage(t);
+ assert.equal(chosen(d),null);
+ assert.equal(d.querySelectorAll('[name="homepagePackage"]').length,0);
+ assert.equal(d.querySelectorAll('.package-details:not([open])').length,4);
  assert.equal(d.querySelectorAll('#pakketten').length,1);
  assert.equal(d.querySelector('.hero').nextElementSibling.id,'pakketten');
  assert.equal(d.querySelector('#pakketten').nextElementSibling.id,'wax');
- assert.equal(d.querySelectorAll('#wax').length,1);
- assert.equal(d.querySelector('.quick-booking'),null);
- assert.equal(d.querySelectorAll('#pakketten input:checked').length,0);
- for(const name of ['Brons','Zilver','Goud','Platinum']) {
-  const card=d.querySelector(`input[name="homepagePackage"][value="${name}"]`).closest('.package-card');
-  const wax=card.querySelector('select[name="homepageWax"]');
-  for(const [value,label] of Object.entries(waxChoices)) {
-   change(w,wax,value);
-   assert.equal(d.querySelector('input[name="homepagePackage"]:checked').value,name);
-   assert.equal(d.querySelectorAll('.package-card.is-selected').length,1);
-   const url=`https://lattenspecialist.nl/afspraak.html?pakket=${name}${value==='beta'?'':'&wax='+value}`;
-   assert.equal(d.querySelector('#packageRequest').href,url);
-   assert.equal(d.querySelector('.mobile-sticky-cta').href,url);
-   assert.ok(d.querySelector('#packageSelection').textContent.includes(wax.selectedOptions[0].textContent));
-   const {f,d:request}=await setup(t,{url});
-   assert.equal(f.elements.package.value,name);
-   assert.equal(f.elements.performanceWax.value,label);
-   assert.ok(request.querySelector('#requestSummary').textContent.includes(`Wax: ${label}`));
+ assert.ok(d.querySelector('.maintenance-sidebar [data-extra="complex"]'));
+});
+test('counts, multiple packages, different materials, wax and extras survive one complete request',async t=>{
+ const {w,d}=homepage(t);
+ d.querySelector('#brons-ski').closest('.quantity-control').querySelector('[data-step="1"]').click();
+ d.querySelector('#brons-ski').closest('.quantity-control').querySelector('[data-step="1"]').click();
+ change(w,d.querySelector('#goud-snowboard'),'1');
+ const gold=d.querySelector('[data-package="goud"]');
+ change(w,gold.querySelector('[name="homepageWax"]'),'performance');gold.querySelector('[name="homepageUrgent"]').click();
+ change(w,d.querySelector('#extra-bindings'),'1');
+ const value=chosen(d);
+ assert.equal(value.p.brons.s,2);assert.equal(value.p.goud.b,1);assert.equal(value.p.goud.u,true);assert.equal(value.p.goud.w,'performance');assert.equal(value.e.bindings.q,1);
+ assert.equal(d.querySelectorAll('.package-card.is-selected').length,2);
+ assert.equal(d.querySelector('.mobile-sticky-cta').href,d.querySelector('#packageRequest').href);
+ const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
+ assert.equal(rd.querySelector('#maintenanceSelection').hidden,false);
+ assert.equal(rd.querySelector('#singleMaintenanceFields').hidden,true);
+ assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Brons: 2×/);
+ assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Goud: 1× snowboard/);
+ assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Performance Purple/);
+ complete(rw,f);f.elements.notes.value='Graag vooraf bellen.';submit(rw,f);await turn();await turn();
+ assert.equal(posts.length,1);assert.equal(posts[0].amount,'3');assert.equal(posts[0].material,'Meerdere / combinatie');
+ assert.equal(posts[0].package,'Meerdere pakketten / losse werkzaamheden');
+ assert.match(posts[0].notes,/Brons: 2x ski/);assert.match(posts[0].notes,/Goud: 1x snowboard; Performance Purple/);
+ assert.match(posts[0].notes,/Los: 1x Bindingen demonteren/);assert.match(posts[0].notes,/spoed/);assert.match(posts[0].notes,/Graag vooraf bellen/);
+ assert.match(rd.querySelector('#confirmationSummary').textContent,/Brons: 2×/);
+ const edited=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
+ assert.equal(edited.d.querySelector('#brons-ski').value,'2');assert.equal(edited.d.querySelector('#extra-bindings').value,'1');
+ assert.deepEqual(chosen(edited.d),value);
+});
+test('wax is independently selectable for every package without removing earlier choices',async t=>{
+ const {w,d}=homepage(t);
+ for(const id of ['brons','zilver','goud','platinum']) {
+  const card=d.querySelector(`[data-package="${id}"]`);
+  for(const wax of Object.keys(waxChoices)) {
+   change(w,card.querySelector('[name="homepageWax"]'),wax);
+   const selected=chosen(d);assert.equal(selected.p[id].w,wax);assert.equal(selected.p[id].s,1);
+   const request=await setup(t,{url:d.querySelector('#packageRequest').href});
+   assert.match(request.d.querySelector('#maintenanceSelectionItems').textContent,new RegExp(wax==='performance'?'Performance Purple':wax==='alpha'?'AlphaMix Yellow':wax==='ultra'?'UltraMix Blue':'BetaMix Red'));
   }
  }
- d.querySelector('input[name="homepagePackage"][value="Brons"]').click();
- assert.equal(d.querySelector('#packageRequest').href,'https://lattenspecialist.nl/afspraak.html?pakket=Brons');
- assert.equal(d.querySelectorAll('select[name="homepageWax"] option:checked').length,4);
- assert.ok([...d.querySelectorAll('select[name="homepageWax"]')].every(select=>select.value==='beta'));
+ assert.equal(Object.keys(chosen(d).p).length,4);
+ change(w,d.querySelector('#brons-ski'),'0');
+ assert.equal(chosen(d).p.brons,undefined);assert.equal(Object.keys(chosen(d).p).length,3);
 });
+test('separate work can be ordered without a package or an unintended wax service',async t=>{
+ const {w,d}=homepage(t);
+ change(w,d.querySelector('#extra-complex'),'2');
+ change(w,d.querySelector('[data-extra="complex"] [name="extraMaterial"]'),'snowboard');
+ d.querySelector('#extrasUrgent').click();
+ const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
+ complete(rw,f);submit(rw,f);await turn();await turn();
+ assert.equal(posts.length,1);assert.equal(posts[0].package,'Losse werkzaamheden / advies');
+ assert.equal(posts[0].material,'Snowboard');assert.equal(posts[0].amount,'2');
+ assert.match(posts[0].notes,/2x Complexe reparaties/);assert.match(posts[0].notes,/prijs in overleg/);assert.doesNotMatch(posts[0].notes,/Waxkeuze|BetaMix/);
+ assert.match(rd.querySelector('#confirmationSummary').textContent,/Grotere of complexere reparaties/);
+ change(w,d.querySelector('#extra-complex'),'0');
+ assert.equal(chosen(d),null);assert.equal(d.querySelector('#extrasUrgent').checked,false);assert.equal(d.querySelector('#extrasUrgent').disabled,true);
+});
+test('invalid selections cannot produce a partial or over-limit order',async t=>{
+ const {w,d,model}=homepage(t);
+ change(w,d.querySelector('#brons-ski'),'20');change(w,d.querySelector('#goud-snowboard'),'1');
+ assert.equal(d.querySelector('#packageRequest').getAttribute('aria-disabled'),'true');assert.match(d.querySelector('#packageSelection').textContent,/maximaal 20/);
+ change(w,d.querySelector('#brons-ski'),'-1');assert.equal(d.querySelector('#packageRequest').getAttribute('aria-disabled'),'true');
+ change(w,d.querySelector('#brons-ski'),'0');assert.equal(d.querySelector('#packageRequest').hasAttribute('aria-disabled'),false);
+ for(const text of ['{','null',JSON.stringify({p:{brons:{s:1.5,b:0,w:'beta',u:false}},e:{},u:false}),JSON.stringify({p:{constructor:{s:1,b:0,w:'beta',u:false}},e:{},u:false})]) {
+  assert.equal(model.parse(text),null);
+  const {f,d:rd}=await setup(t,{url:'https://lattenspecialist.nl/afspraak.html?keuze='+encodeURIComponent(text)});
+  assert.equal(f.elements.package.value,'');assert.match(rd.querySelector('#bookingStatus').textContent,/opnieuw/);
+ }
+});
+test('the largest selection and allowed comment reach the existing backend without truncation',async t=>{
+ const {model}=homepage(t);const value=model.empty();
+ for(const id of Object.keys(model.packages))value.p[id]={s:3,b:2,w:'performance',u:true};
+ for(const id of Object.keys(model.extras))value.e[id]={q:20,m:'snowboard'};
+ value.u=true;
+ assert.ok(model.notes(model.normalize(value)).length<800);
+ const {w,f,posts}=await setup(t,{url:'https://lattenspecialist.nl/afspraak.html?keuze='+encodeURIComponent(JSON.stringify(value))});
+ complete(w,f);
+ const limit=f.elements.notes.maxLength;
+ assert.ok(limit>0);
+ f.elements.notes.value='x'.repeat(limit+1);f.elements.notes.dispatchEvent(new w.Event('input',{bubbles:true}));
+ assert.equal(f.elements.notes.checkValidity(),false);
+ f.elements.notes.value='x'.repeat(limit);f.elements.notes.dispatchEvent(new w.Event('input',{bubbles:true}));
+ assert.equal(f.elements.notes.checkValidity(),true);submit(w,f);await turn();await turn();
+ assert.equal(posts[0].notes.length,800);
+ const {readAndValidateLattenspecialist}=await import('../../worker/src/index.js');
+ assert.equal(readAndValidateLattenspecialist(posts[0]).data.notes,posts[0].notes.replace(/\s+/g,' ').trim());
+});
+
 test('wax choices survive submission, invalid URL choices stay on the included default',async t=>{
  for(const [value,label] of Object.entries(waxChoices)) {
   const {w,f,posts}=await setup(t,{url:`https://lattenspecialist.nl/afspraak.html?pakket=Goud&wax=${value}`});
@@ -83,38 +146,16 @@ test('wax choices survive submission, invalid URL choices stay on the included d
  }
 });
 const urgentChoice='Ja, graag overleggen (+ € 10,00 indien mogelijk)';
-test('rush is opt-in for every package and survives wax selection, navigation and submission',async t=>{
- const dom=new JSDOM(home,{url:'https://lattenspecialist.nl',runScripts:'outside-only'});t.after(()=>dom.window.close());
- const {window:w}=dom,d=w.document;w.eval(choice);
- assert.equal(d.querySelectorAll('[name="homepageUrgent"]').length,4);
- assert.equal(d.querySelectorAll('[name="homepageUrgent"]:checked').length,0);
- for(const name of ['Brons','Zilver','Goud','Platinum']) {
-  const card=d.querySelector(`input[name="homepagePackage"][value="${name}"]`).closest('.package-card');
-  const urgent=card.querySelector('[name="homepageUrgent"]');
-  urgent.click();
-  assert.equal(d.querySelector('[name="homepagePackage"]:checked').value,name);
-  assert.equal(d.querySelector('#packageRequest').href,`https://lattenspecialist.nl/afspraak.html?pakket=${name}&spoed=1`);
-  change(w,card.querySelector('[name="homepageWax"]'),'performance');
-  const url=`https://lattenspecialist.nl/afspraak.html?pakket=${name}&wax=performance&spoed=1`;
-  assert.equal(d.querySelector('#packageRequest').href,url);
-  assert.equal(d.querySelector('.mobile-sticky-cta').href,url);
-  assert.match(d.querySelector('#packageSelection').textContent,/Spoedonderhoud \+ € 10,00 \(indien mogelijk, in overleg\)/);
-  const {w:requestWindow,d:request,f,posts}=await setup(t,{url});
-  assert.equal(f.elements.urgent.value,urgentChoice);
-  assert.ok(request.querySelector('#requestSummary').textContent.includes(`Spoed: ${urgentChoice}`));
-  complete(requestWindow,f);change(requestWindow,f.elements.package,name);submit(requestWindow,f);await turn();await turn();
-  assert.equal(posts[0].package,name);assert.equal(posts[0].urgent,urgentChoice);
-  assert.ok(posts[0].notes.includes('Waxkeuze: Performance Wax (+ € 7,50)'));
-  assert.ok(request.querySelector('#confirmationSummary').textContent.includes(`Spoed: ${urgentChoice}`));
-  urgent.click();
-  assert.equal(d.querySelector('#packageRequest').href,`https://lattenspecialist.nl/afspraak.html?pakket=${name}&wax=performance`);
-  assert.doesNotMatch(d.querySelector('#packageSelection').textContent,/Spoedonderhoud/);
+test('rush remains optional and scoped to each selected package',async t=>{
+ const {d,w}=homepage(t);
+ for(const id of ['brons','zilver','goud','platinum']) {
+  const card=d.querySelector(`[data-package="${id}"]`),urgent=card.querySelector('[name="homepageUrgent"]');
+  assert.equal(urgent.checked,false);urgent.click();
+  assert.equal(chosen(d).p[id].s,1);assert.equal(chosen(d).p[id].u,true);
+  change(w,card.querySelector('[name="homepageWax"]'),'alpha');assert.equal(chosen(d).p[id].u,true);
+  urgent.click();assert.equal(chosen(d).p[id].u,false);
  }
- const bronze=d.querySelector('.package-card--bronze');
- bronze.querySelector('[name="homepageUrgent"]').click();
- d.querySelector('[name="homepagePackage"][value="Zilver"]').click();
- assert.equal(d.querySelectorAll('[name="homepageUrgent"]:checked').length,0);
- assert.equal(d.querySelector('#packageRequest').href,'https://lattenspecialist.nl/afspraak.html?pakket=Zilver');
+ assert.equal(Object.keys(chosen(d).p).length,4);
 });
 test('rush can be declined in the form and does not leak into rentals or invalid URL choices',async t=>{
  for(const query of ['','?spoed=0','?spoed=false','?spoed=unknown']) {
