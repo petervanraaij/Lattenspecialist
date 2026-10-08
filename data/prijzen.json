@@ -8,7 +8,8 @@
       "ski": 19.95,
       "snowboard": 24.95,
       "items": [
-        "Warme waxbeurt",
+        "Belag controleren en reinigen",
+        "Holmenkol hotwax naar keuze",
         "Afkoelen en afschrapen",
         "Uitborstelen en finish"
       ]
@@ -20,8 +21,10 @@
       "ski": 34.95,
       "snowboard": 39.95,
       "items": [
+        "Belag controleren en reinigen",
         "Kanten slijpen en tunen",
-        "Warme waxbeurt",
+        "Holmenkol hotwax naar keuze",
+        "Afkoelen en afschrapen",
         "Uitborstelen en finish"
       ]
     },
@@ -33,11 +36,12 @@
       "snowboard": 49.95,
       "featured": true,
       "items": [
+        "Belag controleren en reinigen",
         "Kanten slijpen en tunen",
-        "Belagcontrole",
-        "Structuur handmatig opfrissen waar passend",
-        "Warme waxbeurt",
-        "Volledige finish"
+        "Structuur gericht opfrissen waar passend",
+        "Holmenkol hotwax naar keuze",
+        "Afkoelen en afschrapen",
+        "Uitborstelen en finish"
       ]
     },
     {
@@ -47,20 +51,25 @@
       "ski_from": 52.5,
       "snowboard_from": 57.5,
       "items": [
-        "Alles uit Goud",
-        "Kleine oppervlakkige belagreparaties",
-        "Altijd overleg bij grotere schade"
+        "Belag controleren en reinigen",
+        "Kanten slijpen en tunen",
+        "Structuur gericht opfrissen waar passend",
+        "Kleine, oppervlakkige belagreparaties",
+        "Holmenkol hotwax naar keuze",
+        "Afkoelen en afschrapen",
+        "Uitborstelen en finish",
+        "Grotere of complexere reparaties bespreken en prijzen we altijd vooraf"
       ]
     }
   ],
   "extras": [
     {
-      "name": "Kanten slijpen / tunen",
+      "name": "Kanten slijpen en tunen",
       "ski": 24.95,
       "snowboard": 29.95
     },
     {
-      "name": "Kleine oppervlakkige belagreparatie",
+      "name": "Kleine, oppervlakkige belagreparaties",
       "from": 7.5
     },
     {
