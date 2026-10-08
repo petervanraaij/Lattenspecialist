@@ -29,7 +29,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=19">
-  <link rel="stylesheet" href="homepage.css?v=9">
+  <link rel="stylesheet" href="homepage.css?v=10">
   <script src="homepage.js?v=2"></script>
   <script type="application/ld+json">
   {
@@ -86,6 +86,65 @@
       </div>
     </section>
 
+    <section class="section packages" id="pakketten" aria-labelledby="packages-title">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">Voor ski’s en snowboards</span>
+          <h2 id="packages-title">Kies jouw onderhoud.</h2>
+          <p>Vergelijk de complete pakketten en kies jouw onderhoud. Performance Wax kun je direct bij je pakket aanvinken.</p>
+        </div>
+        <div class="package-grid" role="group" aria-label="Kies je onderhoudspakket">
+          <article class="package-card package-card--bronze">
+            <span class="tier bronze-dot">Brons</span><h3>Wax & verzorging</h3><p class="package-fit">Voor een frisse waxlaag en soepel glijden.</p>
+            <div class="price-row"><div><small>Ski</small><strong>€ 19,95</strong></div><div><small>Snowboard</small><strong>€ 24,95</strong></div></div>
+            <div class="package-highlights"><span>Belag reinigen</span><span>Holmenkol BetaMix Red hotwax</span><span>Uitborstelen en finish</span></div>
+            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Belag reinigen en oude waxresten verwijderen</li><li>Holmenkol BetaMix Red hotwax</li><li>Afkoelen en afschrapen</li><li>Uitborstelen en finish</li></ul></details><label class="package-performance"><input type="checkbox" name="homepagePerformance" value="Brons" aria-label="Performance Wax bij Brons (+ € 7,50)"><span>Performance Wax <strong>+ € 7,50</strong></span></label>
+            <label class="package-choice"><input type="radio" name="homepagePackage" value="Brons"><span>Kies Brons</span></label>
+          </article>
+          <article class="package-card package-card--silver">
+            <span class="tier silver-dot">Zilver</span><h3>Grip &amp; glijvermogen</h3><p class="package-fit">Voor materiaal met minder grip, maar zonder behoefte aan een volledige technische beurt.</p>
+            <div class="price-row"><div><small>Ski</small><strong>€ 34,95</strong></div><div><small>Snowboard</small><strong>€ 39,95</strong></div></div>
+            <div class="package-highlights"><span>Belag controleren</span><span>Kanten slijpen en tunen</span><span>Holmenkol BetaMix Red hotwax</span></div>
+            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Belagcontrole en reiniging</li><li>Kanten slijpen en tunen</li><li>Holmenkol BetaMix Red hotwax</li><li>Afschrapen, uitborstelen en finish</li></ul></details><label class="package-performance"><input type="checkbox" name="homepagePerformance" value="Zilver" aria-label="Performance Wax bij Zilver (+ € 7,50)"><span>Performance Wax <strong>+ € 7,50</strong></span></label>
+            <label class="package-choice"><input type="radio" name="homepagePackage" value="Zilver"><span>Kies Zilver</span></label>
+          </article>
+          <article class="package-card package-card--gold featured">
+            <span class="featured-badge">Meest gekozen</span><span class="tier gold-dot">Goud</span><h3>Complete onderhoudsbeurt</h3><p class="package-fit">Voor materiaal dat een seizoen heeft gedraaid of volledig nagekeken mee op reis moet.</p>
+            <div class="price-row"><div><small>Ski</small><strong>€ 44,95</strong></div><div><small>Snowboard</small><strong>€ 49,95</strong></div></div>
+            <div class="package-highlights"><span>Volledige technische inspectie</span><span>Slijpen en structuur gericht opfrissen</span><span>Holmenkol BetaMix Red hotwax en finish</span></div>
+            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Volledige inspectie van belag en kanten</li><li>Belag reinigen en oude waxresten verwijderen</li><li>Kanten slijpen en tunen</li><li>Structuur gericht opfrissen waar passend</li><li>Holmenkol BetaMix Red hotwax en volledige finish</li></ul></details><label class="package-performance"><input type="checkbox" name="homepagePerformance" value="Goud" aria-label="Performance Wax bij Goud (+ € 7,50)"><span>Performance Wax <strong>+ € 7,50</strong></span></label>
+            <label class="package-choice"><input type="radio" name="homepagePackage" value="Goud"><span>Kies Goud</span></label>
+          </article>
+          <article class="package-card package-card--platinum">
+            <span class="tier platinum-dot">Platinum</span><h3>Compleet + lichte reparaties</h3><p class="package-fit">Voor materiaal dat naast volledig onderhoud ook kleine, oppervlakkige schade heeft.</p>
+            <div class="price-row"><div><small>Ski vanaf</small><strong>€ 52,50</strong></div><div><small>Snowboard vanaf</small><strong>€ 57,50</strong></div></div>
+            <div class="package-highlights"><span>Alles uit Goud</span><span>Oppervlakkige krassen herstellen</span><span>Grotere schade eerst beoordelen</span></div>
+            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Alles uit Goud</li><li>Kleine, oppervlakkige beschadigingen kunnen binnen het pakket vallen</li><li>Grotere of complexere reparaties bespreken en prijzen we altijd vooraf</li></ul></details><label class="package-performance"><input type="checkbox" name="homepagePerformance" value="Platinum" aria-label="Performance Wax bij Platinum (+ € 7,50)"><span>Performance Wax <strong>+ € 7,50</strong></span></label>
+            <label class="package-choice"><input type="radio" name="homepagePackage" value="Platinum"><span>Kies Platinum</span></label>
+          </article>
+        </div>
+        <p class="package-selection" id="packageSelection" role="status" aria-live="polite" hidden></p>
+        <p class="price-note">Alle genoemde consumentenprijzen zijn inclusief btw.</p>
+        <details class="price-details">
+          <summary>Losse werkzaamheden &amp; spoed</summary>
+        <div class="extras-card">
+          <div><h3>Losse werkzaamheden</h3><p>Ook mogelijk als een volledig pakket niet nodig is.</p></div>
+          <div class="extras-list">
+            <span><b>Kanten slijpen/tunen</b><em>Ski € 24,95 · Snowboard € 29,95</em></span>
+            <span><b>Kleine belagreparatie</b><em>v.a. € 7,50</em></span>
+            <span><b>Snowboardbindingen demonteren + monteren</b><em>€ 7,50</em></span>
+            <span><b>Spoedonderhoud</b><em>indien mogelijk + € 10,00</em></span>
+          </div>
+          <p class="extras-foot"><strong>Spoed?</strong> Dan geven we je onderhoud in overleg voorrang in de werkplanning. Extra haal- of brengritten vallen niet onder de spoedtoeslag. Zelf brengen en ophalen kan op afspraak.</p>
+        </div>
+        </details>
+        <div class="package-action">
+          <p>Twijfel je? Wij bekijken je materiaal en adviseren wat nodig is.<br>Extra werk doen we alleen na overleg.</p>
+          <a class="btn btn-dark" id="packageRequest" href="afspraak.html">Onderhoud aanvragen <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+
     <section class="trust-strip" aria-label="Onze service">
       <div class="container trust-grid">
         <div><strong>Holmenkol BetaMix</strong><span>Hoogwaardige hotwax als standaard</span></div>
@@ -101,21 +160,6 @@
           <article><span class="eyebrow">01 / Onderhoud</span><h3>Vakwerk voor de piste.</h3><p>Van hoogwaardige hotwax tot complete ski- en snowboardbeurten.</p><a class="quiet-link" href="#pakketten">Bekijk het onderhoud <span aria-hidden="true">→</span></a></article>
           <article><span class="eyebrow">02 / Verhuur</span><h3>Passend op reis.</h3><p>Een complete skiset, ski’s met stokken of een dakkoffer met daksteunen.</p><a class="quiet-link" href="verhuur.html">Bekijk het verhuuraanbod <span aria-hidden="true">→</span></a></article>
           <article id="webshop"><span class="eyebrow">03 / Webshop</span><h3>Jouw materiaal. Ons advies.</h3><p>Vragen over wintersportartikelen? Informeer naar het assortiment, de beschikbaarheid en prijzen.</p><a class="quiet-link" href="https://wa.me/31618327132?text=Hallo%20De%20Lattenspecialist%2C%20ik%20heb%20een%20vraag%20over%20het%20webshopassortiment." target="_blank" rel="noopener noreferrer">Vraag naar het aanbod <span aria-hidden="true">→</span></a></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="quick-booking" aria-labelledby="quick-booking-title">
-      <div class="container">
-        <div class="quick-booking-head">
-          <div><span class="eyebrow">Direct regelen</span><h2 id="quick-booking-title">Kies je onderhoud en maak je afspraak.</h2></div>
-          <a class="quiet-link" href="#pakketten">Vergelijk alle werkzaamheden <span aria-hidden="true">→</span></a>
-        </div>
-        <div class="quick-booking-grid">
-          <a href="afspraak.html?pakket=Brons"><span>Brons</span><strong>Wax &amp; verzorging</strong><small>Ski € 19,95 · Snowboard € 24,95</small><b>Kies Brons →</b></a>
-          <a href="afspraak.html?pakket=Zilver"><span>Zilver</span><strong>Grip &amp; glijvermogen</strong><small>Ski € 34,95 · Snowboard € 39,95</small><b>Kies Zilver →</b></a>
-          <a class="is-featured" href="afspraak.html?pakket=Goud"><span>Meest gekozen · Goud</span><strong>Complete onderhoudsbeurt</strong><small>Ski € 44,95 · Snowboard € 49,95</small><b>Kies Goud →</b></a>
-          <a href="afspraak.html?pakket=Platinum"><span>Platinum</span><strong>Compleet + lichte reparaties</strong><small>Ski v.a. € 52,50 · Snowboard v.a. € 57,50</small><b>Kies Platinum →</b></a>
         </div>
       </div>
     </section>
@@ -159,70 +203,6 @@
           <article class="wax-card wax-purple"><span class="performance-badge">Performance + € 7,50</span><h3>Performance Wax</h3><div class="wax-range"><small>Sneeuwtemperatuur</small><strong>0 °C tot -12 °C</strong></div><p>Hiervoor gebruiken we Holmenkol Performance Bar Purple: onze premium optie met zeer hoge slijtvastheid, lage vuilhechting en een breed inzetbereik. Toe te voegen aan ieder pakket.</p><a class="quiet-link performance-link" href="afspraak.html?wax=performance">Kies bij aanvraag <span aria-hidden="true">→</span></a></article>
         </div>
         <p class="snow-temperature-note"><strong>Let op:</strong> alle genoemde temperaturen zijn sneeuwtemperaturen, niet buitentemperaturen.</p>
-      </div>
-    </section>
-
-
-    <section class="section packages" id="pakketten" aria-labelledby="packages-title">
-      <div class="container">
-        <div class="section-head center">
-          <span class="eyebrow">Voor ski’s en snowboards</span>
-          <h2 id="packages-title">Kies jouw onderhoud.</h2>
-          <p>Van een verse waxlaag tot een complete onderhoudsbeurt.</p>
-        </div>
-        <div class="package-grid" role="group" aria-label="Kies je onderhoudspakket">
-          <article class="package-card package-card--bronze">
-            <span class="tier bronze-dot">Brons</span><h3>Wax & verzorging</h3><p class="package-fit">Voor een frisse waxlaag en soepel glijden.</p>
-            <div class="price-row"><div><small>Ski</small><strong>€ 19,95</strong></div><div><small>Snowboard</small><strong>€ 24,95</strong></div></div>
-            <div class="package-highlights"><span>Belag reinigen</span><span>Holmenkol BetaMix Red hotwax</span><span>Uitborstelen en finish</span></div>
-            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Belag reinigen en oude waxresten verwijderen</li><li>Holmenkol BetaMix Red hotwax</li><li>Afkoelen en afschrapen</li><li>Uitborstelen en finish</li></ul></details><p class="package-performance">Performance Wax + € 7,50</p>
-            <label class="package-choice"><input type="radio" name="homepagePackage" value="Brons"><span>Kies Brons</span></label>
-          </article>
-          <article class="package-card package-card--silver">
-            <span class="tier silver-dot">Zilver</span><h3>Grip &amp; glijvermogen</h3><p class="package-fit">Voor materiaal met minder grip, maar zonder behoefte aan een volledige technische beurt.</p>
-            <div class="price-row"><div><small>Ski</small><strong>€ 34,95</strong></div><div><small>Snowboard</small><strong>€ 39,95</strong></div></div>
-            <div class="package-highlights"><span>Belag controleren</span><span>Kanten slijpen en tunen</span><span>Holmenkol BetaMix Red hotwax</span></div>
-            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Belagcontrole en reiniging</li><li>Kanten slijpen en tunen</li><li>Holmenkol BetaMix Red hotwax</li><li>Afschrapen, uitborstelen en finish</li></ul></details><p class="package-performance">Performance Wax + € 7,50</p>
-            <label class="package-choice"><input type="radio" name="homepagePackage" value="Zilver"><span>Kies Zilver</span></label>
-          </article>
-          <article class="package-card package-card--gold featured">
-            <span class="featured-badge">Meest gekozen</span><span class="tier gold-dot">Goud</span><h3>Complete onderhoudsbeurt</h3><p class="package-fit">Voor materiaal dat een seizoen heeft gedraaid of volledig nagekeken mee op reis moet.</p>
-            <div class="price-row"><div><small>Ski</small><strong>€ 44,95</strong></div><div><small>Snowboard</small><strong>€ 49,95</strong></div></div>
-            <div class="package-highlights"><span>Volledige technische inspectie</span><span>Slijpen en structuur gericht opfrissen</span><span>Holmenkol BetaMix Red hotwax en finish</span></div>
-            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Volledige inspectie van belag en kanten</li><li>Belag reinigen en oude waxresten verwijderen</li><li>Kanten slijpen en tunen</li><li>Structuur gericht opfrissen waar passend</li><li>Holmenkol BetaMix Red hotwax en volledige finish</li></ul></details><p class="package-performance">Performance Wax + € 7,50</p>
-            <label class="package-choice"><input type="radio" name="homepagePackage" value="Goud"><span>Kies Goud</span></label>
-          </article>
-          <article class="package-card package-card--platinum">
-            <span class="tier platinum-dot">Platinum</span><h3>Compleet + lichte reparaties</h3><p class="package-fit">Voor materiaal dat naast volledig onderhoud ook kleine, oppervlakkige schade heeft.</p>
-            <div class="price-row"><div><small>Ski vanaf</small><strong>€ 52,50</strong></div><div><small>Snowboard vanaf</small><strong>€ 57,50</strong></div></div>
-            <div class="package-highlights"><span>Alles uit Goud</span><span>Oppervlakkige krassen herstellen</span><span>Grotere schade eerst beoordelen</span></div>
-            <details class="package-details"><summary>Alle werkzaamheden</summary><ul><li>Alles uit Goud</li><li>Kleine, oppervlakkige beschadigingen kunnen binnen het pakket vallen</li><li>Grotere of complexere reparaties bespreken en prijzen we altijd vooraf</li></ul></details><p class="package-performance">Performance Wax + € 7,50</p>
-            <label class="package-choice"><input type="radio" name="homepagePackage" value="Platinum"><span>Kies Platinum</span></label>
-          </article>
-        </div>
-        <div class="package-upgrade">
-          <div><strong>Performance Wax upgrade</strong><span>Bij ieder pakket kun je kiezen voor Performance Wax.</span></div>
-          <div><b>+ € 7,50</b><a href="#wax">Lees waarom →</a></div>
-        </div>
-        <p class="package-selection" id="packageSelection" role="status" aria-live="polite" hidden></p>
-        <p class="price-note">Alle genoemde consumentenprijzen zijn inclusief btw.</p>
-        <details class="price-details">
-          <summary>Losse werkzaamheden &amp; spoed</summary>
-        <div class="extras-card">
-          <div><h3>Losse werkzaamheden</h3><p>Ook mogelijk als een volledig pakket niet nodig is.</p></div>
-          <div class="extras-list">
-            <span><b>Kanten slijpen/tunen</b><em>Ski € 24,95 · Snowboard € 29,95</em></span>
-            <span><b>Kleine belagreparatie</b><em>v.a. € 7,50</em></span>
-            <span><b>Snowboardbindingen demonteren + monteren</b><em>€ 7,50</em></span>
-            <span><b>Spoedonderhoud</b><em>indien mogelijk + € 10,00</em></span>
-          </div>
-          <p class="extras-foot"><strong>Spoed?</strong> Dan geven we je onderhoud in overleg voorrang in de werkplanning. Extra haal- of brengritten vallen niet onder de spoedtoeslag. Zelf brengen en ophalen kan op afspraak.</p>
-        </div>
-        </details>
-        <div class="package-action">
-          <p>Twijfel je? Wij bekijken je materiaal en adviseren wat nodig is.<br>Extra werk doen we alleen na overleg.</p>
-          <a class="btn btn-dark" id="packageRequest" href="afspraak.html">Onderhoud aanvragen <span aria-hidden="true">→</span></a>
-        </div>
       </div>
     </section>
 
@@ -280,7 +260,7 @@
   <a class="mobile-sticky-cta" href="afspraak.html">Onderhoud aanvragen</a>
 
   <script src="script.js?v=10"></script>
-  <script src="package-choice.js?v=1"></script>
+  <script src="package-choice.js?v=2"></script>
   <script src="booking-config.js?v=2"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>
