@@ -1,10 +1,10 @@
-const CACHE_NAME = 'lattenspecialist-v36-work-descriptions';
+const CACHE_NAME = 'lattenspecialist-v37-repair-exclusion';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=12',
+  '/homepage.css?v=13',
   '/homepage.js?v=2',
   '/package-choice.js?v=3',
   '/website-metrics.js?v=1',
