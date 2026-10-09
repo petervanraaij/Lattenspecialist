@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v81-rush-rules';
+const CACHE_NAME = 'lattenspecialist-v82-edges-only-copy';
 const APP_SHELL = [
   '/',
   '/index.html',
