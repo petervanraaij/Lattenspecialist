@@ -1,12 +1,12 @@
-const CACHE_NAME = 'lattenspecialist-v49-sharpening-package-repairs';
+const CACHE_NAME = 'lattenspecialist-v50-copper-bronze-packages';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=23',
+  '/homepage.css?v=24',
   '/homepage.js?v=2',
-  '/maintenance-selection.js?v=4',
+  '/maintenance-selection.js?v=5',
   '/package-choice.js?v=10',
   '/website-metrics.js?v=1',
   '/app.html',
@@ -18,7 +18,7 @@ const APP_SHELL = [
   '/images/van-raaij-solutions-logo.webp',
   '/script.js?v=10',
   '/booking-config.js?v=2',
-  '/booking.js?v=12',
+  '/booking.js?v=13',
   '/customer-booking.css?v=1',
   '/customer-booking.js?v=2',
   '/customer-app.css?v=1',

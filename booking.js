@@ -33,6 +33,7 @@
   const rentalLabels = {'Complete set': 'Complete skiset'};
   const getValue = name => String(form.elements[name]?.value || '').trim();
   const selectedService = () => form.querySelector('input[name="service"]:checked')?.value || 'Onderhoud';
+  const sharpeningOnly = () => !maintenanceSelection && getValue('package') === 'Brons';
   const usesPickup = () => selectedService() === 'Onderhoud' && getValue('logistics').includes('Gratis ophalen');
   const formatDate = value => {
     if (!value || value === 'In overleg') return value || 'Nog niet ingevuld';
@@ -77,7 +78,10 @@
     const lines = [`Dienst: ${service}`];
     if (service === 'Onderhoud') {
       if (maintenanceSelection) lines.push(...selectionModel.describe(maintenanceSelection));
-      else lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`, `Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`);
+      else {
+        lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`);
+        if (!sharpeningOnly()) lines.push(`Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`);
+      }
       lines.push(`Halen of brengen: ${getValue('logistics')}`);
       if (usesPickup()) lines.push(`Ophaaldatum: ${formatDate(getValue('pickupDate'))}`, `Ophaal- en terugbrenglocatie: ${getValue('address') || 'Nog invullen'}`);
       if (!maintenanceSelection) lines.push(`Spoed: ${getValue('urgent')}`);
@@ -91,7 +95,7 @@
     if (getValue('notes')) lines.push(`Opmerking: ${getValue('notes')}`);
     return lines.join('\n');
   };
-  const selectionNotes = () => selectedService() !== 'Onderhoud' ? '' : maintenanceSelection ? selectionModel.notes(maintenanceSelection) : `Waxkeuze: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`;
+  const selectionNotes = () => selectedService() !== 'Onderhoud' ? '' : maintenanceSelection ? selectionModel.notes(maintenanceSelection) : sharpeningOnly() ? 'Alleen kanten slijpen en tunen; geen wax.' : `Waxkeuze: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`;
   const updateForm = () => {
     toggleFields(maintenanceFields, selectedService() === 'Onderhoud');
     toggleFields(rentalFields, selectedService() === 'Verhuur');
@@ -105,6 +109,10 @@
       for (const name of ['package','material','amount']) form.elements[name].value = values[name];
       form.elements.urgent.value = values.urgent === 'Nee' ? 'Nee' : form.elements.urgent.querySelector('[data-urgent="yes"]').value;
     }
+    const hideWax = selectedService() !== 'Onderhoud' || !!maintenanceSelection || sharpeningOnly();
+    document.querySelector('#waxChoiceField').hidden = hideWax;
+    document.querySelector('#waxChoiceNote').hidden = hideWax;
+    form.elements.performanceWax.disabled = hideWax;
     if (rentalPrice && selectedService() === 'Verhuur') rentalPrice.textContent = `${rentalLabels[getValue('rentaltype')] || getValue('rentaltype')}: ${rentalPrices[getValue('rentaltype')] || ''}. Prijzen zijn inclusief btw.`;
     toggleFields(addressFields, usesPickup());
     toggleFields(pickupDateField, usesPickup());

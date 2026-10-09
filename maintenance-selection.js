@@ -1,5 +1,5 @@
 (() => {
-  const packages = {slijpen:'Slijpen', brons:'Brons', zilver:'Zilver', goud:'Goud', platinum:'Platinum'};
+  const packages = {slijpen:'Brons', brons:'Koper', zilver:'Zilver', goud:'Goud', platinum:'Platinum'};
   const waxes = {none:'Geen wax', beta:'BetaMix Red', alpha:'AlphaMix Yellow', ultra:'UltraMix Blue', performance:'Performance Purple (+ € 7,50)'};
   const waxNotes = {none:'', beta:'BetaMix Red', alpha:'AlphaMix Yellow', ultra:'UltraMix Blue', performance:'Performance Purple +€7,50'};
   const extras = {edges:'Kanten slijpen en tunen', repair:'Kleine, oppervlakkige belagreparaties', complex:'Grotere of complexere reparaties', bindings:'Snowboardbindingen demonteren + monteren'};

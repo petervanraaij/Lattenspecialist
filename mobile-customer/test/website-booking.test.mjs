@@ -33,8 +33,8 @@ function homepage(t,url='https://lattenspecialist.nl/') {
 }
 const chosen=d=>JSON.parse(new URL(d.querySelector('#packageRequest').href).searchParams.get('keuze'));
 const waxChoices={beta:'Holmenkol BetaMix Red (standaard inbegrepen)',alpha:'Holmenkol AlphaMix Yellow (inbegrepen)',ultra:'Holmenkol UltraMix Blue (inbegrepen)',performance:'Performance Wax (+ € 7,50)'};
-test('old and sharpening package links work and no package is silently preselected',async t=>{
- for(const name of ['Slijpen','Brons','Zilver','Goud','Platinum']) {
+test('copper and bronze package links work and no package is silently preselected',async t=>{
+ for(const name of ['Koper','Brons','Zilver','Goud','Platinum']) {
   const {f}=await setup(t,{url:`https://lattenspecialist.nl/afspraak.html?pakket=${name}`});assert.equal(f.elements.package.value,name);
  }
  assert.equal((await setup(t)).f.elements.package.value,'');
@@ -51,6 +51,11 @@ test('old and sharpening package links work and no package is silently preselect
  assert.match(d.querySelector('[data-package="slijpen"] .package-wax-price').textContent,/alleen slijpen/);
  assert.match(d.querySelector('[data-extra="repair"] .extra-explanation').textContent,/Kanten slijpen doen we alleen als dat ook nodig is/);
  assert.match(d.querySelector('#faq').textContent,/Kan ik alleen mijn kanten laten slijpen/);
+ const bronze=await setup(t,{url:'https://lattenspecialist.nl/afspraak.html?pakket=Brons'});
+ assert.equal(bronze.f.elements.performanceWax.disabled,true);
+ assert.equal(bronze.d.querySelector('#waxChoiceField').hidden,true);
+ assert.match(bronze.d.querySelector('#requestSummary').textContent,/Pakket: Brons/);
+ assert.doesNotMatch(bronze.d.querySelector('#requestSummary').textContent,/Wax:/);
 });
 test('counts, multiple packages, different materials and wax survive one complete request',async t=>{
  const {w,d}=homepage(t);
@@ -67,15 +72,15 @@ test('counts, multiple packages, different materials and wax survive one complet
  const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
  assert.equal(rd.querySelector('#maintenanceSelection').hidden,false);
  assert.equal(rd.querySelector('#singleMaintenanceFields').hidden,true);
- assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Brons: 2×/);
+ assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Koper: 2×/);
  assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Goud: 1× snowboard/);
  assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Performance Purple/);
  complete(rw,f);f.elements.notes.value='Graag vooraf bellen.';submit(rw,f);await turn();await turn();
  assert.equal(posts.length,1);assert.equal(posts[0].amount,'4');assert.equal(posts[0].material,'Meerdere / combinatie');
  assert.equal(posts[0].package,'Meerdere pakketten / losse werkzaamheden');
- assert.match(posts[0].notes,/Brons: 2x ski/);assert.match(posts[0].notes,/Goud: 1x snowboard; Performance Purple/);
- assert.match(posts[0].notes,/Slijpen: 1x ski \| Brons:/);assert.doesNotMatch(posts[0].notes,/Slijpen: 1x ski;/);assert.match(posts[0].notes,/spoed/);assert.match(posts[0].notes,/Graag vooraf bellen/);
- assert.match(rd.querySelector('#confirmationSummary').textContent,/Brons: 2×/);
+ assert.match(posts[0].notes,/Koper: 2x ski/);assert.match(posts[0].notes,/Goud: 1x snowboard; Performance Purple/);
+ assert.match(posts[0].notes,/Brons: 1x ski \| Koper:/);assert.doesNotMatch(posts[0].notes,/Brons: 1x ski;/);assert.match(posts[0].notes,/spoed/);assert.match(posts[0].notes,/Graag vooraf bellen/);
+ assert.match(rd.querySelector('#confirmationSummary').textContent,/Koper: 2×/);
  const edited=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
  assert.equal(edited.d.querySelector('#brons-ski').value,'2');assert.equal(edited.d.querySelector('#slijpen-ski').value,'1');
  assert.deepEqual(chosen(edited.d),value);
