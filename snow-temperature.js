@@ -19,6 +19,7 @@
   const endpoint = 'https://api.open-meteo.com/v1/dwd-icon';
   const geocodingEndpoint = 'https://geocoding-api.open-meteo.com/v1/search';
   const cacheKey = 'lattenspecialist-snow-conditions-v2';
+  let selectedResortIndex = 0;
   const formatTemperature = value => `${new Intl.NumberFormat('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1}).format(value)} °C`;
   const formatDepth = value => `${Math.round(value * 100)} cm sneeuwdek`;
   const includedWaxAdvice = temperature => temperature < -14 ? 'UltraMix Blue' : temperature < -4 ? 'BetaMix Red' : 'AlphaMix Yellow';
@@ -64,20 +65,33 @@
   }
   function createResortCard(resort,current,daily) {
     const card = element('article','snow-resort-card');
-    card.append(element('h4','',resort.name));
-    card.append(element('span','snow-resort-location',`${resort.country} · modelpunt ${Math.round(resort.elevation)} m`));
+    const heading = element('div','snow-resort-heading');
+    heading.append(element('h4','',resort.name));
+    heading.append(element('span','snow-resort-location',`${resort.country} · modelpunt ${Math.round(resort.elevation)} m`));
+    card.append(heading);
+    const currentBlock = element('div','snow-resort-current');
+    currentBlock.append(element('span','snow-resort-current-label','Nu op het modelpunt'));
+    let estimatedSnow = null;
     if (!current || !Number.isFinite(current.temperature_2m) || !Number.isFinite(current.snow_depth)) {
-      card.append(element('strong','snow-resort-temperature is-no-snow','Geen actuele data'));
-      card.append(element('span','snow-resort-meta','Probeer het later opnieuw.'));
+      currentBlock.append(element('strong','snow-resort-temperature is-no-snow','Geen actuele data'));
+      currentBlock.append(element('span','snow-resort-meta','Probeer het later opnieuw.'));
     } else if (current.snow_depth < 0.01) {
-      card.append(element('strong','snow-resort-temperature is-no-snow','Geen sneeuwdek in model'));
-      card.append(element('span','snow-resort-meta',`Lucht ${formatTemperature(current.temperature_2m)}`));
+      currentBlock.append(element('strong','snow-resort-temperature is-no-snow','Geen sneeuwdek in model'));
+      currentBlock.append(element('span','snow-resort-meta',`Lucht ${formatTemperature(current.temperature_2m)}`));
     } else {
-      const estimatedSnow = Math.min(0,current.temperature_2m);
-      card.append(element('span','snow-resort-location','Geschatte sneeuwtemperatuur'));
-      card.append(element('strong','snow-resort-temperature',`≈ ${formatTemperature(estimatedSnow)}`));
-      card.append(element('span','snow-resort-meta',`Lucht ${formatTemperature(current.temperature_2m)} · ${formatDepth(current.snow_depth)}`));
+      estimatedSnow = Math.min(0,current.temperature_2m);
+      currentBlock.append(element('strong','snow-resort-temperature',`Sneeuw ≈ ${formatTemperature(estimatedSnow)}`));
+      currentBlock.append(element('span','snow-resort-meta',`Lucht ${formatTemperature(current.temperature_2m)} · ${formatDepth(current.snow_depth)}`));
+    }
+    card.append(currentBlock);
+    if (estimatedSnow !== null) {
       addWaxMatch(card,estimatedSnow);
+    } else {
+      const waxMatch = element('div','snow-resort-wax-match is-unavailable');
+      waxMatch.append(element('span','snow-resort-wax-label','Waxmatch'));
+      waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--included','Nog niet te bepalen'));
+      waxMatch.append(element('span','snow-resort-wax-included','Zonder sneeuwdek adviseren we op bestemming en gebruik.'));
+      card.append(waxMatch);
     }
     addForecast(card,daily);
     return card;
@@ -85,9 +99,32 @@
   function render(payload, cached = false) {
     const rows = Array.isArray(payload) ? payload : [payload];
     grid.replaceChildren();
-    resorts.forEach((resort,index) => {
-      grid.append(createResortCard(resort,rows[index]?.current,rows[index]?.daily));
+    const tabs = element('div','snow-resort-tabs');
+    tabs.setAttribute('role','tablist');
+    tabs.setAttribute('aria-label','Kies een favoriet skigebied');
+    const panel = element('div','snow-resort-panel');
+    panel.id = 'snowResortPanel';
+    panel.setAttribute('role','tabpanel');
+    const buttons = resorts.map((resort,index) => {
+      const button = element('button','snow-resort-tab',resort.name);
+      button.type = 'button';
+      button.setAttribute('role','tab');
+      button.setAttribute('aria-controls',panel.id);
+      button.addEventListener('click',() => {
+        selectedResortIndex = index;
+        panel.replaceChildren(createResortCard(resort,rows[index]?.current,rows[index]?.daily));
+        buttons.forEach((item,itemIndex) => {
+          const selected = itemIndex === index;
+          item.classList.toggle('is-active',selected);
+          item.setAttribute('aria-selected',String(selected));
+          item.tabIndex = selected ? 0 : -1;
+        });
+      });
+      return button;
     });
+    tabs.append(...buttons);
+    grid.append(tabs,panel);
+    buttons[Math.min(selectedResortIndex,buttons.length - 1)]?.click();
     const times = rows.map(row => row.current?.time).filter(Boolean).sort();
     const time = times.at(-1)?.split('T')[1] || '';
     status.className = 'snow-live-status';

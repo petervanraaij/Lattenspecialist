@@ -1,14 +1,14 @@
-const CACHE_NAME = 'lattenspecialist-v63-compact-snow-forecast';
+const CACHE_NAME = 'lattenspecialist-v65-snow-destination-tabs';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=37',
+  '/homepage.css?v=39',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=6',
   '/package-choice.js?v=11',
-  '/snow-temperature.js?v=4',
+  '/snow-temperature.js?v=5',
   '/website-metrics.js?v=1',
   '/app.html',
   '/beheer.html',
