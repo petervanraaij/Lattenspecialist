@@ -1,11 +1,11 @@
-const CACHE_NAME = 'lattenspecialist-v83-payment-on-ready';
+const CACHE_NAME = 'lattenspecialist-v84-floating-total';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
   '/webshop.html',
-  '/homepage.css?v=50',
+  '/homepage.css?v=51',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=8',
   '/package-choice.js?v=12',

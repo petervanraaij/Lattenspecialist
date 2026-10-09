@@ -469,7 +469,6 @@
 .booking-cart-copy output { margin-left:5px; color:#e4bf60; font-size:1.25rem; }
 .home-page .booking-cart .mobile-sticky-cta { display:inline-flex; position:static; min-height:46px; padding:0 20px; align-items:center; justify-content:center; gap:10px; border:1px solid #e0bd65; border-radius:999px; background:linear-gradient(135deg,#e2c26c,#c99a2c); color:#111; font-size:.86rem; font-weight:900; white-space:nowrap; box-shadow:none; }
 .booking-cart[data-empty="true"] .booking-cart-copy output { color:#aaa399; }
-.home-page .booking-cart { display:none; }
 .complex-repair-note { display:grid; grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr); gap:24px; align-items:center; margin-top:18px; padding:20px 24px; border:1px solid #d6c9af; border-left:5px solid #a8791f; border-radius:14px; background:#fffdf8; }
 .complex-repair-note .eyebrow { display:block; margin-bottom:6px; }
 .complex-repair-note h3 { margin:0; font-size:1.15rem; line-height:1.35; }
@@ -557,6 +556,7 @@
   body.home-page:has(.booking-cart:not([data-empty="true"])) { padding-bottom:88px; }
 }
 @media(max-width:720px) {
+  .home-page .booking-cart[data-empty="true"] { display:none; }
   .home-page .booking-cart:not([data-empty="true"]) { display:grid; }
   .brand-offer--portals .brand-offer-grid { grid-template-columns:1fr; }
 }
