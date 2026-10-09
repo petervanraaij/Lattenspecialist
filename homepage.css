@@ -301,7 +301,31 @@
 .snow-live-head > p { margin:0; color:#675e50; font-size:.76rem; white-space:nowrap; }
 .snow-live-label { display:inline-flex; align-items:center; gap:7px; color:#76540d; font-size:.68rem; font-weight:850; letter-spacing:.09em; text-transform:uppercase; }
 .snow-live-label i { width:8px; height:8px; border-radius:50%; background:#3bad67; box-shadow:0 0 0 5px rgba(59,173,103,.13); }
-.snow-resort-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:9px; }
+.home-page .snow-live .snow-wax-guide { margin:0; gap:10px; }
+.home-page .snow-live .wax-card { min-height:0; padding:16px; border:1px solid #d7c18e; border-radius:12px; background:#fffdf8; color:#191713; box-shadow:0 6px 18px rgba(69,50,17,.07); transform:none; }
+.home-page .snow-live .wax-card h3 { color:#191713; }
+.home-page .snow-live .wax-card > p { color:#5d554a; }
+.home-page .snow-live .wax-label { color:#76540d; }
+.home-page .snow-live .wax-range { border-color:#e6dac1; }
+.home-page .snow-live .wax-range small { color:#746b5e; }
+.home-page .snow-live .wax-range strong { color:#8a6210; }
+.home-page .snow-live .wax-purple { border:2px solid #b48d39; background:linear-gradient(145deg,#fffaf0,#efe2c8); box-shadow:0 9px 24px rgba(69,50,17,.12),inset 0 2px #d6ad50; }
+.home-page .snow-live .performance-link { color:#75550f; }
+.snow-live-current,.snow-indoor { margin-top:18px; padding-top:18px; border-top:1px solid #cdb57a; }
+.snow-live-current-head,.snow-indoor-head { display:flex; align-items:end; justify-content:space-between; gap:24px; margin-bottom:12px; }
+.snow-live-current-head span,.snow-indoor-head span { color:#76540d; font-size:.65rem; font-weight:850; letter-spacing:.08em; text-transform:uppercase; }
+.home-page .snow-live-current-head h4,.home-page .snow-indoor-head h4 { margin:4px 0 0; color:#191713; font-size:1rem; }
+.snow-indoor-head > p { max-width:370px; margin:0; color:#675e50; font-size:.72rem; line-height:1.45; text-align:right; }
+.snow-search { display:grid; gap:5px; min-width:min(100%,390px); }
+.snow-search label { color:#5d554a; font-size:.68rem; font-weight:750; }
+.snow-search > div { display:grid; grid-template-columns:minmax(0,1fr) auto; }
+.snow-search input { min-width:0; min-height:40px; padding:9px 12px; border:1px solid #cdb57a; border-right:0; border-radius:8px 0 0 8px; background:#fffdf8; color:#191713; font:inherit; font-size:.78rem; }
+.snow-search button { min-height:40px; padding:8px 15px; border:1px solid #8a6210; border-radius:0 8px 8px 0; background:#1a1916; color:#e5c56f; font:inherit; font-size:.72rem; font-weight:850; cursor:pointer; }
+.snow-search input:focus,.snow-search button:focus { outline:3px solid rgba(180,141,57,.32); outline-offset:2px; }
+.snow-search-result { margin:0 0 11px; }
+.snow-search-result .snow-resort-card { max-width:370px; border-width:2px; border-color:#b48d39; }
+.snow-search-message { margin:0; padding:11px 13px; border:1px solid #d7c18e; border-radius:10px; background:#fffdf8; color:#5d554a; font-size:.75rem; }
+.snow-resort-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
 .snow-resort-card { min-width:0; padding:14px 13px 13px; border:1px solid #d7c18e; border-radius:12px; background:#fffdf8; box-shadow:0 6px 18px rgba(69,50,17,.07),inset 0 2px #d6ad50; }
 .snow-resort-card h4 { margin:0 0 2px; color:#191713; font-size:.88rem; line-height:1.25; }
 .snow-resort-location { display:block; min-height:2.4em; color:#746b5e; font-size:.62rem; line-height:1.35; }
@@ -317,10 +341,18 @@
 .snow-resort-wax-link { color:#75550f; font-size:.6rem; font-weight:850; line-height:1.3; text-decoration:underline; text-underline-offset:2px; }
 .snow-resort-wax-link:hover { color:#171511; }
 .snow-resort-card.is-loading { grid-column:1/-1; color:#5d554a; font-size:.8rem; }
+.snow-indoor-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:9px; }
+.snow-indoor-card { min-width:0; padding:13px; border:1px solid #d7c18e; border-radius:12px; background:#fffaf0; box-shadow:inset 0 2px #d6ad50; }
+.snow-indoor-card h5 { margin:0 0 3px; color:#191713; font-size:.8rem; }
+.snow-indoor-card > span { display:block; color:#746b5e; font-size:.61rem; }
+.snow-indoor-temperature { margin:8px 0 6px!important; color:#8a6210!important; font-size:1.05rem!important; font-weight:900; }
+.snow-indoor-wax { margin-top:7px; padding-top:7px; border-top:1px solid #e6dac1; color:#5d554a; font-size:.61rem; line-height:1.4; }
+.snow-indoor-wax strong { display:block; color:#191713; }
 .snow-live-status { margin:10px 0 0; color:#62594d; font-size:.7rem; }
 .snow-live-status.is-error { color:#8a6010; }
 .snow-live-note { margin:6px 0 0; color:#746b5e; font-size:.66rem; line-height:1.45; }
 .snow-live-note a { color:#75550f; text-decoration:underline; text-underline-offset:2px; }
+.home-page .snow-live .snow-temperature-note { margin:9px 0 0; color:#645b4f; }
 .home-page .package-wax { display:grid; gap:8px; margin:0 0 14px; padding:12px 10px; border:1px solid #d7c18e; border-radius:7px; color:#654b13; background:#fbf5e7; font-size:.82rem; font-weight:700; }
 .home-page .package-wax select { width:100%; min-width:0; min-height:44px; padding:8px 4px; border:1px solid #d7c18e; border-radius:5px; background:#fffdf9; color:#3c3019; font:inherit; font-size:.8rem; cursor:pointer; }
 .home-page .package-urgent { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:start; gap:10px; margin:0 0 14px; padding:12px 10px; border:1px solid var(--metal-edge); border-radius:7px; cursor:pointer; }
@@ -479,6 +511,8 @@
   .home-page .wax-story--compact .wax-purple { transform:none; }
   .snow-resort-grid { grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:190px; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x mandatory; scrollbar-width:thin; }
   .snow-resort-card { scroll-snap-align:start; }
+  .snow-indoor-grid { grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:190px; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x mandatory; scrollbar-width:thin; }
+  .snow-indoor-card { scroll-snap-align:start; }
 }
 @media(max-width:560px) {
   .home-page .packages > .container { width:calc(100% - 40px); }
@@ -495,7 +529,11 @@
   .home-page .wax-story--compact .wax-card { order:initial; flex:0 0 min(82vw,310px); scroll-snap-align:start; }
   .snow-live-head { align-items:flex-start; flex-direction:column; gap:4px; }
   .snow-live-head > p { white-space:normal; }
+  .snow-live-current-head,.snow-indoor-head { align-items:flex-start; flex-direction:column; gap:10px; }
+  .snow-search { width:100%; min-width:0; }
+  .snow-indoor-head > p { text-align:left; }
   .snow-resort-grid { grid-auto-columns:min(68vw,230px); }
+  .snow-indoor-grid { grid-auto-columns:min(68vw,230px); }
   .booking-cart { left:8px; right:8px; bottom:max(8px,env(safe-area-inset-bottom)); grid-template-columns:minmax(0,1fr) auto; min-width:0; gap:10px; padding:10px 10px 10px 14px; border-radius:14px; }
   .booking-cart-copy > span { font-size:.68rem; }
   .booking-cart-copy strong { font-size:.7rem; }

@@ -41,3 +41,28 @@ test('live snow estimate fails clearly without inventing temperatures',async t =
   assert.match(d.querySelector('#snowLiveStatus').textContent,/probeer de live condities later opnieuw/);
   assert.doesNotMatch(d.querySelector('#snowLive').textContent,/≈/);
 });
+
+test('wax guide, indoor slopes and customer destination search stay in one temperature panel',async t => {
+  const dom = new JSDOM(html,{url:'https://lattenspecialist.nl/',runScripts:'outside-only'});t.after(()=>dom.window.close());
+  const {window:w}=dom,d=w.document;
+  w.setInterval=()=>1;
+  w.fetch=async url => {
+    const request=new URL(String(url));
+    if(request.hostname==='geocoding-api.open-meteo.com') return {ok:true,json:async()=>({results:[{name:'Saalbach',admin1:'Salzburg',country:'Oostenrijk',latitude:47.39,longitude:12.64,elevation:1003}]})};
+    if(request.searchParams.get('latitude')?.includes(',')) return {ok:true,json:async()=>Array.from({length:6},()=>row(-6,.2))};
+    return {ok:true,json:async()=>row(-7,.3)};
+  };
+  w.eval(code);await turn();
+  assert.equal(d.querySelectorAll('#snowLive .wax-card').length,4);
+  assert.equal(d.querySelectorAll('.snow-indoor-card').length,5);
+  assert.match(d.querySelector('.snow-indoor-card').textContent,/Landgraaf/);
+  assert.match(d.querySelector('.snow-indoor-card').textContent,/-5 °C/);
+  d.querySelector('#snowSearchInput').value='Saalbach';
+  d.querySelector('#snowSearchForm').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+  await turn();await turn();
+  const result=d.querySelector('#snowSearchResult');
+  assert.equal(result.hidden,false);
+  assert.match(result.textContent,/Saalbach/);
+  assert.match(result.textContent,/≈ -7,0 °C/);
+  assert.match(result.textContent,/Performance Purple/);
+});
