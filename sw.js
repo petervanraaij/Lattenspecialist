@@ -1,10 +1,10 @@
-const CACHE_NAME = 'lattenspecialist-v56-live-snow-estimate';
+const CACHE_NAME = 'lattenspecialist-v58-light-snow-panel';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=30',
+  '/homepage.css?v=32',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=6',
   '/package-choice.js?v=11',
