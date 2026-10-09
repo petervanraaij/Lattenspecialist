@@ -353,9 +353,6 @@
 .extra-choice > p { color:#e9cc85; margin:0 0 10px; font-size:.76rem; }
 .extra-material { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.75rem; }
 .extra-material select { min-width:0; max-width:125px; min-height:36px; font:inherit; padding:4px; border:1px solid #666052; border-radius:5px; background:#fffdf9; color:#28251f; }
-.extra-urgent { display:flex; align-items:start; gap:9px; margin-top:12px; border-top:1px solid #3c3b38; padding-top:16px; font-size:.85rem; cursor:pointer; }
-.extra-urgent input { width:18px; height:18px; margin:2px 0 0; accent-color:#bc8c26; }
-.extra-urgent small { display:block; font-size:.74rem; color:#c8c5be; }
 .selection-panel { margin-top:18px; padding:20px; border:1px solid #d6c9af; border-radius:14px; background:#f8f3e8; }
 .selection-panel ul { padding-left:18px; margin:12px 0; font-size:.8rem; }
 .selection-panel li { margin-bottom:10px; overflow-wrap:anywhere; }

@@ -7,7 +7,6 @@
   const message = document.querySelector('#packageSelection');
   const list = document.querySelector('#selectionItems');
   const emptyMessage = document.querySelector('#selectionEmpty');
-  const urgentExtras = document.querySelector('#extrasUrgent');
   const bindingsDialog = document.querySelector('#bindingsDialog');
   const bindingsYes = document.querySelector('#bindingsYes');
   const snowboardCounts = new WeakMap();
@@ -19,7 +18,6 @@
     const value = model.empty();
     cards.forEach(card => { value.p[card.dataset.package] = {s:amount(card,'homepageSki'),b:amount(card,'homepageSnowboard'),d:amount(card,'homepageBindings'),w:card.querySelector('[name="homepageWax"]').value,u:card.querySelector('[name="homepageUrgent"]').checked}; });
     extras.forEach(extra => { value.e[extra.dataset.extra] = {q:amount(extra,'extraAmount'),m:extra.querySelector('[name="extraMaterial"]').value}; });
-    value.u = urgentExtras.checked;
     return model.normalize(value);
   }
   function restore(value) {
@@ -36,7 +34,6 @@
       extra.querySelector('[name="extraAmount"]').value = item?.q || 0;
       if (item) extra.querySelector('[name="extraMaterial"]').value = item.m;
     });
-    urgentExtras.checked = value.u;
   }
   function update() {
     cards.forEach(card => {
@@ -58,9 +55,6 @@
       control.querySelector('[data-step="-1"]').disabled = value <= 0;
       control.querySelector('[data-step="1"]').disabled = value >= Number(input.max);
     });
-    const hasExtras = extras.some(extra => amount(extra,'extraAmount') > 0);
-    urgentExtras.disabled = !hasExtras;
-    if (!hasExtras) urgentExtras.checked = false;
     cards.forEach(card => {
       card.classList.toggle('is-selected',amount(card,'homepageSki') + amount(card,'homepageSnowboard') > 0);
       card.querySelector('.package-wax-price').textContent = card.querySelector('[name="homepageWax"]').value === 'performance' ? '+ € 7,50 per paar / snowboard' : 'Inbegrepen';

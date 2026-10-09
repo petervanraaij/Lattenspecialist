@@ -55,9 +55,9 @@ test('counts, multiple packages, different materials, wax and extras survive one
  change(w,d.querySelector('#goud-snowboard'),'1');
  const gold=d.querySelector('[data-package="goud"]');
  change(w,gold.querySelector('[name="homepageWax"]'),'performance');gold.querySelector('[name="homepageUrgent"]').click();
- change(w,d.querySelector('#extra-bindings'),'1');
+ change(w,d.querySelector('#extra-edges'),'1');
  const value=chosen(d);
- assert.equal(value.p.brons.s,2);assert.equal(value.p.goud.b,1);assert.equal(value.p.goud.u,true);assert.equal(value.p.goud.w,'performance');assert.equal(value.e.bindings.q,1);
+ assert.equal(value.p.brons.s,2);assert.equal(value.p.goud.b,1);assert.equal(value.p.goud.u,true);assert.equal(value.p.goud.w,'performance');assert.equal(value.e.edges.q,1);
  assert.equal(d.querySelectorAll('.package-card.is-selected').length,2);
  assert.equal(d.querySelector('.mobile-sticky-cta').href,d.querySelector('#packageRequest').href);
  const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
@@ -70,10 +70,10 @@ test('counts, multiple packages, different materials, wax and extras survive one
  assert.equal(posts.length,1);assert.equal(posts[0].amount,'3');assert.equal(posts[0].material,'Meerdere / combinatie');
  assert.equal(posts[0].package,'Meerdere pakketten / losse werkzaamheden');
  assert.match(posts[0].notes,/Brons: 2x ski/);assert.match(posts[0].notes,/Goud: 1x snowboard; Performance Purple/);
- assert.match(posts[0].notes,/Los: 1x Bindingen demonteren/);assert.match(posts[0].notes,/spoed/);assert.match(posts[0].notes,/Graag vooraf bellen/);
+ assert.match(posts[0].notes,/Los: 1x Kanten slijpen/);assert.match(posts[0].notes,/spoed/);assert.match(posts[0].notes,/Graag vooraf bellen/);
  assert.match(rd.querySelector('#confirmationSummary').textContent,/Brons: 2×/);
  const edited=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
- assert.equal(edited.d.querySelector('#brons-ski').value,'2');assert.equal(edited.d.querySelector('#extra-bindings').value,'1');
+ assert.equal(edited.d.querySelector('#brons-ski').value,'2');assert.equal(edited.d.querySelector('#extra-edges').value,'1');
  assert.deepEqual(chosen(edited.d),value);
 });
 test('snowboard prompts add bindings and their cost to the correct package, never to separate work',async t=>{
@@ -90,7 +90,7 @@ test('snowboard prompts add bindings and their cost to the correct package, neve
   assert.equal(chosen(d).p[id].d,2);
   assert.match(d.querySelector(`[data-package="${id}"] .package-bindings-price`).textContent,/15,00 extra in dit pakket/);
  }
- assert.equal(d.querySelector('#extra-bindings').value,'0');assert.deepEqual(chosen(d).e,{});
+ assert.equal(d.querySelector('#extra-bindings'),null);assert.deepEqual(chosen(d).e,{});
  const {w,f,posts,d:rd}=await setup(t,{url:d.querySelector('#packageRequest').href});
  assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/2× bindingen demonteren \+ monteren \(\+ €\s15,00\)/);
  complete(w,f);submit(w,f);await turn();await turn();
@@ -138,7 +138,7 @@ test('separate work can be ordered without a package or an unintended wax servic
  const {w,d}=homepage(t);
  change(w,d.querySelector('#extra-complex'),'2');
  change(w,d.querySelector('[data-extra="complex"] [name="extraMaterial"]'),'snowboard');
- d.querySelector('#extrasUrgent').click();
+ assert.equal(d.querySelector('#extrasUrgent'),null);assert.equal(chosen(d).u,false);
  const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
  complete(rw,f);submit(rw,f);await turn();await turn();
  assert.equal(posts.length,1);assert.equal(posts[0].package,'Losse werkzaamheden / advies');
@@ -146,7 +146,7 @@ test('separate work can be ordered without a package or an unintended wax servic
  assert.match(posts[0].notes,/2x Complexe reparaties/);assert.match(posts[0].notes,/prijs in overleg/);assert.doesNotMatch(posts[0].notes,/Waxkeuze|BetaMix/);
  assert.match(rd.querySelector('#confirmationSummary').textContent,/Grotere of complexere reparaties/);
  change(w,d.querySelector('#extra-complex'),'0');
- assert.equal(chosen(d),null);assert.equal(d.querySelector('#extrasUrgent').checked,false);assert.equal(d.querySelector('#extrasUrgent').disabled,true);
+ assert.equal(chosen(d),null);
 });
 test('invalid selections cannot produce a partial or over-limit order',async t=>{
  const {w,d,model}=homepage(t);
