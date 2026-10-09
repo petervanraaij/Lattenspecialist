@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v79-header-service-strip';
+const CACHE_NAME = 'lattenspecialist-v80-pickup-weekends';
 const APP_SHELL = [
   '/',
   '/index.html',
