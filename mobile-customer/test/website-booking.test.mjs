@@ -44,8 +44,8 @@ test('copper and bronze package links work and no package is silently preselecte
  assert.equal(d.querySelectorAll('[name="homepagePackage"]').length,0);
  assert.equal(d.querySelectorAll('.package-details:not([open])').length,5);
  assert.equal(d.querySelectorAll('#pakketten').length,1);
- assert.equal(d.querySelector('.hero').nextElementSibling.id,'pakketten');
- assert.equal(d.querySelector('#pakketten').nextElementSibling.id,'wax');
+ assert.equal(d.querySelector('.hero').nextElementSibling.id,'wax');
+ assert.equal(d.querySelector('#wax').nextElementSibling.id,'pakketten');
  assert.equal(d.querySelector('.maintenance-sidebar'),null);
  assert.equal(d.querySelectorAll('[data-extra]').length,0);
  assert.match(d.querySelector('.complex-repair-note').textContent,/Grotere of complexere reparaties/);
