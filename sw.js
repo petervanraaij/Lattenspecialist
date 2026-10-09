@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v76-carefree-hero';
+const CACHE_NAME = 'lattenspecialist-v77-clean-main-nav';
 const APP_SHELL = [
   '/',
   '/index.html',
