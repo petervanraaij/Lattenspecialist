@@ -351,6 +351,7 @@
 .extra-choice { padding:16px 0; border-top:1px solid #3c3b38; }
 .extra-choice h4 { margin:0 0 4px; font-size:.86rem; line-height:1.45; }
 .extra-choice > p { color:#e9cc85; margin:0 0 10px; font-size:.76rem; }
+.extra-explanation { display:block; min-height:5.6em; margin:0 0 12px; color:#d0cbc2; font-size:.72rem; line-height:1.55; }
 .extra-material { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.75rem; }
 .extra-material select { min-width:0; max-width:125px; min-height:36px; font:inherit; padding:4px; border:1px solid #666052; border-radius:5px; background:#fffdf9; color:#28251f; }
 .selection-panel { margin-top:18px; padding:20px; border:1px solid #d6c9af; border-radius:14px; background:#f8f3e8; }

@@ -47,6 +47,9 @@ test('old package links still work and no package is silently preselected',async
  assert.equal(d.querySelector('.hero').nextElementSibling.id,'pakketten');
  assert.equal(d.querySelector('#pakketten').nextElementSibling.id,'wax');
  assert.ok(d.querySelector('.maintenance-sidebar [data-extra="complex"]'));
+ assert.match(d.querySelector('[data-extra="edges"] .extra-explanation').textContent,/belagreparatie is niet inbegrepen/);
+ assert.match(d.querySelector('[data-extra="repair"] .extra-explanation').textContent,/Kanten slijpen doen we alleen als dat ook nodig is/);
+ assert.match(d.querySelector('#faq').textContent,/Kan ik alleen mijn kanten laten slijpen/);
 });
 test('counts, multiple packages, different materials, wax and extras survive one complete request',async t=>{
  const {w,d}=homepage(t);
