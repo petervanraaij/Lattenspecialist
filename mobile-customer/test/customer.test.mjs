@@ -121,7 +121,7 @@ test('packages use current website prices and include starting-price labels unch
   const {w,d}=app(t,async url=>url.endsWith('aanbod.json')?reply({items:[]}):reply(site));
   w.location.hash='aanbod';await turn();await turn();
   const source=new JSDOM(site).window.document;
-  assert.equal(d.querySelectorAll('#packages .card').length,4);
+  assert.equal(d.querySelectorAll('#packages .card').length,5);
   assert.deepEqual([...d.querySelectorAll('#packages .price-row strong')].map(el=>el.textContent),[...source.querySelectorAll('#pakketten .price-row strong')].map(el=>el.textContent));
   assert.match(d.getElementById('packages').textContent,/Ski vanaf/);
   assert.match(d.getElementById('inventory').textContent,/geen vast openbaar aanbod/);

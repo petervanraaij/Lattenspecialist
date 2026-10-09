@@ -1,8 +1,9 @@
 (() => {
-  const packages = {brons:'Brons', zilver:'Zilver', goud:'Goud', platinum:'Platinum'};
-  const waxes = {beta:'BetaMix Red', alpha:'AlphaMix Yellow', ultra:'UltraMix Blue', performance:'Performance Purple (+ € 7,50)'};
+  const packages = {slijpen:'Slijpen', brons:'Brons', zilver:'Zilver', goud:'Goud', platinum:'Platinum'};
+  const waxes = {none:'Geen wax', beta:'BetaMix Red', alpha:'AlphaMix Yellow', ultra:'UltraMix Blue', performance:'Performance Purple (+ € 7,50)'};
+  const waxNotes = {none:'', beta:'BetaMix Red', alpha:'AlphaMix Yellow', ultra:'UltraMix Blue', performance:'Performance Purple +€7,50'};
   const extras = {edges:'Kanten slijpen en tunen', repair:'Kleine, oppervlakkige belagreparaties', complex:'Grotere of complexere reparaties', bindings:'Snowboardbindingen demonteren + monteren'};
-  const extraNotes = {edges:'Kanten slijpen/tunen', repair:'Kleine belagreparaties', complex:'Complexe reparaties (prijs in overleg)', bindings:'Bindingen demonteren + monteren'};
+  const extraNotes = {edges:'Kanten slijpen', repair:'Kleine reparaties', complex:'Complexe reparaties (prijs in overleg)', bindings:'Bindingen dem./mont.'};
   const own = (map, key) => Object.prototype.hasOwnProperty.call(map, key);
   const quantity = value => Number.isInteger(value) && value >= 0 && value <= 20;
   const empty = () => ({p:{}, e:{}, u:false});
@@ -12,10 +13,11 @@
     const result = empty();
     for (const [id, item] of Object.entries(value.p)) {
       if (!own(packages,id) || !item || !quantity(item.s) || !quantity(item.b) || !own(waxes,item.w) || typeof item.u !== 'boolean') return null;
+      if ((id === 'slijpen' && item.w !== 'none') || (id !== 'slijpen' && item.w === 'none')) return null;
       const bindings = item.d === undefined ? 0 : item.d;
       if (!quantity(bindings) || bindings > item.b) return null;
       const repairs = item.r === undefined ? 0 : item.r;
-      if (!quantity(repairs) || (repairs && id !== 'platinum')) return null;
+      if (!quantity(repairs) || (repairs && id === 'slijpen')) return null;
       if (item.s + item.b) {
         result.p[id] = {s:item.s,b:item.b,d:bindings,w:item.w,u:item.u};
         if (repairs) result.p[id].r = repairs;
@@ -40,7 +42,7 @@
       const item = value.p[id];
       if (!item) continue;
       const materials = [item.s ? `${item.s}× ski's (paar)` : '',item.b ? `${item.b}× snowboard` : ''].filter(Boolean).join(' + ');
-      lines.push(`${name}: ${materials} · ${waxes[item.w]}${item.u ? ' · Spoed + € 10,00 (indien mogelijk)' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}${item.r ? ` · ${item.r}× kleine belagreparaties in totaal (prijs na beoordeling)` : ''}`);
+      lines.push(`${name}: ${materials}${item.w === 'none' ? '' : ` · ${waxes[item.w]}`}${item.u ? ' · Spoed + € 10,00 (indien mogelijk)' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}${item.r ? ` · ${item.r}× kleine belagreparaties in totaal (vanaf € 7,50 per reparatie; definitieve prijs na beoordeling)` : ''}`);
     }
     for (const [id,name] of Object.entries(extras)) {
       const item = value.e[id];
@@ -55,16 +57,15 @@
     for (const [id,name] of Object.entries(packages)) {
       const item = value.p[id];
       if (!item) continue;
-      const materials = [item.s ? `${item.s}x ski (paar)` : '',item.b ? `${item.b}x snowboard` : ''].filter(Boolean).join(' + ');
-      lines.push(`${name}: ${materials}; ${waxes[item.w]}${item.u ? '; spoed +€10' : ''}${item.d ? `; bindingen ${item.d}x` : ''}${item.r ? `; kleine reparaties ${item.r}x totaal` : ''}`);
+      const materials = [item.s ? `${item.s}x ski` : '',item.b ? `${item.b}x snowboard` : ''].filter(Boolean).join('+');
+      lines.push(`${name}: ${materials}${waxNotes[item.w] ? `; ${waxNotes[item.w]}` : ''}${item.u ? '; spoed+€10' : ''}${item.d ? `; bindingen ${item.d}x à€7,50` : ''}${item.r ? `; kleine rep. ${item.r}x v.a.€7,50/st.` : ''}`);
     }
-    if (Object.values(value.p).some(item => item.d)) lines.push('Bindingen in pakket: demonteren + monteren, €7,50/st.');
     for (const [id,name] of Object.entries(extraNotes)) {
       const item = value.e[id];
       if (item) lines.push(`Los: ${item.q}x ${name} (${item.m})`);
     }
-    if (value.u) lines.push('Losse werkzaamheden: spoed +€10.');
-    if (value.u || Object.values(value.p).some(item => item.u)) lines.push('Spoed alleen indien mogelijk, in overleg.');
+    if (value.u) lines.push('Los: spoed+€10.');
+    if (value.u || Object.values(value.p).some(item => item.u)) lines.push('Spoed indien mogelijk, in overleg.');
     return lines.join(' | ');
   }
   function legacy(value) {

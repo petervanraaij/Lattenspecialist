@@ -16,14 +16,18 @@
   const amount = (element,name) => Number(element.querySelector(`[name="${name}"]`).value);
   function read() {
     const value = model.empty();
-    cards.forEach(card => { value.p[card.dataset.package] = {s:amount(card,'homepageSki'),b:amount(card,'homepageSnowboard'),d:amount(card,'homepageBindings'),w:card.querySelector('[name="homepageWax"]').value,u:card.querySelector('[name="homepageUrgent"]').checked}; });
-    value.p.platinum.r = amount(section.querySelector('[data-package="platinum"]'),'homepageRepairs');
+    cards.forEach(card => {
+      const item = {s:amount(card,'homepageSki'),b:amount(card,'homepageSnowboard'),d:amount(card,'homepageBindings'),w:card.querySelector('[name="homepageWax"]').value,u:card.querySelector('[name="homepageUrgent"]').checked};
+      const repairs = card.querySelector('[name="homepageRepairs"]');
+      if (repairs) item.r = Number(repairs.value);
+      value.p[card.dataset.package] = item;
+    });
     extras.forEach(extra => { value.e[extra.dataset.extra] = {q:amount(extra,'extraAmount'),m:extra.querySelector('[name="extraMaterial"]').value}; });
     return model.normalize(value);
   }
   function restore(value) {
     cards.forEach(card => {
-      const item = value.p[card.dataset.package] || {s:0,b:0,w:'beta',u:false};
+      const item = value.p[card.dataset.package] || {s:0,b:0,w:card.dataset.package === 'slijpen' ? 'none' : 'beta',u:false};
       card.querySelector('[name="homepageSki"]').value = item.s;
       card.querySelector('[name="homepageSnowboard"]').value = item.b;
       card.querySelector('[name="homepageBindings"]').value = item.d || 0;
@@ -47,7 +51,7 @@
         if (repairs.disabled) repairs.value = '0';
         card.querySelector('.package-repairs-hint').textContent = repairs.disabled
           ? 'Kies eerst het aantal ski’s of snowboards.'
-          : 'Totaal voor alle materialen in dit pakket. Prijs na beoordeling.';
+          : 'Totaal voor alle materialen in dit pakket. Vanaf € 7,50 per reparatie; definitieve prijs na beoordeling.';
       }
       const bindings = card.querySelector('[name="homepageBindings"]');
       if (Number.isInteger(snowboards) && snowboards >= 0) {
@@ -68,7 +72,8 @@
     });
     cards.forEach(card => {
       card.classList.toggle('is-selected',amount(card,'homepageSki') + amount(card,'homepageSnowboard') > 0);
-      card.querySelector('.package-wax-price').textContent = card.querySelector('[name="homepageWax"]').value === 'performance' ? '+ € 7,50 per paar / snowboard' : 'Inbegrepen';
+      const wax = card.querySelector('[name="homepageWax"]').value;
+      card.querySelector('.package-wax-price').textContent = wax === 'performance' ? '+ € 7,50 per paar / snowboard' : wax === 'none' ? 'Dit pakket is alleen slijpen.' : 'Inbegrepen';
     });
     const value = read();
     valid = !!value;

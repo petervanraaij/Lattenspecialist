@@ -33,8 +33,8 @@ function homepage(t,url='https://lattenspecialist.nl/') {
 }
 const chosen=d=>JSON.parse(new URL(d.querySelector('#packageRequest').href).searchParams.get('keuze'));
 const waxChoices={beta:'Holmenkol BetaMix Red (standaard inbegrepen)',alpha:'Holmenkol AlphaMix Yellow (inbegrepen)',ultra:'Holmenkol UltraMix Blue (inbegrepen)',performance:'Performance Wax (+ € 7,50)'};
-test('old package links still work and no package is silently preselected',async t=>{
- for(const name of ['Brons','Zilver','Goud','Platinum']) {
+test('old and sharpening package links work and no package is silently preselected',async t=>{
+ for(const name of ['Slijpen','Brons','Zilver','Goud','Platinum']) {
   const {f}=await setup(t,{url:`https://lattenspecialist.nl/afspraak.html?pakket=${name}`});assert.equal(f.elements.package.value,name);
  }
  assert.equal((await setup(t)).f.elements.package.value,'');
@@ -42,26 +42,27 @@ test('old package links still work and no package is silently preselected',async
  const {d}=homepage(t);
  assert.equal(chosen(d),null);
  assert.equal(d.querySelectorAll('[name="homepagePackage"]').length,0);
- assert.equal(d.querySelectorAll('.package-details:not([open])').length,4);
+ assert.equal(d.querySelectorAll('.package-details:not([open])').length,5);
  assert.equal(d.querySelectorAll('#pakketten').length,1);
  assert.equal(d.querySelector('.hero').nextElementSibling.id,'pakketten');
  assert.equal(d.querySelector('#pakketten').nextElementSibling.id,'wax');
  assert.ok(d.querySelector('.maintenance-sidebar [data-extra="complex"]'));
- assert.match(d.querySelector('[data-extra="edges"] .extra-explanation').textContent,/belagreparatie is niet inbegrepen/);
+ assert.equal(d.querySelector('[data-extra="edges"]'),null);
+ assert.match(d.querySelector('[data-package="slijpen"] .package-wax-price').textContent,/alleen slijpen/);
  assert.match(d.querySelector('[data-extra="repair"] .extra-explanation').textContent,/Kanten slijpen doen we alleen als dat ook nodig is/);
  assert.match(d.querySelector('#faq').textContent,/Kan ik alleen mijn kanten laten slijpen/);
 });
-test('counts, multiple packages, different materials, wax and extras survive one complete request',async t=>{
+test('counts, multiple packages, different materials and wax survive one complete request',async t=>{
  const {w,d}=homepage(t);
  d.querySelector('#brons-ski').closest('.quantity-control').querySelector('[data-step="1"]').click();
  d.querySelector('#brons-ski').closest('.quantity-control').querySelector('[data-step="1"]').click();
  change(w,d.querySelector('#goud-snowboard'),'1');
  const gold=d.querySelector('[data-package="goud"]');
  change(w,gold.querySelector('[name="homepageWax"]'),'performance');gold.querySelector('[name="homepageUrgent"]').click();
- change(w,d.querySelector('#extra-edges'),'1');
+ change(w,d.querySelector('#slijpen-ski'),'1');
  const value=chosen(d);
- assert.equal(value.p.brons.s,2);assert.equal(value.p.goud.b,1);assert.equal(value.p.goud.u,true);assert.equal(value.p.goud.w,'performance');assert.equal(value.e.edges.q,1);
- assert.equal(d.querySelectorAll('.package-card.is-selected').length,2);
+ assert.equal(value.p.brons.s,2);assert.equal(value.p.goud.b,1);assert.equal(value.p.slijpen.s,1);assert.equal(value.p.slijpen.w,'none');assert.equal(value.p.goud.u,true);assert.equal(value.p.goud.w,'performance');
+ assert.equal(d.querySelectorAll('.package-card.is-selected').length,3);
  assert.equal(d.querySelector('.mobile-sticky-cta').href,d.querySelector('#packageRequest').href);
  const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
  assert.equal(rd.querySelector('#maintenanceSelection').hidden,false);
@@ -70,18 +71,18 @@ test('counts, multiple packages, different materials, wax and extras survive one
  assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Goud: 1× snowboard/);
  assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Performance Purple/);
  complete(rw,f);f.elements.notes.value='Graag vooraf bellen.';submit(rw,f);await turn();await turn();
- assert.equal(posts.length,1);assert.equal(posts[0].amount,'3');assert.equal(posts[0].material,'Meerdere / combinatie');
+ assert.equal(posts.length,1);assert.equal(posts[0].amount,'4');assert.equal(posts[0].material,'Meerdere / combinatie');
  assert.equal(posts[0].package,'Meerdere pakketten / losse werkzaamheden');
  assert.match(posts[0].notes,/Brons: 2x ski/);assert.match(posts[0].notes,/Goud: 1x snowboard; Performance Purple/);
- assert.match(posts[0].notes,/Los: 1x Kanten slijpen/);assert.match(posts[0].notes,/spoed/);assert.match(posts[0].notes,/Graag vooraf bellen/);
+ assert.match(posts[0].notes,/Slijpen: 1x ski \| Brons:/);assert.doesNotMatch(posts[0].notes,/Slijpen: 1x ski;/);assert.match(posts[0].notes,/spoed/);assert.match(posts[0].notes,/Graag vooraf bellen/);
  assert.match(rd.querySelector('#confirmationSummary').textContent,/Brons: 2×/);
  const edited=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
- assert.equal(edited.d.querySelector('#brons-ski').value,'2');assert.equal(edited.d.querySelector('#extra-edges').value,'1');
+ assert.equal(edited.d.querySelector('#brons-ski').value,'2');assert.equal(edited.d.querySelector('#slijpen-ski').value,'1');
  assert.deepEqual(chosen(edited.d),value);
 });
 test('snowboard prompts add bindings and their cost to the correct package, never to separate work',async t=>{
  const {d}=homepage(t),dialog=d.querySelector('#bindingsDialog');
- for (const id of ['brons','zilver','goud','platinum']) {
+ for (const id of ['slijpen','brons','zilver','goud','platinum']) {
   const plus=d.querySelector(`#${id}-snowboard`).closest('.quantity-control').querySelector('[data-step="1"]');
   plus.click();assert.equal(dialog.open,true);
   assert.match(d.querySelector('#bindingsPrice').textContent,/7,50/);
@@ -98,7 +99,7 @@ test('snowboard prompts add bindings and their cost to the correct package, neve
  assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/2× bindingen demonteren \+ monteren \(\+ €\s15,00\)/);
  complete(w,f);submit(w,f);await turn();await turn();
  assert.match(posts[0].notes,/Brons:.*bindingen 2x/);
- assert.match(posts[0].notes,/Bindingen in pakket: demonteren \+ monteren, €7,50\/st/);
+ assert.match(posts[0].notes,/bindingen 2x à€7,50/);
  const restored=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
  assert.deepEqual(chosen(restored.d),chosen(d));assert.equal(restored.d.querySelector('#bindingsDialog').open,false);
 });
@@ -122,8 +123,17 @@ test('bindings decline, escape, fewer snowboards and manual quantity changes do 
  assert.equal(model.normalize({p:{goud:{s:0,b:1,d:-1,w:'beta',u:false}},e:{},u:false}),null);
 });
 
-test('Platinum repair totals survive booking and editing and clear when the package is removed',async t=>{
+test('small repair totals are available in Brons, Zilver, Goud and Platinum and survive booking',async t=>{
  const {w,d,model}=homepage(t),repairs=d.querySelector('#platinum-repairs');
+ for (const id of ['brons','zilver','goud','platinum']) {
+  const selector=d.querySelector(`#${id}-repairs`);
+  assert.ok(selector);assert.match(selector.nextElementSibling.textContent,/Kies eerst/);
+  change(w,d.querySelector(`#${id}-ski`),'1');assert.equal(selector.disabled,false);
+  change(w,selector,'2');assert.equal(chosen(d).p[id].r,2);
+  assert.match(d.querySelector('#selectionItems').textContent,/vanaf € 7,50 per reparatie/);
+  change(w,d.querySelector(`#${id}-ski`),'0');assert.equal(selector.value,'0');assert.equal(selector.disabled,true);
+ }
+ assert.equal(d.querySelector('#slijpen-repairs'),null);
  assert.equal(repairs.disabled,true);
  change(w,d.querySelector('#platinum-ski'),'2');
  assert.equal(repairs.disabled,false);assert.equal(repairs.value,'0');
@@ -135,7 +145,7 @@ test('Platinum repair totals survive booking and editing and clear when the pack
  assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Platinum: 2×.*3× kleine belagreparaties/);
  complete(rw,f);submit(rw,f);await turn();await turn();
  assert.equal(posts[0].amount,'2');assert.equal(posts[0].package,'Platinum');
- assert.match(posts[0].notes,/kleine reparaties 3x totaal/);
+ assert.match(posts[0].notes,/kleine rep\. 3x/);
  assert.match(rd.querySelector('#confirmationSummary').textContent,/3× kleine belagreparaties/);
  const edited=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
  assert.equal(edited.d.querySelector('#platinum-repairs').value,'3');assert.deepEqual(chosen(edited.d),chosen(d));
@@ -143,7 +153,8 @@ test('Platinum repair totals survive booking and editing and clear when the pack
  change(w,repairs,'3');change(w,d.querySelector('#platinum-ski'),'0');
  assert.equal(repairs.value,'0');assert.equal(repairs.disabled,true);assert.equal(chosen(d),null);
  for(const r of [-1,1.5,21,'3']) assert.equal(model.normalize({p:{platinum:{s:1,b:0,w:'beta',u:false,r}},e:{},u:false}),null);
- assert.equal(model.normalize({p:{goud:{s:1,b:0,w:'beta',u:false,r:1}},e:{},u:false}),null);
+ assert.equal(model.normalize({p:{goud:{s:1,b:0,w:'beta',u:false,r:1}},e:{},u:false}).p.goud.r,1);
+ assert.equal(model.normalize({p:{slijpen:{s:1,b:0,w:'none',u:false,r:1}},e:{},u:false}),null);
 });
 
 test('wax is independently selectable for every package without removing earlier choices',async t=>{
@@ -189,8 +200,8 @@ test('invalid selections cannot produce a partial or over-limit order',async t=>
 });
 test('the largest selection and allowed comment reach the existing backend without truncation',async t=>{
  const {model}=homepage(t);const value=model.empty();
- for(const id of Object.keys(model.packages))value.p[id]={s:3,b:2,d:2,w:'performance',u:true};
- value.p.platinum.r=20;
+ for(const id of Object.keys(model.packages))value.p[id]={s:2,b:2,d:2,w:id==='slijpen'?'none':'performance',u:true};
+ for(const id of ['brons','zilver','goud','platinum'])value.p[id].r=20;
  for(const id of Object.keys(model.extras))value.e[id]={q:20,m:'snowboard'};
  value.u=true;
  assert.ok(model.notes(model.normalize(value)).length<800);
@@ -222,14 +233,15 @@ test('wax choices survive submission, invalid URL choices stay on the included d
 const urgentChoice='Ja, graag overleggen (+ € 10,00 indien mogelijk)';
 test('rush remains optional and scoped to each selected package',async t=>{
  const {d,w}=homepage(t);
- for(const id of ['brons','zilver','goud','platinum']) {
+ for(const id of ['slijpen','brons','zilver','goud','platinum']) {
   const card=d.querySelector(`[data-package="${id}"]`),urgent=card.querySelector('[name="homepageUrgent"]');
   assert.equal(urgent.checked,false);urgent.click();
   assert.equal(chosen(d).p[id].s,1);assert.equal(chosen(d).p[id].u,true);
-  change(w,card.querySelector('[name="homepageWax"]'),'alpha');assert.equal(chosen(d).p[id].u,true);
+  if(id !== 'slijpen') change(w,card.querySelector('[name="homepageWax"]'),'alpha');
+  assert.equal(chosen(d).p[id].u,true);
   urgent.click();assert.equal(chosen(d).p[id].u,false);
  }
- assert.equal(Object.keys(chosen(d).p).length,4);
+ assert.equal(Object.keys(chosen(d).p).length,5);
 });
 test('rush can be declined in the form and does not leak into rentals or invalid URL choices',async t=>{
  for(const query of ['','?spoed=0','?spoed=false','?spoed=unknown']) {
