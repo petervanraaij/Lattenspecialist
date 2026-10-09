@@ -29,7 +29,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=19">
-  <link rel="stylesheet" href="homepage.css?v=24">
+  <link rel="stylesheet" href="homepage.css?v=25">
   <script src="homepage.js?v=2"></script>
   <script type="application/ld+json">
   {
@@ -91,7 +91,7 @@
         <div class="section-head center">
           <span class="eyebrow">Voor ski’s en snowboards</span>
           <h2 id="packages-title">Kies jouw onderhoud.</h2>
-          <p>Kies aantallen per pakket. Combineer pakketten en losse werkzaamheden in één aanvraag.</p>
+          <p>Kies aantallen per pakket. Combineer meerdere pakketten in één aanvraag.</p>
         </div>
         <div class="maintenance-layout">
         <div class="packages-main">
@@ -186,23 +186,25 @@
           <div class="package-bindings" hidden><strong>Bindingen demonteren + monteren</strong><small class="package-bindings-price">Optioneel · € 7,50 per snowboard</small><div class="quantity-row"><label for="platinum-bindings">Aantal</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder bindingen bij Platinum" disabled>−</button><input id="platinum-bindings" type="number" name="homepageBindings" min="0" max="0" step="1" value="0" aria-label="Aantal snowboards met bindingsservice bij Platinum"><button type="button" data-step="1" aria-label="Meer bindingen bij Platinum" disabled>+</button></div></div></div>
           </article>
         </div>
+          <aside class="complex-repair-note" aria-labelledby="complex-repair-title">
+            <div>
+              <span class="eyebrow">Schade die meer werk vraagt</span>
+              <h3 id="complex-repair-title">Grotere of complexere reparaties</h3>
+            </div>
+            <div>
+              <strong>Prijs na beoordeling en overleg</strong>
+              <p>We beoordelen eerst de schade en bespreken de aanpak en kosten vooraf.</p>
+            </div>
+          </aside>
           <section class="selection-panel" aria-labelledby="selection-title">
             <h3 id="selection-title">Jouw keuze</h3>
-            <p id="selectionEmpty">Gebruik + om een pakket of losse werkzaamheden toe te voegen.</p>
+            <p id="selectionEmpty">Gebruik + om een pakket toe te voegen.</p>
             <ul id="selectionItems"></ul>
             <p class="package-selection" id="packageSelection" role="status" aria-live="polite" hidden></p>
             <a class="btn btn-dark" id="packageRequest" href="afspraak.html">Onderhoud aanvragen <span aria-hidden="true">→</span></a>
             <p class="selection-note">We bevestigen de werkzaamheden en planning met je.</p>
           </section>
         </div>
-        <aside class="maintenance-sidebar" aria-label="Losse werkzaamheden">
-          <section class="extras-panel" aria-labelledby="extras-title">
-            <h3 id="extras-title">Losse werkzaamheden</h3>
-            <p>Los te kiezen of toe te voegen aan je pakket. We voeren alleen uit wat nodig is.</p>
-            <div class="extras-options"><div class="extra-choice" data-extra="repair"><h4>Kleine, oppervlakkige belagreparaties</h4><p>Vanaf € 7,50</p><small class="extra-explanation">We vullen de schade en werken de plek handmatig vlak af. Kanten slijpen doen we alleen als dat ook nodig is.</small><label class="extra-material"><span>Materiaal</span><select name="extraMaterial" aria-label="Materiaal bij Kleine, oppervlakkige belagreparaties"><option value="ski">Ski’s (paar)</option><option value="snowboard">Snowboard</option></select></label><div class="quantity-row"><label for="extra-repair">Aantal</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder Kleine, oppervlakkige belagreparaties" disabled>−</button><input id="extra-repair" type="number" name="extraAmount" min="0" max="20" step="1" value="0" aria-label="Aantal Kleine, oppervlakkige belagreparaties"><button type="button" data-step="1" aria-label="Meer Kleine, oppervlakkige belagreparaties">+</button></div></div></div><div class="extra-choice" data-extra="complex"><h4>Grotere of complexere reparaties</h4><p>Prijs na beoordeling en overleg</p><small class="extra-explanation">We beoordelen eerst de schade en bespreken de aanpak en kosten vooraf.</small><label class="extra-material"><span>Materiaal</span><select name="extraMaterial" aria-label="Materiaal bij Grotere of complexere reparaties"><option value="ski">Ski’s (paar)</option><option value="snowboard">Snowboard</option></select></label><div class="quantity-row"><label for="extra-complex">Aantal</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder Grotere of complexere reparaties" disabled>−</button><input id="extra-complex" type="number" name="extraAmount" min="0" max="20" step="1" value="0" aria-label="Aantal Grotere of complexere reparaties"><button type="button" data-step="1" aria-label="Meer Grotere of complexere reparaties">+</button></div></div></div></div>
-          </section>
-
-        </aside>
         </div>
         <p class="price-note">Alle genoemde consumentenprijzen zijn inclusief btw. Aantallen bij ski’s zijn per paar.</p>
         <p class="package-help">Twijfel je? Wij adviseren wat nodig is. Extra werk doen we alleen na overleg. Spoed is mogelijk als de planning het toelaat; extra haal- of brengritten zijn niet inbegrepen.</p>

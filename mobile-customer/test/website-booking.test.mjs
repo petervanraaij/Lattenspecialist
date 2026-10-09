@@ -46,10 +46,13 @@ test('copper and bronze package links work and no package is silently preselecte
  assert.equal(d.querySelectorAll('#pakketten').length,1);
  assert.equal(d.querySelector('.hero').nextElementSibling.id,'pakketten');
  assert.equal(d.querySelector('#pakketten').nextElementSibling.id,'wax');
- assert.ok(d.querySelector('.maintenance-sidebar [data-extra="complex"]'));
+ assert.equal(d.querySelector('.maintenance-sidebar'),null);
+ assert.equal(d.querySelectorAll('[data-extra]').length,0);
+ assert.match(d.querySelector('.complex-repair-note').textContent,/Grotere of complexere reparaties/);
+ assert.match(d.querySelector('.complex-repair-note').textContent,/Prijs na beoordeling en overleg/);
+ assert.match(d.querySelector('.complex-repair-note').textContent,/bespreken de aanpak en kosten vooraf/);
  assert.equal(d.querySelector('[data-extra="edges"]'),null);
  assert.match(d.querySelector('[data-package="slijpen"] .package-wax-price').textContent,/alleen slijpen/);
- assert.match(d.querySelector('[data-extra="repair"] .extra-explanation').textContent,/Kanten slijpen doen we alleen als dat ook nodig is/);
  assert.match(d.querySelector('#faq').textContent,/Kan ik alleen mijn kanten laten slijpen/);
  const bronze=await setup(t,{url:'https://lattenspecialist.nl/afspraak.html?pakket=Brons'});
  assert.equal(bronze.f.elements.performanceWax.disabled,true);
@@ -176,20 +179,6 @@ test('wax is independently selectable for every package without removing earlier
  assert.equal(Object.keys(chosen(d).p).length,4);
  change(w,d.querySelector('#brons-ski'),'0');
  assert.equal(chosen(d).p.brons,undefined);assert.equal(Object.keys(chosen(d).p).length,3);
-});
-test('separate work can be ordered without a package or an unintended wax service',async t=>{
- const {w,d}=homepage(t);
- change(w,d.querySelector('#extra-complex'),'2');
- change(w,d.querySelector('[data-extra="complex"] [name="extraMaterial"]'),'snowboard');
- assert.equal(d.querySelector('#extrasUrgent'),null);assert.equal(chosen(d).u,false);
- const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
- complete(rw,f);submit(rw,f);await turn();await turn();
- assert.equal(posts.length,1);assert.equal(posts[0].package,'Losse werkzaamheden / advies');
- assert.equal(posts[0].material,'Snowboard');assert.equal(posts[0].amount,'2');
- assert.match(posts[0].notes,/2x Complexe reparaties/);assert.match(posts[0].notes,/prijs in overleg/);assert.doesNotMatch(posts[0].notes,/Waxkeuze|BetaMix/);
- assert.match(rd.querySelector('#confirmationSummary').textContent,/Grotere of complexere reparaties/);
- change(w,d.querySelector('#extra-complex'),'0');
- assert.equal(chosen(d),null);
 });
 test('invalid selections cannot produce a partial or over-limit order',async t=>{
  const {w,d,model}=homepage(t);

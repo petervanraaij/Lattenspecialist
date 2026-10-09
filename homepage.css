@@ -320,9 +320,9 @@
 .booking-page .form-step[hidden] { display:none!important; }
 @media(max-width:560px){.booking-page .form-progress small{font-size:.62rem}.booking-page .form-progress li{grid-template-columns:26px 1fr;gap:5px}.booking-page .form-progress span{width:26px;height:26px}.booking-page .form-progress li::after{left:13px;top:13px}.booking-page .form-step-actions{align-items:stretch}.booking-page .form-step-actions .btn{min-width:0}.booking-page .submit-actions{display:grid;grid-template-columns:auto 1fr}.booking-page .submit-actions .form-submit{width:100%}}
 
-/* Multiple packages with selectable separate work alongside the cards. */
+/* Multiple maintenance packages with repair guidance below the cards. */
 .home-page .packages > .container { width:min(1560px,calc(100% - 48px)); }
-.maintenance-layout { display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:20px; align-items:start; }
+.maintenance-layout { display:block; }
 .home-page .maintenance-layout .package-grid { grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
 .home-page .maintenance-layout .package-card { padding:24px 16px; min-width:0; cursor:default; }
 .home-page .maintenance-layout .package-card h3 { font-size:1.05rem; min-height:3.9em; }
@@ -365,6 +365,11 @@
 .selection-panel .btn { width:fit-content; padding:13px 20px; font-size:.9rem; gap:12px; }
 .selection-panel .selection-note { color:#676156; font-size:.75rem; margin-bottom:0; }
 .home-page .selection-panel .package-selection { font-size:.8rem; }
+.complex-repair-note { display:grid; grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr); gap:24px; align-items:center; margin-top:18px; padding:20px 24px; border:1px solid #d6c9af; border-left:5px solid #a8791f; border-radius:14px; background:#fffdf8; }
+.complex-repair-note .eyebrow { display:block; margin-bottom:6px; }
+.complex-repair-note h3 { margin:0; font-size:1.15rem; line-height:1.35; }
+.complex-repair-note strong { display:block; color:#71520f; font-size:.95rem; }
+.complex-repair-note p { margin:6px 0 0; color:#615b52; font-size:.85rem; line-height:1.55; }
 .package-help { max-width:950px; margin:20px auto 0; text-align:center; color:#615b52; font-size:.85rem; }
 .maintenance-selection { border:1px solid #dacdab; border-radius:12px; padding:20px; background:#faf5e9; }
 .maintenance-selection h3 { margin:0 0 12px; }
@@ -411,14 +416,14 @@
   .home-page .maintenance-layout .package-card h3 { min-height:2.6em; font-size:1.15rem; }
 }
 @media(max-width:850px) {
-  .maintenance-layout { grid-template-columns:1fr; }
-  .maintenance-sidebar { max-width:none; }
+  .complex-repair-note { grid-template-columns:1fr; gap:12px; }
 }
 @media(max-width:560px) {
   .home-page .packages > .container { width:calc(100% - 40px); }
-  .home-page .maintenance-layout .package-grid,.maintenance-sidebar { grid-template-columns:1fr; }
+  .home-page .maintenance-layout .package-grid { grid-template-columns:1fr; }
   .home-page .maintenance-layout .package-card { padding:24px; }
   .home-page .maintenance-layout .package-card h3 { min-height:0; }
+  .complex-repair-note { padding:18px; }
   .quantity-control { grid-template-columns:40px 44px 40px; }
   .quantity-row > label { font-size:.85rem; }
 }
