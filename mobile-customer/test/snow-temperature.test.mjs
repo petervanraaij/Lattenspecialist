@@ -37,7 +37,7 @@ test('live snow estimate renders resorts, snow state and matching wax advice',as
   tabs[4].click();assert.match(selectedCard().textContent,/AlphaMix Yellow/);assert.match(selectedCard().textContent,/Performance Purple/);
   tabs[6].click();assert.match(selectedCard().textContent,/Winterberg/);
   assert.equal(tabs[6].getAttribute('aria-selected'),'true');
-  tabs[7].click();assert.match(selectedCard().textContent,/Indoor skihallen/);assert.match(selectedCard().textContent,/BetaMix Red · inbegrepen/);assert.match(selectedCard().textContent,/Performance Purple · \+ € 5,00/);
+  tabs[7].click();assert.match(selectedCard().textContent,/Indoor skihallen/);assert.match(selectedCard().textContent,/BetaMix Red · inbegrepen/);assert.match(selectedCard().textContent,/Performance Purple · ski \+ € 5,00 · snowboard \+ € 7,50/);
   assert.match(selectedCard().textContent,/Landgraaf/);assert.match(selectedCard().textContent,/Bottrop/);assert.match(selectedCard().textContent,/-4 °C tot -5 °C/);
   assert.equal(tabs[7].getAttribute('aria-selected'),'true');
   assert.match(d.querySelector('#snowLiveStatus').textContent,/bijgewerkt om 12:00 uur/);

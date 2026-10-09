@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v84-floating-total';
+const CACHE_NAME = 'lattenspecialist-v85-snowboard-performance-price';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -7,9 +7,9 @@ const APP_SHELL = [
   '/webshop.html',
   '/homepage.css?v=51',
   '/homepage.js?v=2',
-  '/maintenance-selection.js?v=8',
-  '/package-choice.js?v=12',
-  '/snow-temperature.js?v=9',
+  '/maintenance-selection.js?v=9',
+  '/package-choice.js?v=13',
+  '/snow-temperature.js?v=10',
   '/website-metrics.js?v=1',
   '/app.html',
   '/beheer.html',

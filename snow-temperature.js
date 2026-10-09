@@ -37,7 +37,7 @@
     const waxOptions = element('div','snow-resort-wax-options');
     waxOptions.append(element('strong','snow-resort-wax snow-resort-wax--included',`${includedWax} · inbegrepen`));
     if (estimatedSnow >= -12) {
-      waxOptions.append(element('strong','snow-resort-wax snow-resort-wax--performance','Performance Purple · + € 5,00'));
+      waxOptions.append(element('strong','snow-resort-wax snow-resort-wax--performance','Performance Purple · ski + € 5,00 · snowboard + € 7,50'));
     }
     waxMatch.append(waxOptions);
     card.append(waxMatch);
