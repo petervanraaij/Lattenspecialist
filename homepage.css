@@ -381,6 +381,11 @@
 .package-bindings[hidden] { display:none; }
 .package-bindings > strong { display:block; font-size:.8rem; line-height:1.45; }
 .package-bindings-price { display:block; margin-top:6px; color:#725311; font-size:.73rem; line-height:1.5; }
+.package-repairs { display:grid; gap:8px; margin-top:16px; padding-top:14px; border-top:1px solid var(--metal-edge); font-size:.8rem; font-weight:700; }
+.package-repairs select { width:100%; min-width:0; min-height:44px; padding:8px 4px; border:1px solid #d7c18e; border-radius:5px; background:#fffdf9; color:#3c3019; font:inherit; }
+.package-repairs select:disabled { opacity:.6; cursor:not-allowed; }
+.package-repairs:focus-within { outline:3px solid #bc8c26; outline-offset:3px; }
+.package-repairs-hint { color:#725311; font-size:.73rem; font-weight:400; line-height:1.5; }
 @media(max-width:1200px) {
   .home-page .maintenance-layout .package-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
   .home-page .maintenance-layout .package-card h3 { min-height:2.6em; font-size:1.15rem; }

@@ -29,7 +29,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=19">
-  <link rel="stylesheet" href="homepage.css?v=19">
+  <link rel="stylesheet" href="homepage.css?v=20">
   <script src="homepage.js?v=2"></script>
   <script type="application/ld+json">
   {
@@ -164,6 +164,7 @@
             <label class="package-wax"><span>Waxsoort</span><select name="homepageWax" aria-label="Waxsoort bij Platinum"><option value="beta">BetaMix Red</option><option value="alpha">AlphaMix Yellow</option><option value="ultra">UltraMix Blue</option><option value="performance">Performance Purple</option></select><small class="package-wax-price">Inbegrepen</small></label>
             <label class="package-urgent"><input type="checkbox" name="homepageUrgent" aria-label="Spoedonderhoud bij Platinum (+ € 10,00, indien mogelijk)"><span><strong>Spoedonderhoud <span class="urgent-price">+ € 10,00</span></strong><small>Indien mogelijk, in overleg</small></span></label>
             <fieldset class="package-amounts"><legend>Aantal</legend><div class="quantity-row"><label for="platinum-ski">Ski’s (paar)</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder paar ski’s Platinum" disabled>−</button><input id="platinum-ski" type="number" name="homepageSki" min="0" max="20" step="1" value="0" aria-label="Aantal paar ski’s Platinum"><button type="button" data-step="1" aria-label="Meer paar ski’s Platinum">+</button></div></div><div class="quantity-row"><label for="platinum-snowboard">Snowboards</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder snowboards Platinum" disabled>−</button><input id="platinum-snowboard" type="number" name="homepageSnowboard" min="0" max="20" step="1" value="0" aria-label="Aantal snowboards Platinum"><button type="button" data-step="1" aria-label="Meer snowboards Platinum">+</button></div></div></fieldset>
+            <label class="package-repairs" for="platinum-repairs"><span>Aantal kleine reparaties</span><select id="platinum-repairs" name="homepageRepairs" aria-label="Aantal kleine reparaties bij Platinum" aria-describedby="platinum-repairs-hint" disabled><option value="0">Nog te beoordelen</option><option value="1">1 kleine reparatie</option><option value="2">2 kleine reparaties</option><option value="3">3 kleine reparaties</option><option value="4">4 kleine reparaties</option><option value="5">5 kleine reparaties</option><option value="6">6 kleine reparaties</option><option value="7">7 kleine reparaties</option><option value="8">8 kleine reparaties</option><option value="9">9 kleine reparaties</option><option value="10">10 kleine reparaties</option><option value="11">11 kleine reparaties</option><option value="12">12 kleine reparaties</option><option value="13">13 kleine reparaties</option><option value="14">14 kleine reparaties</option><option value="15">15 kleine reparaties</option><option value="16">16 kleine reparaties</option><option value="17">17 kleine reparaties</option><option value="18">18 kleine reparaties</option><option value="19">19 kleine reparaties</option><option value="20">20 kleine reparaties</option></select><small id="platinum-repairs-hint" class="package-repairs-hint">Kies eerst het aantal ski’s of snowboards.</small></label>
           <div class="package-bindings" hidden><strong>Bindingen demonteren + monteren</strong><small class="package-bindings-price">Optioneel · € 7,50 per snowboard</small><div class="quantity-row"><label for="platinum-bindings">Aantal</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder bindingen bij Platinum" disabled>−</button><input id="platinum-bindings" type="number" name="homepageBindings" min="0" max="0" step="1" value="0" aria-label="Aantal snowboards met bindingsservice bij Platinum"><button type="button" data-step="1" aria-label="Meer bindingen bij Platinum" disabled>+</button></div></div></div>
           </article>
         </div>
@@ -316,8 +317,8 @@
   </dialog>
 
   <script src="script.js?v=10"></script>
-  <script src="maintenance-selection.js?v=2"></script>
-  <script src="package-choice.js?v=8"></script>
+  <script src="maintenance-selection.js?v=3"></script>
+  <script src="package-choice.js?v=9"></script>
   <script src="booking-config.js?v=2"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>

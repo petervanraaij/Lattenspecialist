@@ -14,7 +14,12 @@
       if (!own(packages,id) || !item || !quantity(item.s) || !quantity(item.b) || !own(waxes,item.w) || typeof item.u !== 'boolean') return null;
       const bindings = item.d === undefined ? 0 : item.d;
       if (!quantity(bindings) || bindings > item.b) return null;
-      if (item.s + item.b) result.p[id] = {s:item.s,b:item.b,d:bindings,w:item.w,u:item.u};
+      const repairs = item.r === undefined ? 0 : item.r;
+      if (!quantity(repairs) || (repairs && id !== 'platinum')) return null;
+      if (item.s + item.b) {
+        result.p[id] = {s:item.s,b:item.b,d:bindings,w:item.w,u:item.u};
+        if (repairs) result.p[id].r = repairs;
+      }
     }
     for (const [id, item] of Object.entries(value.e)) {
       if (!own(extras,id) || !item || !quantity(item.q) || !['ski','snowboard'].includes(item.m) || (id === 'bindings' && item.m !== 'snowboard')) return null;
@@ -35,7 +40,7 @@
       const item = value.p[id];
       if (!item) continue;
       const materials = [item.s ? `${item.s}× ski's (paar)` : '',item.b ? `${item.b}× snowboard` : ''].filter(Boolean).join(' + ');
-      lines.push(`${name}: ${materials} · ${waxes[item.w]}${item.u ? ' · Spoed + € 10,00 (indien mogelijk)' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}`);
+      lines.push(`${name}: ${materials} · ${waxes[item.w]}${item.u ? ' · Spoed + € 10,00 (indien mogelijk)' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}${item.r ? ` · ${item.r}× kleine belagreparaties in totaal (prijs na beoordeling)` : ''}`);
     }
     for (const [id,name] of Object.entries(extras)) {
       const item = value.e[id];
@@ -51,7 +56,7 @@
       const item = value.p[id];
       if (!item) continue;
       const materials = [item.s ? `${item.s}x ski (paar)` : '',item.b ? `${item.b}x snowboard` : ''].filter(Boolean).join(' + ');
-      lines.push(`${name}: ${materials}; ${waxes[item.w]}${item.u ? '; spoed +€10' : ''}${item.d ? `; bindingen ${item.d}x` : ''}`);
+      lines.push(`${name}: ${materials}; ${waxes[item.w]}${item.u ? '; spoed +€10' : ''}${item.d ? `; bindingen ${item.d}x` : ''}${item.r ? `; kleine reparaties ${item.r}x totaal` : ''}`);
     }
     if (Object.values(value.p).some(item => item.d)) lines.push('Bindingen in pakket: demonteren + monteren, €7,50/st.');
     for (const [id,name] of Object.entries(extraNotes)) {

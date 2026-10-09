@@ -119,6 +119,30 @@ test('bindings decline, escape, fewer snowboards and manual quantity changes do 
  assert.equal(model.normalize({p:{goud:{s:0,b:1,d:-1,w:'beta',u:false}},e:{},u:false}),null);
 });
 
+test('Platinum repair totals survive booking and editing and clear when the package is removed',async t=>{
+ const {w,d,model}=homepage(t),repairs=d.querySelector('#platinum-repairs');
+ assert.equal(repairs.disabled,true);
+ change(w,d.querySelector('#platinum-ski'),'2');
+ assert.equal(repairs.disabled,false);assert.equal(repairs.value,'0');
+ change(w,repairs,'3');
+ assert.equal(chosen(d).p.platinum.r,3);
+ assert.match(d.querySelector('#selectionItems').textContent,/3× kleine belagreparaties in totaal/);
+ assert.deepEqual(chosen(d).e,{});
+ const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
+ assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/Platinum: 2×.*3× kleine belagreparaties/);
+ complete(rw,f);submit(rw,f);await turn();await turn();
+ assert.equal(posts[0].amount,'2');assert.equal(posts[0].package,'Platinum');
+ assert.match(posts[0].notes,/kleine reparaties 3x totaal/);
+ assert.match(rd.querySelector('#confirmationSummary').textContent,/3× kleine belagreparaties/);
+ const edited=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
+ assert.equal(edited.d.querySelector('#platinum-repairs').value,'3');assert.deepEqual(chosen(edited.d),chosen(d));
+ change(w,repairs,'0');assert.equal(chosen(d).p.platinum.r,undefined);
+ change(w,repairs,'3');change(w,d.querySelector('#platinum-ski'),'0');
+ assert.equal(repairs.value,'0');assert.equal(repairs.disabled,true);assert.equal(chosen(d),null);
+ for(const r of [-1,1.5,21,'3']) assert.equal(model.normalize({p:{platinum:{s:1,b:0,w:'beta',u:false,r}},e:{},u:false}),null);
+ assert.equal(model.normalize({p:{goud:{s:1,b:0,w:'beta',u:false,r:1}},e:{},u:false}),null);
+});
+
 test('wax is independently selectable for every package without removing earlier choices',async t=>{
  const {w,d}=homepage(t);
  for(const id of ['brons','zilver','goud','platinum']) {
@@ -163,6 +187,7 @@ test('invalid selections cannot produce a partial or over-limit order',async t=>
 test('the largest selection and allowed comment reach the existing backend without truncation',async t=>{
  const {model}=homepage(t);const value=model.empty();
  for(const id of Object.keys(model.packages))value.p[id]={s:3,b:2,d:2,w:'performance',u:true};
+ value.p.platinum.r=20;
  for(const id of Object.keys(model.extras))value.e[id]={q:20,m:'snowboard'};
  value.u=true;
  assert.ok(model.notes(model.normalize(value)).length<800);

@@ -17,6 +17,7 @@
   function read() {
     const value = model.empty();
     cards.forEach(card => { value.p[card.dataset.package] = {s:amount(card,'homepageSki'),b:amount(card,'homepageSnowboard'),d:amount(card,'homepageBindings'),w:card.querySelector('[name="homepageWax"]').value,u:card.querySelector('[name="homepageUrgent"]').checked}; });
+    value.p.platinum.r = amount(section.querySelector('[data-package="platinum"]'),'homepageRepairs');
     extras.forEach(extra => { value.e[extra.dataset.extra] = {q:amount(extra,'extraAmount'),m:extra.querySelector('[name="extraMaterial"]').value}; });
     return model.normalize(value);
   }
@@ -28,6 +29,8 @@
       card.querySelector('[name="homepageBindings"]').value = item.d || 0;
       card.querySelector('[name="homepageWax"]').value = item.w;
       card.querySelector('[name="homepageUrgent"]').checked = item.u;
+      const repairs = card.querySelector('[name="homepageRepairs"]');
+      if (repairs) repairs.value = item.r || 0;
     });
     extras.forEach(extra => {
       const item = value.e[extra.dataset.extra];
@@ -38,6 +41,14 @@
   function update() {
     cards.forEach(card => {
       const snowboards = amount(card,'homepageSnowboard');
+      const repairs = card.querySelector('[name="homepageRepairs"]');
+      if (repairs) {
+        repairs.disabled = !(amount(card,'homepageSki') + snowboards > 0);
+        if (repairs.disabled) repairs.value = '0';
+        card.querySelector('.package-repairs-hint').textContent = repairs.disabled
+          ? 'Kies eerst het aantal ski’s of snowboards.'
+          : 'Totaal voor alle materialen in dit pakket. Prijs na beoordeling.';
+      }
       const bindings = card.querySelector('[name="homepageBindings"]');
       if (Number.isInteger(snowboards) && snowboards >= 0) {
         bindings.max = Math.min(20,snowboards);
