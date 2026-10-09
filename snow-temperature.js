@@ -4,7 +4,6 @@
 
   const grid = document.querySelector('#snowResortGrid');
   const status = document.querySelector('#snowLiveStatus');
-  const indoorGrid = document.querySelector('#snowIndoorGrid');
   const searchForm = document.querySelector('#snowSearchForm');
   const searchInput = document.querySelector('#snowSearchInput');
   const searchResult = document.querySelector('#snowSearchResult');
@@ -14,15 +13,16 @@
     {name:'Gerlos', country:'Oostenrijk', elevation:2300, latitude:47.23, longitude:12.02},
     {name:'Val Thorens', country:'Frankrijk', elevation:2500, latitude:45.30, longitude:6.58},
     {name:'Tignes', country:'Frankrijk', elevation:2700, latitude:45.45, longitude:6.90},
-    {name:'Zermatt', country:'Zwitserland', elevation:2900, latitude:45.99, longitude:7.74}
+    {name:'Zermatt', country:'Zwitserland', elevation:2900, latitude:45.99, longitude:7.74},
+    {name:'Winterberg', country:'Duitsland', elevation:800, latitude:51.20, longitude:8.53}
   ];
-  const indoorSlopes = ['Landgraaf','Zoetermeer','Amsterdam','Rucphen-Breda','Terneuzen'];
   const endpoint = 'https://api.open-meteo.com/v1/dwd-icon';
   const geocodingEndpoint = 'https://geocoding-api.open-meteo.com/v1/search';
-  const cacheKey = 'lattenspecialist-snow-conditions-v1';
+  const cacheKey = 'lattenspecialist-snow-conditions-v2';
   const formatTemperature = value => `${new Intl.NumberFormat('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1}).format(value)} °C`;
   const formatDepth = value => `${Math.round(value * 100)} cm sneeuwdek`;
   const includedWaxAdvice = temperature => temperature < -14 ? 'UltraMix Blue' : temperature < -4 ? 'BetaMix Red' : 'AlphaMix Yellow';
+  const finiteValues = values => Array.isArray(values) ? values.filter(Number.isFinite) : [];
   const element = (name,className,text) => {
     const node = document.createElement(name);
     if (className) node.className = className;
@@ -45,7 +45,24 @@
     waxMatch.append(waxLink);
     card.append(waxMatch);
   }
-  function createResortCard(resort,current) {
+  function addForecast(card,daily) {
+    const lows = finiteValues(daily?.temperature_2m_min);
+    const highs = finiteValues(daily?.temperature_2m_max);
+    const snowfall = finiteValues(daily?.snowfall_sum);
+    const forecast = element('div','snow-resort-forecast');
+    forecast.append(element('span','','Verwachting komende 14 dagen'));
+    if (!lows.length || !highs.length) {
+      forecast.append(element('strong','','Nog niet beschikbaar'));
+    } else {
+      const minimum = Math.min(...lows);
+      const maximum = Math.max(...highs);
+      const snowTotal = snowfall.reduce((total,value) => total + value,0);
+      forecast.append(element('strong','',`${formatTemperature(minimum)} tot ${formatTemperature(maximum)}`));
+      forecast.append(element('small','',snowTotal >= .1 ? `${new Intl.NumberFormat('nl-NL',{maximumFractionDigits:1}).format(snowTotal)} cm nieuwe sneeuw verwacht` : 'Geen nieuwe sneeuw verwacht'));
+    }
+    card.append(forecast);
+  }
+  function createResortCard(resort,current,daily) {
     const card = element('article','snow-resort-card');
     card.append(element('h4','',resort.name));
     card.append(element('span','snow-resort-location',`${resort.country} · modelpunt ${Math.round(resort.elevation)} m`));
@@ -62,27 +79,14 @@
       card.append(element('span','snow-resort-meta',`Lucht ${formatTemperature(current.temperature_2m)} · ${formatDepth(current.snow_depth)}`));
       addWaxMatch(card,estimatedSnow);
     }
+    addForecast(card,daily);
     return card;
-  }
-  function renderIndoorSlopes() {
-    if (!indoorGrid) return;
-    indoorGrid.replaceChildren(...indoorSlopes.map(name => {
-      const card = element('article','snow-indoor-card');
-      card.append(element('h5','',`SnowWorld ${name}`));
-      card.append(element('span','','Indoor · echte sneeuw'));
-      card.append(element('span','snow-indoor-temperature','-5 °C op de piste'));
-      const wax = element('div','snow-indoor-wax');
-      wax.append(element('strong','','Performance Purple'));
-      wax.append(element('span','', 'Inbegrepen alternatief: BetaMix Red'));
-      card.append(wax);
-      return card;
-    }));
   }
   function render(payload, cached = false) {
     const rows = Array.isArray(payload) ? payload : [payload];
     grid.replaceChildren();
     resorts.forEach((resort,index) => {
-      grid.append(createResortCard(resort,rows[index]?.current));
+      grid.append(createResortCard(resort,rows[index]?.current,rows[index]?.daily));
     });
     const times = rows.map(row => row.current?.time).filter(Boolean).sort();
     const time = times.at(-1)?.split('T')[1] || '';
@@ -103,6 +107,8 @@
     url.searchParams.set('longitude',resorts.map(item => item.longitude).join(','));
     url.searchParams.set('elevation',resorts.map(item => item.elevation).join(','));
     url.searchParams.set('current','temperature_2m,snow_depth');
+    url.searchParams.set('daily','temperature_2m_min,temperature_2m_max,snowfall_sum');
+    url.searchParams.set('forecast_days','14');
     url.searchParams.set('timezone','Europe/Amsterdam');
     try {
       const response = await fetch(url,{cache:'no-store'});
@@ -148,6 +154,8 @@
       weatherUrl.searchParams.set('longitude',place.longitude);
       if (Number.isFinite(place.elevation)) weatherUrl.searchParams.set('elevation',place.elevation);
       weatherUrl.searchParams.set('current','temperature_2m,snow_depth');
+      weatherUrl.searchParams.set('daily','temperature_2m_min,temperature_2m_max,snowfall_sum');
+      weatherUrl.searchParams.set('forecast_days','14');
       weatherUrl.searchParams.set('timezone','Europe/Amsterdam');
       const weatherResponse = await fetch(weatherUrl,{cache:'no-store'});
       if (!weatherResponse.ok) throw new Error('Weather request failed');
@@ -157,7 +165,7 @@
         country:[place.admin1,place.country].filter(Boolean).join(', '),
         elevation:Number.isFinite(place.elevation) ? place.elevation : 0
       };
-      searchResult.replaceChildren(createResortCard(resort,weatherPayload.current));
+      searchResult.replaceChildren(createResortCard(resort,weatherPayload.current,weatherPayload.daily));
     } catch {
       searchResult.replaceChildren(element('p','snow-search-message','Deze bestemming kan nu niet worden opgehaald. Controleer de spelling of probeer het later opnieuw.'));
     } finally {
@@ -165,7 +173,6 @@
       button.disabled = false;
     }
   }
-  renderIndoorSlopes();
   searchForm?.addEventListener('submit',searchDestination);
   refresh();
   window.setInterval(refresh,15 * 60 * 1000);
