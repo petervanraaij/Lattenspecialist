@@ -1,10 +1,10 @@
-const CACHE_NAME = 'lattenspecialist-v65-snow-destination-tabs';
+const CACHE_NAME = 'lattenspecialist-v66-clear-wax-typography';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=39',
+  '/homepage.css?v=40',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=6',
   '/package-choice.js?v=11',

@@ -302,13 +302,20 @@
 .snow-live-label { display:inline-flex; align-items:center; gap:7px; color:#76540d; font-size:.68rem; font-weight:850; letter-spacing:.09em; text-transform:uppercase; }
 .snow-live-label i { width:8px; height:8px; border-radius:50%; background:#3bad67; box-shadow:0 0 0 5px rgba(59,173,103,.13); }
 .home-page .snow-live .snow-wax-guide { margin:0; gap:8px; }
-.home-page .snow-live .wax-card { min-height:0; padding:11px 12px; border:1px solid #d7c18e; border-radius:10px; background:#fffdf8; color:#191713; box-shadow:none; transform:none; }
-.home-page .snow-live .wax-card h3 { margin:5px 0 6px; color:#191713; font-size:1rem; }
-.home-page .snow-live .wax-card > p { margin:5px 0 0; color:#5d554a; font-size:.72rem; line-height:1.35; }
+.home-page .snow-live .wax-card { min-height:0; padding:11px 12px; border:1px solid #d7c18e; border-top-width:4px; border-radius:10px; background:#fffdf8; color:#191713; box-shadow:none; transform:none; }
+.home-page .snow-live .wax-card h3 { margin:5px 0 6px; color:#191713; font-size:1.12rem; line-height:1.15; }
+.home-page .snow-live .wax-card > p { margin:5px 0 0; color:#5d554a; font-size:.78rem; line-height:1.4; }
+.home-page .snow-live .wax-yellow { border-top-color:#d2a91e; }
+.home-page .snow-live .wax-yellow h3 { color:#876708; }
+.home-page .snow-live .wax-standard { border-top-color:#a83a31; }
+.home-page .snow-live .wax-standard h3 { color:#8f2e27; }
+.home-page .snow-live .wax-blue { border-top-color:#3f76a8; }
+.home-page .snow-live .wax-blue h3 { color:#315f8d; }
+.home-page .snow-live .wax-purple h3 { color:#6d3f78; }
 .home-page .snow-live .wax-label { color:#76540d; }
 .home-page .snow-live .wax-range { margin:5px 0; padding:7px 0; border-color:#e6dac1; }
-.home-page .snow-live .wax-range small { color:#746b5e; }
-.home-page .snow-live .wax-range strong { margin-top:2px; color:#8a6210; font-size:1rem; }
+.home-page .snow-live .wax-range small { color:#746b5e; font-size:.66rem; }
+.home-page .snow-live .wax-range strong { margin-top:2px; color:#8a6210; font-size:1.08rem; }
 .home-page .snow-live .wax-purple { border:2px solid #b48d39; background:linear-gradient(145deg,#fffaf0,#efe2c8); box-shadow:0 9px 24px rgba(69,50,17,.12),inset 0 2px #d6ad50; }
 .home-page .snow-live .performance-badge { padding:4px 7px; font-size:.58rem; }
 .home-page .snow-live .performance-link { margin-top:6px; color:#75550f; font-size:.68rem; }
@@ -327,31 +334,31 @@
 .snow-search-message { margin:0; padding:11px 13px; border:1px solid #d7c18e; border-radius:10px; background:#fffdf8; color:#5d554a; font-size:.75rem; }
 .snow-resort-grid { display:grid; gap:7px; scroll-margin-top:105px; }
 .snow-resort-tabs { display:flex; gap:5px; overflow-x:auto; padding:1px 1px 3px; scrollbar-width:thin; }
-.snow-resort-tab { flex:0 0 auto; min-height:32px; padding:6px 11px; border:1px solid #d7c18e; border-radius:999px; background:#fffdf8; color:#514938; font:inherit; font-size:.66rem; font-weight:800; cursor:pointer; }
+.snow-resort-tab { flex:0 0 auto; min-height:34px; padding:7px 12px; border:1px solid #d7c18e; border-radius:999px; background:#fffdf8; color:#514938; font:inherit; font-size:.74rem; font-weight:850; cursor:pointer; }
 .snow-resort-tab:hover,.snow-resort-tab.is-active { border-color:#8a6210; background:#1a1916; color:#e5c56f; }
 .snow-resort-tab:focus-visible { outline:3px solid rgba(180,141,57,.35); outline-offset:2px; }
 .snow-resort-panel { min-width:0; }
 .snow-resort-card { display:grid; grid-template-columns:minmax(125px,.65fr) minmax(165px,.9fr) minmax(190px,1fr) minmax(190px,1fr); grid-template-areas:'heading current wax forecast'; align-items:center; gap:12px; min-width:0; padding:10px 12px; border:1px solid #d7c18e; border-radius:10px; background:#fffdf8; box-shadow:inset 0 2px #d6ad50; }
 .snow-resort-heading { grid-area:heading; }
 .snow-resort-current { grid-area:current; display:grid; gap:2px; min-width:0; padding-left:12px; border-left:1px solid #e6dac1; }
-.snow-resort-card h4 { margin:0 0 1px; color:#191713; font-size:.9rem; line-height:1.2; }
-.snow-resort-location { display:block; min-height:0; color:#746b5e; font-size:.58rem; line-height:1.3; }
-.snow-resort-current-label { color:#746b5e; font-size:.53rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
-.snow-resort-temperature { display:block; margin:1px 0; color:#8a6210; font-size:.9rem; font-weight:900; }
-.snow-resort-temperature.is-no-snow { color:#5d554a; font-size:.78rem; }
-.snow-resort-meta { display:block; min-height:0; color:#5d554a; font-size:.59rem; line-height:1.35; }
+.snow-resort-card h4 { margin:0 0 2px; color:#191713; font-size:1rem; line-height:1.2; }
+.snow-resort-location { display:block; min-height:0; color:#746b5e; font-size:.66rem; line-height:1.35; }
+.snow-resort-current-label { color:#746b5e; font-size:.6rem; font-weight:850; letter-spacing:.05em; text-transform:uppercase; }
+.snow-resort-temperature { display:block; margin:2px 0; color:#8a6210; font-size:1.05rem; font-weight:900; }
+.snow-resort-temperature.is-no-snow { color:#5d554a; font-size:.88rem; }
+.snow-resort-meta { display:block; min-height:0; color:#5d554a; font-size:.67rem; line-height:1.4; }
 .snow-resort-wax-match { grid-area:wax; display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; margin:0; padding:0 0 0 12px; border:0; border-left:1px solid #e6dac1; }
-.snow-resort-wax-label { color:#746b5e; font-size:.56rem; font-weight:850; letter-spacing:.06em; text-transform:uppercase; }
-.snow-resort-wax { display:inline-flex; padding:4px 7px; border-radius:999px; font-size:.57rem; font-weight:850; line-height:1.2; }
-.snow-resort-wax--performance { background:#1a1916; color:#e5c56f; }
-.snow-resort-wax--included { background:#f0e2bf; color:#60460f; }
-.snow-resort-wax-included { color:#645b4f; font-size:.58rem; line-height:1.35; }
-.snow-resort-wax-link { color:#75550f; font-size:.57rem; font-weight:850; line-height:1.25; text-decoration:underline; text-underline-offset:2px; }
+.snow-resort-wax-label { color:#5f5545; font-size:.62rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; }
+.snow-resort-wax { display:inline-flex; padding:6px 10px; border-radius:999px; font-size:.7rem; font-weight:900; line-height:1.2; }
+.snow-resort-wax--performance { background:#1a1916; color:#f0cf72; box-shadow:0 3px 9px rgba(24,21,17,.18); }
+.snow-resort-wax--included { background:#ead39b; color:#49340a; }
+.snow-resort-wax-included { color:#645b4f; font-size:.65rem; line-height:1.4; }
+.snow-resort-wax-link { color:#75550f; font-size:.65rem; font-weight:900; line-height:1.3; text-decoration:underline; text-underline-offset:2px; }
 .snow-resort-wax-link:hover { color:#171511; }
-.snow-resort-forecast { grid-area:forecast; display:grid; gap:2px; min-width:0; margin:0; padding:7px 9px; border-radius:7px; background:#f3ead7; color:#615747; font-size:.56rem; line-height:1.3; }
+.snow-resort-forecast { grid-area:forecast; display:grid; gap:2px; min-width:0; margin:0; padding:8px 10px; border-radius:7px; background:#f3ead7; color:#615747; font-size:.63rem; line-height:1.35; }
 .snow-resort-forecast span { font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
-.snow-resort-forecast strong { color:#3f331e; font-size:.64rem; }
-.snow-resort-forecast small { font-size:.56rem; }
+.snow-resort-forecast strong { color:#3f331e; font-size:.75rem; }
+.snow-resort-forecast small { font-size:.63rem; }
 .snow-resort-card.is-loading { grid-column:1/-1; color:#5d554a; font-size:.8rem; }
 .snow-indoor-summary { display:flex; align-items:center; justify-content:space-between; gap:22px; padding:10px 12px; border:1px solid #d7c18e; border-radius:10px; background:#fffaf0; }
 .snow-indoor-summary div > p { margin:2px 0 0; color:#645b4f; font-size:.62rem; }
