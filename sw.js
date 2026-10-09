@@ -1,10 +1,11 @@
-const CACHE_NAME = 'lattenspecialist-v74-clean-hero';
+const CACHE_NAME = 'lattenspecialist-v75-separate-shop';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=46',
+  '/webshop.html',
+  '/homepage.css?v=47',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=7',
   '/package-choice.js?v=12',
