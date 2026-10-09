@@ -1,14 +1,14 @@
-const CACHE_NAME = 'lattenspecialist-v59-brand-snow-panel';
+const CACHE_NAME = 'lattenspecialist-v60-snow-wax-match';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=33',
+  '/homepage.css?v=34',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=6',
   '/package-choice.js?v=11',
-  '/snow-temperature.js?v=1',
+  '/snow-temperature.js?v=2',
   '/website-metrics.js?v=1',
   '/app.html',
   '/beheer.html',

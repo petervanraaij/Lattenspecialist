@@ -16,7 +16,7 @@
   const cacheKey = 'lattenspecialist-snow-conditions-v1';
   const formatTemperature = value => `${new Intl.NumberFormat('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1}).format(value)} °C`;
   const formatDepth = value => `${Math.round(value * 100)} cm sneeuwdek`;
-  const waxAdvice = temperature => temperature < -14 ? 'UltraMix Blue' : temperature < -12 ? 'BetaMix Red' : 'Performance Purple';
+  const includedWaxAdvice = temperature => temperature < -14 ? 'UltraMix Blue' : temperature < -4 ? 'BetaMix Red' : 'AlphaMix Yellow';
   const element = (name,className,text) => {
     const node = document.createElement(name);
     if (className) node.className = className;
@@ -42,7 +42,20 @@
         card.append(element('span','snow-resort-location','Geschatte sneeuwtemperatuur'));
         card.append(element('strong','snow-resort-temperature',`≈ ${formatTemperature(estimatedSnow)}`));
         card.append(element('span','snow-resort-meta',`Lucht ${formatTemperature(current.temperature_2m)} · ${formatDepth(current.snow_depth)}`));
-        card.append(element('span','snow-resort-wax',`Waxadvies: ${waxAdvice(estimatedSnow)}`));
+        const includedWax = includedWaxAdvice(estimatedSnow);
+        const waxMatch = element('div','snow-resort-wax-match');
+        waxMatch.append(element('span','snow-resort-wax-label','Waxmatch bij deze sneeuw'));
+        if (estimatedSnow >= -12) {
+          waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--performance','Performance Purple · + € 7,50'));
+          waxMatch.append(element('span','snow-resort-wax-included',`Inbegrepen alternatief: ${includedWax}`));
+        } else {
+          waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--included',includedWax));
+          waxMatch.append(element('span','snow-resort-wax-included','Inbegrepen bij ieder waxpakket'));
+        }
+        const waxLink = element('a','snow-resort-wax-link',estimatedSnow >= -12 ? 'Kies Performance bij je pakket →' : `Kies ${includedWax} bij je pakket →`);
+        waxLink.href = '#pakketten';
+        waxMatch.append(waxLink);
+        card.append(waxMatch);
       }
       grid.append(card);
     });

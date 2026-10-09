@@ -22,10 +22,12 @@ test('live snow estimate renders resorts, snow state and matching wax advice',as
   w.eval(code);await turn();
   const cards=[...d.querySelectorAll('.snow-resort-card')];
   assert.equal(cards.length,6);
-  assert.match(cards[0].textContent,/Sölden/);assert.match(cards[0].textContent,/≈ -5,0 °C/);assert.match(cards[0].textContent,/Performance Purple/);
-  assert.match(cards[1].textContent,/BetaMix Red/);
+  assert.match(cards[0].textContent,/Sölden/);assert.match(cards[0].textContent,/≈ -5,0 °C/);assert.match(cards[0].textContent,/Performance Purple/);assert.match(cards[0].textContent,/BetaMix Red/);
+  assert.match(cards[1].textContent,/BetaMix Red/);assert.doesNotMatch(cards[1].textContent,/Performance Purple/);
   assert.match(cards[2].textContent,/UltraMix Blue/);
   assert.match(cards[3].textContent,/Geen sneeuwdek in model/);assert.match(cards[3].textContent,/Lucht 4,0 °C/);
+  assert.match(cards[4].textContent,/AlphaMix Yellow/);assert.match(cards[4].textContent,/Performance Purple/);
+  assert.equal(cards[0].querySelector('.snow-resort-wax-link').getAttribute('href'),'#pakketten');
   assert.match(d.querySelector('#snowLiveStatus').textContent,/bijgewerkt om 12:00 uur/);
   assert.equal(d.querySelector('#snowResortGrid').getAttribute('aria-busy'),'false');
 });
