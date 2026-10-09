@@ -1,10 +1,10 @@
-const CACHE_NAME = 'lattenspecialist-v46-platinum-repairs';
+const CACHE_NAME = 'lattenspecialist-v47-package-alignment';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=20',
+  '/homepage.css?v=21',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=3',
   '/package-choice.js?v=9',

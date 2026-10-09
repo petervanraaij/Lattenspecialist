@@ -276,7 +276,7 @@
 .home-page .performance-badge { align-self:flex-start; color:#111213; background:#d6ad50; border-radius:999px; padding:5px 9px; font-size:.67rem; font-weight:850; letter-spacing:.06em; text-transform:uppercase; }
 .home-page .wax-purple .performance-link { margin-top:auto; }
 .home-page .snow-temperature-note { margin:20px 0 0; color:#aaa399; font-size:.88rem; }
-.home-page .package-wax { display:grid; gap:8px; margin:auto 0 14px; padding:12px 10px; border:1px solid #d7c18e; border-radius:7px; color:#654b13; background:#fbf5e7; font-size:.82rem; font-weight:700; }
+.home-page .package-wax { display:grid; gap:8px; margin:0 0 14px; padding:12px 10px; border:1px solid #d7c18e; border-radius:7px; color:#654b13; background:#fbf5e7; font-size:.82rem; font-weight:700; }
 .home-page .package-wax select { width:100%; min-width:0; min-height:44px; padding:8px 4px; border:1px solid #d7c18e; border-radius:5px; background:#fffdf9; color:#3c3019; font:inherit; font-size:.8rem; cursor:pointer; }
 .home-page .package-urgent { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:start; gap:10px; margin:0 0 14px; padding:12px 10px; border:1px solid var(--metal-edge); border-radius:7px; cursor:pointer; }
 .home-page .package-urgent input { width:18px; height:18px; margin:2px 0 0; accent-color:#755711; }
@@ -386,6 +386,21 @@
 .package-repairs select:disabled { opacity:.6; cursor:not-allowed; }
 .package-repairs:focus-within { outline:3px solid #bc8c26; outline-offset:3px; }
 .package-repairs-hint { color:#725311; font-size:.73rem; font-weight:400; line-height:1.5; }
+/* Share the common rows so extra options cannot shift another package's controls. */
+@supports (grid-template-rows:subgrid) {
+  @media (min-width:561px) {
+    .home-page .maintenance-layout .package-card { display:grid; grid-template-rows:subgrid; grid-row:span 9; row-gap:0; }
+    .package-card > .tier { grid-row:1; }
+    .package-card > h3 { grid-row:2; }
+    .package-card > .price-row { grid-row:3; }
+    .package-card > .package-details { grid-row:4; }
+    .package-card > .package-wax { grid-row:5; }
+    .package-card > .package-urgent { grid-row:6; }
+    .package-card > .package-amounts { grid-row:7; }
+    .package-card > .package-repairs, .package-card > .package-bindings { grid-row:8; }
+    .package-card--platinum > .package-bindings { grid-row:9; }
+  }
+}
 @media(max-width:1200px) {
   .home-page .maintenance-layout .package-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
   .home-page .maintenance-layout .package-card h3 { min-height:2.6em; font-size:1.15rem; }
