@@ -20,7 +20,7 @@ test('live snow estimate renders resorts, snow state and matching wax advice',as
   w.fetch=async url => {
     assert.match(String(url),/temperature_2m%2Csnow_depth/);
     assert.match(String(url),/temperature_2m_min%2Ctemperature_2m_max%2Csnowfall_sum/);
-    assert.match(String(url),/forecast_days=14/);
+    assert.match(String(url),/forecast_days=7/);
     assert.match(String(url),/elevation=2850%2C2500%2C2300%2C2500%2C2700%2C2900%2C800/);
     return {ok:true,json:async()=>[row(-5,.18),row(-13,.35),row(-18,.6),row(4,0),row(-2,.2),row(-9,.5),row(2,0)]};
   };
@@ -29,7 +29,7 @@ test('live snow estimate renders resorts, snow state and matching wax advice',as
   assert.equal(tabs.length,7);
   const selectedCard=()=>d.querySelector('#snowResortPanel .snow-resort-card');
   assert.match(selectedCard().textContent,/Sölden/);assert.match(selectedCard().textContent,/≈ -5,0 °C/);assert.match(selectedCard().textContent,/Performance Purple/);assert.match(selectedCard().textContent,/BetaMix Red/);
-  assert.match(selectedCard().textContent,/Verwachting komende 14 dagen/);assert.match(selectedCard().textContent,/3,5 cm nieuwe sneeuw verwacht/);
+  assert.match(selectedCard().textContent,/Weersindicatie komende 7 dagen/);assert.match(selectedCard().textContent,/3,5 cm nieuwe sneeuw in het model/);assert.match(selectedCard().textContent,/kies vooral op voorkeur en gebruik/);
   assert.equal(selectedCard().querySelector('.snow-resort-wax-link').getAttribute('href'),'#pakketten');
   tabs[1].click();assert.match(selectedCard().textContent,/Ischgl/);assert.match(selectedCard().textContent,/BetaMix Red/);assert.doesNotMatch(selectedCard().textContent,/Performance Purple/);
   tabs[2].click();assert.match(selectedCard().textContent,/Gerlos/);assert.match(selectedCard().textContent,/UltraMix Blue/);
@@ -77,5 +77,5 @@ test('wax guide, indoor slopes and customer destination search stay in one tempe
   assert.match(result.textContent,/Saalbach/);
   assert.match(result.textContent,/≈ -7,0 °C/);
   assert.match(result.textContent,/Performance Purple/);
-  assert.match(result.textContent,/Verwachting komende 14 dagen/);
+  assert.match(result.textContent,/Weersindicatie komende 7 dagen/);
 });

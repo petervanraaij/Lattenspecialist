@@ -359,6 +359,7 @@
 .snow-resort-forecast span { font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
 .snow-resort-forecast strong { color:#3f331e; font-size:.75rem; }
 .snow-resort-forecast small { font-size:.63rem; }
+.snow-resort-forecast .snow-resort-forecast-caution { margin-top:3px; padding-top:4px; border-top:1px solid #d8c9aa; color:#704d0a; font-weight:800; }
 .snow-resort-card.is-loading { grid-column:1/-1; color:#5d554a; font-size:.8rem; }
 .snow-indoor-summary { display:flex; align-items:center; justify-content:space-between; gap:22px; padding:10px 12px; border:1px solid #d7c18e; border-radius:10px; background:#fffaf0; }
 .snow-indoor-summary div > p { margin:2px 0 0; color:#645b4f; font-size:.62rem; }

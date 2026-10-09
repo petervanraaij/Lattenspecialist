@@ -18,7 +18,7 @@
   ];
   const endpoint = 'https://api.open-meteo.com/v1/dwd-icon';
   const geocodingEndpoint = 'https://geocoding-api.open-meteo.com/v1/search';
-  const cacheKey = 'lattenspecialist-snow-conditions-v2';
+  const cacheKey = 'lattenspecialist-snow-conditions-v3';
   let selectedResortIndex = 0;
   const formatTemperature = value => `${new Intl.NumberFormat('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1}).format(value)} °C`;
   const formatDepth = value => `${Math.round(value * 100)} cm sneeuwdek`;
@@ -33,25 +33,25 @@
   function addWaxMatch(card,estimatedSnow) {
     const includedWax = includedWaxAdvice(estimatedSnow);
     const waxMatch = element('div','snow-resort-wax-match');
-    waxMatch.append(element('span','snow-resort-wax-label','Waxmatch bij deze sneeuw'));
+    waxMatch.append(element('span','snow-resort-wax-label','Waxsuggestie bij deze temperatuur'));
     if (estimatedSnow >= -12) {
       waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--performance','Performance Purple · + € 7,50'));
-      waxMatch.append(element('span','snow-resort-wax-included',`Inbegrepen alternatief: ${includedWax}`));
+      waxMatch.append(element('span','snow-resort-wax-included',`Inbegrepen keuze: ${includedWax}`));
     } else {
       waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--included',includedWax));
       waxMatch.append(element('span','snow-resort-wax-included','Inbegrepen bij ieder waxpakket'));
     }
-    const waxLink = element('a','snow-resort-wax-link',estimatedSnow >= -12 ? 'Kies Performance bij je pakket →' : `Kies ${includedWax} bij je pakket →`);
+    const waxLink = element('a','snow-resort-wax-link','Bekijk de waxkeuzes bij de pakketten →');
     waxLink.href = '#pakketten';
     waxMatch.append(waxLink);
     card.append(waxMatch);
   }
   function addForecast(card,daily) {
-    const lows = finiteValues(daily?.temperature_2m_min);
-    const highs = finiteValues(daily?.temperature_2m_max);
-    const snowfall = finiteValues(daily?.snowfall_sum);
+    const lows = finiteValues(daily?.temperature_2m_min).slice(0,7);
+    const highs = finiteValues(daily?.temperature_2m_max).slice(0,7);
+    const snowfall = finiteValues(daily?.snowfall_sum).slice(0,7);
     const forecast = element('div','snow-resort-forecast');
-    forecast.append(element('span','','Verwachting komende 14 dagen'));
+    forecast.append(element('span','','Weersindicatie komende 7 dagen'));
     if (!lows.length || !highs.length) {
       forecast.append(element('strong','','Nog niet beschikbaar'));
     } else {
@@ -59,8 +59,9 @@
       const maximum = Math.max(...highs);
       const snowTotal = snowfall.reduce((total,value) => total + value,0);
       forecast.append(element('strong','',`${formatTemperature(minimum)} tot ${formatTemperature(maximum)}`));
-      forecast.append(element('small','',snowTotal >= .1 ? `${new Intl.NumberFormat('nl-NL',{maximumFractionDigits:1}).format(snowTotal)} cm nieuwe sneeuw verwacht` : 'Geen nieuwe sneeuw verwacht'));
+      forecast.append(element('small','',snowTotal >= .1 ? `${new Intl.NumberFormat('nl-NL',{maximumFractionDigits:1}).format(snowTotal)} cm nieuwe sneeuw in het model` : 'Geen nieuwe sneeuw in het model'));
     }
+    forecast.append(element('small','snow-resort-forecast-caution','Indicatief · kies vooral op voorkeur en gebruik'));
     card.append(forecast);
   }
   function createResortCard(resort,current,daily) {
@@ -88,9 +89,9 @@
       addWaxMatch(card,estimatedSnow);
     } else {
       const waxMatch = element('div','snow-resort-wax-match is-unavailable');
-      waxMatch.append(element('span','snow-resort-wax-label','Waxmatch'));
+      waxMatch.append(element('span','snow-resort-wax-label','Waxkeuze'));
       waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--included','Nog niet te bepalen'));
-      waxMatch.append(element('span','snow-resort-wax-included','Zonder sneeuwdek adviseren we op bestemming en gebruik.'));
+      waxMatch.append(element('span','snow-resort-wax-included','Zonder sneeuwdek kies je op voorkeur en verwacht gebruik.'));
       card.append(waxMatch);
     }
     addForecast(card,daily);
@@ -145,7 +146,7 @@
     url.searchParams.set('elevation',resorts.map(item => item.elevation).join(','));
     url.searchParams.set('current','temperature_2m,snow_depth');
     url.searchParams.set('daily','temperature_2m_min,temperature_2m_max,snowfall_sum');
-    url.searchParams.set('forecast_days','14');
+    url.searchParams.set('forecast_days','7');
     url.searchParams.set('timezone','Europe/Amsterdam');
     try {
       const response = await fetch(url,{cache:'no-store'});
@@ -192,7 +193,7 @@
       if (Number.isFinite(place.elevation)) weatherUrl.searchParams.set('elevation',place.elevation);
       weatherUrl.searchParams.set('current','temperature_2m,snow_depth');
       weatherUrl.searchParams.set('daily','temperature_2m_min,temperature_2m_max,snowfall_sum');
-      weatherUrl.searchParams.set('forecast_days','14');
+      weatherUrl.searchParams.set('forecast_days','7');
       weatherUrl.searchParams.set('timezone','Europe/Amsterdam');
       const weatherResponse = await fetch(weatherUrl,{cache:'no-store'});
       if (!weatherResponse.ok) throw new Error('Weather request failed');
