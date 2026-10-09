@@ -1,7 +1,7 @@
 (() => {
   const packages = {slijpen:'Brons', brons:'Koper', zilver:'Zilver', goud:'Goud', platinum:'Platinum'};
-  const waxes = {none:'Geen wax', beta:'BetaMix Red', alpha:'AlphaMix Yellow', ultra:'UltraMix Blue', performance:'Performance Purple (+ € 7,50)'};
-  const waxNotes = {none:'', beta:'BetaMix Red', alpha:'AlphaMix Yellow', ultra:'UltraMix Blue', performance:'Performance Purple +€7,50'};
+  const waxes = {none:'Geen wax', beta:'BetaMix Red', alpha:'AlphaMix Yellow', ultra:'UltraMix Blue', performance:'Performance Purple (+ € 5,00)'};
+  const waxNotes = {none:'', beta:'BetaMix Red', alpha:'AlphaMix Yellow', ultra:'UltraMix Blue', performance:'Performance Purple +€5,00'};
   const extras = {edges:'Kanten slijpen en tunen', repair:'Kleine, oppervlakkige belagreparaties', complex:'Grotere of complexere reparaties', bindings:'Snowboardbindingen demonteren + monteren'};
   const extraNotes = {edges:'Kanten slijpen', repair:'Kleine reparaties', complex:'Complexe reparaties (prijs in overleg)', bindings:'Bindingen dem./mont.'};
   const prices = {
@@ -11,7 +11,7 @@
     goud:{s:44.95,b:49.95},
     platinum:{s:52.5,b:57.5}
   };
-  const performancePrice = 7.5, urgentPrice = 10, repairPrice = 7.5;
+  const performancePrice = 5, urgentPrice = 10, repairPrice = 7.5;
   const own = (map, key) => Object.prototype.hasOwnProperty.call(map, key);
   const quantity = value => Number.isInteger(value) && value >= 0 && value <= 20;
   const empty = () => ({p:{}, e:{}, u:false});

@@ -32,7 +32,7 @@ function homepage(t,url='https://lattenspecialist.nl/') {
  return {w,d,model:w.LATTEN_SELECTION};
 }
 const chosen=d=>JSON.parse(new URL(d.querySelector('#packageRequest').href).searchParams.get('keuze'));
-const waxChoices={beta:'Holmenkol BetaMix Red (standaard inbegrepen)',alpha:'Holmenkol AlphaMix Yellow (inbegrepen)',ultra:'Holmenkol UltraMix Blue (inbegrepen)',performance:'Performance Wax (+ € 7,50)'};
+const waxChoices={beta:'Holmenkol BetaMix Red (standaard inbegrepen)',alpha:'Holmenkol AlphaMix Yellow (inbegrepen)',ultra:'Holmenkol UltraMix Blue (inbegrepen)',performance:'Performance Wax (+ € 5,00)'};
 test('copper and bronze package links work and no package is silently preselected',async t=>{
  for(const name of ['Koper','Brons','Zilver','Goud','Platinum']) {
   const {f}=await setup(t,{url:`https://lattenspecialist.nl/afspraak.html?pakket=${name}`});assert.equal(f.elements.package.value,name);
@@ -75,8 +75,8 @@ test('counts, multiple packages, different materials and wax survive one complet
  assert.equal(value.p.brons.s,2);assert.equal(value.p.goud.b,1);assert.equal(value.p.slijpen.s,1);assert.equal(value.p.slijpen.w,'none');assert.equal(value.p.goud.u,true);assert.equal(value.p.goud.w,'performance');
  assert.equal(d.querySelectorAll('.package-card.is-selected').length,3);
  assert.equal(d.querySelector('.mobile-sticky-cta').href,d.querySelector('#packageRequest').href);
- assert.match(d.querySelector('#selectionTotal').textContent,/132,30/);
- assert.match(d.querySelector('#bookingCartTotal').textContent,/132,30/);
+ assert.match(d.querySelector('#selectionTotal').textContent,/129,80/);
+ assert.match(d.querySelector('#bookingCartTotal').textContent,/129,80/);
  assert.match(d.querySelector('#bookingCartCount').textContent,/4 materialen gekozen/);
  const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
  assert.equal(rd.querySelector('#maintenanceSelection').hidden,false);
@@ -104,14 +104,14 @@ test('visible total includes package, performance wax, rush, bindings and repair
  copper.querySelector('[name="homepageUrgent"]').click();
  change(w,d.querySelector('#brons-repairs'),'2');
  const value=chosen(d),estimate=model.estimate(value);
- assert.equal(estimate.amount,2);assert.equal(estimate.total,92.4);assert.equal(estimate.needsAssessment,true);
- assert.match(d.querySelector('#selectionTotal').textContent,/92,40/);
- assert.match(d.querySelector('#bookingCartTotal').textContent,/92,40/);
+ assert.equal(estimate.amount,2);assert.equal(estimate.total,87.4);assert.equal(estimate.needsAssessment,true);
+ assert.match(d.querySelector('#selectionTotal').textContent,/87,40/);
+ assert.match(d.querySelector('#bookingCartTotal').textContent,/87,40/);
  assert.match(d.querySelector('#bookingCartCount').textContent,/2 materialen gekozen/);
  assert.equal(d.querySelector('#stickyPackageRequest').href,d.querySelector('#packageRequest').href);
  const request=await setup(t,{url:d.querySelector('#packageRequest').href});
- assert.match(request.d.querySelector('#maintenanceSelectionTotal').textContent,/92,40/);
- assert.match(request.d.querySelector('#requestSummary').textContent,/Totaal vanaf:.*92,40/);
+ assert.match(request.d.querySelector('#maintenanceSelectionTotal').textContent,/87,40/);
+ assert.match(request.d.querySelector('#requestSummary').textContent,/Totaal vanaf:.*87,40/);
 });
 test('snowboard prompts add bindings and their cost to the correct package, never to separate work',async t=>{
  const {d}=homepage(t),dialog=d.querySelector('#bindingsDialog');

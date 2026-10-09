@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v69-gold-performance-label';
+const CACHE_NAME = 'lattenspecialist-v70-performance-five-euro';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -6,9 +6,9 @@ const APP_SHELL = [
   '/verhuur.html',
   '/homepage.css?v=43',
   '/homepage.js?v=2',
-  '/maintenance-selection.js?v=6',
-  '/package-choice.js?v=11',
-  '/snow-temperature.js?v=6',
+  '/maintenance-selection.js?v=7',
+  '/package-choice.js?v=12',
+  '/snow-temperature.js?v=7',
   '/website-metrics.js?v=1',
   '/app.html',
   '/beheer.html',

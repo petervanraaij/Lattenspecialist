@@ -35,7 +35,7 @@
     const waxMatch = element('div','snow-resort-wax-match');
     waxMatch.append(element('span','snow-resort-wax-label','Waxsuggestie bij deze temperatuur'));
     if (estimatedSnow >= -12) {
-      waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--performance','Performance Purple · + € 7,50'));
+      waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--performance','Performance Purple · + € 5,00'));
       waxMatch.append(element('span','snow-resort-wax-included',`Inbegrepen keuze: ${includedWax}`));
     } else {
       waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--included',includedWax));

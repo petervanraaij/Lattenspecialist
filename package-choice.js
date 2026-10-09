@@ -77,7 +77,7 @@
     cards.forEach(card => {
       card.classList.toggle('is-selected',amount(card,'homepageSki') + amount(card,'homepageSnowboard') > 0);
       const wax = card.querySelector('[name="homepageWax"]').value;
-      card.querySelector('.package-wax-price').textContent = wax === 'performance' ? '+ € 7,50 per paar / snowboard' : wax === 'none' ? 'Dit pakket is alleen slijpen.' : 'Inbegrepen';
+      card.querySelector('.package-wax-price').textContent = wax === 'performance' ? '+ € 5,00 per paar / snowboard' : wax === 'none' ? 'Dit pakket is alleen slijpen.' : 'Inbegrepen';
     });
     const value = read();
     valid = !!value;
