@@ -1,14 +1,14 @@
-const CACHE_NAME = 'lattenspecialist-v70-performance-five-euro';
+const CACHE_NAME = 'lattenspecialist-v72-indoor-wax-options-clean';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=43',
+  '/homepage.css?v=45',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=7',
   '/package-choice.js?v=12',
-  '/snow-temperature.js?v=7',
+  '/snow-temperature.js?v=9',
   '/website-metrics.js?v=1',
   '/app.html',
   '/beheer.html',

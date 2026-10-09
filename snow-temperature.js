@@ -34,16 +34,12 @@
     const includedWax = includedWaxAdvice(estimatedSnow);
     const waxMatch = element('div','snow-resort-wax-match');
     waxMatch.append(element('span','snow-resort-wax-label','Waxsuggestie bij deze temperatuur'));
+    const waxOptions = element('div','snow-resort-wax-options');
+    waxOptions.append(element('strong','snow-resort-wax snow-resort-wax--included',`${includedWax} · inbegrepen`));
     if (estimatedSnow >= -12) {
-      waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--performance','Performance Purple · + € 5,00'));
-      waxMatch.append(element('span','snow-resort-wax-included',`Inbegrepen keuze: ${includedWax}`));
-    } else {
-      waxMatch.append(element('strong','snow-resort-wax snow-resort-wax--included',includedWax));
-      waxMatch.append(element('span','snow-resort-wax-included','Inbegrepen bij ieder waxpakket'));
+      waxOptions.append(element('strong','snow-resort-wax snow-resort-wax--performance','Performance Purple · + € 5,00'));
     }
-    const waxLink = element('a','snow-resort-wax-link','Bekijk de waxkeuzes bij de pakketten →');
-    waxLink.href = '#pakketten';
-    waxMatch.append(waxLink);
+    waxMatch.append(waxOptions);
     card.append(waxMatch);
   }
   function addForecast(card,daily) {
@@ -61,7 +57,6 @@
       forecast.append(element('strong','',`${formatTemperature(minimum)} tot ${formatTemperature(maximum)}`));
       forecast.append(element('small','',snowTotal >= .1 ? `${new Intl.NumberFormat('nl-NL',{maximumFractionDigits:1}).format(snowTotal)} cm nieuwe sneeuw in het model` : 'Geen nieuwe sneeuw in het model'));
     }
-    forecast.append(element('small','snow-resort-forecast-caution','Indicatief · kies vooral op voorkeur en gebruik'));
     card.append(forecast);
   }
   function createResortCard(resort,current,daily) {
@@ -97,23 +92,43 @@
     addForecast(card,daily);
     return card;
   }
+  function createIndoorCard() {
+    const card = element('article','snow-resort-card snow-resort-card--indoor');
+    const heading = element('div','snow-resort-heading');
+    heading.append(element('h4','','Indoor skihallen'));
+    heading.append(element('span','snow-resort-location','Nederland en Bottrop'));
+    card.append(heading);
+    const currentBlock = element('div','snow-resort-current');
+    currentBlock.append(element('span','snow-resort-current-label','Vaste binnentemperatuur'));
+    currentBlock.append(element('strong','snow-resort-temperature','Circa -4 °C tot -5 °C'));
+    currentBlock.append(element('span','snow-resort-meta','Geen live weerdata nodig'));
+    card.append(currentBlock);
+    addWaxMatch(card,-5);
+    const locations = element('div','snow-resort-forecast snow-resort-indoor-locations');
+    locations.append(element('span','','Indoorlocaties'));
+    locations.append(element('strong','','Landgraaf · Zoetermeer · Amsterdam'));
+    locations.append(element('small','','Rucphen-Breda · Terneuzen · Bottrop'));
+    card.append(locations);
+    return card;
+  }
   function render(payload, cached = false) {
     const rows = Array.isArray(payload) ? payload : [payload];
     grid.replaceChildren();
     const tabs = element('div','snow-resort-tabs');
     tabs.setAttribute('role','tablist');
-    tabs.setAttribute('aria-label','Kies een favoriet skigebied');
+    tabs.setAttribute('aria-label','Kies een skigebied of indoorhal');
     const panel = element('div','snow-resort-panel');
     panel.id = 'snowResortPanel';
     panel.setAttribute('role','tabpanel');
-    const buttons = resorts.map((resort,index) => {
+    const choices = [...resorts,{name:'Indoor',indoor:true}];
+    const buttons = choices.map((resort,index) => {
       const button = element('button','snow-resort-tab',resort.name);
       button.type = 'button';
       button.setAttribute('role','tab');
       button.setAttribute('aria-controls',panel.id);
       button.addEventListener('click',() => {
         selectedResortIndex = index;
-        panel.replaceChildren(createResortCard(resort,rows[index]?.current,rows[index]?.daily));
+        panel.replaceChildren(resort.indoor ? createIndoorCard() : createResortCard(resort,rows[index]?.current,rows[index]?.daily));
         buttons.forEach((item,itemIndex) => {
           const selected = itemIndex === index;
           item.classList.toggle('is-active',selected);
