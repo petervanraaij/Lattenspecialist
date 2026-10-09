@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v72-indoor-wax-options-clean';
+const CACHE_NAME = 'lattenspecialist-v73-clean-snow-note';
 const APP_SHELL = [
   '/',
   '/index.html',
