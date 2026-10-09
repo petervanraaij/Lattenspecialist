@@ -6,12 +6,15 @@
   const own = (map, key) => Object.prototype.hasOwnProperty.call(map, key);
   const quantity = value => Number.isInteger(value) && value >= 0 && value <= 20;
   const empty = () => ({p:{}, e:{}, u:false});
+  const bindingPrice = count => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(count * 7.5);
   function normalize(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value) || !value.p || !value.e || typeof value.p !== 'object' || typeof value.e !== 'object' || Array.isArray(value.p) || Array.isArray(value.e) || typeof value.u !== 'boolean') return null;
     const result = empty();
     for (const [id, item] of Object.entries(value.p)) {
       if (!own(packages,id) || !item || !quantity(item.s) || !quantity(item.b) || !own(waxes,item.w) || typeof item.u !== 'boolean') return null;
-      if (item.s + item.b) result.p[id] = {s:item.s,b:item.b,w:item.w,u:item.u};
+      const bindings = item.d === undefined ? 0 : item.d;
+      if (!quantity(bindings) || bindings > item.b) return null;
+      if (item.s + item.b) result.p[id] = {s:item.s,b:item.b,d:bindings,w:item.w,u:item.u};
     }
     for (const [id, item] of Object.entries(value.e)) {
       if (!own(extras,id) || !item || !quantity(item.q) || !['ski','snowboard'].includes(item.m) || (id === 'bindings' && item.m !== 'snowboard')) return null;
@@ -32,7 +35,7 @@
       const item = value.p[id];
       if (!item) continue;
       const materials = [item.s ? `${item.s}× ski's (paar)` : '',item.b ? `${item.b}× snowboard` : ''].filter(Boolean).join(' + ');
-      lines.push(`${name}: ${materials} · ${waxes[item.w]}${item.u ? ' · Spoed + € 10,00 (indien mogelijk)' : ''}`);
+      lines.push(`${name}: ${materials} · ${waxes[item.w]}${item.u ? ' · Spoed + € 10,00 (indien mogelijk)' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}`);
     }
     for (const [id,name] of Object.entries(extras)) {
       const item = value.e[id];
@@ -48,8 +51,9 @@
       const item = value.p[id];
       if (!item) continue;
       const materials = [item.s ? `${item.s}x ski (paar)` : '',item.b ? `${item.b}x snowboard` : ''].filter(Boolean).join(' + ');
-      lines.push(`${name}: ${materials}; ${waxes[item.w]}${item.u ? '; spoed +€10' : ''}`);
+      lines.push(`${name}: ${materials}; ${waxes[item.w]}${item.u ? '; spoed +€10' : ''}${item.d ? `; bindingen ${item.d}x` : ''}`);
     }
+    if (Object.values(value.p).some(item => item.d)) lines.push('Bindingen in pakket: demonteren + monteren, €7,50/st.');
     for (const [id,name] of Object.entries(extraNotes)) {
       const item = value.e[id];
       if (item) lines.push(`Los: ${item.q}x ${name} (${item.m})`);
@@ -75,5 +79,5 @@
       urgent:value.u || Object.values(value.p).some(item => item.u) ? 'Ja, zie onderhoudskeuze (indien mogelijk, in overleg)' : 'Nee'
     };
   }
-  window.LATTEN_SELECTION = {packages,waxes,extras,empty,normalize,hasItems,parse,describe,notes,legacy};
+  window.LATTEN_SELECTION = {packages,waxes,extras,empty,normalize,hasItems,parse,describe,notes,legacy,bindingPrice};
 })();

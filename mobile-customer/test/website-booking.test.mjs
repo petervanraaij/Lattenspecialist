@@ -25,7 +25,10 @@ function complete(w,f) {
 const submit=(w,f)=>f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
 function homepage(t,url='https://lattenspecialist.nl/') {
  const dom=new JSDOM(home,{url,runScripts:'outside-only'});t.after(()=>dom.window.close());
- const w=dom.window,d=w.document;w.eval(selection);w.eval(choice);
+ const w=dom.window,d=w.document;
+ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
+ w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
+ w.eval(selection);w.eval(choice);
  return {w,d,model:w.LATTEN_SELECTION};
 }
 const chosen=d=>JSON.parse(new URL(d.querySelector('#packageRequest').href).searchParams.get('keuze'));
@@ -73,6 +76,49 @@ test('counts, multiple packages, different materials, wax and extras survive one
  assert.equal(edited.d.querySelector('#brons-ski').value,'2');assert.equal(edited.d.querySelector('#extra-bindings').value,'1');
  assert.deepEqual(chosen(edited.d),value);
 });
+test('snowboard prompts add bindings and their cost to the correct package, never to separate work',async t=>{
+ const {d}=homepage(t),dialog=d.querySelector('#bindingsDialog');
+ for (const id of ['brons','zilver','goud','platinum']) {
+  const plus=d.querySelector(`#${id}-snowboard`).closest('.quantity-control').querySelector('[data-step="1"]');
+  plus.click();assert.equal(dialog.open,true);
+  assert.match(d.querySelector('#bindingsPrice').textContent,/7,50/);
+  d.querySelector('#bindingsYes').click();d.querySelector('#bindingsYes').click();
+  assert.equal(dialog.open,false);assert.equal(chosen(d).p[id].d,1);
+  plus.click();d.querySelector('#bindingsNo').click();
+  assert.equal(chosen(d).p[id].b,2);assert.equal(chosen(d).p[id].d,1);
+  plus.click();d.querySelector('#bindingsYes').click();
+  assert.equal(chosen(d).p[id].d,2);
+  assert.match(d.querySelector(`[data-package="${id}"] .package-bindings-price`).textContent,/15,00 extra in dit pakket/);
+ }
+ assert.equal(d.querySelector('#extra-bindings').value,'0');assert.deepEqual(chosen(d).e,{});
+ const {w,f,posts,d:rd}=await setup(t,{url:d.querySelector('#packageRequest').href});
+ assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/2× bindingen demonteren \+ monteren \(\+ €\s15,00\)/);
+ complete(w,f);submit(w,f);await turn();await turn();
+ assert.match(posts[0].notes,/Brons:.*bindingen 2x/);
+ assert.match(posts[0].notes,/Bindingen in pakket: demonteren \+ monteren, €7,50\/st/);
+ const restored=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
+ assert.deepEqual(chosen(restored.d),chosen(d));assert.equal(restored.d.querySelector('#bindingsDialog').open,false);
+});
+
+test('bindings decline, escape, fewer snowboards and manual quantity changes do not add unwanted services',t=>{
+ const {w,d,model}=homepage(t),dialog=d.querySelector('#bindingsDialog');
+ const board=d.querySelector('#goud-snowboard'),bindings=d.querySelector('#goud-bindings');
+ change(w,board,'2');assert.equal(dialog.open,true);
+ assert.match(d.querySelector('#bindingsQuestion').textContent,/2 extra snowboards bij Goud/);
+ d.querySelector('#bindingsYes').click();assert.equal(bindings.value,'2');
+ change(w,board,'1');assert.equal(dialog.open,false);assert.equal(bindings.value,'1');
+ change(w,board,'0');assert.equal(bindings.value,'0');assert.equal(d.querySelector('[data-package="goud"] .package-bindings').hidden,true);
+ board.closest('.quantity-control').querySelector('[data-step="1"]').click();
+ dialog.dispatchEvent(new w.Event('cancel'));dialog.close();
+ assert.equal(bindings.value,'0');assert.equal(chosen(d).p.goud.b,1);
+ const ski=d.querySelector('#brons-ski');ski.closest('.quantity-control').querySelector('[data-step="1"]').click();
+ assert.equal(dialog.open,false);
+ bindings.closest('.quantity-control').querySelector('[data-step="1"]').click();
+ assert.equal(bindings.value,'1');assert.equal(bindings.closest('.quantity-control').querySelector('[data-step="1"]').disabled,true);
+ assert.equal(model.normalize({p:{goud:{s:0,b:1,d:2,w:'beta',u:false}},e:{},u:false}),null);
+ assert.equal(model.normalize({p:{goud:{s:0,b:1,d:-1,w:'beta',u:false}},e:{},u:false}),null);
+});
+
 test('wax is independently selectable for every package without removing earlier choices',async t=>{
  const {w,d}=homepage(t);
  for(const id of ['brons','zilver','goud','platinum']) {
@@ -116,7 +162,7 @@ test('invalid selections cannot produce a partial or over-limit order',async t=>
 });
 test('the largest selection and allowed comment reach the existing backend without truncation',async t=>{
  const {model}=homepage(t);const value=model.empty();
- for(const id of Object.keys(model.packages))value.p[id]={s:3,b:2,w:'performance',u:true};
+ for(const id of Object.keys(model.packages))value.p[id]={s:3,b:2,d:2,w:'performance',u:true};
  for(const id of Object.keys(model.extras))value.e[id]={q:20,m:'snowboard'};
  value.u=true;
  assert.ok(model.notes(model.normalize(value)).length<800);

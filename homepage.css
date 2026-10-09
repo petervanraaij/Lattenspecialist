@@ -369,6 +369,21 @@
 .maintenance-selection ul { padding-left:20px; margin:0 0 12px; }
 .maintenance-selection li { margin:10px 0; }
 #notesRemaining { font-size:.75rem; font-weight:400; color:#6a655e; }
+.bindings-dialog { width:min(480px,calc(100% - 32px)); max-height:calc(100dvh - 32px); box-sizing:border-box; padding:30px; border:1px solid #c4a25a; border-radius:18px; background:#fffdf8; color:#23211d; box-shadow:0 24px 90px #0005; }
+.bindings-dialog::backdrop { background:rgba(12,13,15,.65); }
+.bindings-dialog h2 { margin:12px 0 16px; font-size:1.65rem; line-height:1.2; }
+.bindings-dialog p { margin:12px 0; line-height:1.6; }
+.bindings-dialog .bindings-price { font-weight:800; color:#725311; }
+.bindings-dialog .field-note { font-size:.85rem; color:#676156; }
+.bindings-actions { display:grid; gap:10px; margin-top:24px; }
+.bindings-actions .btn { width:100%; }
+.bindings-actions button:disabled { opacity:.45; cursor:not-allowed; }
+.bindings-decline { padding:12px; border:1px solid #d8cdb9; border-radius:8px; background:transparent; color:#504b40; font:inherit; cursor:pointer; }
+.bindings-actions button:focus-visible { outline:3px solid #b48d39; outline-offset:3px; }
+.package-bindings { margin-top:16px; padding-top:14px; border-top:1px solid var(--metal-edge); }
+.package-bindings[hidden] { display:none; }
+.package-bindings > strong { display:block; font-size:.8rem; line-height:1.45; }
+.package-bindings-price { display:block; margin-top:6px; color:#725311; font-size:.73rem; line-height:1.5; }
 @media(max-width:1200px) {
   .home-page .maintenance-layout .package-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
   .home-page .maintenance-layout .package-card h3 { min-height:2.6em; font-size:1.15rem; }
