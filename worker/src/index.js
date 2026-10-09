@@ -375,7 +375,7 @@ const sendPaymentEmail = async (record, env) => {
     to: [record.email],
     subject: `Betaalverzoek De Lattenspecialist – € ${amount}`,
     text: [`Hallo ${record.name},`, '', `Je materiaal is behandeld. Via deze link kun je € ${amount} betalen:`, record.paymentUrl, '', `Aanvraagcode: ${record.reference}`, '', 'Groet,', 'De Lattenspecialist'].join('\n'),
-    html: `<p>Hallo ${escapeHtml(record.name)},</p><p>Je materiaal is behandeld. Via onderstaande knop kun je <strong>€ ${escapeHtml(amount)}</strong> betalen.</p><p><a href="${escapeHtml(record.paymentUrl)}" style="display:inline-block;padding:12px 20px;border-radius:999px;background:#c99a2e;color:#111;text-decoration:none;font-weight:bold">Betaal € ${escapeHtml(amount)}</a></p><p>Aanvraagcode: ${escapeHtml(record.reference)}</p><p>Groet,<br>De Lattenspecialist</p>`
+    html: `<p>Hallo ${escapeHtml(record.name)},</p><p>Je materiaal is gereed. Via onderstaande knop kun je <strong>€ ${escapeHtml(amount)}</strong> betalen.</p><p><a href="${escapeHtml(record.paymentUrl)}" style="display:inline-block;padding:12px 20px;border-radius:999px;background:#c99a2e;color:#111;text-decoration:none;font-weight:bold">Betaal € ${escapeHtml(amount)}</a></p><p>Na betaling kan het materiaal worden opgehaald of teruggebracht.</p><p>Aanvraagcode: ${escapeHtml(record.reference)}</p><p>Groet,<br>De Lattenspecialist</p>`
   }, env);
 };
 

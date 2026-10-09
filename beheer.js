@@ -51,7 +51,7 @@
     if (!phone) return '';
     const firstName = String(record.name || '').split(/\s+/)[0] || '';
     const lines = type === 'payment'
-      ? [`Hallo ${firstName},`,'',`Je materiaal is behandeld. Het betaalverzoek van € ${Number(record.paymentAmount || 0).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})} staat hier:`,record.paymentUrl || '','',`Aanvraagcode: ${record.reference}`,'','Groet,','De Lattenspecialist']
+      ? [`Hallo ${firstName},`,'',`Je materiaal is gereed. Het betaalverzoek van € ${Number(record.paymentAmount || 0).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})} staat hier:`,record.paymentUrl || '','Na betaling kan het materiaal worden opgehaald of teruggebracht.','',`Aanvraagcode: ${record.reference}`,'','Groet,','De Lattenspecialist']
       : [`Hallo ${firstName},`,'','De status van je aanvraag bij De Lattenspecialist is bijgewerkt:',`*${record.status || steps[Math.max(0,Number(record.currentStep || 1)-1)]}*`];
     if (type === 'status') {
       if (record.note) lines.push('',record.note);

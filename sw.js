@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v82-edges-only-copy';
+const CACHE_NAME = 'lattenspecialist-v83-payment-on-ready';
 const APP_SHELL = [
   '/',
   '/index.html',
