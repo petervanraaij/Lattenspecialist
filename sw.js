@@ -1,11 +1,11 @@
-const CACHE_NAME = 'lattenspecialist-v77-clean-main-nav';
+const CACHE_NAME = 'lattenspecialist-v78-organized-homepage';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
   '/webshop.html',
-  '/homepage.css?v=48',
+  '/homepage.css?v=49',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=7',
   '/package-choice.js?v=12',
