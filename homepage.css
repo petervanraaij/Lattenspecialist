@@ -295,6 +295,25 @@
 .home-page .wax-story--compact .performance-link { margin-top:12px; font-size:.82rem; }
 .home-page .wax-story--compact .snow-temperature-note { margin-top:14px; font-size:.78rem; }
 .home-page .wax-swipe-hint { display:none; }
+.snow-live { margin-top:22px; padding-top:19px; border-top:1px solid rgba(255,255,255,.12); }
+.snow-live-head { display:flex; align-items:end; justify-content:space-between; gap:24px; margin-bottom:12px; }
+.snow-live-head h3 { margin:5px 0 0; font-size:1.16rem!important; }
+.snow-live-head > p { margin:0; color:#aaa399; font-size:.76rem; white-space:nowrap; }
+.snow-live-label { display:inline-flex; align-items:center; gap:7px; color:#e3c16e; font-size:.68rem; font-weight:850; letter-spacing:.09em; text-transform:uppercase; }
+.snow-live-label i { width:8px; height:8px; border-radius:50%; background:#69d38c; box-shadow:0 0 0 5px rgba(105,211,140,.12); }
+.snow-resort-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:9px; }
+.snow-resort-card { min-width:0; padding:13px 13px 12px; border:1px solid rgba(214,173,80,.24); border-radius:12px; background:rgba(255,255,255,.035); }
+.snow-resort-card h4 { margin:0 0 2px; color:#fffaf0; font-size:.88rem; line-height:1.25; }
+.snow-resort-location { display:block; min-height:2.4em; color:#948e85; font-size:.62rem; line-height:1.35; }
+.snow-resort-temperature { display:block; margin:9px 0 7px; color:#e5c46f; font-size:1.25rem; font-weight:900; }
+.snow-resort-temperature.is-no-snow { color:#c0b9ad; font-size:.9rem; }
+.snow-resort-meta { display:block; min-height:2.8em; color:#c7c0b5; font-size:.66rem; line-height:1.45; }
+.snow-resort-wax { display:inline-flex; margin-top:9px; padding:4px 7px; border-radius:999px; background:rgba(214,173,80,.13); color:#e4c46e; font-size:.61rem; font-weight:800; line-height:1.25; }
+.snow-resort-card.is-loading { grid-column:1/-1; color:#b9b2a7; font-size:.8rem; }
+.snow-live-status { margin:10px 0 0; color:#aaa399; font-size:.7rem; }
+.snow-live-status.is-error { color:#e8c77a; }
+.snow-live-note { margin:6px 0 0; color:#827d75; font-size:.66rem; line-height:1.45; }
+.snow-live-note a { color:#b9a064; text-decoration:underline; text-underline-offset:2px; }
 .home-page .package-wax { display:grid; gap:8px; margin:0 0 14px; padding:12px 10px; border:1px solid #d7c18e; border-radius:7px; color:#654b13; background:#fbf5e7; font-size:.82rem; font-weight:700; }
 .home-page .package-wax select { width:100%; min-width:0; min-height:44px; padding:8px 4px; border:1px solid #d7c18e; border-radius:5px; background:#fffdf9; color:#3c3019; font:inherit; font-size:.8rem; cursor:pointer; }
 .home-page .package-urgent { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:start; gap:10px; margin:0 0 14px; padding:12px 10px; border:1px solid var(--metal-edge); border-radius:7px; cursor:pointer; }
@@ -451,6 +470,8 @@
 }
 @media(max-width:1050px) {
   .home-page .wax-story--compact .wax-purple { transform:none; }
+  .snow-resort-grid { grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:190px; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x mandatory; scrollbar-width:thin; }
+  .snow-resort-card { scroll-snap-align:start; }
 }
 @media(max-width:560px) {
   .home-page .packages > .container { width:calc(100% - 40px); }
@@ -465,6 +486,9 @@
   .home-page .wax-swipe-hint { display:block; margin:0 0 9px; color:#d7c073; font-size:.75rem; }
   .home-page .wax-story--compact .wax-grid--four { display:flex; gap:12px; margin:0 -20px; padding:5px 20px 15px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:thin; }
   .home-page .wax-story--compact .wax-card { order:initial; flex:0 0 min(82vw,310px); scroll-snap-align:start; }
+  .snow-live-head { align-items:flex-start; flex-direction:column; gap:4px; }
+  .snow-live-head > p { white-space:normal; }
+  .snow-resort-grid { grid-auto-columns:min(68vw,230px); }
   .booking-cart { left:8px; right:8px; bottom:max(8px,env(safe-area-inset-bottom)); grid-template-columns:minmax(0,1fr) auto; min-width:0; gap:10px; padding:10px 10px 10px 14px; border-radius:14px; }
   .booking-cart-copy > span { font-size:.68rem; }
   .booking-cart-copy strong { font-size:.7rem; }
