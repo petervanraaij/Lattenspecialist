@@ -77,7 +77,10 @@
     const service = selectedService();
     const lines = [`Dienst: ${service}`];
     if (service === 'Onderhoud') {
-      if (maintenanceSelection) lines.push(...selectionModel.describe(maintenanceSelection));
+      if (maintenanceSelection) {
+        lines.push(...selectionModel.describe(maintenanceSelection));
+        lines.push(`Totaal vanaf: ${selectionModel.estimate(maintenanceSelection).formatted}`);
+      }
       else {
         lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`);
         if (!sharpeningOnly()) lines.push(`Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`);
@@ -198,6 +201,7 @@
     maintenanceSelection = requestedSelection;
     const list = document.querySelector('#maintenanceSelectionItems');
     selectionModel.describe(maintenanceSelection).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
+    document.querySelector('#maintenanceSelectionTotal').textContent = `Totaal vanaf ${selectionModel.estimate(maintenanceSelection).formatted}`;
     document.querySelector('#editMaintenanceSelection').href = `/?keuze=${encodeURIComponent(JSON.stringify(maintenanceSelection))}#pakketten`;
   }
   const packageChoice = params.get('pakket');

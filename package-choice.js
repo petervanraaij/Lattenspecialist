@@ -9,6 +9,10 @@
   const emptyMessage = document.querySelector('#selectionEmpty');
   const bindingsDialog = document.querySelector('#bindingsDialog');
   const bindingsYes = document.querySelector('#bindingsYes');
+  const selectionTotal = document.querySelector('#selectionTotal');
+  const bookingCart = document.querySelector('#bookingCart');
+  const bookingCartCount = document.querySelector('#bookingCartCount');
+  const bookingCartTotal = document.querySelector('#bookingCartTotal');
   const snowboardCounts = new WeakMap();
   let pendingBindings = null;
   const requestLinks = [...document.querySelectorAll('a[href="afspraak.html"]')];
@@ -80,6 +84,12 @@
     list.replaceChildren();
     if (value) model.describe(value).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
     const selected = value && model.hasItems(value);
+    const estimate = value ? model.estimate(value) : null;
+    const total = estimate?.formatted || '€ 0,00';
+    selectionTotal.textContent = total;
+    bookingCartTotal.textContent = total;
+    bookingCartCount.textContent = selected ? `${estimate.amount} ${estimate.amount === 1 ? 'materiaal' : 'materialen'} gekozen` : valid ? 'Nog niets gekozen' : 'Controleer de aantallen';
+    bookingCart.dataset.empty = selected ? 'false' : 'true';
     emptyMessage.hidden = !!selected || !valid;
     message.hidden = !selected && valid;
     message.textContent = !valid ? 'Kies hele aantallen van 0 t/m 20, met maximaal 20 paar ski’s of snowboards in de pakketten samen.' : selected ? 'Je volledige keuze gaat mee naar het aanvraagformulier.' : '';

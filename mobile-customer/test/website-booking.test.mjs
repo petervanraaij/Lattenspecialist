@@ -42,6 +42,9 @@ test('copper and bronze package links work and no package is silently preselecte
  const {d}=homepage(t);
  assert.equal(chosen(d),null);
  assert.equal(d.querySelectorAll('[name="homepagePackage"]').length,0);
+ assert.match(d.querySelector('#selectionTotal').textContent,/0,00/);
+ assert.match(d.querySelector('#bookingCartTotal').textContent,/0,00/);
+ assert.match(d.querySelector('#stickyPackageRequest').textContent,/Reserveren/);
  assert.equal(d.querySelectorAll('.package-details:not([open])').length,5);
  assert.equal(d.querySelectorAll('#pakketten').length,1);
  assert.equal(d.querySelector('.hero').nextElementSibling.id,'wax');
@@ -72,6 +75,9 @@ test('counts, multiple packages, different materials and wax survive one complet
  assert.equal(value.p.brons.s,2);assert.equal(value.p.goud.b,1);assert.equal(value.p.slijpen.s,1);assert.equal(value.p.slijpen.w,'none');assert.equal(value.p.goud.u,true);assert.equal(value.p.goud.w,'performance');
  assert.equal(d.querySelectorAll('.package-card.is-selected').length,3);
  assert.equal(d.querySelector('.mobile-sticky-cta').href,d.querySelector('#packageRequest').href);
+ assert.match(d.querySelector('#selectionTotal').textContent,/132,30/);
+ assert.match(d.querySelector('#bookingCartTotal').textContent,/132,30/);
+ assert.match(d.querySelector('#bookingCartCount').textContent,/4 materialen gekozen/);
  const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
  assert.equal(rd.querySelector('#maintenanceSelection').hidden,false);
  assert.equal(rd.querySelector('#singleMaintenanceFields').hidden,true);
@@ -87,6 +93,25 @@ test('counts, multiple packages, different materials and wax survive one complet
  const edited=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
  assert.equal(edited.d.querySelector('#brons-ski').value,'2');assert.equal(edited.d.querySelector('#slijpen-ski').value,'1');
  assert.deepEqual(chosen(edited.d),value);
+});
+test('visible total includes package, performance wax, rush, bindings and repair minimum',async t=>{
+ const {w,d,model}=homepage(t);
+ const copper=d.querySelector('[data-package="brons"]');
+ change(w,d.querySelector('#brons-ski'),'1');
+ change(w,d.querySelector('#brons-snowboard'),'1');
+ d.querySelector('#bindingsYes').click();
+ change(w,copper.querySelector('[name="homepageWax"]'),'performance');
+ copper.querySelector('[name="homepageUrgent"]').click();
+ change(w,d.querySelector('#brons-repairs'),'2');
+ const value=chosen(d),estimate=model.estimate(value);
+ assert.equal(estimate.amount,2);assert.equal(estimate.total,92.4);assert.equal(estimate.needsAssessment,true);
+ assert.match(d.querySelector('#selectionTotal').textContent,/92,40/);
+ assert.match(d.querySelector('#bookingCartTotal').textContent,/92,40/);
+ assert.match(d.querySelector('#bookingCartCount').textContent,/2 materialen gekozen/);
+ assert.equal(d.querySelector('#stickyPackageRequest').href,d.querySelector('#packageRequest').href);
+ const request=await setup(t,{url:d.querySelector('#packageRequest').href});
+ assert.match(request.d.querySelector('#maintenanceSelectionTotal').textContent,/92,40/);
+ assert.match(request.d.querySelector('#requestSummary').textContent,/Totaal vanaf:.*92,40/);
 });
 test('snowboard prompts add bindings and their cost to the correct package, never to separate work',async t=>{
  const {d}=homepage(t),dialog=d.querySelector('#bindingsDialog');

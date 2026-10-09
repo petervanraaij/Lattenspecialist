@@ -29,7 +29,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=19">
-  <link rel="stylesheet" href="homepage.css?v=28">
+  <link rel="stylesheet" href="homepage.css?v=29">
   <script src="homepage.js?v=2"></script>
   <script type="application/ld+json">
   {
@@ -220,7 +220,8 @@
             <p id="selectionEmpty">Gebruik + om een pakket toe te voegen.</p>
             <ul id="selectionItems"></ul>
             <p class="package-selection" id="packageSelection" role="status" aria-live="polite" hidden></p>
-            <a class="btn btn-dark" id="packageRequest" href="afspraak.html">Onderhoud aanvragen <span aria-hidden="true">→</span></a>
+            <div class="selection-total"><span>Totaal vanaf</span><output id="selectionTotal" aria-live="polite">€ 0,00</output><small>Inclusief gekozen extra’s. Definitieve prijs na controle van het materiaal.</small></div>
+            <a class="btn btn-dark" id="packageRequest" href="afspraak.html">Reserveren <span aria-hidden="true">→</span></a>
             <p class="selection-note">We bevestigen de werkzaamheden en planning met je.</p>
           </section>
         </div>
@@ -321,7 +322,10 @@
     <div class="container footer-bottom">© <span id="year"></span> De Lattenspecialist · Van Raaij Services · Hollenhof 13, 6659 BB Wamel · KvK 99668637 · BTW-id NL005403580B64 · Prijzen onder voorbehoud van typefouten en wijzigingen.</div>
     <div class="container footer-credit"><span>Website gemaakt en beheerd door</span><a class="solutions-logo-link" href="https://solutions.vanraaijservice.nl/" target="_blank" rel="noopener noreferrer" aria-label="Van Raaij Solutions — opent in een nieuw tabblad"><img src="images/van-raaij-solutions-logo.webp" alt="Van Raaij Solutions" width="1774" height="887" loading="lazy" decoding="async"></a></div>
   </footer>
-  <a class="mobile-sticky-cta" href="afspraak.html">Onderhoud aanvragen</a>
+  <aside class="booking-cart" id="bookingCart" aria-label="Gekozen onderhoud en totaal" aria-live="polite" aria-atomic="true">
+    <div class="booking-cart-copy"><span id="bookingCartCount">Nog niets gekozen</span><strong>Totaal vanaf <output id="bookingCartTotal">€ 0,00</output></strong></div>
+    <a class="mobile-sticky-cta" id="stickyPackageRequest" href="afspraak.html">Reserveren <span aria-hidden="true">→</span></a>
+  </aside>
 
   <dialog id="bindingsDialog" class="bindings-dialog" aria-labelledby="bindingsTitle" aria-describedby="bindingsQuestion bindingsPrice">
     <span class="eyebrow">Extra service voor je snowboard</span>
@@ -336,8 +340,8 @@
   </dialog>
 
   <script src="script.js?v=10"></script>
-  <script src="maintenance-selection.js?v=5"></script>
-  <script src="package-choice.js?v=10"></script>
+  <script src="maintenance-selection.js?v=6"></script>
+  <script src="package-choice.js?v=11"></script>
   <script src="booking-config.js?v=2"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>

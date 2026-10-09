@@ -4,10 +4,19 @@
   const waxNotes = {none:'', beta:'BetaMix Red', alpha:'AlphaMix Yellow', ultra:'UltraMix Blue', performance:'Performance Purple +€7,50'};
   const extras = {edges:'Kanten slijpen en tunen', repair:'Kleine, oppervlakkige belagreparaties', complex:'Grotere of complexere reparaties', bindings:'Snowboardbindingen demonteren + monteren'};
   const extraNotes = {edges:'Kanten slijpen', repair:'Kleine reparaties', complex:'Complexe reparaties (prijs in overleg)', bindings:'Bindingen dem./mont.'};
+  const prices = {
+    brons:{s:19.95,b:24.95},
+    slijpen:{s:24.95,b:29.95},
+    zilver:{s:34.95,b:39.95},
+    goud:{s:44.95,b:49.95},
+    platinum:{s:52.5,b:57.5}
+  };
+  const performancePrice = 7.5, urgentPrice = 10, repairPrice = 7.5;
   const own = (map, key) => Object.prototype.hasOwnProperty.call(map, key);
   const quantity = value => Number.isInteger(value) && value >= 0 && value <= 20;
   const empty = () => ({p:{}, e:{}, u:false});
   const bindingPrice = count => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(count * 7.5);
+  const formatPrice = amount => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(amount);
   function normalize(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value) || !value.p || !value.e || typeof value.p !== 'object' || typeof value.e !== 'object' || Array.isArray(value.p) || Array.isArray(value.e) || typeof value.u !== 'boolean') return null;
     const result = empty();
@@ -32,6 +41,21 @@
     return result;
   }
   const hasItems = value => Object.keys(value.p).length > 0 || Object.keys(value.e).length > 0;
+  function estimate(value) {
+    const normalized = normalize(value);
+    if (!normalized) return null;
+    let amount = 0, total = 0, needsAssessment = Object.keys(normalized.e).length > 0;
+    for (const [id,item] of Object.entries(normalized.p)) {
+      const packagePrice = prices[id];
+      amount += item.s + item.b;
+      total += item.s * packagePrice.s + item.b * packagePrice.b;
+      if (item.w === 'performance') total += (item.s + item.b) * performancePrice;
+      if (item.u) total += urgentPrice;
+      total += item.d * 7.5;
+      if (item.r) { total += item.r * repairPrice; needsAssessment = true; }
+    }
+    return {amount,total,formatted:formatPrice(total),needsAssessment};
+  }
   function parse(text) {
     if (!text || text.length > 5000) return null;
     try { return normalize(JSON.parse(text)); } catch { return null; }
@@ -85,5 +109,5 @@
       urgent:value.u || Object.values(value.p).some(item => item.u) ? 'Ja, zie onderhoudskeuze (indien mogelijk, in overleg)' : 'Nee'
     };
   }
-  window.LATTEN_SELECTION = {packages,waxes,extras,empty,normalize,hasItems,parse,describe,notes,legacy,bindingPrice};
+  window.LATTEN_SELECTION = {packages,waxes,extras,empty,normalize,hasItems,parse,describe,notes,legacy,bindingPrice,estimate};
 })();

@@ -384,6 +384,18 @@
 .selection-panel .btn { width:fit-content; padding:13px 20px; font-size:.9rem; gap:12px; }
 .selection-panel .selection-note { color:#676156; font-size:.75rem; margin-bottom:0; }
 .home-page .selection-panel .package-selection { font-size:.8rem; }
+.selection-total { display:grid; grid-template-columns:1fr auto; gap:4px 16px; align-items:end; margin:18px 0 14px; padding:14px 16px; border-radius:10px; background:#fffdf8; border:1px solid #d3bc83; }
+.selection-total > span { color:#625948; font-size:.78rem; font-weight:750; }
+.selection-total output { color:#6c4c0f; font-size:1.35rem; font-weight:900; }
+.selection-total small { grid-column:1/-1; color:#6b6459; font-size:.7rem; line-height:1.45; }
+.maintenance-selection-total { margin:14px 0; padding:12px 14px; border-left:4px solid #b48422; background:#fff8e8; color:#654b13; font-size:1rem; font-weight:900; }
+.booking-cart { position:fixed; z-index:95; right:20px; bottom:20px; display:grid; grid-template-columns:minmax(180px,1fr) auto; gap:18px; align-items:center; min-width:410px; padding:13px 14px 13px 18px; border:1px solid #d0aa50; border-radius:16px; background:rgba(17,18,19,.97); color:#fff; box-shadow:0 18px 55px rgba(0,0,0,.34); backdrop-filter:blur(12px); }
+.booking-cart-copy { display:grid; gap:3px; }
+.booking-cart-copy > span { color:#bdb5a8; font-size:.74rem; }
+.booking-cart-copy strong { font-size:.82rem; }
+.booking-cart-copy output { margin-left:5px; color:#e4bf60; font-size:1.25rem; }
+.home-page .booking-cart .mobile-sticky-cta { display:inline-flex; position:static; min-height:46px; padding:0 20px; align-items:center; justify-content:center; gap:10px; border:1px solid #e0bd65; border-radius:999px; background:linear-gradient(135deg,#e2c26c,#c99a2c); color:#111; font-size:.86rem; font-weight:900; white-space:nowrap; box-shadow:none; }
+.booking-cart[data-empty="true"] .booking-cart-copy output { color:#aaa399; }
 .complex-repair-note { display:grid; grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr); gap:24px; align-items:center; margin-top:18px; padding:20px 24px; border:1px solid #d6c9af; border-left:5px solid #a8791f; border-radius:14px; background:#fffdf8; }
 .complex-repair-note .eyebrow { display:block; margin-bottom:6px; }
 .complex-repair-note h3 { margin:0; font-size:1.15rem; line-height:1.35; }
@@ -453,4 +465,10 @@
   .home-page .wax-swipe-hint { display:block; margin:0 0 9px; color:#d7c073; font-size:.75rem; }
   .home-page .wax-story--compact .wax-grid--four { display:flex; gap:12px; margin:0 -20px; padding:5px 20px 15px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:thin; }
   .home-page .wax-story--compact .wax-card { order:initial; flex:0 0 min(82vw,310px); scroll-snap-align:start; }
+  .booking-cart { left:8px; right:8px; bottom:max(8px,env(safe-area-inset-bottom)); grid-template-columns:minmax(0,1fr) auto; min-width:0; gap:10px; padding:10px 10px 10px 14px; border-radius:14px; }
+  .booking-cart-copy > span { font-size:.68rem; }
+  .booking-cart-copy strong { font-size:.7rem; }
+  .booking-cart-copy output { display:block; margin:1px 0 0; font-size:1.08rem; }
+  .home-page .booking-cart .mobile-sticky-cta { right:auto; min-height:44px; padding:0 17px; font-size:.8rem; }
+  body.home-page:has(.booking-cart) { padding-bottom:88px; }
 }
