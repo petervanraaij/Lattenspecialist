@@ -317,7 +317,7 @@
 .home-page .snow-live .wax-range small { color:#746b5e; font-size:.66rem; }
 .home-page .snow-live .wax-range strong { margin-top:2px; color:#8a6210; font-size:1.08rem; }
 .home-page .snow-live .wax-purple { border:2px solid #724187; background:linear-gradient(145deg,#fcf8ff,#e8d7f0); box-shadow:0 9px 24px rgba(92,48,112,.18),inset 0 3px #724187; }
-.home-page .snow-live .performance-badge { padding:4px 7px; background:#724187; color:#fff; font-size:.58rem; box-shadow:0 3px 9px rgba(92,48,112,.2); }
+.home-page .snow-live .performance-badge { padding:4px 7px; border:1px solid #e1bd61; background:#d6ad50; color:#17130b; font-size:.58rem; box-shadow:0 3px 9px rgba(142,101,20,.24); }
 .home-page .snow-live .performance-link { margin-top:6px; color:#5f2d72; font-size:.68rem; }
 .snow-live-current,.snow-indoor { margin-top:12px; padding-top:12px; border-top:1px solid #cdb57a; }
 .snow-live-current-head { display:flex; align-items:end; justify-content:space-between; gap:20px; margin-bottom:9px; }
