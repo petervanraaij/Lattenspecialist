@@ -1,10 +1,10 @@
-const CACHE_NAME = 'lattenspecialist-v66-clear-wax-typography';
+const CACHE_NAME = 'lattenspecialist-v67-purple-performance-wax';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
-  '/homepage.css?v=40',
+  '/homepage.css?v=41',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=6',
   '/package-choice.js?v=11',
