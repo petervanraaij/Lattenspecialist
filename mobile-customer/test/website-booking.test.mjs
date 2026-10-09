@@ -249,7 +249,7 @@ test('wax choices survive submission, invalid URL choices stay on the included d
   assert.equal(f.elements.performanceWax.value,waxChoices.beta);
  }
 });
-const urgentChoice='Ja, graag overleggen (+ € 10,00 indien mogelijk)';
+const urgentChoice='Ja, voor komend weekend (+ € 10,00, minimaal 2 werkdagen vooraf)';
 test('rush remains optional and scoped to each selected package',async t=>{
  const {d,w}=homepage(t);
  for(const id of ['slijpen','brons','zilver','goud','platinum']) {
@@ -269,7 +269,11 @@ test('rush can be declined in the form and does not leak into rentals or invalid
  }
  const url='https://lattenspecialist.nl/afspraak.html?pakket=Goud&spoed=1';
  const {w,d,f,posts}=await setup(t,{url});
+ assert.equal(f.elements.urgent.value,urgentChoice);
+ assert.equal(f.elements.logistics.value,'Zelf brengen en zelf ophalen');
+ assert.equal(f.elements.logistics.disabled,true);
  complete(w,f);change(w,f.elements.urgent,'Nee');submit(w,f);await turn();await turn();
+ assert.equal(f.elements.logistics.disabled,false);
  assert.equal(posts[0].urgent,'Nee');
  assert.match(d.querySelector('#confirmationSummary').textContent,/Spoed: Nee/);
  const rental=await setup(t,{url:url+'&dienst=verhuur'});

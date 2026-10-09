@@ -66,13 +66,13 @@
       const item = value.p[id];
       if (!item) continue;
       const materials = [item.s ? `${item.s}× ski's (paar)` : '',item.b ? `${item.b}× snowboard` : ''].filter(Boolean).join(' + ');
-      lines.push(`${name}: ${materials}${item.w === 'none' ? '' : ` · ${waxes[item.w]}`}${item.u ? ' · Spoed + € 10,00 (indien mogelijk)' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}${item.r ? ` · ${item.r}× kleine belagreparaties in totaal (vanaf € 7,50 per reparatie; definitieve prijs na beoordeling)` : ''}`);
+      lines.push(`${name}: ${materials}${item.w === 'none' ? '' : ` · ${waxes[item.w]}`}${item.u ? ' · Spoed + € 10,00 · zelf brengen en ophalen · minimaal 2 werkdagen vooraf' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}${item.r ? ` · ${item.r}× kleine belagreparaties in totaal (vanaf € 7,50 per reparatie; definitieve prijs na beoordeling)` : ''}`);
     }
     for (const [id,name] of Object.entries(extras)) {
       const item = value.e[id];
       if (item) lines.push(`${item.q}× ${name} · ${item.m === 'ski' ? "ski's" : 'snowboard'}`);
     }
-    if (value.u) lines.push('Spoed bij losse werkzaamheden: + € 10,00, indien mogelijk en in overleg.');
+    if (value.u) lines.push('Spoed bij losse werkzaamheden: + € 10,00 · zelf brengen en ophalen · minimaal 2 werkdagen vooraf.');
     return lines;
   }
   // Keep the complete selection within the existing booking API's notes limit.
@@ -89,7 +89,7 @@
       if (item) lines.push(`Los: ${item.q}x ${name} (${item.m})`);
     }
     if (value.u) lines.push('Los: spoed+€10.');
-    if (value.u || Object.values(value.p).some(item => item.u)) lines.push('Spoed indien mogelijk, in overleg.');
+    if (value.u || Object.values(value.p).some(item => item.u)) lines.push('Spoed: 2 werkd.; zelf brengen/halen.');
     return lines.join(' | ');
   }
   function legacy(value) {
@@ -106,7 +106,7 @@
       material:materials.size === 1 ? [...materials][0] : 'Meerdere / combinatie',
       amount:String(amount || Math.max(1,...Object.values(value.e).map(item => item.q))),
       package:names.length === 1 && !Object.keys(value.e).length ? packages[names[0]] : names.length ? 'Meerdere pakketten / losse werkzaamheden' : 'Losse werkzaamheden / advies',
-      urgent:value.u || Object.values(value.p).some(item => item.u) ? 'Ja, zie onderhoudskeuze (indien mogelijk, in overleg)' : 'Nee'
+      urgent:value.u || Object.values(value.p).some(item => item.u) ? 'Ja, voor komend weekend; minimaal 2 werkdagen vooraf; zelf brengen en ophalen' : 'Nee'
     };
   }
   window.LATTEN_SELECTION = {packages,waxes,extras,empty,normalize,hasItems,parse,describe,notes,legacy,bindingPrice,estimate};

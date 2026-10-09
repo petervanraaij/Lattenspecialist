@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v80-pickup-weekends';
+const CACHE_NAME = 'lattenspecialist-v81-rush-rules';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -7,7 +7,7 @@ const APP_SHELL = [
   '/webshop.html',
   '/homepage.css?v=50',
   '/homepage.js?v=2',
-  '/maintenance-selection.js?v=7',
+  '/maintenance-selection.js?v=8',
   '/package-choice.js?v=12',
   '/snow-temperature.js?v=9',
   '/website-metrics.js?v=1',
@@ -20,7 +20,7 @@ const APP_SHELL = [
   '/images/van-raaij-solutions-logo.webp',
   '/script.js?v=10',
   '/booking-config.js?v=2',
-  '/booking.js?v=14',
+  '/booking.js?v=15',
   '/customer-booking.css?v=1',
   '/customer-booking.js?v=2',
   '/customer-app.css?v=1',

@@ -34,6 +34,9 @@
   const getValue = name => String(form.elements[name]?.value || '').trim();
   const selectedService = () => form.querySelector('input[name="service"]:checked')?.value || 'Onderhoud';
   const sharpeningOnly = () => !maintenanceSelection && getValue('package') === 'Brons';
+  const needsRush = () => selectedService() === 'Onderhoud' && (maintenanceSelection
+    ? maintenanceSelection.u || Object.values(maintenanceSelection.p).some(item => item.u)
+    : getValue('urgent') !== 'Nee');
   const usesPickup = () => selectedService() === 'Onderhoud' && getValue('logistics').includes('Gratis ophalen');
   const formatDate = value => {
     if (!value || value === 'In overleg') return value || 'Nog niet ingevuld';
@@ -112,6 +115,10 @@
       for (const name of ['package','material','amount']) form.elements[name].value = values[name];
       form.elements.urgent.value = values.urgent === 'Nee' ? 'Nee' : form.elements.urgent.querySelector('[data-urgent="yes"]').value;
     }
+    const rush = needsRush();
+    if (rush) form.elements.logistics.value = 'Zelf brengen en zelf ophalen';
+    form.elements.logistics.disabled = rush;
+    form.elements.logistics.closest('label').title = rush ? 'Bij spoed breng en haal je het materiaal altijd zelf.' : '';
     const hideWax = selectedService() !== 'Onderhoud' || !!maintenanceSelection || sharpeningOnly();
     document.querySelector('#waxChoiceField').hidden = hideWax;
     document.querySelector('#waxChoiceNote').hidden = hideWax;
@@ -252,6 +259,7 @@
     payload.privacyConsent = formData.get('privacyConsent') === 'on';
     payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
     if (selectedService() === 'Onderhoud') {
+      payload.logistics = getValue('logistics');
       payload.notes = [selectionNotes(),String(payload.notes || '').trim()].filter(Boolean).join('\n');
     }
     payload.turnstileToken = turnstileToken;

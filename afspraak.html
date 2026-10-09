@@ -84,7 +84,7 @@
               <ul id="maintenanceSelectionItems"></ul>
               <p id="maintenanceSelectionTotal" class="maintenance-selection-total"></p>
               <a id="editMaintenanceSelection" class="quiet-link" href="/#pakketten">Aantallen of werkzaamheden aanpassen</a>
-              <p class="field-note">De wax- en spoedkeuze geldt voor alle materialen binnen het betreffende pakket. We bevestigen de werkzaamheden en planning met je.</p>
+              <p class="field-note">De wax- en spoedkeuze geldt voor alle materialen binnen het betreffende pakket. Spoed is voor het eerstvolgende weekend, met minimaal 2 werkdagen speling; je brengt en haalt het materiaal dan altijd zelf.</p>
             </div>
             <div id="singleMaintenanceFields">
             <div class="form-grid">
@@ -116,12 +116,12 @@
               <div class="form-grid">
                 <label><span>Halen of brengen</span><select name="logistics"><option>Gratis ophalen &amp; terugbrengen (gemeenten West Maas en Waal en Druten)</option><option value="Zelf brengen en zelf ophalen">Zelf brengen en ophalen in Wamel</option></select></label>
                 <label id="pickupDateField"><span>Ophaaldatum</span><select name="pickupDate" required><option value="">Beschikbare data laden…</option><option>In overleg</option></select></label>
-                <label><span>Spoed</span><select name="urgent"><option>Nee</option><option data-urgent="yes">Ja, graag overleggen (+ € 10,00 indien mogelijk)</option></select></label>
+                <label><span>Spoed</span><select name="urgent"><option>Nee</option><option data-urgent="yes">Ja, voor komend weekend (+ € 10,00, minimaal 2 werkdagen vooraf)</option></select></label>
                 <label><span>Skigebied / bestemming</span><input type="text" name="destination" placeholder="bijv. Sölden, Oostenrijk"></label>
                 <label><span>Eerste skidag</span><input type="date" name="skidate"></label>
                 <details class="trip-conditions"><summary>Sneeuwomstandigheden (optioneel)</summary><label><span>Verwachte omstandigheden</span><select name="conditions"><option>Weet ik nog niet</option><option>Zacht / warm</option><option>Rond het vriespunt</option><option>Koud</option><option>Kunstsneeuw / hard / ijzig</option></select></label></details>
               </div>
-              <p class="field-note">Gratis ophalen en terugbrengen geldt in de gemeenten West Maas en Waal en Druten. Woon je daarbuiten, kies dan voor brengen en ophalen in Wamel.</p>
+              <p class="field-note">Gratis ophalen en terugbrengen geldt in de gemeenten West Maas en Waal en Druten. Bij spoed kies je altijd voor zelf brengen en ophalen in Wamel; er moeten minimaal 2 werkdagen beschikbaar zijn.</p>
             </div>
             <div id="rentalPlanningFields" hidden>
               <div class="form-grid"><label><span>Van</span><input type="date" name="rentfrom"></label><label><span>Tot en met</span><input type="date" name="rentto"></label></div>
@@ -189,8 +189,8 @@
 
   <script src="script.js?v=10"></script>
   <script src="booking-config.js?v=2"></script>
-  <script src="maintenance-selection.js?v=7"></script>
-  <script src="booking.js?v=14"></script>
+  <script src="maintenance-selection.js?v=8"></script>
+  <script src="booking.js?v=15"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>
 </html>
