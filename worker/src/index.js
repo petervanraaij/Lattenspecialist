@@ -123,13 +123,15 @@ const readAndValidateLattenspecialist = raw => {
     shoesize: clean(raw.shoesize, 20), level: clean(raw.level, 30), rentfrom: clean(raw.rentfrom, 10),
     rentto: clean(raw.rentto, 10), name: clean(raw.name, 80), phone: clean(raw.phone, 30),
     email: clean(raw.email, 120), postcode: clean(raw.postcode, 12), houseNumber: clean(raw.houseNumber, 16), address: clean(raw.address, 180), addressCity: clean(raw.addressCity, 100),
-    notes: clean(raw.notes, 800), website: clean(raw.website, 120), turnstileToken: clean(raw.turnstileToken, 2048),
-    privacyConsent: raw.privacyConsent === true, whatsappConsent: raw.whatsappConsent === true
+    notes: clean(raw.notes, 800), maintenanceSelection: clean(raw.maintenanceSelection, 5000), performanceWax: clean(raw.performanceWax, 100),
+    website: clean(raw.website, 120), turnstileToken: clean(raw.turnstileToken, 2048),
+    privacyConsent: raw.privacyConsent === true, termsConsent: raw.termsConsent === true, whatsappConsent: raw.whatsappConsent === true,
+    quickReservation: raw.quickReservation === true
   };
   if (data.website) return {data, spam: true};
   if (!['Onderhoud', 'Verhuur'].includes(data.service)) throw new ValidationError('Kies onderhoud of verhuur.');
-  if (!data.name || !data.phone || !data.email) throw new ValidationError('Vul naam, telefoonnummer en e-mailadres in.');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new ValidationError('Controleer het e-mailadres.');
+  if (!data.name || !data.phone || (!data.quickReservation && !data.email)) throw new ValidationError(data.quickReservation ? 'Vul naam en telefoonnummer in.' : 'Vul naam, telefoonnummer en e-mailadres in.');
+  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new ValidationError('Controleer het e-mailadres.');
   if (data.service === 'Onderhoud' && (!data.material || !/^\d{1,2}$/.test(data.amount) || Number(data.amount) < 1 || Number(data.amount) > 20 || !data.package)) throw new ValidationError('Controleer het materiaal, aantal en pakket.');
   if (data.service === 'Onderhoud' && !data.pickupDate) throw new ValidationError('Kies een beschikbare ophaaldatum of kies in overleg.');
   if (data.service === 'Onderhoud' && data.pickupDate !== 'In overleg' && !isIsoDate(data.pickupDate)) throw new ValidationError('Controleer de gekozen ophaaldatum.');
@@ -141,6 +143,8 @@ const readAndValidateLattenspecialist = raw => {
   }
   if (data.rentfrom && data.rentto && data.rentto < data.rentfrom) throw new ValidationError('De einddatum ligt vóór de begindatum.');
   if (!data.privacyConsent) throw new ValidationError('Geef toestemming om je aanvraag te verwerken.');
+  if (data.quickReservation && !data.termsConsent) throw new ValidationError('Ga akkoord met de servicevoorwaarden voordat je reserveert.');
+  if (data.quickReservation && !data.whatsappConsent) throw new ValidationError('Geef toestemming om via WhatsApp contact op te nemen over deze aanvraag.');
   if (!data.turnstileToken) throw new ValidationError('Voltooi de beveiligingscontrole.');
   return {data, spam: false};
 };
@@ -412,14 +416,15 @@ const lattenspecialistFields = data => {
 const sendLattenspecialistEmail = async (data, reference, env) => {
   const fields = lattenspecialistFields(data);
   const rows = fields.map(([label, value]) => `<tr><th align="left" style="padding:6px 14px 6px 0;vertical-align:top">${escapeHtml(label)}</th><td style="padding:6px 0">${escapeHtml(value)}</td></tr>`).join('');
-  await sendResendEmail({
+  const message = {
     from: env.LATTENSPECIALIST_FROM_EMAIL || 'De Lattenspecialist via Stuiterbaas <reserveringen@stuiterbaas.nl>',
     to: [env.LATTENSPECIALIST_TO_EMAIL || 'info@lattenspecialist.nl'],
-    reply_to: data.email,
     subject: `[Lattenspecialist aanvraag] ${data.service} ${reference} – ${data.name}`,
-    text: ['Nieuwe aanvraag via lattenspecialist.nl', `Aanvraagcode: ${reference}`, '', ...fields.map(([label, value]) => `${label}: ${value}`), '', 'Deze aanvraag is nog geen definitieve afspraak.'].join('\n'),
-    html: `<h1 style="font-size:20px">Nieuwe aanvraag</h1><p><strong>Aanvraagcode: ${escapeHtml(reference)}</strong></p><table style="border-collapse:collapse">${rows}</table><p><strong>Deze aanvraag is nog geen definitieve afspraak.</strong></p>`
-  }, env);
+    text: [data.paymentAmount ? 'Nieuwe betaalde aanvraag via lattenspecialist.nl' : 'Nieuwe onderhoudsaanvraag via lattenspecialist.nl', `Aanvraagcode: ${reference}`, data.paymentAmount ? `Betaald: € ${data.paymentAmount}` : '', '', ...fields.map(([label, value]) => `${label}: ${value}`), '', 'Neem contact op om het onderhoud en de exacte ophaaldag te bevestigen.'].filter(Boolean).join('\n'),
+    html: `<h1 style="font-size:20px">${data.paymentAmount ? 'Nieuwe betaalde aanvraag' : 'Nieuwe onderhoudsaanvraag'}</h1><p><strong>Aanvraagcode: ${escapeHtml(reference)}</strong>${data.paymentAmount ? `<br>Betaald: € ${escapeHtml(data.paymentAmount)}` : ''}</p><table style="border-collapse:collapse">${rows}</table><p><strong>Neem contact op om het onderhoud en de exacte ophaaldag te bevestigen.</strong></p>`
+  };
+  if (data.email) message.reply_to = data.email;
+  await sendResendEmail(message, env);
 };
 
 const saveLattenspecialistReservation = async (data, reference, env) => {
@@ -544,11 +549,16 @@ export default {
         const confirmation = await completeStuiterbaasBooking(result.data, env, sendResendEmail);
         return json(confirmation, 202, origin);
       }
-      if (result.data.service === 'Onderhoud' && result.data.pickupDate !== 'In overleg') {
+      if (result.data.service === 'Onderhoud' && !result.data.quickReservation && result.data.pickupDate !== 'In overleg') {
         const availability = await getAvailability(env);
         if (!availability.dates.includes(result.data.pickupDate)) throw new ValidationError('Deze ophaaldatum is niet meer beschikbaar. Kies een andere datum.');
       }
       const reference = createReference();
+      if (result.data.service === 'Onderhoud' && result.data.quickReservation) {
+        await sendLattenspecialistEmail(result.data, reference, env);
+        await saveLattenspecialistReservation(result.data, reference, env);
+        return json({ok: true, reference}, 202, origin);
+      }
       await sendLattenspecialistEmail(result.data, reference, env);
       await saveLattenspecialistReservation(result.data, reference, env);
       let confirmationSent = true;

@@ -30,7 +30,7 @@
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=19">
   <link rel="stylesheet" href="homepage.css?v=52">
-  <link rel="stylesheet" href="test-environment.css?v=3">
+  <link rel="stylesheet" href="test-environment.css?v=4">
   <script src="homepage.js?v=2"></script>
   <script type="application/ld+json">
   {
@@ -370,9 +370,13 @@
         </div>
       </fieldset>
       <label class="test-extra-information"><span>Aanvullende informatie <small>(optioneel)</small></span><textarea name="testNotes" rows="3" maxlength="500" placeholder="Bijvoorbeeld een voorkeursmoment, schade of andere bijzonderheden"></textarea></label>
+      <div class="test-order-review" id="testOrderReview" aria-live="polite"></div>
+      <label class="test-consent"><input type="checkbox" name="testPrivacyConsent" required><span>Ik geef toestemming om mijn gegevens voor deze aanvraag te verwerken en ga akkoord met de <a href="privacy.html" target="_blank">privacy-informatie</a> en <a href="service.html" target="_blank">servicevoorwaarden</a>.</span></label>
+      <label class="test-consent"><input type="checkbox" name="testWhatsAppConsent" required><span>De Lattenspecialist mag mij via WhatsApp berichten over deze aanvraag en de voortgang van het onderhoud.</span></label>
       <p id="testReservationStatus" class="test-reservation-status" role="status" aria-live="polite"></p>
-      <div class="test-dialog-actions"><button type="button" class="test-dialog-cancel">Annuleren</button><button type="submit" class="btn btn-gold">Verder naar betalen <span aria-hidden="true">→</span></button></div>
+      <div class="test-dialog-actions"><button type="button" class="test-dialog-cancel">Annuleren</button><button type="submit" class="btn btn-gold">Reserveren <span aria-hidden="true">→</span></button></div>
       <p class="test-dialog-note">Testomgeving: er worden geen gegevens verstuurd en er wordt niets afgeschreven.</p>
+      <section class="test-reservation-success" hidden><span class="test-success-mark" aria-hidden="true">✓</span><h2>Reservering gelukt</h2><p>In de echte reservering komt de aanvraag nu in de beheerapp. De Lattenspecialist neemt daarna contact op om het onderhoud en de exacte ophaaldag te bevestigen.</p><p><strong>Testaanvraag — niet verstuurd</strong></p><button type="button" class="btn btn-gold test-success-close">Sluiten</button></section>
     </form>
   </dialog>
 
@@ -391,7 +395,7 @@
   <script src="script.js?v=10"></script>
   <script src="maintenance-selection.js?v=9"></script>
   <script src="package-choice.js?v=14"></script>
-  <script src="test-reservation-modal.js?v=5"></script>
+  <script src="test-reservation-modal.js?v=6"></script>
   <script src="snow-temperature.js?v=10"></script>
   <script src="booking-config.js?v=2"></script>
   <script src="website-metrics.js?v=1"></script>

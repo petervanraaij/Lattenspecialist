@@ -54,6 +54,17 @@
 .test-reservation-dialog .test-extra-information>span { display:block; }
 .test-reservation-dialog .test-extra-information small { color:#6c655a; font-weight:500; }
 .test-reservation-dialog .test-extra-information textarea { display:block; width:100%; min-height:96px; margin:0; resize:vertical; line-height:1.45; }
+.test-order-review { display:grid; gap:5px; margin-top:18px; padding:15px 17px; border-left:4px solid #c79421; border-radius:0 10px 10px 0; background:#f7f0e2; font-size:.82rem; line-height:1.45; }
+.test-order-review strong { color:#6b4700; }
+.test-consent { display:flex; align-items:flex-start; gap:10px; margin-top:14px; color:#4f493f; font-size:.76rem; font-weight:500; line-height:1.45; }
+.test-consent input { width:18px; height:18px; flex:0 0 auto; margin:1px 0 0; accent-color:#c79421; }
+.test-consent a { color:#6b4700; font-weight:800; }
+.test-turnstile { min-height:65px; margin-top:15px; }
+.test-reservation-success { padding:36px 10px 14px; text-align:center; }
+.test-reservation-success h2 { margin:12px 0; }
+.test-reservation-success p { max-width:500px; margin:10px auto; line-height:1.55; }
+.test-success-mark { display:grid; width:58px; height:58px; margin:auto; place-items:center; border-radius:50%; background:#e3b83f; color:#171819; font-size:2rem; font-weight:900; }
+.test-reservation-success .btn { margin-top:16px; }
 .test-address-fields { display:grid; gap:12px; margin-top:20px; padding-top:18px; border-top:1px solid #ded4c1; }
 .test-address-fields[hidden] { display:none; }
 .test-dialog-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }

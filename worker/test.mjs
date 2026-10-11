@@ -24,6 +24,8 @@ assert.equal(getSite('https://localhost', baseEnv), 'lattenspecialist');
 assert.equal(getSite(stuiterOrigin, baseEnv), 'stuiterbaas');
 assert.equal(getSite('https://example.com', baseEnv), null);
 assert.equal(readAndValidateLattenspecialist(lattenPayload).data.package, 'Goud');
+assert.equal(readAndValidateLattenspecialist({...lattenPayload,quickReservation:true,email:'',termsConsent:true}).data.quickReservation,true);
+assert.throws(() => readAndValidateLattenspecialist({...lattenPayload,quickReservation:true,email:'',termsConsent:true,whatsappConsent:false}), /WhatsApp/);
 assert.equal(readAndValidateStuiterbaas(stuiterPayload).data.name, 'Peter');
 assert.equal(escapeHtml('<script>&"\''), '&lt;script&gt;&amp;&quot;&#039;');
 assert.match(createReference(), /^LS-\d{4}-[A-Z2-9]{6}$/);
