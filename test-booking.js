@@ -1,0 +1,398 @@
+(() => {
+  const form = document.querySelector('#requestForm');
+  if (!form) return;
+  const config = window.LATTENSPECIALIST_BOOKING || {};
+  const previewMode = document.body.dataset.bookingEnvironment === 'test';
+  const endpoint = String(config.endpoint || '').replace(/\/$/, '');
+  const params = new URLSearchParams(location.search);
+  const maintenanceFields = document.querySelector('#maintenanceFields');
+  const rentalFields = document.querySelector('#rentalFields');
+  const maintenancePlanningFields = document.querySelector('#maintenancePlanningFields');
+  const rentalPlanningFields = document.querySelector('#rentalPlanningFields');
+  const addressFields = document.querySelector('#pickupAddressFields');
+  const pickupDateField = document.querySelector('#pickupDateField');
+  const summary = document.querySelector('#requestSummary');
+  const selectionModel = window.LATTEN_SELECTION;
+  let maintenanceSelection = null;
+  const selectionPanel = document.querySelector('#maintenanceSelection');
+  const singleMaintenanceFields = document.querySelector('#singleMaintenanceFields');
+  const status = document.querySelector('#bookingStatus');
+  const addressStatus = document.querySelector('#addressStatus');
+  const submitButton = form.querySelector('.form-submit');
+  const confirmation = document.querySelector('#bookingConfirmation');
+  const turnstileContainer = document.querySelector('#turnstileContainer');
+  const rentalPrice = document.querySelector('#rentalPrice');
+  const checkoutTotalPanel = document.querySelector('#checkoutTotalPanel');
+  const checkoutTotal = document.querySelector('#checkoutTotal');
+  const retryPaymentButton = document.querySelector('#retryPayment');
+  const steps = [...form.querySelectorAll('[data-form-step]')];
+  const progressSteps = [...form.querySelectorAll('[data-progress-step]')];
+  let currentStep = 1;
+  let turnstileWidgetId = null, addressTimer, addressController;
+  let addressVersion = 0, lastAddressQuery = '', outsidePickupArea = false, submitting = false;
+  const rentalPrices = {
+    'Complete set': '€ 15 per dag · € 35 per weekend · € 69 per week',
+    "Ski's met stokken": '€ 10 per dag · € 25 per weekend · € 49 per week',
+    'Dakkoffer met daksteunen': '€ 10 per dag · € 15 per weekend · € 20 per week'
+  };
+  const rentalLabels = {'Complete set': 'Complete skiset'};
+  const packagePrices = {
+    Koper:{Ski:19.95,Snowboard:24.95},
+    Brons:{Ski:24.95,Snowboard:29.95},
+    Zilver:{Ski:34.95,Snowboard:39.95},
+    Goud:{Ski:44.95,Snowboard:49.95},
+    Platinum:{Ski:52.5,Snowboard:57.5}
+  };
+  const money = amount => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(amount);
+  const getValue = name => String(form.elements[name]?.value || '').trim();
+  const selectedService = () => form.querySelector('input[name="service"]:checked')?.value || 'Onderhoud';
+  const sharpeningOnly = () => !maintenanceSelection && getValue('package') === 'Brons';
+  const needsRush = () => selectedService() === 'Onderhoud' && (maintenanceSelection
+    ? maintenanceSelection.u || Object.values(maintenanceSelection.p).some(item => item.u)
+    : getValue('urgent') !== 'Nee');
+  const usesPickup = () => selectedService() === 'Onderhoud' && getValue('logistics').includes('Gratis ophalen');
+  const formatDate = value => {
+    if (!value || value === 'In overleg') return value || 'Nog niet ingevuld';
+    const date = new Date(`${value}T12:00:00`);
+    return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('nl-NL', {weekday:'long', day:'numeric', month:'long', year:'numeric'}).format(date);
+  };
+  const showStatus = (message, type) => { status.textContent = message; status.className = `booking-status is-visible is-${type}`; };
+  const clearStatus = () => { status.textContent = ''; status.className = 'booking-status'; };
+  const setAddressStatus = (message, type = '') => { addressStatus.textContent = message; addressStatus.className = `address-status${type ? ` is-${type}` : ''}`; };
+  const toggleFields = (container, visible) => {
+    if (!container) return;
+    container.hidden = !visible;
+    container.querySelectorAll('input, select, textarea').forEach(input => { input.disabled = !visible; });
+  };
+  const showStep = (step, focus = true) => {
+    currentStep = Math.min(3, Math.max(1, step));
+    steps.forEach(panel => { panel.hidden = Number(panel.dataset.formStep) !== currentStep; });
+    progressSteps.forEach(item => {
+      const number = Number(item.dataset.progressStep);
+      item.classList.toggle('is-active', number === currentStep);
+      item.classList.toggle('is-complete', number < currentStep);
+      if (number === currentStep) item.setAttribute('aria-current', 'step'); else item.removeAttribute('aria-current');
+    });
+    if (focus) {
+      const legend = steps.find(panel => Number(panel.dataset.formStep) === currentStep)?.querySelector('legend');
+      legend?.setAttribute('tabindex', '-1');
+      legend?.focus({preventScroll:true});
+      form.scrollIntoView?.({block:'start', behavior:'smooth'});
+    }
+  };
+  const validateCurrentStep = () => {
+    const panel = steps.find(item => Number(item.dataset.formStep) === currentStep);
+    const fields = [...panel.querySelectorAll('input, select, textarea')].filter(field => !field.disabled && field.type !== 'hidden');
+    const invalid = fields.find(field => !field.checkValidity());
+    if (!invalid) return true;
+    invalid.reportValidity();
+    invalid.focus();
+    return false;
+  };
+  const payableTotal = () => {
+    if (selectedService() !== 'Onderhoud') return null;
+    if (maintenanceSelection) return selectionModel.estimate(maintenanceSelection)?.total ?? null;
+    const material = getValue('material'), price = packagePrices[getValue('package')]?.[material], count = Number(getValue('amount'));
+    if (!price || !Number.isInteger(count) || count < 1 || count > 20) return null;
+    let total = price * count;
+    if (!sharpeningOnly() && getValue('performanceWax') === 'Performance Wax (ski + € 5,00 · snowboard + € 7,50)') total += count * (material === 'Snowboard' ? 7.5 : 5);
+    if (needsRush()) total += 10;
+    return total;
+  };
+  const buildSummary = () => {
+    const service = selectedService();
+    const lines = [`Dienst: ${service}`];
+    if (service === 'Onderhoud') {
+      if (maintenanceSelection) {
+        lines.push(...selectionModel.describe(maintenanceSelection));
+        lines.push(`Totaal vanaf: ${selectionModel.estimate(maintenanceSelection).formatted}`);
+      }
+      else {
+        lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`);
+        if (!sharpeningOnly()) lines.push(`Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`);
+      }
+      lines.push(`Halen of brengen: ${getValue('logistics')}`);
+      if (usesPickup()) lines.push(`Ophaaldatum: ${formatDate(getValue('pickupDate'))}`, `Ophaal- en terugbrenglocatie: ${getValue('address') || 'Nog invullen'}`);
+      if (!maintenanceSelection) lines.push(`Spoed: ${getValue('urgent')}`);
+      if (getValue('destination')) lines.push(`Bestemming: ${getValue('destination')}`);
+      if (getValue('skidate')) lines.push(`Eerste skidag: ${formatDate(getValue('skidate'))}`);
+      if (getValue('conditions') !== 'Weet ik nog niet') lines.push(`Omstandigheden: ${getValue('conditions')}`);
+    } else {
+      lines.push(`Verhuur: ${rentalLabels[getValue('rentaltype')] || getValue('rentaltype')}`, `Huurprijs: ${rentalPrices[getValue('rentaltype')] || '-'}`, `Lengte persoon: ${getValue('height') ? `${getValue('height')} cm` : '-'}`, `Schoenmaat: ${getValue('shoesize') || '-'}`, `Niveau: ${getValue('level')}`, `Periode: ${formatDate(getValue('rentfrom'))} t/m ${formatDate(getValue('rentto'))}`);
+    }
+    lines.push('', `Naam: ${getValue('name') || '-'}`, `Mobiel: ${getValue('phone') || '-'}`, `E-mail: ${getValue('email') || '-'}`, `WhatsApp-updates: ${form.elements.whatsappConsent.checked ? 'Ja' : 'Nee'}`);
+    if (getValue('notes')) lines.push(`Opmerking: ${getValue('notes')}`);
+    return lines.join('\n');
+  };
+  const selectionNotes = () => selectedService() !== 'Onderhoud' ? '' : maintenanceSelection ? selectionModel.notes(maintenanceSelection) : sharpeningOnly() ? 'Alleen kanten slijpen en tunen; geen wax.' : `Waxkeuze: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`;
+  const updateForm = () => {
+    toggleFields(maintenanceFields, selectedService() === 'Onderhoud');
+    toggleFields(rentalFields, selectedService() === 'Verhuur');
+    toggleFields(maintenancePlanningFields, selectedService() === 'Onderhoud');
+    toggleFields(rentalPlanningFields, selectedService() === 'Verhuur');
+    singleMaintenanceFields.hidden = !!maintenanceSelection;
+    selectionPanel.hidden = !maintenanceSelection;
+    form.elements.urgent.closest('label').hidden = !!maintenanceSelection;
+    if (maintenanceSelection) {
+      const values = selectionModel.legacy(maintenanceSelection);
+      for (const name of ['package','material','amount']) form.elements[name].value = values[name];
+      form.elements.urgent.value = values.urgent === 'Nee' ? 'Nee' : form.elements.urgent.querySelector('[data-urgent="yes"]').value;
+    }
+    const rush = needsRush();
+    if (rush) form.elements.logistics.value = 'Zelf brengen en zelf ophalen';
+    form.elements.logistics.disabled = rush;
+    form.elements.logistics.closest('label').title = rush ? 'Bij spoed breng en haal je het materiaal altijd zelf.' : '';
+    const hideWax = selectedService() !== 'Onderhoud' || !!maintenanceSelection || sharpeningOnly();
+    document.querySelector('#waxChoiceField').hidden = hideWax;
+    document.querySelector('#waxChoiceNote').hidden = hideWax;
+    form.elements.performanceWax.disabled = hideWax;
+    if (rentalPrice && selectedService() === 'Verhuur') rentalPrice.textContent = `${rentalLabels[getValue('rentaltype')] || getValue('rentaltype')}: ${rentalPrices[getValue('rentaltype')] || ''}. Prijzen zijn inclusief btw.`;
+    toggleFields(addressFields, usesPickup());
+    toggleFields(pickupDateField, usesPickup());
+    ['postcode','houseNumber','address','pickupDate'].forEach(name => { form.elements[name].required = usesPickup(); });
+    form.elements.address.setCustomValidity(usesPickup() && outsidePickupArea ? 'Deze plaats valt buiten het gratis servicegebied. Kies zelf brengen in Wamel of in overleg.' : '');
+    form.elements.rentto.setCustomValidity(selectedService() === 'Verhuur' && getValue('rentfrom') && getValue('rentto') && getValue('rentto') < getValue('rentfrom') ? 'Kies een einddatum op of na de begindatum.' : '');
+    const reservedNotes = selectionNotes();
+    const noteLimit = 800 - reservedNotes.length - (reservedNotes ? 1 : 0);
+    form.elements.notes.maxLength = Math.max(0,noteLimit);
+    form.elements.notes.setCustomValidity(getValue('notes').length > noteLimit ? `Maak je opmerking korter: er is ruimte voor ${noteLimit} tekens.` : '');
+    document.querySelector('#notesRemaining').textContent = `Nog ${Math.max(0,noteLimit - form.elements.notes.value.length)} tekens voor je opmerking.`;
+    const total = payableTotal();
+    if (checkoutTotalPanel) checkoutTotalPanel.hidden = selectedService() !== 'Onderhoud';
+    if (checkoutTotal) checkoutTotal.textContent = total === null ? 'Kies eerst een pakket met vaste prijs' : money(total);
+    submitButton.textContent = previewMode && selectedService() === 'Onderhoud' ? 'Test reservering afronden' : selectedService() === 'Onderhoud' ? 'Veilig betalen met iDEAL' : 'Huuraanvraag versturen';
+    summary.textContent = buildSummary();
+  };
+  const loadAvailability = async () => {
+    const select = form.elements.pickupDate;
+    const chosen = select.value;
+    select.replaceChildren(new Option('Beschikbare data laden…', ''));
+    try {
+      if (!endpoint) throw new Error();
+      const response = await fetch(`${endpoint}/api/availability`, {cache:'no-store'});
+      const result = await response.json();
+      if (!response.ok || !Array.isArray(result.dates)) throw new Error();
+      const dates = [...new Set(result.dates.filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date)))].sort();
+      const options = dates.length ? [new Option('Kies een ophaaldatum', '')] : [];
+      dates.forEach(date => options.push(new Option(formatDate(date), date)));
+      options.push(new Option('In overleg', 'In overleg'));
+      select.replaceChildren(...options);
+      select.value = [...select.options].some(option => option.value === chosen) ? chosen : dates.length ? '' : 'In overleg';
+    } catch { select.replaceChildren(new Option('In overleg — data niet beschikbaar', 'In overleg')); }
+    updateForm();
+  };
+  const lookupAddress = async () => {
+    const postcode = getValue('postcode').toUpperCase().replace(/\s+/g, '');
+    const houseNumber = getValue('houseNumber');
+    if (!usesPickup() || !/^\d{4}[A-Z]{2}$/.test(postcode) || !/^\d{1,5}/.test(houseNumber) || !endpoint) return;
+    const query = `${postcode}|${houseNumber}`;
+    if (query === lastAddressQuery) return;
+    const version = addressVersion;
+    addressController = new AbortController();
+    const controller = addressController;
+    const timeout = window.setTimeout(() => controller.abort(), 8000);
+    setAddressStatus('Adres opzoeken…', 'loading');
+    try {
+      const response = await fetch(`${endpoint}/api/address?postcode=${encodeURIComponent(postcode)}&houseNumber=${encodeURIComponent(houseNumber)}`, {cache:'no-store', signal:controller.signal});
+      const result = await response.json();
+      if (version !== addressVersion || !usesPickup()) return;
+      if (!response.ok || !result.address?.address) throw new Error('Adres niet gevonden.');
+      lastAddressQuery = query;
+      form.elements.postcode.value = result.address.postcode;
+      form.elements.houseNumber.value = result.address.houseNumber;
+      form.elements.address.value = result.address.address;
+      form.elements.addressCity.value = result.address.city;
+      outsidePickupArea = result.address.freePickup === false;
+      setAddressStatus(outsidePickupArea ? 'Dit adres ligt buiten het gratis servicegebied. Kies zelf brengen in Wamel of in overleg.' : 'Adres gevonden en binnen het gratis servicegebied.', outsidePickupArea ? 'warning' : 'success');
+      updateForm();
+    } catch {
+      if (version !== addressVersion || !usesPickup()) return;
+      setAddressStatus('Het adres kon niet worden opgezocht. Vul je ophaal- en terugbrenglocatie handmatig in; we controleren het servicegebied bij de planning.', 'warning');
+    } finally { window.clearTimeout(timeout); }
+  };
+  const scheduleAddressLookup = () => {
+    window.clearTimeout(addressTimer);
+    addressController?.abort();
+    addressVersion += 1;
+    lastAddressQuery = ''; outsidePickupArea = false;
+    form.elements.address.value = ''; form.elements.addressCity.value = '';
+    setAddressStatus('Het adres verschijnt na het invullen van postcode en huisnummer.');
+    addressTimer = window.setTimeout(lookupAddress, 450);
+  };
+  const resetRequest = () => {
+    addressController?.abort(); addressVersion += 1; window.clearTimeout(addressTimer);
+    maintenanceSelection = null;
+    form.reset(); lastAddressQuery = ''; outsidePickupArea = false;
+    setAddressStatus('Het adres verschijnt na het invullen van postcode en huisnummer.');
+    clearStatus(); updateForm(); loadAvailability(); showStep(1, false);
+  };
+  const today = new Date();
+  const minimum = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
+  ['skidate','rentfrom','rentto'].forEach(name => { form.elements[name].min = minimum; });
+  const requestedSelection = selectionModel?.parse(params.get('keuze'));
+  if (requestedSelection && selectionModel.hasItems(requestedSelection)) {
+    maintenanceSelection = requestedSelection;
+    const list = document.querySelector('#maintenanceSelectionItems');
+    selectionModel.describe(maintenanceSelection).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
+    document.querySelector('#maintenanceSelectionTotal').textContent = `Totaal vanaf ${selectionModel.estimate(maintenanceSelection).formatted}`;
+    document.querySelector('#editMaintenanceSelection').href = `/?keuze=${encodeURIComponent(JSON.stringify(maintenanceSelection))}#pakketten`;
+  }
+  const packageChoice = params.get('pakket');
+  if ([...form.elements.package.options].some(option => option.value && option.value === packageChoice)) form.elements.package.value = packageChoice;
+  const waxChoice = [...form.elements.performanceWax.options].find(option => option.dataset.wax === params.get('wax'));
+  if (waxChoice) form.elements.performanceWax.value = waxChoice.value;
+  if (params.get('spoed') === '1') form.elements.urgent.value = form.elements.urgent.querySelector('[data-urgent="yes"]').value;
+  if (params.get('dienst') === 'verhuur') {
+    form.querySelector('input[name="service"][value="Verhuur"]').checked = true;
+    const requestedRental = params.get('type');
+    if (requestedRental && [...form.elements.rentaltype.options].some(option => option.value === requestedRental)) form.elements.rentaltype.value = requestedRental;
+  }
+  const loadTurnstile = () => {
+    if (!config.turnstileSiteKey) return;
+    turnstileContainer.hidden = false;
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true; script.defer = true;
+    script.addEventListener('load', () => { turnstileWidgetId = window.turnstile.render(turnstileContainer, {sitekey:config.turnstileSiteKey, theme:'light', language:'nl'}); });
+    script.addEventListener('error', () => showStatus('De beveiligingscontrole kon niet worden geladen. Vernieuw de pagina en probeer het opnieuw.', 'error'));
+    document.head.appendChild(script);
+  };
+  form.addEventListener('input', event => {
+    if (event.target.matches('[name="postcode"], [name="houseNumber"]')) scheduleAddressLookup();
+    updateForm();
+  });
+  form.addEventListener('change', () => { updateForm(); if (usesPickup()) lookupAddress(); });
+  form.querySelectorAll('.step-next').forEach(button => button.addEventListener('click', () => {
+    clearStatus(); updateForm();
+    if (validateCurrentStep()) showStep(currentStep + 1);
+  }));
+  form.querySelectorAll('.step-back').forEach(button => button.addEventListener('click', () => showStep(currentStep - 1)));
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (submitting) return;
+    clearStatus(); updateForm();
+    if (!form.checkValidity()) {
+      const invalid = form.querySelector(':invalid');
+      const invalidStep = Number(invalid?.closest('[data-form-step]')?.dataset.formStep || 3);
+      showStep(invalidStep, false); form.reportValidity(); invalid?.focus(); return;
+    }
+    if (form.elements.website.value) { resetRequest(); showStatus('Bedankt. Je aanvraag is ontvangen.', 'success'); return; }
+    if (previewMode) {
+      const paymentChoice = getValue('paymentPreference') === 'cash' ? 'contant betalen' : 'na reserveren via iDEAL betalen';
+      showStatus(`Test geslaagd: deze aanvraag zou nu worden gereserveerd met de keuze “${paymentChoice}”. Er zijn geen gegevens verstuurd en er is niets afgeschreven.`, 'success');
+      return;
+    }
+    if (!endpoint || !config.turnstileSiteKey) { showStatus('Het formulier is tijdelijk niet beschikbaar. Gebruik “Reserveer via WhatsApp” of mail naar info@lattenspecialist.nl.', 'error'); return; }
+    const turnstileToken = window.turnstile && turnstileWidgetId !== null ? window.turnstile.getResponse(turnstileWidgetId) : '';
+    if (!turnstileToken) { showStatus('Voltooi eerst de beveiligingscontrole en verstuur de aanvraag opnieuw.', 'error'); return; }
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+    payload.privacyConsent = formData.get('privacyConsent') === 'on';
+    payload.termsConsent = formData.get('termsConsent') === 'on';
+    payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
+    if (selectedService() === 'Onderhoud') {
+      payload.logistics = getValue('logistics');
+      payload.notes = [selectionNotes(),String(payload.notes || '').trim()].filter(Boolean).join('\n');
+      if (maintenanceSelection) payload.maintenanceSelection = JSON.stringify(maintenanceSelection);
+    }
+    payload.turnstileToken = turnstileToken;
+    if (selectedService() === 'Onderhoud' && !usesPickup()) payload.pickupDate = 'In overleg';
+    const submittedSummary = buildSummary();
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
+    submitting = true; submitButton.disabled = true; submitButton.textContent = selectedService() === 'Onderhoud' ? 'Beveiligde betaling openen…' : 'Aanvraag versturen…';
+    try {
+      const response = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload), signal:controller.signal});
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || 'De aanvraag kon niet worden verstuurd.');
+      if (!result.ok || !/^LS-\d{4}-[A-Z2-9]{6}$/.test(result.reference || '')) throw new Error('We kunnen de ontvangst nog niet bevestigen. Neem contact met ons op voordat je opnieuw verstuurt.');
+      if (result.checkoutUrl) {
+        const checkout = new URL(result.checkoutUrl);
+        if (checkout.protocol !== 'https:' || (checkout.hostname !== 'mollie.com' && !checkout.hostname.endsWith('.mollie.com'))) throw new Error('De beveiligde betaalpagina heeft een ongeldig adres. Neem contact met ons op.');
+        sessionStorage.setItem(`lattenspecialist-payment-${result.reference}`, submittedSummary);
+        const checkoutEvent = new CustomEvent('lattenspecialist:checkout', {detail:{url:checkout.href,reference:result.reference},cancelable:true});
+        if (window.dispatchEvent(checkoutEvent)) window.location.assign(checkout.href);
+        return;
+      }
+      document.querySelector('#confirmationReference').textContent = result.reference;
+      document.querySelector('#confirmationSummary').textContent = submittedSummary;
+      document.querySelector('#confirmationDelivery').textContent = result.confirmationSent === true ? 'We hebben je ook een bevestiging per e-mail gestuurd. Nog niet zichtbaar? Kijk ook in je spammap.' : result.confirmationSent === false ? 'Je aanvraag is opgeslagen, maar de bevestigingsmail kon niet worden verstuurd. Bewaar de aanvraagcode hierboven.' : 'Bewaar je aanvraagcode voor vragen over de planning.';
+      document.querySelector('#confirmationTracking').textContent = payload.whatsappConsent ? 'Zodra je onderhoud is geregistreerd, ontvang je je persoonlijke statuslink bij een update. Daarmee open je direct je onderhoud, zonder code of installatie.' : 'Zodra je onderhoud is geregistreerd, kun je het volgen via een persoonlijke statuslink. Je hoeft daarvoor geen app te installeren.';
+      document.body.classList.add('has-confirmation');
+      form.hidden = true; confirmation.hidden = false; confirmation.focus({preventScroll:true});
+      confirmation.scrollIntoView?.({block:'start', behavior:'instant'});
+      resetRequest();
+      window.dispatchEvent(new CustomEvent('lattenspecialist:booking-submitted', {detail:{reference:result.reference}}));
+    } catch (error) {
+      showStatus(error.name === 'AbortError' ? 'De ontvangst kon niet op tijd worden bevestigd. Controleer je e-mail of neem contact op voordat je opnieuw verstuurt, om een dubbele aanvraag te voorkomen.' : error.message, 'error');
+    } finally {
+      window.clearTimeout(timeout); submitting = false;
+      submitButton.disabled = false; submitButton.textContent = previewMode && selectedService() === 'Onderhoud' ? 'Test reservering afronden' : selectedService() === 'Onderhoud' ? 'Veilig betalen met iDEAL' : 'Huuraanvraag versturen';
+      if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
+    }
+  });
+  const paymentReference = String(params.get('betaling') || '').toUpperCase();
+  const paymentToken = String(params.get('sleutel') || '');
+  const showPaymentReturn = async () => {
+    form.hidden = true;
+    confirmation.hidden = false;
+    document.body.classList.add('has-confirmation');
+    document.querySelector('#confirmationReference').textContent = paymentReference;
+    document.querySelector('#confirmationSummary').textContent = sessionStorage.getItem(`lattenspecialist-payment-${paymentReference}`) || 'Je onderhoudskeuze is veilig bij je reservering opgeslagen.';
+    document.querySelector('#confirmationTitle').textContent = 'We controleren je betaling…';
+    document.querySelector('#confirmationDelivery').textContent = 'Een ogenblik geduld. Je reservering wordt pas bevestigd na controle bij de betaalprovider.';
+    document.querySelector('#confirmationTracking').textContent = '';
+    try {
+      const response = await fetch(`${endpoint}/api/payment/status/${encodeURIComponent(paymentReference)}?token=${encodeURIComponent(paymentToken)}`, {cache:'no-store'});
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || 'De betaalstatus kon niet worden gecontroleerd.');
+      if (result.status === 'paid') {
+        document.querySelector('#confirmationTitle').textContent = 'Betaling gelukt. Je aanvraag is compleet.';
+        document.querySelector('#confirmationDelivery').textContent = `We hebben je betaling van ${money(Number(result.amount))} ontvangen en sturen je een bevestiging per e-mail.`;
+        document.querySelector('#confirmationTracking').textContent = 'We nemen contact met je op om de planning te bevestigen.';
+        retryPaymentButton.hidden = true;
+        sessionStorage.removeItem(`lattenspecialist-payment-${paymentReference}`);
+        window.dispatchEvent(new CustomEvent('lattenspecialist:booking-submitted', {detail:{reference:paymentReference}}));
+      } else {
+        document.querySelector('#confirmationTitle').textContent = params.get('geannuleerd') === '1' ? 'De betaling is geannuleerd.' : 'De betaling is nog niet afgerond.';
+        document.querySelector('#confirmationDelivery').textContent = 'Er is nog niets definitief gereserveerd. Je kunt de beveiligde iDEAL-betaling opnieuw openen.';
+        retryPaymentButton.hidden = false;
+      }
+    } catch (error) {
+      document.querySelector('#confirmationTitle').textContent = 'We kunnen de betaling nog niet bevestigen.';
+      document.querySelector('#confirmationDelivery').textContent = error.message;
+      document.querySelector('#confirmationTracking').textContent = 'Probeer deze pagina straks opnieuw te laden. Betaal niet opnieuw zolang je bank de betaling als geslaagd toont.';
+      retryPaymentButton.hidden = true;
+    }
+    confirmation.focus({preventScroll:true});
+  };
+  retryPaymentButton?.addEventListener('click', async () => {
+    retryPaymentButton.disabled = true;
+    retryPaymentButton.textContent = 'Betaalpagina openen…';
+    try {
+      const response = await fetch(`${endpoint}/api/payment/retry`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reference:paymentReference,token:paymentToken})});
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.checkoutUrl) throw new Error(result.message || 'De betaling kon niet opnieuw worden gestart.');
+      const checkout = new URL(result.checkoutUrl);
+      if (checkout.protocol !== 'https:' || (checkout.hostname !== 'mollie.com' && !checkout.hostname.endsWith('.mollie.com'))) throw new Error('De beveiligde betaalpagina heeft een ongeldig adres.');
+      const checkoutEvent = new CustomEvent('lattenspecialist:checkout', {detail:{url:checkout.href,reference:paymentReference},cancelable:true});
+      if (window.dispatchEvent(checkoutEvent)) window.location.assign(checkout.href);
+    } catch (error) {
+      document.querySelector('#confirmationDelivery').textContent = error.message;
+      retryPaymentButton.disabled = false;
+      retryPaymentButton.textContent = 'Opnieuw betalen met iDEAL';
+    }
+  });
+  document.querySelector('#newRequest')?.addEventListener('click', () => {
+    confirmation.hidden = true; form.hidden = false; document.body.classList.remove('has-confirmation');
+    ['confirmationReference','confirmationSummary','confirmationDelivery','confirmationTracking'].forEach(id => { document.getElementById(id).textContent = ''; });
+    showStep(1, false);
+    (selectedService() === 'Onderhoud' ? form.elements.package : form.elements.rentaltype).focus();
+  });
+  if (/^LS-\d{4}-[A-Z2-9]{6}$/.test(paymentReference) && /^[a-f0-9]{48}$/.test(paymentToken)) {
+    showPaymentReturn();
+    return;
+  }
+  updateForm(); showStep(1, false); loadAvailability(); loadTurnstile(); submitButton.disabled = false;
+  if (params.has('keuze') && !requestedSelection) showStatus('Je keuze kon niet worden overgenomen. Kies je pakketten opnieuw via de website of vul hieronder je aanvraag in.', 'error');
+})();

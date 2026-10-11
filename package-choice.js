@@ -15,7 +15,8 @@
   const bookingCartTotal = document.querySelector('#bookingCartTotal');
   const snowboardCounts = new WeakMap();
   let pendingBindings = null;
-  const requestLinks = [...document.querySelectorAll('a[href="afspraak.html"]')];
+  const bookingUrl = document.body.dataset.bookingUrl || 'afspraak.html';
+  const requestLinks = [...document.querySelectorAll(`a[href="${bookingUrl}"]`)];
   let valid = true;
   const amount = (element,name) => Number(element.querySelector(`[name="${name}"]`).value);
   function read() {
@@ -93,7 +94,7 @@
     emptyMessage.hidden = !!selected || !valid;
     message.hidden = !selected && valid;
     message.textContent = !valid ? 'Kies hele aantallen van 0 t/m 20, met maximaal 20 paar ski’s of snowboards in de pakketten samen.' : selected ? 'Je volledige keuze gaat mee naar het aanvraagformulier.' : '';
-    const href = !valid ? '#pakketten' : selected ? `afspraak.html?keuze=${encodeURIComponent(JSON.stringify(value))}` : 'afspraak.html';
+    const href = !valid ? '#pakketten' : selected ? `${bookingUrl}?keuze=${encodeURIComponent(JSON.stringify(value))}` : bookingUrl;
     requestLinks.forEach(link => { link.href = href; if (valid) link.removeAttribute('aria-disabled'); else link.setAttribute('aria-disabled','true'); });
   }
   function askAboutBindings(input, previous) {
