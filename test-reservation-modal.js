@@ -19,10 +19,17 @@
   const dateLabel = date => new Intl.DateTimeFormat('nl-NL', {weekday:'long',day:'numeric',month:'long'}).format(date);
   const populateDays = () => {
     const saturday = weekendSelect.value ? new Date(`${weekendSelect.value}T12:00:00`) : null;
-    daySelect.replaceChildren(new Option(saturday ? 'Geen voorkeur' : 'Kies eerst een weekend', saturday ? 'Geen voorkeur' : ''));
+    daySelect.replaceChildren(new Option(saturday ? 'Kies een voorkeursmoment' : 'Kies eerst een weekend', ''));
     if (!saturday) return;
+    const friday = new Date(saturday); friday.setDate(saturday.getDate() - 1);
     const sunday = new Date(saturday); sunday.setDate(saturday.getDate() + 1);
-    daySelect.append(new Option(dateLabel(saturday), dateValue(saturday)), new Option(dateLabel(sunday), dateValue(sunday)));
+    daySelect.append(
+      new Option(`${dateLabel(friday)} · avond`, `${dateValue(friday)}|avond`),
+      new Option(`${dateLabel(saturday)} · 08:00–12:00`, `${dateValue(saturday)}|08:00-12:00`),
+      new Option(`${dateLabel(saturday)} · 12:00–16:00`, `${dateValue(saturday)}|12:00-16:00`),
+      new Option(`${dateLabel(sunday)} · 08:00–12:00`, `${dateValue(sunday)}|08:00-12:00`),
+      new Option(`${dateLabel(sunday)} · 12:00–16:00`, `${dateValue(sunday)}|12:00-16:00`)
+    );
   };
   const populateWeekends = () => {
     const today = new Date(); today.setHours(12,0,0,0);

@@ -47,11 +47,13 @@
 .test-logistics-choice input:checked + span { border-color:#c79421; background:#fff5d9; box-shadow:0 0 0 2px rgba(199,148,33,.12); }
 .test-contact-fields,.test-address-fields>div { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .test-contact-fields { margin-top:20px; }
-.test-contact-fields label,.test-address-fields label,.test-extra-information { display:grid; gap:7px; font-size:.82rem; font-weight:800; }
+.test-contact-fields label,.test-address-fields label,.test-reservation-dialog .test-extra-information { display:grid; gap:7px; font-size:.82rem; font-weight:800; }
 .test-contact-fields input,.test-address-fields input,.test-address-fields select,.test-extra-information textarea { width:100%; min-height:48px; box-sizing:border-box; padding:11px 13px; border:1px solid #d7cdbd; border-radius:10px; background:#fff; color:#171819; font:inherit; }
-.test-extra-information { margin-top:18px; }
-.test-extra-information small { color:#6c655a; font-weight:500; }
-.test-extra-information textarea { min-height:84px; resize:vertical; }
+.test-address-fields select { appearance:auto; }
+.test-reservation-dialog .test-extra-information { width:100%; margin:18px 0 0; }
+.test-reservation-dialog .test-extra-information>span { display:block; }
+.test-reservation-dialog .test-extra-information small { color:#6c655a; font-weight:500; }
+.test-reservation-dialog .test-extra-information textarea { display:block; width:100%; min-height:96px; margin:0; resize:vertical; line-height:1.45; }
 .test-address-fields { display:grid; gap:12px; margin-top:20px; padding-top:18px; border-top:1px solid #ded4c1; }
 .test-address-fields[hidden] { display:none; }
 .test-dialog-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
