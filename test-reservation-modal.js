@@ -7,7 +7,9 @@
   const total = document.querySelector('#testDialogTotal');
   if (!dialog || !form || !pickupAddress || !status || !count || !total) return;
 
-  const reservationLinks = [...document.querySelectorAll('a[href^="test-afspraak.html"]')];
+  const isTest = document.body.classList.contains('test-environment');
+  const reservationLinks = [...document.querySelectorAll('a[href^="test-afspraak.html"],a[href^="afspraak.html"]')];
+  let activeLink = null;
   const pickupInputs = [...pickupAddress.querySelectorAll('input')];
   const close = () => { dialog.close(); status.textContent = ''; };
   const selectedLogistics = () => form.elements.testLogistics.value;
@@ -31,6 +33,7 @@
       return;
     }
     event.preventDefault();
+    activeLink = link;
     const estimate = window.LATTEN_SELECTION.estimate(selection);
     count.textContent = `${estimate.amount} ${estimate.amount === 1 ? 'materiaal' : 'materialen'} gekozen`;
     total.textContent = estimate.formatted;
@@ -46,6 +49,10 @@
   form.addEventListener('submit', event => {
     event.preventDefault();
     if (!form.checkValidity()) { form.reportValidity(); return; }
+    if (!isTest && activeLink) {
+      location.href = activeLink.href;
+      return;
+    }
     status.textContent = selectedLogistics() === 'pickup'
       ? 'Test compleet. De volgende stap wordt de betaalkeuze; het ophaaladres gaat alleen mee bij ophalen.'
       : 'Test compleet. De volgende stap wordt de betaalkeuze; bij zelf brengen bewaren we alleen naam en telefoonnummer.';
