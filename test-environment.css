@@ -16,6 +16,50 @@
 }
 .test-environment-banner strong { text-transform:uppercase; letter-spacing:.09em; }
 .test-environment-banner a { color:#171819; font-weight:900; text-decoration:underline; }
+.test-reservation-dialog {
+  width:min(650px,calc(100% - 32px));
+  max-height:calc(100dvh - 32px);
+  box-sizing:border-box;
+  padding:0;
+  overflow:auto;
+  border:1px solid #caa24a;
+  border-radius:22px;
+  background:#fffdf8;
+  color:#171819;
+  box-shadow:0 30px 100px rgba(0,0,0,.45);
+}
+.test-reservation-dialog::backdrop { background:rgba(8,9,10,.76); backdrop-filter:blur(4px); }
+.test-reservation-dialog form { padding:28px; }
+.test-dialog-head { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; }
+.test-dialog-head h2 { margin:6px 0 0; font-size:clamp(1.5rem,4vw,2.15rem); line-height:1.12; }
+.test-dialog-close { width:42px; height:42px; flex:0 0 auto; border:1px solid #d8cdb9; border-radius:50%; background:#fff; color:#171819; font-size:1.7rem; line-height:1; cursor:pointer; }
+.test-dialog-summary { display:flex; align-items:end; justify-content:space-between; gap:20px; margin:24px 0; padding:16px 18px; border-radius:12px; background:#171819; color:#fff; }
+.test-dialog-summary span { color:#c9c1b4; font-size:.8rem; }
+.test-dialog-summary strong { color:#e3b83f; font-size:1.45rem; }
+.test-logistics-choice,.test-address-fields { margin:0; padding:0; border:0; }
+.test-logistics-choice legend,.test-address-fields legend { margin-bottom:10px; font-weight:900; }
+.test-logistics-choice { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.test-logistics-choice legend { grid-column:1/-1; }
+.test-logistics-choice label { position:relative; display:block; cursor:pointer; }
+.test-logistics-choice input { position:absolute; opacity:0; pointer-events:none; }
+.test-logistics-choice label span { display:grid; gap:4px; min-height:82px; box-sizing:border-box; padding:16px; border:2px solid #ddd2bd; border-radius:14px; background:#fff; }
+.test-logistics-choice label small { color:#6c655a; line-height:1.35; }
+.test-logistics-choice input:checked + span { border-color:#c79421; background:#fff5d9; box-shadow:0 0 0 2px rgba(199,148,33,.12); }
+.test-contact-fields,.test-address-fields>div { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.test-contact-fields { margin-top:20px; }
+.test-contact-fields label,.test-address-fields label { display:grid; gap:7px; font-size:.82rem; font-weight:800; }
+.test-contact-fields input,.test-address-fields input { width:100%; min-height:48px; box-sizing:border-box; padding:11px 13px; border:1px solid #d7cdbd; border-radius:10px; background:#fff; color:#171819; font:inherit; }
+.test-address-fields { display:grid; gap:12px; margin-top:20px; padding-top:18px; border-top:1px solid #ded4c1; }
+.test-address-fields[hidden] { display:none; }
+.test-dialog-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+.test-dialog-actions .btn { min-height:48px; }
+.test-dialog-cancel { padding:0 18px; border:1px solid #d7cdbd; border-radius:999px; background:#fff; color:#171819; font-weight:800; cursor:pointer; }
+.test-dialog-note,.test-reservation-status { margin:12px 0 0; color:#665f54; font-size:.75rem; line-height:1.45; }
+.test-reservation-status:empty { display:none; }
 @media(max-width:720px) {
   .test-environment-banner { position:relative; flex-direction:column; gap:4px; padding:10px 18px; }
+  .test-reservation-dialog form { padding:22px 18px; }
+  .test-logistics-choice,.test-contact-fields,.test-address-fields>div { grid-template-columns:1fr; }
+  .test-dialog-actions { align-items:stretch; flex-direction:column-reverse; }
+  .test-dialog-actions>* { width:100%; min-height:46px; }
 }

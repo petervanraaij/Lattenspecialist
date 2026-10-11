@@ -243,7 +243,7 @@
             <ul id="selectionItems"></ul>
             <p class="package-selection" id="packageSelection" role="status" aria-live="polite" hidden></p>
             <div class="selection-total"><span>Totaal</span><output id="selectionTotal" aria-live="polite">€ 0,00</output><small>Dit bedrag reken je af bij reserveren. Meerwerk doen we alleen na overleg.</small></div>
-            <a class="btn btn-dark" id="packageRequest" href="test-afspraak.html">Reserveren &amp; betalen <span aria-hidden="true">→</span></a>
+            <a class="btn btn-dark" id="packageRequest" href="test-afspraak.html">Reserveren <span aria-hidden="true">→</span></a>
             <p class="selection-note">We bevestigen de werkzaamheden en planning met je.</p>
           </section>
         </div>
@@ -338,8 +338,38 @@
   </footer>
   <aside class="booking-cart" id="bookingCart" data-empty="true" aria-label="Gekozen onderhoud en totaal" aria-live="polite" aria-atomic="true">
     <div class="booking-cart-copy"><span id="bookingCartCount">Nog niets gekozen</span><strong>Totaal <output id="bookingCartTotal">€ 0,00</output></strong></div>
-    <a class="mobile-sticky-cta" id="stickyPackageRequest" href="test-afspraak.html">Reserveren &amp; betalen <span aria-hidden="true">→</span></a>
+    <a class="mobile-sticky-cta" id="stickyPackageRequest" href="test-afspraak.html">Reserveren <span aria-hidden="true">→</span></a>
   </aside>
+
+  <dialog id="testReservationDialog" class="test-reservation-dialog" aria-labelledby="testReservationTitle">
+    <form id="testReservationForm" method="dialog" novalidate>
+      <div class="test-dialog-head">
+        <div><span class="eyebrow">Testreservering</span><h2 id="testReservationTitle">Hoe wil je het materiaal aanleveren?</h2></div>
+        <button type="button" class="test-dialog-close" aria-label="Popup sluiten">×</button>
+      </div>
+      <div class="test-dialog-summary"><span id="testDialogCount">Je onderhoudskeuze</span><strong id="testDialogTotal">€ 0,00</strong></div>
+      <fieldset class="test-logistics-choice">
+        <legend>Kies ophalen of brengen</legend>
+        <label><input type="radio" name="testLogistics" value="pickup" checked><span><strong>Gratis laten ophalen</strong><small>In West Maas en Waal en Druten</small></span></label>
+        <label><input type="radio" name="testLogistics" value="dropoff"><span><strong>Zelf brengen</strong><small>Op afspraak in Wamel</small></span></label>
+      </fieldset>
+      <div class="test-contact-fields">
+        <label><span>Naam</span><input type="text" name="testName" autocomplete="name" required></label>
+        <label><span>Telefoonnummer</span><input type="tel" name="testPhone" autocomplete="tel" required></label>
+      </div>
+      <fieldset id="testPickupAddress" class="test-address-fields">
+        <legend>Ophaaladres</legend>
+        <div>
+          <label><span>Postcode</span><input type="text" name="testPostcode" autocomplete="postal-code" placeholder="1234 AB" required></label>
+          <label><span>Huisnummer + toevoeging</span><input type="text" name="testHouseNumber" autocomplete="address-line2" required></label>
+        </div>
+        <label><span>Straat en plaats</span><input type="text" name="testAddress" autocomplete="street-address" required></label>
+      </fieldset>
+      <p id="testReservationStatus" class="test-reservation-status" role="status" aria-live="polite"></p>
+      <div class="test-dialog-actions"><button type="button" class="test-dialog-cancel">Annuleren</button><button type="submit" class="btn btn-gold">Verder naar betalen <span aria-hidden="true">→</span></button></div>
+      <p class="test-dialog-note">Testomgeving: er worden geen gegevens verstuurd en er wordt niets afgeschreven.</p>
+    </form>
+  </dialog>
 
   <dialog id="bindingsDialog" class="bindings-dialog" aria-labelledby="bindingsTitle" aria-describedby="bindingsQuestion bindingsPrice">
     <span class="eyebrow">Extra service voor je snowboard</span>
@@ -356,6 +386,7 @@
   <script src="script.js?v=10"></script>
   <script src="maintenance-selection.js?v=9"></script>
   <script src="package-choice.js?v=14"></script>
+  <script src="test-reservation-modal.js?v=1"></script>
   <script src="snow-temperature.js?v=10"></script>
   <script src="booking-config.js?v=2"></script>
   <script src="website-metrics.js?v=1"></script>
