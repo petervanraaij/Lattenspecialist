@@ -363,11 +363,11 @@
           <label><span>Huisnummer + toevoeging</span><input type="text" name="testHouseNumber" autocomplete="address-line2" required></label>
         </div>
         <label><span>Straat en plaats</span><input type="text" name="testAddress" autocomplete="street-address" required></label>
-        <div class="test-pickup-planning">
-          <label><span>Ophaalweekend</span><select name="testPickupWeekend" required><option value="">Kies een weekend</option></select></label>
-          <label><span>Voorkeursdag</span><select name="testPreferredDay" required><option value="">Kies eerst een weekend</option></select></label>
-        </div>
       </fieldset>
+      <div class="test-pickup-planning">
+        <label><span id="testWeekendLabel">Ophaalweekend</span><select name="testPickupWeekend" required><option value="">Kies een weekend</option></select></label>
+        <label id="testPreferredDayField"><span>Voorkeursmoment</span><select name="testPreferredDay" required><option value="">Kies eerst een weekend</option></select></label>
+      </div>
       <label class="test-extra-information"><span>Aanvullende informatie <small>(optioneel)</small></span><textarea name="testNotes" rows="3" maxlength="500" placeholder="Bijvoorbeeld een voorkeursmoment, schade of andere bijzonderheden"></textarea></label>
       <div class="test-order-review" id="testOrderReview" aria-live="polite"></div>
       <label class="test-consent"><input type="checkbox" name="testPrivacyConsent" required><span>Ik geef toestemming om mijn gegevens voor deze aanvraag te verwerken en ga akkoord met de <a href="privacy.html" target="_blank">privacy-informatie</a> en <a href="service.html" target="_blank">servicevoorwaarden</a>.</span></label>
@@ -375,8 +375,8 @@
       <div id="testTurnstile" class="test-turnstile" hidden></div>
       <p id="testReservationStatus" class="test-reservation-status" role="status" aria-live="polite"></p>
       <div class="test-dialog-actions"><button type="button" class="test-dialog-cancel">Annuleren</button><button type="submit" class="btn btn-gold">Reserveren <span aria-hidden="true">→</span></button></div>
-      <p class="test-dialog-note">Dit is een aanvraag. We nemen contact op om het onderhoud en de exacte ophaaldag te bevestigen. Betalen doe je wanneer het onderhoud gereed is.</p>
-      <section class="test-reservation-success" hidden><span class="test-success-mark" aria-hidden="true">✓</span><h2>Reservering gelukt</h2><p>We hebben je aanvraag ontvangen. De Lattenspecialist neemt contact met je op om het onderhoud te bevestigen en laat weten op welke dag we langskomen.</p><p><strong>Aanvraagcode: <span id="testReservationReference"></span></strong></p><button type="button" class="btn btn-gold test-success-close">Sluiten</button></section>
+      <p id="testDialogNote" class="test-dialog-note">Dit is een aanvraag. We nemen contact op om het onderhoud en de exacte ophaaldag te bevestigen. Betalen doe je wanneer het onderhoud gereed is.</p>
+      <section class="test-reservation-success" hidden><span class="test-success-mark" aria-hidden="true">✓</span><h2>Reservering gelukt</h2><p id="testSuccessMessage">We hebben je aanvraag ontvangen.</p><p><strong>Aanvraagcode: <span id="testReservationReference"></span></strong></p><button type="button" class="btn btn-gold test-success-close">Sluiten</button></section>
     </form>
   </dialog>
 
@@ -395,7 +395,7 @@
   <script src="script.js?v=10"></script>
   <script src="maintenance-selection.js?v=9"></script>
   <script src="package-choice.js?v=14"></script>
-  <script src="test-reservation-modal.js?v=6"></script>
+  <script src="test-reservation-modal.js?v=7"></script>
   <script src="snow-temperature.js?v=10"></script>
   <script src="booking-config.js?v=2"></script>
   <script src="website-metrics.js?v=1"></script>

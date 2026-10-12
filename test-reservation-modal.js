@@ -7,6 +7,10 @@
   const total = document.querySelector('#testDialogTotal');
   const weekendSelect = form?.elements.testPickupWeekend;
   const daySelect = form?.elements.testPreferredDay;
+  const weekendLabel = document.querySelector('#testWeekendLabel');
+  const preferredDayField = document.querySelector('#testPreferredDayField');
+  const dialogNote = document.querySelector('#testDialogNote');
+  const successMessage = document.querySelector('#testSuccessMessage');
   const review = document.querySelector('#testOrderReview');
   const turnstileContainer = document.querySelector('#testTurnstile');
   const success = form?.querySelector('.test-reservation-success');
@@ -28,6 +32,11 @@
   const dateValue = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   const dateLabel = date => new Intl.DateTimeFormat('nl-NL', {weekday:'long',day:'numeric',month:'long'}).format(date);
   const populateDays = () => {
+    const appointment = weekendSelect.value === 'appointment';
+    preferredDayField.hidden = appointment;
+    daySelect.disabled = appointment;
+    daySelect.required = !appointment;
+    if (appointment) { daySelect.replaceChildren(new Option('Op afspraak', 'appointment')); return; }
     const saturday = weekendSelect.value ? new Date(`${weekendSelect.value}T12:00:00`) : null;
     daySelect.replaceChildren(new Option(saturday ? 'Kies een voorkeursmoment' : 'Kies eerst een weekend', ''));
     if (!saturday) return;
@@ -55,15 +64,26 @@
     const pickup = selectedLogistics() === 'pickup';
     pickupAddress.hidden = !pickup;
     pickupInputs.forEach(input => { input.required = pickup; input.disabled = !pickup; });
+    weekendLabel.textContent = pickup ? 'Ophaalweekend' : 'Wanneer kom je brengen?';
+    const appointmentOption = [...weekendSelect.options].find(option => option.value === 'appointment');
+    if (!pickup && !appointmentOption) weekendSelect.append(new Option('Op afspraak · we nemen contact op', 'appointment'));
+    if (pickup && appointmentOption) {
+      if (weekendSelect.value === 'appointment') weekendSelect.value = '';
+      appointmentOption.remove();
+    }
+    if (!isTest) dialogNote.textContent = pickup
+      ? 'Dit is een aanvraag. We nemen contact op om het onderhoud en de exacte ophaaldag te bevestigen. Betalen doe je wanneer het onderhoud gereed is.'
+      : 'Kies een voorkeursmoment om het materiaal in Wamel te brengen. Kies je “op afspraak”, dan nemen we contact met je op. Betalen doe je wanneer het onderhoud gereed is.';
+    populateDays();
     updateReview();
   };
-  const chosenMoment = () => daySelect.selectedOptions[0]?.textContent || '';
+  const chosenMoment = () => weekendSelect.value === 'appointment' ? 'Op afspraak' : daySelect.selectedOptions[0]?.textContent || '';
   const updateReview = () => {
     if (!review || !activeSelection) return;
     const lines = window.LATTEN_SELECTION.describe(activeSelection);
     const logistics = selectedLogistics() === 'pickup'
       ? `Gratis ophalen · ${weekendSelect.selectedOptions[0]?.textContent || 'weekend nog kiezen'} · ${chosenMoment() || 'voorkeursmoment nog kiezen'}`
-      : 'Zelf brengen en ophalen in Wamel';
+      : `Zelf brengen in Wamel · ${weekendSelect.value === 'appointment' ? 'op afspraak; we nemen contact op' : `${weekendSelect.selectedOptions[0]?.textContent || 'weekend nog kiezen'} · ${chosenMoment() || 'voorkeursmoment nog kiezen'}`}`;
     review.replaceChildren();
     const heading = document.createElement('strong'); heading.textContent = 'Controleer je bestelling'; review.append(heading);
     lines.forEach(line => { const item = document.createElement('span'); item.textContent = line; review.append(item); });
@@ -117,6 +137,9 @@
     if (submitting) return;
     if (!form.checkValidity()) { form.reportValidity(); return; }
     if (isTest) {
+      successMessage.textContent = selectedLogistics() === 'pickup'
+        ? 'In de echte reservering nemen we contact op om het onderhoud en de exacte ophaaldag te bevestigen.'
+        : weekendSelect.value === 'appointment' ? 'In de echte reservering nemen we contact op om het brengmoment in Wamel af te spreken.' : 'In de echte reservering bevestigen we het gekozen brengmoment in Wamel.';
       [...form.children].forEach(child => { if (child !== success) child.hidden = true; });
       success.hidden = false;
       return;
@@ -125,8 +148,8 @@
     if (!token) { status.textContent = 'Voltooi eerst de beveiligingscontrole.'; return; }
     const legacy = window.LATTEN_SELECTION.legacy(activeSelection);
     const pickup = selectedLogistics() === 'pickup';
-    const notes = [window.LATTEN_SELECTION.notes(activeSelection), pickup ? `Voorkeursmoment: ${chosenMoment()}` : '', form.elements.testNotes.value.trim()].filter(Boolean).join('\n');
-    const payload = {...legacy, service:'Onderhoud', quickReservation:true, maintenanceSelection:JSON.stringify(activeSelection), logistics:pickup ? 'Gratis ophalen & terugbrengen (servicegebied)' : 'Zelf brengen en zelf ophalen', pickupDate:pickup ? weekendSelect.value : 'In overleg', name:form.elements.testName.value.trim(), phone:form.elements.testPhone.value.trim(), email:'', postcode:pickup ? form.elements.testPostcode.value.trim() : '', houseNumber:pickup ? form.elements.testHouseNumber.value.trim() : '', address:pickup ? form.elements.testAddress.value.trim() : '', notes, privacyConsent:true, termsConsent:true, whatsappConsent:true, website:'', turnstileToken:token};
+    const notes = [window.LATTEN_SELECTION.notes(activeSelection), `${pickup ? 'Voorkeursmoment ophalen' : 'Voorkeursmoment brengen'}: ${chosenMoment()}`, form.elements.testNotes.value.trim()].filter(Boolean).join('\n');
+    const payload = {...legacy, service:'Onderhoud', quickReservation:true, maintenanceSelection:JSON.stringify(activeSelection), logistics:pickup ? 'Gratis ophalen & terugbrengen (servicegebied)' : 'Zelf brengen en zelf ophalen', pickupDate:weekendSelect.value === 'appointment' ? 'In overleg' : weekendSelect.value, name:form.elements.testName.value.trim(), phone:form.elements.testPhone.value.trim(), email:'', postcode:pickup ? form.elements.testPostcode.value.trim() : '', houseNumber:pickup ? form.elements.testHouseNumber.value.trim() : '', address:pickup ? form.elements.testAddress.value.trim() : '', notes, privacyConsent:true, termsConsent:true, whatsappConsent:true, website:'', turnstileToken:token};
     const endpoint = window.LATTENSPECIALIST_BOOKING?.endpoint;
     if (!endpoint) { status.textContent = 'Reserveren is tijdelijk niet beschikbaar. Probeer het later opnieuw.'; return; }
     submitting = true; submitButton.disabled = true; submitButton.textContent = 'Reservering versturen…'; status.textContent = '';
@@ -135,6 +158,11 @@
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.ok || !/^LS-\d{4}-[A-Z2-9]{6}$/.test(result.reference || '')) throw new Error(result.message || 'De reservering kon niet worden verstuurd.');
       reference.textContent = result.reference;
+      successMessage.textContent = pickup
+        ? 'We hebben je aanvraag ontvangen. De Lattenspecialist neemt contact met je op om het onderhoud te bevestigen en laat weten op welke dag we langskomen.'
+        : weekendSelect.value === 'appointment'
+          ? 'We hebben je aanvraag ontvangen. De Lattenspecialist neemt contact met je op om het onderhoud en het brengmoment in Wamel af te spreken.'
+          : 'We hebben je aanvraag ontvangen. De Lattenspecialist neemt contact met je op om het onderhoud en jouw gekozen brengmoment in Wamel te bevestigen.';
       [...form.children].forEach(child => { if (child !== success) child.hidden = true; });
       success.hidden = false;
     } catch (error) {

@@ -111,7 +111,7 @@
 
   const serviceDetails = record => record.service === 'Verhuur'
     ? [['Materiaal',record.rentaltype],['Lengte',record.height ? `${record.height} cm` : ''],['Schoenmaat',record.shoesize],['Niveau',record.level],['Periode',record.rentfrom || record.rentto ? `${record.rentfrom || '?'} t/m ${record.rentto || '?'}` : '']]
-    : [['Materiaal',`${record.amount || 1}× ${record.material || ''}`],['Pakket',record.package],['Logistiek',record.logistics],['Ophaaldatum',formatDate(record.pickupDate || record.pickupday)],['Spoed',record.urgent],['Bestemming',record.destination],['Eerste skidag',formatDate(record.skidate)],['Omstandigheden',record.conditions]];
+    : [['Materiaal',`${record.amount || 1}× ${record.material || ''}`],['Pakket',record.package],['Logistiek',record.logistics],[String(record.logistics || '').toLowerCase().includes('zelf brengen') ? 'Brengweekend' : 'Ophaalweekend',formatDate(record.pickupDate || record.pickupday)],['Spoed',record.urgent],['Bestemming',record.destination],['Eerste skidag',formatDate(record.skidate)],['Omstandigheden',record.conditions]];
 
   const renderRecord = record => {
     const currentStep = Math.max(1,Math.min(steps.length,Number(record.currentStep) || 1));
