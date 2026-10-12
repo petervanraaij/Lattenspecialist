@@ -1,6 +1,22 @@
 name: Android apps klanten medewerkers beheer
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile-*/**'
+      - 'worker/**'
+      - 'beheer.*'
+      - 'admin-team.js'
+      - 'admin-operations*.js'
+      - 'admin-operations*.css'
+      - 'vendor/**'
+      - 'team.css'
+      - 'medewerkers.*'
+      - 'booking-config.js'
+      - 'styles.css'
+      - 'admin-metrics.css'
+      - '.github/workflows/android-app.yml'
   pull_request:
     paths:
       - 'mobile-*/**'
