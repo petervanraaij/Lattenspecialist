@@ -46,9 +46,7 @@
     if (conditions.includes('kunst') || conditions.includes('ijzig') || conditions.includes('hard')) return waxOptions[4];
     return waxOptions[0];
   };
-  const whatsappUrl = (record, type = 'status') => {
-    const phone = normalizeWhatsAppPhone(record.phone);
-    if (!phone) return '';
+  const customerMessageLines = (record, type = 'status') => {
     const firstName = String(record.name || '').split(/\s+/)[0] || '';
     const lines = type === 'payment'
       ? [`Hallo ${firstName},`,'',`Je materiaal is gereed. Het betaalverzoek van € ${Number(record.paymentAmount || 0).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})} staat hier:`,record.paymentUrl || '','Na betaling kan het materiaal worden opgehaald of teruggebracht.','',`Aanvraagcode: ${record.reference}`,'','Groet,','De Lattenspecialist']
@@ -59,7 +57,17 @@
       const statusUrl = customerStatusUrl(record);
       lines.push('','Bekijk je onderhoudsstatus:',statusUrl,'Deze persoonlijke link opent direct jouw onderhoud. Je hoeft niets te installeren of een code in te voeren.','','Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.','','Groet,','De Lattenspecialist');
     }
-    return `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
+    return lines;
+  };
+  const whatsappUrl = (record, type = 'status') => {
+    const phone = normalizeWhatsAppPhone(record.phone);
+    return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(customerMessageLines(record,type).join('\n'))}` : '';
+  };
+  const smsUrl = record => {
+    const phone = String(record.phone || '').replace(/[^+\d]/g,'');
+    if (!phone) return '';
+    const lines = customerMessageLines(record).filter(line => !line.includes('Geen statusupdates meer via WhatsApp'));
+    return `sms:${phone}?body=${encodeURIComponent(lines.join('\n'))}`;
   };
 
   const api = async (path, options = {}) => {
@@ -140,7 +148,8 @@
           <label><span>Gereserveerde werktijd</span><input type="number" name="plannedMinutes" min="15" max="2400" step="15" value="${minutes}"><small class="field-hint">Totaal voor deze aanvraag in minuten. Automatisch 60 minuten per paar.</small></label>
           <label><span>Bericht voor klant</span><textarea name="note" rows="3" maxlength="320" placeholder="Bijvoorbeeld: de kanten zijn gecontroleerd.">${escapeHtml(record.note || '')}</textarea></label>
           <label class="admin-consent-confirm"><input type="checkbox" name="whatsappConsent"${record.whatsappConsent ? ' checked' : ''}><span>Klant heeft toestemming gegeven voor WhatsApp-statusupdates</span><small>Alleen aanvinken na mondelinge of schriftelijke toestemming.</small></label>
-          <div class="admin-save-actions"><button class="btn btn-gold save-record" type="submit" data-action="notify">Opslaan + klant berichten</button><button class="btn btn-dark save-record" type="submit" data-action="save">Alleen opslaan</button></div>
+          <details class="customer-message-actions"><summary>Klant berichten</summary><p>Kies hoe je deze klant wilt informeren. WhatsApp en sms openen met een ingevuld bericht; jij controleert en verstuurt het.</p><div><button class="btn message-whatsapp" type="submit" data-action="whatsapp"${record.whatsappConsent ? '' : ' disabled'}>WhatsApp openen</button><button class="btn message-sms" type="submit" data-action="sms">Sms openen</button><button class="btn btn-dark" type="submit" data-action="email"${record.email ? '' : ' disabled'}>E-mail automatisch versturen</button></div>${record.whatsappConsent ? '' : '<small>WhatsApp is niet beschikbaar omdat toestemming ontbreekt.</small>'}${record.email ? '' : '<small>E-mail is niet beschikbaar omdat bij deze aanvraag geen e-mailadres is ingevuld.</small>'}</details>
+          <div class="admin-save-actions"><button class="btn btn-gold save-record" type="submit" data-action="save">Wijzigingen opslaan</button></div>
           <section class="admin-payment"><h3>Betaalverzoek</h3><div class="payment-fields"><label><span>Bedrag (€)</span><input name="paymentAmount" inputmode="decimal" placeholder="44,95" value="${escapeHtml(String(record.paymentAmount || '').replace('.',','))}"></label><label><span>Betaallink</span><input name="paymentUrl" type="url" placeholder="https://…" value="${escapeHtml(record.paymentUrl || '')}"></label></div><button class="btn btn-dark save-record" type="submit" data-action="payment">Betaalverzoek e-mailen</button></section>
           <button class="admin-close-button" type="submit" data-action="close">${closed ? 'Aanvraag opnieuw openen' : 'Aanvraag afmelden'}</button>
           <div class="admin-record-message" role="status" aria-live="polite"></div>
@@ -225,9 +234,11 @@
     const form = event.target.closest('.admin-update-form'); if (!form) return; event.preventDefault();
     const card = form.closest('.admin-record'); const message = form.querySelector('.admin-record-message'); const buttons = [...form.querySelectorAll('button')];
     const action = event.submitter?.dataset.action || 'save'; const existing = records.find(record => record.reference === card.dataset.reference); const values = Object.fromEntries(new FormData(form)); const currentStep = Number(values.currentStep);
+    if (action === 'whatsapp' && !form.elements.whatsappConsent.checked) { message.textContent = 'WhatsApp kan alleen na toestemming van de klant.'; message.className = 'admin-record-message is-error'; return; }
+    if (action === 'email' && !existing?.email) { message.textContent = 'Bij deze aanvraag is geen e-mailadres ingevuld.'; message.className = 'admin-record-message is-error'; return; }
     const payload = {serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,plannedMinutes:Number(values.plannedMinutes),note:values.note,waxType:values.waxType,whatsappConsent:form.elements.whatsappConsent.checked,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl};
     payload.revision=existing?.revision ?? 0;payload.assignedTo=values.assignedTo || '';
-    if (action === 'notify') { payload.sendStatusEmail = true; payload.sendWhatsApp = true; payload.notificationType = 'status'; }
+    if (action === 'email') payload.sendStatusEmail = true;
     if (action === 'payment') { payload.sendPaymentEmail = true; payload.sendWhatsApp = true; payload.notificationType = 'payment'; }
     if (action === 'close') payload.closed = !existing?.closedAt;
     buttons.forEach(button => { button.disabled = true; }); message.textContent = action === 'payment' ? 'Betaalverzoek versturen…' : 'Opslaan…'; message.className = 'admin-record-message';
@@ -237,12 +248,22 @@
       const updated = document.querySelector(`[data-reference="${CSS.escape(result.record.reference)}"]`); const updatedMessage = updated?.querySelector('.admin-record-message');
       if (!updatedMessage) return;
       let messageText = 'Opgeslagen.';
-      if (action === 'notify') messageText = result.notifications?.email?.sent ? 'Opgeslagen en status per e-mail verstuurd.' : 'Opgeslagen; de status-e-mail kon niet worden verstuurd.';
+      if (action === 'email') messageText = result.notifications?.email?.sent ? 'Opgeslagen en status per e-mail verstuurd.' : 'Opgeslagen; de status-e-mail kon niet worden verstuurd.';
       if (action === 'payment') messageText = result.notifications?.paymentEmail?.sent ? 'Betaalverzoek per e-mail verstuurd.' : `Opgeslagen; betaalmail niet verstuurd (${result.notifications?.paymentEmail?.reason || 'controleer de gegevens'}).`;
       if (action === 'close') messageText = result.record.closedAt ? 'Aanvraag afgemeld.' : 'Aanvraag opnieuw geopend.';
       updatedMessage.textContent = messageText; updatedMessage.className = 'admin-record-message is-success';
+      if (action === 'whatsapp') {
+        const url = whatsappUrl(result.record);
+        if (url) window.location.href = url;
+        else { updatedMessage.textContent = 'Opgeslagen, maar het WhatsApp-nummer is niet geldig.'; updatedMessage.className = 'admin-record-message is-error'; }
+      }
+      if (action === 'sms') {
+        const url = smsUrl(result.record);
+        if (url) window.location.href = url;
+        else { updatedMessage.textContent = 'Opgeslagen, maar het telefoonnummer is niet geldig.'; updatedMessage.className = 'admin-record-message is-error'; }
+      }
       const whatsAppSent = result.notifications?.whatsapp?.sent;
-      if ((action === 'notify' || action === 'payment') && result.record.whatsappConsent && !whatsAppSent) {
+      if (action === 'payment' && result.record.whatsappConsent && !whatsAppSent) {
         const link = document.createElement('a'); link.href = whatsappUrl(result.record,action === 'payment' ? 'payment' : 'status'); link.target = '_blank'; link.rel = 'noopener'; link.className = 'btn whatsapp-launch'; link.textContent = 'Open WhatsApp en verstuur'; updatedMessage.append(link);
       } else if (whatsAppSent) updatedMessage.append(document.createTextNode(' WhatsApp is automatisch verstuurd.'));
     } catch (error) { message.textContent = error.message; message.className = 'admin-record-message is-error'; buttons.forEach(button => { button.disabled = false; }); }
