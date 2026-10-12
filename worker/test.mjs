@@ -138,7 +138,7 @@ try {
   assert.match(lattenMessage.subject, /^\[Lattenspecialist aanvraag\].*Onderhoud/);
   assert.match(lattenMessage.text, /Bestemming: Sölden/);
   assert.match(lattenMessage.text, /WhatsApp-statusupdates: Ja, toestemming gegeven/);
-  assert.match(lattenMessage.text, /Ophaaldatum: 2099-11-28/);
+  assert.match(lattenMessage.text, /Ophaalweekend: 2099-11-28/);
   assert.deepEqual(JSON.parse(requests[2].options.body).to, ['peter@example.nl']);
   assert.equal((await store.list({prefix: 'reservation:'})).keys.length, 1);
 
