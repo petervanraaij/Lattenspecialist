@@ -46,6 +46,8 @@ const syncWidgetToken=()=>widgetBridge?.setAdminToken(localStorage.getItem('latt
 syncWidgetToken();
 window.addEventListener('lattenspecialist:widget-refresh',()=>{syncWidgetToken();widgetBridge?.refresh();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncWidgetToken();});
+const quickMaterial=widgetBridge?.consumeQuickMaterial();
+if(quickMaterial)window.dispatchEvent(new CustomEvent('lattenspecialist:new-request',{detail:{material:quickMaterial}}));
 `);
 
 console.log('Beheerbestanden voor de mobiele app zijn bijgewerkt.');

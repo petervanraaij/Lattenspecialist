@@ -16,6 +16,12 @@
   const saveAvailabilityButton = document.querySelector('#saveAvailability');
   const addAvailabilityButton = document.querySelector('#addAvailabilityDate');
   const customAvailabilityDate = document.querySelector('#customAvailabilityDate');
+  const manualDialog = document.querySelector('#manualRequestDialog');
+  const manualForm = document.querySelector('#manualRequestForm');
+  const manualStatus = document.querySelector('#manualRequestStatus');
+  const manualAddress = document.querySelector('#manualPickupAddress');
+  const manualAddressStatus = document.querySelector('#manualAddressStatus');
+  let manualAddressTimer, manualAddressController;
   let token = sessionStorage.getItem('lattenspecialist-admin-token') || localStorage.getItem('lattenspecialist-admin-token') || '';
   let records = [];
   let availableDates = new Set();
@@ -119,7 +125,7 @@
 
   const serviceDetails = record => record.service === 'Verhuur'
     ? [['Materiaal',record.rentaltype],['Lengte',record.height ? `${record.height} cm` : ''],['Schoenmaat',record.shoesize],['Niveau',record.level],['Periode',record.rentfrom || record.rentto ? `${record.rentfrom || '?'} t/m ${record.rentto || '?'}` : '']]
-    : [['Materiaal',`${record.amount || 1}× ${record.material || ''}`],['Pakket',record.package],['Logistiek',record.logistics],[String(record.logistics || '').toLowerCase().includes('zelf brengen') ? 'Brengweekend' : 'Ophaalweekend',formatDate(record.pickupDate || record.pickupday)],['Spoed',record.urgent],['Bestemming',record.destination],['Eerste skidag',formatDate(record.skidate)],['Omstandigheden',record.conditions]];
+    : [['Binnengekomen via',record.sourceChannel],['Materiaal',`${record.amount || 1}× ${record.material || ''}`],['Pakket',record.package],['Logistiek',record.logistics],[String(record.logistics || '').toLowerCase().includes('zelf brengen') ? 'Brengweekend' : 'Ophaalweekend',formatDate(record.pickupDate || record.pickupday)],['Spoed',record.urgent],['Bestemming',record.destination],['Eerste skidag',formatDate(record.skidate)],['Omstandigheden',record.conditions]];
 
   const renderRecord = record => {
     const currentStep = Math.max(1,Math.min(steps.length,Number(record.currentStep) || 1));
@@ -188,6 +194,53 @@
     } catch { if (version === metricsVersion && token === auth) target.textContent = 'Tellingen tijdelijk niet beschikbaar. Je kunt de reserveringen gewoon beheren.'; }
   };
   document.querySelector('#metricsPeriod').addEventListener('change', loadMetrics);
+  const updateManualAddress = () => {
+    const pickup = manualForm.elements.logistics.value.includes('Gratis ophalen');
+    manualAddress.hidden = !pickup;
+    manualAddress.querySelectorAll('input').forEach(input => { input.required = pickup; input.disabled = !pickup; });
+  };
+  const fillManualWeekends = () => {
+    const select=manualForm.elements.pickupDate;if(select.options.length>1)return;
+    const today=new Date();today.setHours(12,0,0,0);const until=(6-today.getDay()+7)%7||7;const first=new Date(today);first.setDate(today.getDate()+until);
+    for(let index=0;index<8;index+=1){const saturday=new Date(first);saturday.setDate(first.getDate()+index*7);const sunday=new Date(saturday);sunday.setDate(saturday.getDate()+1);const value=saturday.toISOString().slice(0,10);select.append(new Option(`Weekend ${saturday.getDate()}–${sunday.getDate()} ${sunday.toLocaleDateString('nl-NL',{month:'long'})}`,value));}
+  };
+  let pendingManualOpen = false;
+  let pendingManualMaterial = '';
+  const openManualRequest = material => { manualForm.reset(); if(material)manualForm.elements.material.value=material; manualStatus.textContent='';fillManualWeekends();updateManualAddress();manualDialog.showModal();manualForm.elements.name.focus(); };
+  const requestManualOpen = material => {
+    pendingManualOpen = true;
+    pendingManualMaterial = material || '';
+    if (dashboard.hidden) return;
+    const chosenMaterial = pendingManualMaterial;
+    pendingManualOpen = false;
+    pendingManualMaterial = '';
+    openManualRequest(chosenMaterial);
+  };
+  document.querySelector('#newAdminRequest').addEventListener('click',()=>requestManualOpen(''));
+  window.addEventListener('lattenspecialist:new-request',event=>requestManualOpen(event.detail?.material||''));
+  manualDialog.querySelector('.manual-request-close').addEventListener('click',()=>manualDialog.close());
+  manualDialog.querySelector('.manual-request-cancel').addEventListener('click',()=>manualDialog.close());
+  manualForm.elements.logistics.addEventListener('change',updateManualAddress);
+  const lookupManualAddress = async () => {
+    const postcode=manualForm.elements.postcode.value.toUpperCase().replace(/\s+/g,'');const houseNumber=manualForm.elements.houseNumber.value.trim();
+    if(!/^\d{4}[A-Z]{2}$/.test(postcode)||!/^\d{1,5}/.test(houseNumber))return;
+    manualAddressController?.abort();manualAddressController=new AbortController();manualAddressStatus.textContent='Adres zoeken…';
+    try{const response=await fetch(`${endpoint}/api/address?postcode=${encodeURIComponent(postcode)}&houseNumber=${encodeURIComponent(houseNumber)}`,{cache:'no-store',signal:manualAddressController.signal});const result=await response.json().catch(()=>({}));if(!response.ok||!result.address?.address)throw new Error(result.message||'Adres niet gevonden.');manualForm.elements.postcode.value=result.address.postcode;manualForm.elements.houseNumber.value=result.address.houseNumber;manualForm.elements.address.value=result.address.address;manualForm.elements.addressCity.value=result.address.city;manualAddressStatus.textContent=result.address.freePickup?'Adres gevonden · binnen gratis servicegebied':'Adres gevonden · buiten gratis servicegebied';manualAddressStatus.className=`address-status ${result.address.freePickup?'is-success':'is-error'}`;}catch(error){if(error.name!=='AbortError'){manualForm.elements.address.value='';manualAddressStatus.textContent=error.message;manualAddressStatus.className='address-status is-error';}}
+  };
+  ['postcode','houseNumber'].forEach(name=>manualForm.elements[name].addEventListener('input',()=>{clearTimeout(manualAddressTimer);manualForm.elements.address.value='';manualAddressTimer=setTimeout(lookupManualAddress,450);}));
+  manualForm.addEventListener('submit',async event => {
+    event.preventDefault();
+    if (!manualForm.reportValidity()) return;
+    const values=Object.fromEntries(new FormData(manualForm));
+    const extraNotes=[values.bindings?'Bindingen demonteren':'',values.planningMoment?`Voorkeursmoment: ${values.planningMoment}`:'',values.notes||''].filter(Boolean).join('\n');
+    const submit=manualForm.querySelector('[type="submit"]');submit.disabled=true;manualStatus.textContent='Aanvraag opslaan…';manualStatus.className='admin-record-message';
+    try {
+      const result=await api('/api/admin/reservations',{method:'POST',body:JSON.stringify({...values,service:'Onderhoud',pickupDate:values.pickupDate||'In overleg',urgent:manualForm.elements.urgent.checked?'Spoed + € 10,00':'Nee',notes:extraNotes,whatsappConsent:manualForm.elements.whatsappConsent.checked})});
+      records.unshift(result.record);render();manualDialog.close();
+      const card=document.querySelector(`[data-reference="${CSS.escape(result.record.reference)}"]`);card?.scrollIntoView({behavior:'smooth',block:'start'});
+    } catch(error){manualStatus.textContent=error.message;manualStatus.className='admin-record-message is-error';}
+    finally{submit.disabled=false;}
+  });
   const loadDashboard = async () => {
     if (!endpoint) throw new Error('De beheerservice is nog niet gekoppeld.');
     refreshButton.disabled = true;
@@ -196,6 +249,7 @@
       const [reservationResult] = await Promise.all([api('/api/admin/reservations'),loadAvailability(),window.LattenspecialistTeam?.init(api,render)]);
       records = reservationResult.records || [];
       loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render(); await window.LattenspecialistOperations?.init(api,()=>records); void loadMetrics();
+      if (pendingManualOpen) requestManualOpen(pendingManualMaterial);
       window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh'));
     } finally { refreshButton.disabled = false; }
   };

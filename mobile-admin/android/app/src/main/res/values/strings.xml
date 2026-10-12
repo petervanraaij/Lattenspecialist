@@ -5,4 +5,5 @@
     <string name="package_name">nl.lattenspecialist.beheer</string>
     <string name="custom_url_scheme">nl.lattenspecialist.beheer</string>
     <string name="widget_description">Nieuwe en openstaande onderhoudsaanvragen in één oogopslag</string>
+    <string name="quick_widget_description">Start direct een nieuwe ski- of snowboardaanvraag</string>
 </resources>

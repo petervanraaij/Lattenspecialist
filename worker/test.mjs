@@ -145,12 +145,20 @@ try {
   const unauthorized = await worker.fetch(new Request('https://worker.example/api/admin/reservations', {method: 'GET', headers: {Origin: lattenOrigin}}), testEnv);
   assert.equal(unauthorized.status, 401);
 
+  const manualPayload = {service:'Onderhoud',sourceChannel:'Telefoon',name:'Telefonische klant',phone:'0612345678',email:'',material:'Snowboard',amount:'1',package:'Zilver',logistics:'Zelf brengen en zelf ophalen',pickupDate:'In overleg',urgent:'Nee',notes:'Voorkeursmoment: zaterdagmiddag',whatsappConsent:false};
+  const manualResponse = await worker.fetch(new Request('https://worker.example/api/admin/reservations', {method:'POST',headers:adminHeaders,body:JSON.stringify(manualPayload)}),testEnv);
+  const manualResult = await manualResponse.json();
+  assert.equal(manualResponse.status,201);
+  assert.match(manualResult.record.reference,/^LS-/);
+  assert.equal(manualResult.record.sourceChannel,'Telefoon');
+  assert.equal(manualResult.record.email,'');
+
   const adminList = await worker.fetch(new Request('https://worker.example/api/admin/reservations', {method: 'GET', headers: adminHeaders}), testEnv);
   const adminResult = await adminList.json();
   assert.equal(adminList.status, 200);
-  assert.equal(adminResult.records.length, 1);
-  assert.equal(adminResult.records[0].email, lattenPayload.email);
-  assert.equal(adminResult.records[0].whatsappConsent, true);
+  assert.equal(adminResult.records.length, 2);
+  const publicEntry=adminResult.records.find(record=>record.email===lattenPayload.email);
+  assert.equal(publicEntry.whatsappConsent, true);
 
   const updateResponse = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${lattenResult.reference}`, {method: 'PATCH', headers: adminHeaders, body: JSON.stringify({generateServiceCode: true, currentStep: 4, status: STATUS_STEPS[3], expectedReady: '2099-12-03', note: 'Kanten gecontroleerd.', whatsappConsent: false, waxType: 'Premium koudweerwax', paymentAmount: '44.95', paymentUrl: 'https://example.test/betalen'})}), testEnv);
   const updateResult = await updateResponse.json();
@@ -173,7 +181,7 @@ try {
   assert.equal(paymentResult.notifications.paymentEmail.sent, true);
 
   const emptyPaymentReference = 'LS-2609-EMPTY2';
-  await store.put(`reservation:${emptyPaymentReference}`, JSON.stringify({...adminResult.records[0], reference:emptyPaymentReference, paymentAmount:'', paymentUrl:''}));
+  await store.put(`reservation:${emptyPaymentReference}`, JSON.stringify({...publicEntry, reference:emptyPaymentReference, paymentAmount:'', paymentUrl:''}));
   requests.length = 0;
   const emptyPaymentResponse = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${emptyPaymentReference}`, {method:'PATCH',headers:adminHeaders,body:JSON.stringify({sendPaymentEmail:true,sendWhatsApp:true,notificationType:'payment'})}),testEnv);
   assert.equal(emptyPaymentResponse.status,400);
@@ -201,7 +209,7 @@ try {
 
   // First status notification must already contain a working personal link.
   const newReference = 'LS-2609-NEW234';
-  await store.put(`reservation:${newReference}`, JSON.stringify({...adminResult.records[0], reference:newReference, serviceCode:null}));
+  await store.put(`reservation:${newReference}`, JSON.stringify({...publicEntry, reference:newReference, serviceCode:null}));
   const firstNotify = await worker.fetch(new Request(`https://worker.example/api/admin/reservations/${newReference}`, {method:'PATCH',headers:adminHeaders,body:JSON.stringify({sendWhatsApp:true,sendStatusEmail:true})}),whatsappEnv);
   const firstResult = await firstNotify.json();
   assert.equal(firstNotify.status,200);

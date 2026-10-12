@@ -114,7 +114,7 @@ const readAndValidateStuiterbaas = raw => {
   return {data, spam: false};
 };
 
-const readAndValidateLattenspecialist = raw => {
+const readAndValidateLattenspecialist = (raw, trustedAdmin = false) => {
   const data = {
     service: clean(raw.service, 24), material: clean(raw.material, 40), amount: clean(raw.amount, 3),
     package: clean(raw.package, 60), logistics: clean(raw.logistics, 100), pickupDate: clean(raw.pickupDate || raw.pickupday, 30),
@@ -126,11 +126,11 @@ const readAndValidateLattenspecialist = raw => {
     notes: clean(raw.notes, 800), maintenanceSelection: clean(raw.maintenanceSelection, 5000), performanceWax: clean(raw.performanceWax, 100),
     website: clean(raw.website, 120), turnstileToken: clean(raw.turnstileToken, 2048),
     privacyConsent: raw.privacyConsent === true, termsConsent: raw.termsConsent === true, whatsappConsent: raw.whatsappConsent === true,
-    quickReservation: raw.quickReservation === true
+    quickReservation: raw.quickReservation === true, sourceChannel: clean(raw.sourceChannel, 30)
   };
   if (data.website) return {data, spam: true};
   if (!['Onderhoud', 'Verhuur'].includes(data.service)) throw new ValidationError('Kies onderhoud of verhuur.');
-  if (!data.name || !data.phone || (!data.quickReservation && !data.email)) throw new ValidationError(data.quickReservation ? 'Vul naam en telefoonnummer in.' : 'Vul naam, telefoonnummer en e-mailadres in.');
+  if (!data.name || !data.phone || (!trustedAdmin && !data.quickReservation && !data.email)) throw new ValidationError(trustedAdmin || data.quickReservation ? 'Vul naam en telefoonnummer in.' : 'Vul naam, telefoonnummer en e-mailadres in.');
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new ValidationError('Controleer het e-mailadres.');
   if (data.service === 'Onderhoud' && (!data.material || !/^\d{1,2}$/.test(data.amount) || Number(data.amount) < 1 || Number(data.amount) > 20 || !data.package)) throw new ValidationError('Controleer het materiaal, aantal en pakket.');
   if (data.service === 'Onderhoud' && !data.pickupDate) throw new ValidationError('Kies een beschikbare ophaaldatum of kies in overleg.');
@@ -142,10 +142,10 @@ const readAndValidateLattenspecialist = raw => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) throw new ValidationError('Controleer de ingevulde datum.');
   }
   if (data.rentfrom && data.rentto && data.rentto < data.rentfrom) throw new ValidationError('De einddatum ligt vóór de begindatum.');
-  if (!data.privacyConsent) throw new ValidationError('Geef toestemming om je aanvraag te verwerken.');
-  if (data.quickReservation && !data.termsConsent) throw new ValidationError('Ga akkoord met de servicevoorwaarden voordat je reserveert.');
-  if (data.quickReservation && !data.whatsappConsent) throw new ValidationError('Geef toestemming om via WhatsApp contact op te nemen over deze aanvraag.');
-  if (!data.turnstileToken) throw new ValidationError('Voltooi de beveiligingscontrole.');
+  if (!trustedAdmin && !data.privacyConsent) throw new ValidationError('Geef toestemming om je aanvraag te verwerken.');
+  if (!trustedAdmin && data.quickReservation && !data.termsConsent) throw new ValidationError('Ga akkoord met de servicevoorwaarden voordat je reserveert.');
+  if (!trustedAdmin && data.quickReservation && !data.whatsappConsent) throw new ValidationError('Geef toestemming om via WhatsApp contact op te nemen over deze aanvraag.');
+  if (!trustedAdmin && !data.turnstileToken) throw new ValidationError('Voltooi de beveiligingscontrole.');
   return {data, spam: false};
 };
 
@@ -506,6 +506,21 @@ export default {
         return json({ok: true, records: await listReservations(env)}, 200, origin);
       } catch {
         return json({message: 'De reserveringen konden niet worden opgehaald.'}, 502, origin);
+      }
+    }
+
+    if (site === 'lattenspecialist' && url.pathname === '/api/admin/reservations' && request.method === 'POST') {
+      if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
+      try {
+        const {data} = readAndValidateLattenspecialist(await request.json(), true);
+        const reference = createReference();
+        await saveLattenspecialistReservation(data, reference, env);
+        const record = (await listReservations(env)).find(item => item.reference === reference);
+        if (!record) throw new Error('Saved reservation missing.');
+        return json({ok: true, record}, 201, origin);
+      } catch (error) {
+        const validation = error instanceof ValidationError;
+        return json({message: validation ? error.message : 'De aanvraag kon niet worden opgeslagen.'}, validation ? 400 : 502, origin);
       }
     }
 
