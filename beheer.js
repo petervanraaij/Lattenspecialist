@@ -187,6 +187,7 @@
       const [reservationResult] = await Promise.all([api('/api/admin/reservations'),loadAvailability(),window.LattenspecialistTeam?.init(api,render)]);
       records = reservationResult.records || [];
       loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render(); await window.LattenspecialistOperations?.init(api,()=>records); void loadMetrics();
+      window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh'));
     } finally { refreshButton.disabled = false; }
   };
 

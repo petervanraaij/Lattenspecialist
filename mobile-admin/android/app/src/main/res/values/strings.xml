@@ -4,4 +4,5 @@
     <string name="title_activity_main">Lattenspecialist Beheer</string>
     <string name="package_name">nl.lattenspecialist.beheer</string>
     <string name="custom_url_scheme">nl.lattenspecialist.beheer</string>
+    <string name="widget_description">Nieuwe en openstaande onderhoudsaanvragen in één oogopslag</string>
 </resources>

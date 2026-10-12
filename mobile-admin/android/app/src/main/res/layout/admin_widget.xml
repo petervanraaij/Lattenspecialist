@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="LATTENSPECIALIST" android:textColor="#E8BD4B" android:textSize="12sp" android:textStyle="bold" />
+        <TextView android:id="@+id/widget_refresh" android:layout_width="36dp" android:layout_height="32dp" android:gravity="center" android:text="↻" android:textColor="#E8BD4B" android:textSize="22sp" android:contentDescription="Vernieuwen" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center" android:orientation="horizontal">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical"><TextView android:id="@+id/widget_new_value" style="@style/WidgetValue" /><TextView style="@style/WidgetLabel" android:text="Nieuw" /></LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical"><TextView android:id="@+id/widget_open_value" style="@style/WidgetValue" /><TextView style="@style/WidgetLabel" android:text="Open" /></LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical"><TextView android:id="@+id/widget_collect_value" style="@style/WidgetValue" /><TextView style="@style/WidgetLabel" android:text="Ophalen" /></LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical"><TextView android:id="@+id/widget_bring_value" style="@style/WidgetValue" /><TextView style="@style/WidgetLabel" android:text="Klant brengt" /></LinearLayout>
+    </LinearLayout>
+
+    <TextView android:id="@+id/widget_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_horizontal" android:maxLines="1" android:text="Bijwerken…" android:textColor="#BEB7AA" android:textSize="10sp" />
+</LinearLayout>
