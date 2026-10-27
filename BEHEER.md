@@ -14,9 +14,11 @@ De klant vult de code in op `https://lattenspecialist.nl/app.html`. Alleen mater
 
 De stappen lopen van 1 tot en met 8: aanvraag ontvangen, planning, ontvangen, inspectie, onderhoud gestart, wax koelt af, finish/eindcontrole en klaar.
 
-## Voorraad, werkstappen en kostprijs
+## Voorraadbeheer
 
-Open in beheer het tabblad **Voorraad & kosten**. De Holmenkol-bestelling van Newsports staat eerst als **Besteld** geregistreerd. Dit is nog geen beschikbare voorraad. Controleer de levering en kies pas daarna **Bestelling ontvangen**; dan worden wax, reinigingsmiddelen, reparatiemateriaal, verkoopvoorraad en gereedschappen bijgeboekt.
+Open in beheer de module **Voorraadbeheer**. De Holmenkol-bestelling van Newsports staat eerst als **Besteld** geregistreerd. Dit is nog geen beschikbare voorraad. Controleer de levering en kies pas daarna **Bestelling ontvangen**; dan worden wax, reinigingsmiddelen, reparatiemateriaal, verkoopvoorraad en gereedschappen bijgeboekt.
+
+In Voorraadbeheer stel je per artikel de minimumvoorraad in en kun je een telling corrigeren met een verplichte reden. Een correctie kan de voorraad nooit onder nul brengen en komt in het mutatieoverzicht. Gereedschap en apparatuur corrigeer je niet handmatig: gebruik daarvoor bestelling ontvangen of de vervangingsfunctie, zodat aanschaf, gebruik en levensduur op elkaar blijven aansluiten.
 
 Eenmalige aanschaffen en langzaam slijtende gereedschappen worden standaard over 300 relevante onderhoudsbeurten verdeeld. Deze toerekening volgt de werkelijk uitgevoerde handeling:
 
@@ -29,9 +31,21 @@ Bij vervanging sluit je het oude gereedschap af vanuit zijn kaart. Beheer bewaar
 
 Na het scannen van een materiaal-QR toont de medewerkersapp het pakket, de gekozen meerwerken, de werkvolgorde en de benodigde middelen. Iedere stap heeft een eigen timer. Bij warm waxen is het gewicht van hetzelfde waxblok vóór en na de stap verplicht; het verschil wordt als werkelijk waxverbruik van de voorraad afgeboekt.
 
+## Leveranciers
+
+De module **Leveranciers** bevat bedrijfs-, contact-, betaal- en notitiegegevens en toont de bijbehorende bestellingen. Newsports is vanuit de Holmenkol-bestellijst als eerste leverancier opgenomen. De eigenaar kan leveranciers toevoegen en wijzigen; verwijderen is bewust niet beschikbaar, zodat oude bestellingen en facturen naar dezelfde leverancier blijven verwijzen.
+
+## Crediteuren en debiteuren
+
+De modules **Crediteuren** en **Debiteuren** zijn uitsluitend toegankelijk met eigenaarstoegang. Crediteuren bevat inkomende leveranciersfacturen; Debiteuren bevat uitgaande klantfacturen. Iedere factuur toont duidelijk de **uiterste betaaldatum**, bedragen exclusief btw, btw, totaalbedrag en de betaalstatus **Open** of **Betaald**. Alleen de aparte knop **Markeer als betaald** wijzigt de betaalstatus; de server legt zelf het betaalmoment vast. De handeling is veilig opnieuw uit te voeren en zet een betaalde factuur niet terug naar open.
+
+De Newsports-factuur `26600713` staat als open crediteurenfactuur geregistreerd met factuurdatum 23 oktober 2026 en uiterste betaaldatum 22 november 2026. Te late facturen worden alleen afgeleid uit `Open` plus een verstreken uiterste betaaldatum. Aanmaken, wijzigen en betaald markeren komen in een financieel auditlogboek; facturen hebben geen verwijderknop.
+
+Een factuur registreren of als betaald markeren ontvangt **nooit** automatisch een bestelling en boekt **geen** voorraad. Alleen **Bestelling ontvangen** in Voorraadbeheer maakt geleverde artikelen beschikbaar. Zo blijven financiële registratie en fysieke levering twee afzonderlijke controles.
+
 ## Oefenklant
 
-In de medewerkersapp staat het tabblad **Oefenen**. Kies ski of snowboard en oefen alleen waxen of alleen vijlen. Een oefening gebruikt dezelfde timers, voorraad en gereedschapslevensduur als echt onderhoud. De resultaten staan apart in **Voorraad & kosten** en tellen niet mee in productieaantallen, klantdoorlooptijd of medewerkersproductie.
+In de medewerkersapp staat het tabblad **Oefenen**. Kies ski of snowboard en oefen alleen waxen of alleen vijlen. Een oefening gebruikt dezelfde timers, voorraad en gereedschapslevensduur als echt onderhoud. De resultaten staan apart in **Voorraadbeheer** en tellen niet mee in productieaantallen, klantdoorlooptijd of medewerkersproductie.
 
 ## Klant informeren
 

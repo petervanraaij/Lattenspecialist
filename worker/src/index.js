@@ -3,6 +3,7 @@ import {handleMetrics} from './metrics.js';
 import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, ensureTeamRecord, saveOwnerRecord} from './team.js';
 import {handleOperations, verifyAdminAccessCode} from './operations.js';
 import {handleInventory, validMaintenanceSelection} from './inventory.js';
+import {handleAccounting} from './accounting.js';
 
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
@@ -451,6 +452,10 @@ export default {
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
     if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-HRM-PIN', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/admin/accounting')) {
+      if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
+      return handleAccounting(request, env, {owner:await isAdminAuthorized(request,env), json, origin});
+    }
     if (url.pathname.startsWith('/api/admin/inventory') || url.pathname === '/api/team/practice' || /^\/api\/team\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || /^\/api\/team\/operations\/steps\/[a-f0-9-]{36}\/(start|pause|finish)$/.test(url.pathname)) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleInventory(request, env, {owner:await isAdminAuthorized(request,env), json, origin});

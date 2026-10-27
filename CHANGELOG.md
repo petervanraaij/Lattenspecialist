@@ -1,3 +1,11 @@
+# Vier bedrijfsmodules en financiële administratie — 27 oktober 2026
+
+- Voorraadbeheer en Leveranciers zijn als losse eigenaarsmodules ingericht, inclusief minimumvoorraad, gemotiveerde correcties en leveranciersgegevens.
+- Crediteuren en Debiteuren registreren open en betaalde in- en verkoopfacturen met een duidelijke uiterste betaaldatum.
+- De Newsports-factuur `26600713` is open vastgelegd met uiterste betaaldatum 22 november 2026; de bestaande bestelling blijft afzonderlijk op besteld staan.
+- Betaald markeren is een expliciete, idempotente eigenaarshandeling met servertijd en financieel auditspoor; facturen kunnen niet worden verwijderd of stilzwijgend heropend.
+- Facturen aanmaken, wijzigen of betalen ontvangt geen bestelling en boekt geen voorraad.
+
 # Voorraad, werkstappen en oefenmodus — 27 oktober 2026
 
 - Newsports en de Holmenkol-bestellijst zijn als leverancier en openstaande bestelling toegevoegd; voorraad ontstaat pas na bevestiging van ontvangst.

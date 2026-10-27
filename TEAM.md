@@ -19,6 +19,19 @@ Voor een waxstap wordt hetzelfde waxblok direct voor en direct na de stap gewoge
 
 **Oefenklant** maakt een oefenopdracht zonder echte klantgegevens. Voorraad, tijd en gereedschapslevensduur worden normaal verwerkt; de oefenvlag houdt deze opdrachten buiten productie, klantdoorlooptijd en medewerkersproductie.
 
+## Bedrijfsmodules en financiële scheiding
+
+De beheerapp heeft vier losse, uitsluitend voor de eigenaar toegankelijke modules:
+
+- **Voorraadbeheer** voor voorraadstanden, minimumvoorraad, gemotiveerde correcties, bestelling ontvangen, kostprijs en gereedschapslevensduur;
+- **Leveranciers** voor bedrijfs- en contactgegevens en de gekoppelde bestellingen;
+- **Crediteuren** voor inkomende leveranciersfacturen;
+- **Debiteuren** voor uitgaande klantfacturen.
+
+Crediteuren en Debiteuren leggen factuurdatum, **uiterste betaaldatum**, bedragen exclusief btw, btw, totaal, valuta en status `open`/`paid` vast. Te laat is geen los opgeslagen statuut, maar wordt uitsluitend afgeleid wanneer een open factuur voorbij de uiterste betaaldatum is. Alleen de expliciete, idempotente eigenaarshandeling **Markeer als betaald** zet de status op betaald en gebruikt een betaalmoment van de server. Financiële mutaties worden in `accounting_audit` vastgelegd; er is geen verwijder- of heropenroute.
+
+`purchase_invoices` en `sales_invoices` staan bewust los van `purchase_orders`, `inventory_items` en `inventory_movements`. Een factuur aanmaken, wijzigen of betalen verandert daarom geen bestelstatus en ontvangt geen voorraad. Fysieke voorraad ontstaat uitsluitend via **Bestelling ontvangen** in Voorraadbeheer.
+
 ## Opslag en API
 
 - `LATTENSPECIALIST_TEAM_DB`: D1 `lattenspecialist-team-eu`, ID `1b56c1db-5ab9-4b1d-80c9-f9ab4189988b`, met de vaste Cloudflare-jurisdictie `eu`. De eerdere database `lattenspecialist-team` blijft tijdens de gecontroleerde migratie beschikbaar als terugvalkopie.
@@ -27,9 +40,13 @@ Voor een waxstap wordt hetzelfde waxblok direct voor en direct na de stap gewoge
 - `records`: volledige actuele aanvraag, toewijzing en versienummer. Eventuele oudere KV-aanvragen worden bij de eerste beheerwijziging overgenomen. Daarna is D1 de bron voor die aanvraag. KV is geen actuele herstelkopie van gewijzigde aanvragen.
 - Nieuwe klantaanvragen worden direct in de EU-D1-database opgeslagen. KV bevat alleen niet-persoonlijke instellingen en servicecodeverwijzingen en blijft uitsluitend een compatibiliteitsbron voor eventuele oudere aanvragen.
 - `team_audit`: actor, voortgang, wax, werknotitie, toewijzing, afmelding en tijd bij elke wijziging. Geen sleutels in het logboek.
+- `operational_suppliers`, `purchase_orders`, `inventory_items` en `inventory_movements`: leveranciers, bestellingen, actuele voorraad en gemotiveerde mutaties.
+- `purchase_invoices`, `sales_invoices` en `accounting_audit`: owner-only crediteuren/debiteuren, uiterste betaaldatum, betaalstatus en financieel auditspoor. Bestandsmetadata bevat alleen een bestandsnaam en optionele SHA-256, nooit een lokaal pad of documentinhoud.
 - `login_limits`: tijdgebonden hash van IP-adres en tijdvak; maximaal twintig aanmeldpogingen per vijftien minuten. Verlopen sessies en limieten worden bij succesvolle aanmelding opgeruimd.
 - `/api/team/login`, `/session`, `/logout`, `/tasks`, `/tasks/:reference`: medewerkersfuncties.
 - `/api/admin/team/members`, `/members/:id`, `/audit?reference=…`: uitsluitend eigenaarstoegang.
+- `/api/admin/inventory/…`: uitsluitend eigenaarstoegang voor Voorraadbeheer en Leveranciers.
+- `/api/admin/accounting/…`: uitsluitend eigenaarstoegang voor Crediteuren, Debiteuren en expliciet betaald markeren.
 - De bestaande `/api/admin/reservations/:reference` gebruikt `revision` en `assignedTo`. Oude beheerclients zonder versienummer krijgen een verzoek om te vernieuwen, zodat ze geen gewijzigde aanvraag overschrijven.
 - Geen demoaccounts of sleutels worden in productie aangemaakt. De app bevat geen eigenaarssleutel. Sessies staan alleen in sessionStorage. Android-back-up is uitgeschakeld voor medewerkers en beheer.
 
