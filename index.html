@@ -29,7 +29,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=19">
-  <link rel="stylesheet" href="homepage.css?v=20261027-onderhoud-1">
+  <link rel="stylesheet" href="homepage.css?v=20261027-snowtop-1">
   <link rel="stylesheet" href="test-environment.css?v=4">
   <script src="homepage.js?v=2"></script>
   <script type="application/ld+json">
@@ -87,6 +87,27 @@
           <div><strong>Betalen als het gereed is</strong><span>Vóór het ophalen</span></div>
         </div>
       </section>
+    </section>
+
+    <section class="section snow-conditions-top" id="snowLive" aria-labelledby="snow-live-title">
+      <div class="container">
+        <div class="snow-live">
+          <div class="snow-live-current">
+            <div class="snow-live-current-head">
+              <div><span>Live per skigebied</span><h2 id="snow-live-title">Sneeuwtemperatuur op jouw bestemming</h2></div>
+              <form class="snow-search" id="snowSearchForm" role="search"><label for="snowSearchInput">Zoek je eigen bestemming</label><div><input id="snowSearchInput" name="destination" type="search" placeholder="Bijv. Saalbach of Winterberg" autocomplete="off" required><button type="submit">Zoeken</button></div></form>
+            </div>
+            <div class="snow-search-result" id="snowSearchResult" aria-live="polite" hidden></div>
+            <div class="snow-resort-grid" id="snowResortGrid" aria-live="polite" aria-busy="true">
+              <article class="snow-resort-card is-loading"><span>Live gegevens laden…</span></article>
+            </div>
+            <p class="snow-live-status" id="snowLiveStatus" role="status">De sneeuwcondities worden opgehaald.</p>
+          </div>
+          <p class="snow-live-note">Buitenlocaties tonen een schatting op basis van de actuele luchttemperatuur op de vermelde modelhoogte en alleen wanneer het weermodel daar sneeuwdek ziet. De 7-daagse weersindicatie geeft alleen context en bepaalt de waxkeuze niet.</p>
+          <p class="snow-temperature-note"><strong>Waxkeuze:</strong> de actuele geschatte sneeuwtemperatuur is alleen een hulpmiddel. Voor recreatief gebruik zijn de praktische verschillen meestal beperkt. Bij skihallen gebruiken we de vermelde binnentemperatuur.</p>
+          <a class="quiet-link" href="#wax">Vergelijk waxsoorten bij deze temperaturen →</a>
+        </div>
+      </div>
     </section>
 
     <section class="section maintenance-overview" id="onderhoud-keuze" aria-labelledby="maintenance-overview-title">
@@ -270,9 +291,9 @@
 
         <p><a class="quiet-link" href="#warme-wax">Hoe verdwijnt wax tijdens het skiën en snowboarden? →</a></p>
         <p class="wax-swipe-hint">Veeg om waxsoorten en temperaturen te vergelijken.</p>
-        <section class="snow-live" id="snowLive" aria-labelledby="snow-live-title">
+        <section class="snow-live" aria-labelledby="wax-comparison-title">
           <div class="snow-live-head">
-            <div><span class="snow-live-label"><i aria-hidden="true"></i> Sneeuwtemperatuur + waxkeuze</span><h3 id="snow-live-title">Waxsoorten en actuele sneeuw in één overzicht</h3></div>
+            <div><span class="snow-live-label">Waxsoorten &amp; temperatuurbereik</span><h3 id="wax-comparison-title">Vergelijk de waxsoorten</h3></div>
             <p>Vergelijk de eigenschappen en maak zelf je keuze.</p>
           </div>
           <div class="wax-grid wax-grid--four snow-wax-guide" aria-label="Waxsoorten en sneeuwtemperaturen">
@@ -281,19 +302,6 @@
             <article class="wax-card wax-standard"><span class="wax-label">Onze standaard · inbegrepen</span><h3>BetaMix Red</h3><div class="wax-range"><small>Sneeuwtemperatuur</small><strong>-4 °C tot -14 °C</strong></div><p>Slijtvast en breed inzetbaar voor de meeste wintersportreizen.</p></article>
             <article class="wax-card wax-blue"><span class="wax-label">Koude sneeuw · inbegrepen</span><h3>UltraMix Blue</h3><div class="wax-range"><small>Sneeuwtemperatuur</small><strong>-8 °C tot -20 °C</strong></div><p>Een hardere wax voor koude, oude en sterk schurende sneeuw.</p></article>
           </div>
-          <div class="snow-live-current">
-            <div class="snow-live-current-head">
-              <div><span>Live per skigebied</span><h4>Actuele sneeuwtemperatuur als keuzehulp</h4></div>
-              <form class="snow-search" id="snowSearchForm" role="search"><label for="snowSearchInput">Zoek je eigen bestemming</label><div><input id="snowSearchInput" name="destination" type="search" placeholder="Bijv. Saalbach of Winterberg" autocomplete="off" required><button type="submit">Zoeken</button></div></form>
-            </div>
-            <div class="snow-search-result" id="snowSearchResult" aria-live="polite" hidden></div>
-            <div class="snow-resort-grid" id="snowResortGrid" aria-live="polite" aria-busy="true">
-              <article class="snow-resort-card is-loading"><span>Live gegevens laden…</span></article>
-            </div>
-            <p class="snow-live-status" id="snowLiveStatus" role="status">De sneeuwcondities worden opgehaald.</p>
-          </div>
-          <p class="snow-live-note">Buitenlocaties tonen een schatting op basis van de actuele luchttemperatuur op de vermelde modelhoogte en alleen wanneer het weermodel daar sneeuwdek ziet. De 7-daagse weersindicatie geeft alleen context en bepaalt de waxkeuze niet.</p>
-          <p class="snow-temperature-note"><strong>Waxkeuze:</strong> de actuele geschatte sneeuwtemperatuur is alleen een hulpmiddel. Voor recreatief gebruik zijn de praktische verschillen meestal beperkt. Bij skihallen gebruiken we de vermelde binnentemperatuur.</p>
         </section>
       </div>
     </section>

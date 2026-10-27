@@ -625,3 +625,11 @@
 .home-page .wax-comparison .snow-live{margin-top:0}
 #pakket-slijpen,#pakket-waxen,#reparaties{scroll-margin-top:108px}
 @media(max-width:800px){.maintenance-service-grid{grid-template-columns:1fr}.maintenance-service-grid article{padding:24px}.maintenance-service-icon{margin-bottom:16px}.maintenance-service-price{padding-top:6px}.home-page .maintenance-overview{padding:48px 0}.wax-comparison-content{padding:12px}}
+
+/* Current slope conditions appear immediately after the hero. */
+.home-page .snow-conditions-top{padding:32px 0;background:#111213}
+.snow-conditions-top .snow-live{margin-top:0;padding:22px}
+.snow-conditions-top .snow-live-current{margin-top:0;padding-top:0;border-top:0}
+.home-page .snow-conditions-top .snow-live-current-head h2{margin:5px 0 0;color:#191713;font-size:1.5rem;line-height:1.25}
+.snow-conditions-top .quiet-link{font-size:.8rem;margin-top:6px}
+@media(max-width:560px){.home-page .snow-conditions-top{padding:24px 0}.snow-conditions-top .snow-live{padding:16px}.home-page .snow-conditions-top .snow-live-current-head h2{font-size:1.3rem}}
