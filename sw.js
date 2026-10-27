@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v93-graphic-wax';
+const CACHE_NAME = 'lattenspecialist-v94-live-wax';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -24,8 +24,8 @@ const APP_SHELL = [
   '/service-options.js?v=1',
   '/test-reservation-modal.js?v=20261027-wax-1',
   '/images/holmenkol-natural-skiwax-stick.png',
-  '/wax-illustration.css?v=3',
-  '/wax-illustration.js?v=1',
+  '/wax-illustration.css?v=4',
+  '/wax-illustration.js?v=2',
   '/customer-booking.css?v=1',
   '/customer-booking.js?v=2',
   '/customer-app.css?v=1',

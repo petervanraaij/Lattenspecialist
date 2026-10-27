@@ -31,7 +31,7 @@
   <link rel="stylesheet" href="styles.css?v=19">
   <link rel="stylesheet" href="homepage.css?v=20261027-snowtop-1">
   <link rel="stylesheet" href="test-environment.css?v=4">
-  <link rel="stylesheet" href="wax-illustration.css?v=3">
+  <link rel="stylesheet" href="wax-illustration.css?v=4">
   <script src="homepage.js?v=2"></script>
   <script type="application/ld+json">
   {
@@ -283,8 +283,8 @@
 
     <section class="section wax-explained" id="warme-wax" aria-labelledby="wax-explained-title">
       <div class="container">
-        <div class="section-head"><span class="eyebrow">Van glijvlak naar sneeuw</span><h2 id="wax-explained-title">Waar blijft je wax?</h2><p>Bekijk wat er tijdens het glijden onder je ski’s of snowboard gebeurt.</p></div>
-        <div class="wax-storyboard" data-wax-stage="glide">
+        <div class="section-head"><span class="eyebrow">Van glijvlak naar sneeuw</span><h2 id="wax-explained-title">Waar blijft je wax?</h2><p>Volg in de animatie wat er tijdens het glijden onder je ski’s of snowboard gebeurt.</p></div>
+        <div class="wax-storyboard" data-wax-stage="glide" data-wax-running="false">
           <figure>
 <svg class="wax-scene" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 650" role="img" aria-labelledby="wax-scene-title wax-scene-desc">
   <title id="wax-scene-title">Een snowboard glijdt over sneeuw, met een uitvergrote doorsnede van het belag</title>
@@ -298,6 +298,10 @@
     <linearGradient id="waxBase" x2="0" y2="1"><stop stop-color="#60717a"/><stop offset="1" stop-color="#34454f"/></linearGradient>
     <radialGradient id="waxHalo"><stop stop-color="#56717e" stop-opacity=".5"/><stop offset="1" stop-color="#56717e" stop-opacity="0"/></radialGradient>
     <pattern id="waxTexture" width="19" height="15" patternUnits="userSpaceOnUse"><path d="M2 5l7-2m5 8 3-1" stroke="#b9cad1" stroke-opacity=".14" stroke-width="1.2"/></pattern>
+    <clipPath id="waxSnowClip"><path d="M48 340Q177 303 323 291T565 249T823 229L856 324Q719 374 507 376T65 400Z"/></clipPath>
+    <clipPath id="waxDetailClip"><rect x="62" y="505" width="776" height="81"/></clipPath>
+    <pattern id="waxSnowTracks" width="180" height="68" patternUnits="userSpaceOnUse" patternTransform="rotate(-11)"><path d="M12 15H79M101 43H166M33 60H54" stroke="#7699ac" stroke-opacity=".32" stroke-width="2" stroke-linecap="round"/><circle cx="135" cy="14" r="2" fill="#fff"/><circle cx="26" cy="37" r="1.8" fill="#fff"/></pattern>
+    <g id="waxCrystalTile"><path d="M0 63L42 35L78 53L119 3L149 52L180 63V81H0Z" fill="url(#waxSnow)"/><path d="M119 3L105 55L78 53M119 3L131 37L149 52" fill="none" stroke="#7f9da9" stroke-opacity=".7"/></g>
     <filter id="waxShadow" x="-.3" y="-.5" width="1.6" height="2"><feGaussianBlur stdDeviation="10"/></filter>
     <marker id="waxArrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#ebc675" stroke-width="1.4"/></marker>
     <path id="waxBoardShape" d="M125 263C80 278 97 302 143 307C169 310 195 305 224 300L688 216C736 207 778 186 767 164C754 140 701 136 650 146L177 246C155 251 139 257 125 263Z"/>
@@ -311,9 +315,10 @@
   <path d="M48 356Q178 312 312 307T540 266T824 244L867 350Q756 398 543 400T56 425Z" fill="#91acb9" opacity=".2"/>
   <path d="M48 340Q177 303 323 291T565 249T823 229L856 324Q719 374 507 376T65 400Z" fill="url(#waxSnow)"/>
   <path d="M48 340Q177 303 323 291T565 249T823 229" fill="none" stroke="#fff" stroke-width="4"/>
-  <g fill="none" stroke="#7699ac" stroke-opacity=".25"><path d="M89 365L234 336M159 380L402 333M463 327L697 280M574 348L803 298"/><path d="M138 345l87-16M305 362l100-19M682 338l87-17" stroke-width="3"/></g>
-  <g class="wax-snow-motion" stroke="#fff" stroke-linecap="round" opacity=".6"><path d="M29 303l74-17M17 320l46-11M82 337l54-12" stroke-width="3"/><circle cx="71" cy="273" r="2" fill="#fff"/><circle cx="41" cy="295" r="2" fill="#fff"/><circle cx="113" cy="321" r="3" fill="#fff"/></g>
+  <g clip-path="url(#waxSnowClip)"><rect class="wax-track-flow wax-loop" x="-180" y="170" width="1440" height="330" fill="url(#waxSnowTracks)"/></g>
+  <g class="wax-snow-motion wax-spray wax-loop" stroke="#fff" stroke-linecap="round" opacity=".6"><path d="M29 303l74-17M17 320l46-11M82 337l54-12" stroke-width="3"/><circle cx="71" cy="273" r="2" fill="#fff"/><circle cx="41" cy="295" r="2" fill="#fff"/><circle cx="113" cy="321" r="3" fill="#fff"/></g>
   <use href="#waxBoardShape" transform="translate(3 32)" fill="#142b38" opacity=".5" filter="url(#waxShadow)"/>
+  <g class="wax-board-float wax-loop">
   <use href="#waxBoardShape" transform="translate(0 14)" fill="url(#waxEdge)" stroke="#11202a" stroke-width="2"/>
   <path d="M129 313Q173 319 224 309L690 225Q737 216 761 195" fill="none" stroke="url(#waxGold)" stroke-width="3" class="wax-board-highlight"/>
   <use href="#waxBoardShape" fill="url(#waxDeck)" stroke="#899ba4" stroke-width="1.5"/>
@@ -322,6 +327,7 @@
   <path d="M625 164l30 14-18 23M644 160l31 14-18 23M664 156l30 14-18 23" fill="none" stroke="#c7a85f" stroke-width="2" opacity=".7"/>
   <use href="#waxBinding" transform="translate(313 245) rotate(-22)"/>
   <use href="#waxBinding" transform="translate(529 204) rotate(11)"/>
+  </g>
   <g class="wax-zoom-marker"><circle cx="461" cy="271" r="23" fill="#172833" fill-opacity=".5" stroke="#f2ce7c" stroke-width="2"/><circle cx="461" cy="271" r="31" fill="none" stroke="#e8c473" stroke-opacity=".3"/><path d="M468 301L504 393" fill="none" stroke="#e8c473" stroke-width="1.5" stroke-dasharray="5 6"/><circle cx="504" cy="393" r="4" fill="#e8c473"/></g>
   <g class="wax-macro">
     <rect x="38" y="395" width="824" height="215" rx="18" fill="#101a22" stroke="#8399a5" stroke-opacity=".4"/>
@@ -335,18 +341,16 @@
     <path class="wax-layer wax-layer-fresh" d="M62 505H838" stroke="url(#waxGold)" stroke-width="5"/>
     <path class="wax-layer wax-layer-glide" d="M62 505H175M185 505H354M366 505H534M546 505H716M729 505H838" stroke="url(#waxGold)" stroke-width="4"/>
     <path class="wax-layer wax-layer-worn" d="M81 505H129M205 505H260M325 505H359M439 505H506M593 505H626M709 505H773M811 505H833" stroke="url(#waxGold)" stroke-width="3"/>
-    <g class="wax-crystals">
-      <path d="M62 571L102 540L138 558L179 508L209 557L254 532L294 560L360 508L399 557L438 537L478 558L540 508L583 559L628 535L671 559L722 508L763 553L799 536L838 568V586H62Z" fill="url(#waxSnow)"/>
-      <g stroke="#7f9da9" stroke-opacity=".7" fill="none"><path d="M179 508L165 560L138 558M179 508L191 542L209 557M360 508L342 553L294 560M360 508L375 539L399 557M540 508L523 550L478 558M540 508L553 540L583 559M722 508L707 548L671 559M722 508L738 539L763 553"/></g>
-    </g>
+    <g clip-path="url(#waxDetailClip)"><g class="wax-crystals"><g class="wax-crystal-flow wax-loop"><use href="#waxCrystalTile" x="-120" y="505"/><use href="#waxCrystalTile" x="60" y="505"/><use href="#waxCrystalTile" x="240" y="505"/><use href="#waxCrystalTile" x="420" y="505"/><use href="#waxCrystalTile" x="600" y="505"/><use href="#waxCrystalTile" x="780" y="505"/><use href="#waxCrystalTile" x="960" y="505"/></g></g></g>
     <g class="wax-traces" fill="#edc56f" stroke="#71521f" stroke-width=".8"><path d="M179 512Q172 530 158 542M360 512Q350 534 334 550M540 512Q532 532 516 542M722 512Q713 533 699 547" fill="none" stroke="#d6ab54" stroke-width="1.7" stroke-dasharray="3 4"/><circle cx="157" cy="546" r="3.4"/><circle cx="332" cy="554" r="3"/><circle cx="514" cy="546" r="3.6"/><circle cx="697" cy="551" r="3"/></g>
-    <g class="wax-moving-particles" fill="#f6ce78" stroke="#725321" stroke-width=".7"><circle class="wax-particle wax-particle-a" cx="179" cy="510" r="4"/><circle class="wax-particle wax-particle-b" cx="360" cy="510" r="3.5"/><circle class="wax-particle wax-particle-c" cx="540" cy="510" r="4"/><circle class="wax-particle wax-particle-d" cx="722" cy="510" r="3.5"/></g>
+    <g class="wax-moving-particles" fill="#f6ce78" stroke="#725321" stroke-width=".7"><circle class="wax-particle wax-loop wax-particle-a" cx="179" cy="510" r="5"/><circle class="wax-particle wax-loop wax-particle-b" cx="360" cy="510" r="3.5"/><circle class="wax-particle wax-loop wax-particle-c" cx="540" cy="510" r="5"/><circle class="wax-particle wax-loop wax-particle-d" cx="722" cy="510" r="3.5"/></g>
   </g>
   <g class="wax-scene-status wax-status-fresh"><text x="450" y="637" text-anchor="middle">KLAAR VOOR DE EERSTE AFDALING</text></g>
   <g class="wax-scene-status wax-status-glide"><text x="450" y="637" text-anchor="middle">KLEINE WAXDEELTJES BLIJVEN IN DE SNEEUW ACHTER</text></g>
   <g class="wax-scene-status wax-status-worn"><text x="450" y="637" text-anchor="middle">NA GEBRUIK: MINDER WAX AAN HET OPPERVLAK</text></g>
 </svg>
 
+            <div class="wax-playback-bar"><span class="wax-playback-status"><i aria-hidden="true"></i>Wax in beweging</span><button type="button" class="wax-playback" data-wax-playback hidden aria-label="Animatie afspelen">▶ Afspelen</button></div>
             <figcaption class="wax-legend"><span><i aria-hidden="true"></i>Belag</span><span><i class="wax-key" aria-hidden="true"></i>Wax</span><span><i class="snow-key" aria-hidden="true"></i>Sneeuw</span></figcaption>
           </figure>
           <div class="wax-story-controls">
@@ -356,10 +360,10 @@
               <li><button type="button" data-wax-select="glide" aria-pressed="true"><span class="wax-number" aria-hidden="true">02</span><span><strong>De sneeuw neemt wax mee</strong><span class="wax-short-copy">Sneeuwkristallen schuren heel kleine hoeveelheden wax van het glijvlak.</span></span></button></li>
               <li><button type="button" data-wax-select="worn" aria-pressed="false"><span class="wax-number" aria-hidden="true">03</span><span><strong>Tijd voor nieuwe wax</strong><span class="wax-short-copy">Na gebruik is minder wax aanwezig. Regelmatig waxen houdt het glijvlak verzorgd.</span></span></button></li>
             </ol>
-            <p class="wax-controls-hint">Kies een stap en bekijk het verschil in de afbeelding.</p>
+            <p class="wax-controls-hint">De stappen spelen automatisch af. Kies een stap om het beeld stil te zetten.</p>
           </div>
         </div>
-        <div class="wax-graphic-notes"><p>Schematische illustratie. Goud stelt wax voor; het detail en de waxdeeltjes zijn sterk uitvergroot. De slijtage verschilt per sneeuwsoort, wax en gebruik.</p><details class="wax-heat"><summary>Welke rol speelt warmte?</summary><p>Warmte door wrijving kan bijdragen aan een dun waterfilmpje tussen belag en sneeuw. Wax slijt ook bij koude sneeuw; hij hoeft daarvoor niet eerst te smelten.</p></details></div>
+        <div class="wax-graphic-notes"><p>Schematische animatie in een herhalende lus. Goud stelt wax voor; het detail en de waxdeeltjes zijn sterk uitvergroot. De slijtage verschilt per sneeuwsoort, wax en gebruik.</p><details class="wax-heat"><summary>Welke rol speelt warmte?</summary><p>Warmte door wrijving kan bijdragen aan een dun waterfilmpje tussen belag en sneeuw. Wax slijt ook bij koude sneeuw; hij hoeft daarvoor niet eerst te smelten.</p></details></div>
         <aside class="first-service-note" id="extra-reiniging"><div><span class="eyebrow">Jij kiest de behandeling</span><h3>Waarom oude wax verwijderen?</h3></div><div><p>Oude wax kan vuil bevatten of van mindere kwaliteit zijn. Grondige reiniging geeft de nieuwe Holmenkol-wax een schone basis, zodat die beter zijn werk kan doen. Laat je je ski’s of snowboard daarna steeds bij ons onderhouden, dan volstaat normaal gesproken de standaardreiniging.</p><p><strong>Extra waxreiniging is optioneel: € 5,00 per paar ski’s of snowboard.</strong> Je kunt ook kiezen voor standaard reinigen en waxen over de aanwezige wax, zonder deze toeslag. Extra waxreiniging staat standaard uit.</p><a class="quiet-link" href="service.html">Lees onze serviceafspraken →</a></div></aside>
       </div>
     </section>
@@ -496,7 +500,7 @@
   <script src="service-options.js?v=1"></script>
   <script src="test-reservation-modal.js?v=20261027-wax-1"></script>
   <script src="snow-temperature.js?v=10"></script>
-  <script src="wax-illustration.js?v=1"></script>
+  <script src="wax-illustration.js?v=2"></script>
   <script src="booking-config.js?v=2"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>
