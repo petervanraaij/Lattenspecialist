@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import worker from './src/index.js';
 
 class D1 {
-  constructor(){this.sql=new DatabaseSync(':memory:');this.sql.exec(readFileSync(new URL('./team-migrations/0001_team.sql',import.meta.url),'utf8'));this.sql.exec(readFileSync(new URL('./team-migrations/0002_operations.sql',import.meta.url),'utf8'));this.sql.exec(readFileSync(new URL('./team-migrations/0003_availability_times.sql',import.meta.url),'utf8'));}
+  constructor(){this.sql=new DatabaseSync(':memory:');this.sql.exec(readFileSync(new URL('./team-migrations/0001_team.sql',import.meta.url),'utf8'));this.sql.exec(readFileSync(new URL('./team-migrations/0002_operations.sql',import.meta.url),'utf8'));this.sql.exec(readFileSync(new URL('./team-migrations/0003_availability_times.sql',import.meta.url),'utf8'));this.sql.exec(readFileSync(new URL('./team-migrations/0004_inventory_workflow.sql',import.meta.url),'utf8'));}
   prepare(query){const sql=this.sql;let values=[];const statement={bind(...args){values=args;return statement;},async first(){return sql.prepare(query).get(...values)||null;},async all(){return {results:sql.prepare(query).all(...values)};},async run(){return {meta:sql.prepare(query).run(...values)};},exec(){const s=sql.prepare(query);return s.columns().length?{results:s.all(...values)}:{results:[],meta:s.run(...values)};}};return statement;}
   async batch(statements){this.sql.exec('BEGIN');try{const result=statements.map(statement=>statement.exec());this.sql.exec('COMMIT');return result;}catch(error){this.sql.exec('ROLLBACK');throw error;}}
 }
@@ -32,12 +32,16 @@ const material=labels.data.materials[0];
 const scan=await call('/api/team/operations/scan/'+material.token,'GET',undefined,staffToken);
 assert.equal(scan.status,200);assert.equal(scan.data.work.package,'Goud');
 assert.equal((await call('/api/team/operations/scan/'+material.displayCode,'GET',undefined,staffToken)).data.material.id,material.id);
+const other=await call('/api/admin/team/members','POST',{name:'Andere Medewerker',login:'andere'}),otherLogin=await call('/api/team/login','POST',{login:'andere',accessKey:other.data.accessKey},''),otherToken=otherLogin.data.token;
+assert.equal((await call(`/api/team/operations/materials/${material.id}/action`,'POST',{action:'receive'},otherToken)).status,403,'een andere medewerker mag de opdracht niet wijzigen');
 assert.equal((await call(`/api/team/operations/materials/${material.id}/action`,'POST',{action:'receive'},staffToken)).data.material.customerStatus,'Materiaal ontvangen');
-assert.equal((await call(`/api/team/operations/materials/${material.id}/action`,'POST',{action:'work_start'},staffToken)).status,200);
+assert.equal((await call(`/api/team/operations/materials/${material.id}/action`,'POST',{action:'work_start'},staffToken)).status,403,'onderhoud kan de workflow niet omzeilen');
 const activeDashboard=await call('/api/admin/operations/dashboard');
-assert.equal(activeDashboard.data.activeWork.length,1);assert.equal(activeDashboard.data.activeWork[0].display_code,material.displayCode);assert.equal(activeDashboard.data.activeWork[0].planned_seconds,3600);
-assert.equal((await call(`/api/team/operations/materials/${material.id}/action`,'POST',{action:'work_complete'},staffToken)).data.material.customerStatus,'Klaar om opgehaald te worden');
+assert.equal(activeDashboard.data.activeWork.length,0);
+assert.equal((await call(`/api/admin/operations/materials/${material.id}/action`,'POST',{action:'ready'})).status,409,'beheer kan een onvolledig stappenplan niet per ongeluk gereedmelden');
+assert.equal((await call(`/api/admin/operations/materials/${material.id}/action`,'POST',{action:'ready',overrideWorkflow:true})).data.material.customerStatus,'Klaar om opgehaald te worden');
 assert.equal(db.sql.prepare("SELECT json_extract(payload,'$.customerStatus') status FROM records WHERE reference=?").get(reference).status,'Klaar om opgehaald te worden');
+db.sql.prepare("INSERT INTO work_sessions(id,material_id,member_id,activity,started_at,ended_at,duration_seconds) VALUES(?,?,?,?,?,?,?)").run(crypto.randomUUID(),material.id,created.data.id,'maintenance',new Date(Date.now()-60000).toISOString(),new Date().toISOString(),60);
 
 assert.equal((await call('/api/team/operations/availability','PATCH',{dates:[{date:'2099-12-01',preference:'preferred',startTime:'10:00',endTime:'16:30',note:'Overdag'}]},staffToken)).status,200);
 const availability=await call('/api/team/operations/availability','GET',undefined,staffToken);assert.equal(availability.data.dates.length,1);assert.equal(availability.data.dates[0].start_time,'10:00');assert.equal(availability.data.dates[0].end_time,'16:30');
@@ -55,7 +59,7 @@ const ownHrm=await call('/api/team/hrm','GET',undefined,staffToken,{'X-HRM-PIN':
 assert.equal(ownHrm.data.profile.iban,'NL91ABNA0417164300');assert.equal(ownHrm.data.terms.hourlyRate,18.5);
 assert.ok(ownHrm.data.totals.earnings>=0);assert.ok(ownHrm.data.totals.monthEarnings>=0);
 const adminHrm=await call('/api/admin/hrm/members','GET',undefined,owner,{'X-HRM-PIN':'8642'});
-assert.equal(adminHrm.status,200);assert.equal(adminHrm.data.members[0].totals.items,1);assert.ok(adminHrm.data.members[0].totals.seconds>=1);assert.ok(adminHrm.data.members[0].totals.monthEarnings>=0);
+const robinHrm=adminHrm.data.members.find(item=>item.id===created.data.id);assert.equal(adminHrm.status,200);assert.equal(robinHrm.totals.items,1);assert.ok(robinHrm.totals.seconds>=1);assert.ok(robinHrm.totals.monthEarnings>=0);
 
 assert.equal((await call('/api/admin/settings/access-code','POST',{currentCode:owner,newCode:'nieuwe-beheercode'},owner)).status,200);
 assert.equal((await call('/api/admin/operations/dashboard','GET',undefined,owner)).status,401);

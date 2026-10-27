@@ -15,6 +15,9 @@ In `mobile-admin` staat de native beheerapp voor Android en iPhone. De app bevat
 - Betaling via betaalverzoek na onderhoud
 - Concrete ophaaldata uit de beheerapp en automatische Nederlandse adresopzoeking via PDOK
 - Beheer van servicecode, voortgang, waxsoort, klantberichten, betaalverzoeken en afmelden
+- Stap-voor-stap werkplaatsregistratie met materiaal-QR, benodigdheden, timers en werkelijk waxverbruik
+- Newsports-leverancier, Holmenkol-bestelling, voorraad en kostprijs per relevante onderhoudshandeling
+- Aparte Oefenklant voor wax- en vijloefeningen zonder invloed op productiecijfers
 - KvK 99668637
 - BTW-id NL005403580B64
 

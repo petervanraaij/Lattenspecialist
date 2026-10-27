@@ -14,6 +14,25 @@ De klant vult de code in op `https://lattenspecialist.nl/app.html`. Alleen mater
 
 De stappen lopen van 1 tot en met 8: aanvraag ontvangen, planning, ontvangen, inspectie, onderhoud gestart, wax koelt af, finish/eindcontrole en klaar.
 
+## Voorraad, werkstappen en kostprijs
+
+Open in beheer het tabblad **Voorraad & kosten**. De Holmenkol-bestelling van Newsports staat eerst als **Besteld** geregistreerd. Dit is nog geen beschikbare voorraad. Controleer de levering en kies pas daarna **Bestelling ontvangen**; dan worden wax, reinigingsmiddelen, reparatiemateriaal, verkoopvoorraad en gereedschappen bijgeboekt.
+
+Eenmalige aanschaffen en langzaam slijtende gereedschappen worden standaard over 300 relevante onderhoudsbeurten verdeeld. Deze toerekening volgt de werkelijk uitgevoerde handeling:
+
+- waxgereedschap telt alleen mee bij waxstappen;
+- vijlen en slijpgereedschap tellen alleen mee bij vijlen/slijpen;
+- reparatiemateriaal en reparatiegereedschap tellen alleen mee bij reparaties;
+- cleaner en fleece worden als werkelijk verbruik geboekt.
+
+Bij vervanging sluit je het oude gereedschap af vanuit zijn kaart. Beheer bewaart eerste en laatste gebruik, het aantal relevante beurten, de totale gebruikstijd en de uiteindelijke kostprijs per gebruik. Voor het nieuwe gereedschap begint een nieuwe levensduurregistratie, opnieuw standaard met een doel van 300 gebruiken.
+
+Na het scannen van een materiaal-QR toont de medewerkersapp het pakket, de gekozen meerwerken, de werkvolgorde en de benodigde middelen. Iedere stap heeft een eigen timer. Bij warm waxen is het gewicht van hetzelfde waxblok vóór en na de stap verplicht; het verschil wordt als werkelijk waxverbruik van de voorraad afgeboekt.
+
+## Oefenklant
+
+In de medewerkersapp staat het tabblad **Oefenen**. Kies ski of snowboard en oefen alleen waxen of alleen vijlen. Een oefening gebruikt dezelfde timers, voorraad en gereedschapslevensduur als echt onderhoud. De resultaten staan apart in **Voorraad & kosten** en tellen niet mee in productieaantallen, klantdoorlooptijd of medewerkersproductie.
+
 ## Klant informeren
 
 Bij een nieuwe aanvraag kan de klant apart toestemming geven voor WhatsApp-statusupdates. In de beheerapp staat dan bij de aanvraag **WhatsApp-statusupdates toegestaan**.

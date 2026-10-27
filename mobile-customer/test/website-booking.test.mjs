@@ -47,7 +47,9 @@ test('copper and bronze package links work and no package is silently preselecte
  assert.match(d.querySelector('#stickyPackageRequest').textContent,/Reserveren/);
  assert.equal(d.querySelectorAll('.package-details:not([open])').length,5);
  assert.equal(d.querySelectorAll('#pakketten').length,1);
- assert.equal(d.querySelector('.hero').nextElementSibling.id,'snowLive');
+ assert.ok(d.querySelector('.hero > .trust-strip'));
+ assert.ok(d.querySelector('.hero').nextElementSibling.matches('.home-route'));
+ assert.equal(d.querySelector('.home-route').nextElementSibling.id,'snowLive');
  assert.equal(d.querySelector('#snowLive').nextElementSibling.id,'onderhoud-keuze');
  assert.equal(d.querySelector('#onderhoud-keuze').nextElementSibling.id,'pakketten');
  assert.equal(d.querySelector('.maintenance-sidebar'),null);

@@ -11,6 +11,14 @@
 
 De medewerker mag geen betalingen, klantcontact, toewijzing, planning of afmeldingen aanpassen. De eigenaar kan een aanvraag afmelden; deze verdwijnt dan uit de medewerkerslijst. Een reeds geopende oude versie kan niet alsnog worden opgeslagen.
 
+## Werkplaatsstappen en Oefenklant
+
+Een medewerker opent een fysiek materiaal via de unieke `LSM`-code of QR-sticker. Het stappenplan is samengesteld uit pakket, materiaalsoort en gekozen meerwerken. Start, pauzeer en rond iedere stap afzonderlijk af. De server bewaart de tijd; een browserklok is alleen voor de liveweergave.
+
+Voor een waxstap wordt hetzelfde waxblok direct voor en direct na de stap gewogen. Het verschil is het werkelijke verbruik. Bij reiniging en reparatie worden respectievelijk cleaner/fleece en reparatiestrips ingevoerd. Gereedschapskosten worden alleen bij hun eigen handeling geboekt en standaard over 300 relevante gebruiken verdeeld.
+
+**Oefenklant** maakt een oefenopdracht zonder echte klantgegevens. Voorraad, tijd en gereedschapslevensduur worden normaal verwerkt; de oefenvlag houdt deze opdrachten buiten productie, klantdoorlooptijd en medewerkersproductie.
+
 ## Opslag en API
 
 - `LATTENSPECIALIST_TEAM_DB`: D1 `lattenspecialist-team-eu`, ID `1b56c1db-5ab9-4b1d-80c9-f9ab4189988b`, met de vaste Cloudflare-jurisdictie `eu`. De eerdere database `lattenspecialist-team` blijft tijdens de gecontroleerde migratie beschikbaar als terugvalkopie.

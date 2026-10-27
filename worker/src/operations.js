@@ -1,3 +1,4 @@
+import {ensureWorkflow,getWorkflow,materialPlans} from './inventory.js';
 const now = () => new Date().toISOString();
 const bearer = request => (request.headers.get('Authorization') || '').replace(/^Bearer /, '');
 const hex = bytes => Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
@@ -136,24 +137,28 @@ const materialView = row => ({
   kind:row.kind, package:row.package_name || '', waxType:row.wax_type || '', assignedTo:row.assigned_to || '',
   internalStatus:row.internal_status, customerStatus:row.customer_status, createdAt:row.created_at,
   updatedAt:row.updated_at, receivedAt:row.received_at, readyAt:row.ready_at, deliveredAt:row.delivered_at,
+  isTraining:Boolean(row.is_training), packageCode:row.package_code || '',
   qrValue:`https://lattenspecialist.nl/medewerkers.html#scan=${encodeURIComponent(row.scan_token)}`
 });
 
 async function createMaterials(db, reference) {
   const row = await db.prepare('SELECT * FROM records WHERE reference=?').bind(reference).first();
   if (!row) throw new OperationsError('Aanvraag niet gevonden.',404);
-  const record = recordFromRow(row), amount = Math.max(1,Math.min(20,Number(record.amount) || 1));
+  const record = recordFromRow(row), plans=materialPlans(record);
   await syncRecordCustomerStatus(db,reference,'Afspraak bevestigd',now());
   const existing = await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all();
-  for (let number=existing.results.length+1;number<=amount;number+=1) {
+  for (let number=existing.results.length+1;number<=plans.length;number+=1) {
+    const plan=plans[number-1],selectedOptions={...plan.options,waxSku:plan.waxSku};
     const created=now(),id=crypto.randomUUID(),token=randomHex(24),display=`LSM-${randomHex(3).toUpperCase()}`;
     await db.batch([
-      db.prepare(`INSERT INTO materials(id,scan_token,display_code,reference,item_number,kind,package_name,wax_type,assigned_to,created_at,updated_at)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?)`).bind(id,token,display,reference,number,clean(record.material || record.rentaltype || 'Materiaal',80),clean(record.package || 'Onderhoud',100),clean(record.waxType || 'Nog te bepalen',100),record.assignedTo || null,created,created),
+      db.prepare(`INSERT INTO materials(id,scan_token,display_code,reference,item_number,kind,package_name,wax_type,assigned_to,created_at,updated_at,package_code,selected_options)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,token,display,reference,number,clean(plan.kind,80),clean(plan.packageName,100),clean(plan.waxType || record.waxType || 'Nog te bepalen',100),record.assignedTo || null,created,created,plan.packageCode,JSON.stringify(selectedOptions)),
       db.prepare('INSERT INTO material_events(material_id,actor,event_type,created_at) VALUES(?,?,?,?)').bind(id,'owner','label_created',created)
     ]);
   }
-  return (await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all()).results.map(materialView);
+  const materials=(await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all()).results;
+  for(const material of materials)await ensureWorkflow(db,material);
+  return materials.map(materialView);
 }
 
 async function workAction(db, material, action, actor) {
@@ -220,25 +225,33 @@ async function routeDetails(db,id){const route=await db.prepare('SELECT * FROM r
 
 async function dashboard(db) {
   const [materials,times,feedback,members,routes,recentSessions,delivery,receivedDaily,completedDaily,turnaroundDaily,production,queue,turnaroundComparison,planning,activeWork]=await Promise.all([
-    db.prepare(`SELECT COUNT(*) total,SUM(internal_status='ready') ready,SUM(internal_status='delivered') delivered,SUM(internal_status NOT IN ('ready','delivered','label_created')) active FROM materials`).first(),
-    db.prepare(`SELECT COUNT(*) sessions,COALESCE(AVG(duration_seconds),0) average_seconds,COALESCE(SUM(duration_seconds),0) total_seconds FROM work_sessions WHERE activity='maintenance' AND ended_at IS NOT NULL`).first(),
+    db.prepare(`SELECT COUNT(*) total,SUM(internal_status='ready') ready,SUM(internal_status='delivered') delivered,SUM(internal_status NOT IN ('ready','delivered','label_created')) active FROM materials WHERE is_training=0`).first(),
+    db.prepare(`SELECT COUNT(*) sessions,COALESCE(AVG(duration_seconds),0) average_seconds,COALESCE(SUM(duration_seconds),0) total_seconds FROM (SELECT ws.duration_seconds FROM work_sessions ws JOIN materials ma ON ma.id=ws.material_id WHERE ws.activity='maintenance' AND ws.ended_at IS NOT NULL AND ma.is_training=0 UNION ALL SELECT duration_seconds FROM maintenance_step_sessions WHERE ended_at IS NOT NULL AND is_training=0)`).first(),
     db.prepare(`SELECT COUNT(*) responses,COALESCE(AVG(overall),0) overall,COALESCE(AVG(quality),0) quality,COALESCE(AVG(communication),0) communication,COALESCE(AVG(speed),0) speed FROM customer_feedback`).first(),
-    db.prepare(`SELECT m.id,m.name,COUNT(DISTINCT ma.id) items,COALESCE(SUM(ws.duration_seconds),0) seconds FROM members m LEFT JOIN materials ma ON ma.assigned_to=m.id LEFT JOIN work_sessions ws ON ws.member_id=m.id AND ws.ended_at IS NOT NULL WHERE m.active=1 GROUP BY m.id,m.name ORDER BY m.name`).all(),
+    db.prepare(`SELECT m.id,m.name,(SELECT COUNT(DISTINCT ma.id) FROM materials ma WHERE ma.assigned_to=m.id AND ma.is_training=0) items,COALESCE((SELECT SUM(ws.duration_seconds) FROM work_sessions ws JOIN materials wm ON wm.id=ws.material_id WHERE ws.member_id=m.id AND ws.ended_at IS NOT NULL AND ws.activity='maintenance' AND wm.is_training=0),0)+COALESCE((SELECT SUM(ss.duration_seconds) FROM maintenance_step_sessions ss WHERE ss.member_id=m.id AND ss.ended_at IS NOT NULL AND ss.is_training=0),0) seconds FROM members m WHERE m.active=1 ORDER BY m.name`).all(),
     db.prepare(`SELECT COUNT(*) completed,COALESCE(AVG((julianday(ended_at)-julianday(started_at))*86400),0) average_seconds,COALESCE(SUM((SELECT SUM(item_count) FROM route_stops s WHERE s.route_id=routes.id)),0) items FROM routes WHERE ended_at IS NOT NULL`).first(),
-    db.prepare("SELECT duration_seconds,started_at FROM work_sessions WHERE activity='maintenance' AND ended_at IS NOT NULL AND started_at>=datetime('now','-60 days')").all(),
-    db.prepare(`SELECT COUNT(*) ready_count,SUM(CASE WHEN m.ready_at IS NOT NULL AND json_extract(r.payload,'$.expectedReady') IS NOT NULL AND date(m.ready_at)<=date(json_extract(r.payload,'$.expectedReady')) THEN 1 ELSE 0 END) on_time FROM materials m JOIN records r ON r.reference=m.reference WHERE m.ready_at IS NOT NULL`).first(),
-    db.prepare(`SELECT date(received_at) day,COUNT(*) count FROM materials WHERE received_at IS NOT NULL AND received_at>=datetime('now','-90 days') GROUP BY date(received_at) ORDER BY day`).all(),
-    db.prepare(`SELECT date(ready_at) day,COUNT(*) count FROM materials WHERE ready_at IS NOT NULL AND ready_at>=datetime('now','-90 days') GROUP BY date(ready_at) ORDER BY day`).all(),
-    db.prepare(`SELECT date(ready_at) day,AVG((julianday(ready_at)-julianday(received_at))*86400) seconds FROM materials WHERE received_at IS NOT NULL AND ready_at IS NOT NULL AND ready_at>=received_at AND ready_at>=datetime('now','-90 days') GROUP BY date(ready_at) ORDER BY day`).all(),
-    db.prepare(`SELECT COUNT(*) completed,COUNT(DISTINCT date(ready_at)) production_days FROM materials WHERE ready_at IS NOT NULL AND ready_at>=datetime('now','-30 days')`).first(),
-    db.prepare(`SELECT COUNT(*) backlog FROM materials WHERE internal_status IN ('received','maintenance','paused')`).first(),
-    db.prepare(`SELECT AVG(CASE WHEN ready_at>=datetime('now','-30 days') THEN (julianday(ready_at)-julianday(received_at))*86400 END) current_seconds,AVG(CASE WHEN ready_at<datetime('now','-30 days') AND ready_at>=datetime('now','-60 days') THEN (julianday(ready_at)-julianday(received_at))*86400 END) previous_seconds FROM materials WHERE received_at IS NOT NULL AND ready_at IS NOT NULL AND ready_at>=received_at`).first(),
+    db.prepare("SELECT duration_seconds,started_at FROM (SELECT ws.duration_seconds,ws.started_at FROM work_sessions ws JOIN materials ma ON ma.id=ws.material_id WHERE ws.activity='maintenance' AND ws.ended_at IS NOT NULL AND ws.started_at>=datetime('now','-60 days') AND ma.is_training=0 UNION ALL SELECT duration_seconds,started_at FROM maintenance_step_sessions WHERE ended_at IS NOT NULL AND started_at>=datetime('now','-60 days') AND is_training=0)").all(),
+    db.prepare(`SELECT COUNT(*) ready_count,SUM(CASE WHEN m.ready_at IS NOT NULL AND json_extract(r.payload,'$.expectedReady') IS NOT NULL AND date(m.ready_at)<=date(json_extract(r.payload,'$.expectedReady')) THEN 1 ELSE 0 END) on_time FROM materials m JOIN records r ON r.reference=m.reference WHERE m.ready_at IS NOT NULL AND m.is_training=0`).first(),
+    db.prepare(`SELECT date(received_at) day,COUNT(*) count FROM materials WHERE is_training=0 AND received_at IS NOT NULL AND received_at>=datetime('now','-90 days') GROUP BY date(received_at) ORDER BY day`).all(),
+    db.prepare(`SELECT date(ready_at) day,COUNT(*) count FROM materials WHERE is_training=0 AND ready_at IS NOT NULL AND ready_at>=datetime('now','-90 days') GROUP BY date(ready_at) ORDER BY day`).all(),
+    db.prepare(`SELECT date(ready_at) day,AVG((julianday(ready_at)-julianday(received_at))*86400) seconds FROM materials WHERE is_training=0 AND received_at IS NOT NULL AND ready_at IS NOT NULL AND ready_at>=received_at AND ready_at>=datetime('now','-90 days') GROUP BY date(ready_at) ORDER BY day`).all(),
+    db.prepare(`SELECT COUNT(*) completed,COUNT(DISTINCT date(ready_at)) production_days FROM materials WHERE is_training=0 AND ready_at IS NOT NULL AND ready_at>=datetime('now','-30 days')`).first(),
+    db.prepare(`SELECT COUNT(*) backlog FROM materials WHERE is_training=0 AND internal_status IN ('received','maintenance','paused')`).first(),
+    db.prepare(`SELECT AVG(CASE WHEN ready_at>=datetime('now','-30 days') THEN (julianday(ready_at)-julianday(received_at))*86400 END) current_seconds,AVG(CASE WHEN ready_at<datetime('now','-30 days') AND ready_at>=datetime('now','-60 days') THEN (julianday(ready_at)-julianday(received_at))*86400 END) previous_seconds FROM materials WHERE is_training=0 AND received_at IS NOT NULL AND ready_at IS NOT NULL AND ready_at>=received_at`).first(),
     db.prepare(`SELECT COUNT(*) requests,COALESCE(SUM(COALESCE(CAST(json_extract(payload,'$.plannedMinutes') AS INTEGER),CASE WHEN json_extract(payload,'$.service')='Onderhoud' THEN MAX(1,CAST(COALESCE(json_extract(payload,'$.amount'),1) AS INTEGER))*60 ELSE 0 END)),0) reserved_minutes FROM records WHERE json_extract(payload,'$.closedAt') IS NULL AND COALESCE(CAST(json_extract(payload,'$.currentStep') AS INTEGER),1)<8`).first(),
-    db.prepare(`SELECT m.id,m.display_code,m.reference,m.item_number,m.kind,m.package_name,mem.name member_name,ws.started_at,
-      COALESCE((SELECT SUM(done.duration_seconds) FROM work_sessions done WHERE done.material_id=m.id AND done.activity='maintenance' AND done.ended_at IS NOT NULL),0) completed_seconds,
-      CAST(ROUND(COALESCE(CAST(json_extract(r.payload,'$.plannedMinutes') AS INTEGER),MAX(1,CAST(COALESCE(json_extract(r.payload,'$.amount'),1) AS INTEGER))*60)*60.0/MAX(1,CAST(COALESCE(json_extract(r.payload,'$.amount'),1) AS INTEGER))) AS INTEGER) planned_seconds
-      FROM work_sessions ws JOIN materials m ON m.id=ws.material_id JOIN records r ON r.reference=m.reference LEFT JOIN members mem ON mem.id=ws.member_id
-      WHERE ws.activity='maintenance' AND ws.ended_at IS NULL ORDER BY ws.started_at`).all()
+    db.prepare(`SELECT * FROM (
+      SELECT m.id,m.display_code,m.reference,m.item_number,m.kind,m.package_name,mem.name member_name,ws.started_at,
+       COALESCE((SELECT SUM(done.duration_seconds) FROM work_sessions done WHERE done.material_id=m.id AND done.activity='maintenance' AND done.ended_at IS NOT NULL),0)+COALESCE((SELECT SUM(done.duration_seconds) FROM maintenance_step_sessions done WHERE done.material_id=m.id AND done.ended_at IS NOT NULL),0) completed_seconds,
+       CAST(ROUND(COALESCE(CAST(json_extract(r.payload,'$.plannedMinutes') AS INTEGER),MAX(1,CAST(COALESCE(json_extract(r.payload,'$.amount'),1) AS INTEGER))*60)*60.0/MAX(1,CAST(COALESCE(json_extract(r.payload,'$.amount'),1) AS INTEGER))) AS INTEGER) planned_seconds
+       FROM work_sessions ws JOIN materials m ON m.id=ws.material_id JOIN records r ON r.reference=m.reference LEFT JOIN members mem ON mem.id=ws.member_id
+       WHERE ws.activity='maintenance' AND ws.ended_at IS NULL AND m.is_training=0
+      UNION ALL
+      SELECT m.id,m.display_code,m.reference,m.item_number,m.kind,m.package_name,mem.name member_name,ss.started_at,
+       COALESCE((SELECT SUM(done.duration_seconds) FROM maintenance_step_sessions done WHERE done.material_id=m.id AND done.ended_at IS NOT NULL),0) completed_seconds,
+       CAST(ROUND(COALESCE(CAST(json_extract(r.payload,'$.plannedMinutes') AS INTEGER),MAX(1,CAST(COALESCE(json_extract(r.payload,'$.amount'),1) AS INTEGER))*60)*60.0/MAX(1,CAST(COALESCE(json_extract(r.payload,'$.amount'),1) AS INTEGER))) AS INTEGER) planned_seconds
+       FROM maintenance_step_sessions ss JOIN materials m ON m.id=ss.material_id JOIN records r ON r.reference=m.reference LEFT JOIN members mem ON mem.id=ss.member_id
+       WHERE ss.ended_at IS NULL AND ss.is_training=0
+     ) ORDER BY started_at`).all()
   ]);
   const cutoff=Date.now()-30*86400000,current=[],previous=[];for(const item of recentSessions.results){(new Date(item.started_at).getTime()>=cutoff?current:previous).push(Number(item.duration_seconds)||0);}
   const average=list=>list.length?list.reduce((sum,value)=>sum+value,0)/list.length:0,median=list=>{if(!list.length)return 0;const sorted=[...list].sort((a,b)=>a-b),middle=Math.floor(sorted.length/2);return sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2;};
@@ -326,9 +339,13 @@ export async function handleOperations(request,env,{owner,json,origin}) {
       if(path==='/api/admin/operations/materials'&&request.method==='POST'){const raw=await body(request);return json({materials:await createMaterials(db,clean(raw.reference,30))},201,origin);}
       if(path==='/api/admin/operations/materials'&&request.method==='GET'){const reference=clean(new URL(request.url).searchParams.get('reference'),30);const rows=await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all();return json({materials:rows.results.map(materialView)},200,origin);}
       const adminScan=path.match(/^\/api\/admin\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6})$/i);
-      if(adminScan&&request.method==='GET'){const key=adminScan[1],material=await db.prepare('SELECT * FROM materials WHERE scan_token=? OR display_code=?').bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),record},200,origin);}
+      if(adminScan&&request.method==='GET'){const key=adminScan[1],material=await db.prepare('SELECT * FROM materials WHERE scan_token=? OR display_code=?').bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),record,workflow:await getWorkflow(db,material)},200,origin);}
       const adminAction=path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/action$/);
-      if(adminAction&&request.method==='POST'){const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(adminAction[1]).first();if(!material)throw new OperationsError('Materiaal niet gevonden.',404);const raw=await body(request),action=clean(raw.action,40);if(!['pickup_depart','receive','ready','delivery_depart','delivered'].includes(action))throw new OperationsError('Gebruik voor onderhoud de medewerkersapp.');return json({material:await workAction(db,material,action,{id:'owner',env})},200,origin);}
+      if(adminAction&&request.method==='POST'){
+        const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(adminAction[1]).first();if(!material)throw new OperationsError('Materiaal niet gevonden.',404);const raw=await body(request),action=clean(raw.action,40);if(!['pickup_depart','receive','ready','delivery_depart','delivered'].includes(action))throw new OperationsError('Gebruik voor onderhoud het stappenplan.');
+        if(action==='ready'&&raw.overrideWorkflow!==true){await ensureWorkflow(db,material);const pending=await db.prepare("SELECT COUNT(*) amount FROM maintenance_steps WHERE material_id=? AND status NOT IN ('completed','skipped')").bind(material.id).first();if(Number(pending?.amount)>0)throw new OperationsError('Rond eerst alle werkstappen af. Gebruik alleen bij een bewuste beheer-correctie de override.',409);}
+        return json({material:await workAction(db,material,action,{id:'owner',env})},200,origin);
+      }
       if(path==='/api/admin/operations/routes'&&request.method==='POST')return json({route:await createRoute(db,await body(request))},201,origin);
       if(path==='/api/admin/operations/routes'&&request.method==='GET'){const rows=(await db.prepare('SELECT * FROM routes ORDER BY route_date DESC,created_at DESC LIMIT 50').all()).results;const routes=[];for(const route of rows)routes.push(await routeDetails(db,route.id));return json({routes},200,origin);}
       if(path==='/api/admin/operations/availability'&&request.method==='GET'){const rows=await db.prepare(`SELECT a.member_id,m.name,a.work_date,a.preference,a.start_time,a.end_time,a.note FROM member_availability a JOIN members m ON m.id=a.member_id WHERE a.work_date>=date('now') AND m.active=1 ORDER BY a.work_date,m.name`).all();return json({availability:rows.results},200,origin);}
@@ -362,9 +379,11 @@ export async function handleOperations(request,env,{owner,json,origin}) {
         else throw new OperationsError('Onbekende routeactie.');return json({route:await routeDetails(db,route.id)},200,origin);
       }
       const scan=path.match(/^\/api\/team\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6})$/i);
-      if(scan&&request.method==='GET'){const key=scan[1],material=await db.prepare('SELECT * FROM materials WHERE scan_token=? OR display_code=?').bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),work:{customerName:clean(record?.name,100),address:clean(record?.address,240),conditions:clean(record?.conditions,100),notes:clean(record?.notes,500),package:clean(record?.package,100),waxType:clean(material.wax_type||record?.waxType||'',100)}},200,origin);}
+      if(scan&&request.method==='GET'){const key=scan[1],material=await db.prepare('SELECT * FROM materials WHERE scan_token=? OR display_code=?').bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);if(material.assigned_to&&material.assigned_to!==member.id)throw new OperationsError('Deze opdracht is aan een andere medewerker toegewezen.',403);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),work:{customerName:material.is_training?'Oefenklant':clean(record?.name,100),address:clean(record?.address,240),conditions:clean(record?.conditions,100),notes:clean(record?.notes,500),package:clean(material.package_name||record?.package,100),waxType:clean(material.wax_type||record?.waxType||'',100)},workflow:await getWorkflow(db,material)},200,origin);}
       const action=path.match(/^\/api\/team\/operations\/materials\/([a-f0-9-]{36})\/action$/);
-      if(action&&request.method==='POST'){const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(action[1]).first();if(!material)throw new OperationsError('Materiaal niet gevonden.',404);const raw=await body(request);return json({material:await workAction(db,material,clean(raw.action,40),{...member,env})},200,origin);}
+      if(action&&request.method==='POST'){
+        const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(action[1]).first();if(!material)throw new OperationsError('Materiaal niet gevonden.',404);if(material.assigned_to&&material.assigned_to!==member.id)throw new OperationsError('Deze opdracht is aan een andere medewerker toegewezen.',403);const raw=await body(request),requested=clean(raw.action,40);if(!['pickup_depart','receive','delivery_depart','delivered'].includes(requested))throw new OperationsError('Onderhoud en gereedmelden lopen uitsluitend via het stappenplan.',403);return json({material:await workAction(db,material,requested,{...member,env})},200,origin);
+      }
       throw new OperationsError('Niet gevonden.',404);
     }
     const feedback=path.match(/^\/api\/feedback\/(LS-[A-Z2-9]{6})$/);
