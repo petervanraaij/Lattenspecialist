@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="260" viewBox="0 0 420 260" role="img" aria-labelledby="title desc">
+  <title id="title">Wax aan het oppervlak neemt af door gebruik</title>
+  <desc id="desc">Twee schematische doorsneden vergelijken het glijvlak na waxen en na gebruik. Na gebruik is minder wax aan het oppervlak aanwezig. De slijtage is ongelijk verdeeld.</desc>
+  <rect width="420" height="260" rx="16" fill="#17191c"/>
+  <g font-family="Arial,sans-serif">
+    <text x="26" y="33" fill="#ddd9d0" font-size="12" letter-spacing="1.2">GELEIDELIJKE SLIJTAGE</text>
+    <text x="26" y="65" fill="#fff" font-size="13">Pas gewaxt</text>
+    <rect x="26" y="77" width="368" height="46" rx="3" fill="#424950"/>
+    <g fill="#e5be64"><circle cx="49" cy="106" r="3"/><circle cx="80" cy="112" r="3"/><circle cx="114" cy="99" r="3"/><circle cx="143" cy="111" r="3"/><circle cx="177" cy="104" r="3"/><circle cx="211" cy="113" r="3"/><circle cx="242" cy="100" r="3"/><circle cx="276" cy="110" r="3"/><circle cx="309" cy="102" r="3"/><circle cx="345" cy="112" r="3"/><circle cx="374" cy="103" r="3"/></g>
+    <path d="M26 124H394" stroke="#e5be64" stroke-width="4"/>
+    <text x="26" y="161" fill="#fff" font-size="13">Na gebruik</text>
+    <rect x="26" y="173" width="368" height="46" rx="3" fill="#424950"/>
+    <g fill="#e5be64"><circle cx="49" cy="202" r="3"/><circle cx="114" cy="195" r="3"/><circle cx="177" cy="200" r="3"/><circle cx="242" cy="196" r="3"/><circle cx="309" cy="198" r="3"/><circle cx="374" cy="199" r="3"/></g>
+    <path d="M43 220H61M110 220H133M173 220H188M233 220H272M303 220H338M365 220H387" stroke="#e5be64" stroke-width="3"/>
+    <text x="210" y="244" text-anchor="middle" fill="#e5be64" font-size="13">minder wax aan het oppervlak</text>
+  </g>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="260" viewBox="0 0 420 260" role="img" aria-labelledby="title desc">
+  <title id="title">Wax in en aan het belag, boven de sneeuw</title>
+  <desc id="desc">Schematische doorsnede. Gouden markeringen tonen wax in de onderste zone van het belag en aan het glijvlak. De sneeuw ligt eronder.</desc>
+  <rect width="420" height="260" rx="16" fill="#17191c"/>
+  <g font-family="Arial,sans-serif">
+    <text x="26" y="33" fill="#ddd9d0" font-size="12" letter-spacing="1.2">ONDER JE SKI OF BOARD</text>
+    <rect x="26" y="66" width="368" height="16" rx="4" fill="#777c82"/>
+    <path d="M26 82H394V144H26Z" fill="#424950"/>
+    <text x="43" y="107" fill="#fff" font-size="14">belag</text>
+    <g fill="#e5be64"><circle cx="49" cy="128" r="3"/><circle cx="80" cy="134" r="3"/><circle cx="114" cy="121" r="3"/><circle cx="143" cy="133" r="3"/><circle cx="177" cy="126" r="3"/><circle cx="211" cy="135" r="3"/><circle cx="242" cy="122" r="3"/><circle cx="276" cy="132" r="3"/><circle cx="309" cy="124" r="3"/><circle cx="345" cy="134" r="3"/><circle cx="374" cy="125" r="3"/></g>
+    <path d="M26 145H394" stroke="#e5be64" stroke-width="4"/>
+    <path d="M295 105H350L374 124" fill="none" stroke="#e5be64"/>
+    <text x="267" y="109" fill="#e5be64" font-size="13">wax</text>
+    <path d="M26 202L49 178L72 196L97 174L122 198L149 181L175 198L200 177L226 199L251 177L276 199L302 180L329 199L357 174L394 202V220H26Z" fill="#d6e2e7"/>
+    <text x="210" y="242" text-anchor="middle" fill="#b8cbd5" font-size="13">sneeuw onder het glijvlak</text>
+  </g>
+</svg>

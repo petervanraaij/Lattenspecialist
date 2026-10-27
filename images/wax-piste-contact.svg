@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="260" viewBox="0 0 420 260" role="img" aria-labelledby="title desc">
+  <title id="title">Sneeuw neemt kleine hoeveelheden wax mee</title>
+  <desc id="desc">Het board beweegt naar rechts. Sneeuwkorrels schuren langs het glijvlak. Gouden waxdeeltjes laten los en blijven achter in de sneeuw.</desc>
+  <defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7Z" fill="#e5be64"/></marker></defs>
+  <rect width="420" height="260" rx="16" fill="#17191c"/>
+  <g font-family="Arial,sans-serif">
+    <text x="26" y="33" fill="#ddd9d0" font-size="12" letter-spacing="1.2">JE GLIJDT VOORUIT</text>
+    <path d="M250 29H388" stroke="#e5be64" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="26" y="66" width="368" height="16" rx="4" fill="#777c82"/>
+    <path d="M26 82H394V144H26Z" fill="#424950"/>
+    <text x="43" y="107" fill="#fff" font-size="14">belag</text>
+    <g fill="#e5be64"><circle cx="49" cy="128" r="3"/><circle cx="114" cy="121" r="3"/><circle cx="143" cy="133" r="3"/><circle cx="211" cy="135" r="3"/><circle cx="242" cy="122" r="3"/><circle cx="309" cy="124" r="3"/><circle cx="374" cy="125" r="3"/></g>
+    <path d="M26 145H69M83 145H173M190 145H287M304 145H394" stroke="#e5be64" stroke-width="4"/>
+    <path d="M26 202L74 147L98 192L135 167L179 146L202 192L249 173L294 147L319 192L358 165L394 200V220H26Z" fill="#d6e2e7"/>
+    <path d="M72 155Q60 172 42 178M179 156Q167 176 146 180M294 156Q282 172 260 179" fill="none" stroke="#e5be64" stroke-width="2" stroke-dasharray="3 4"/>
+    <g fill="#e5be64" stroke="#17191c" stroke-width="1"><circle cx="40" cy="181" r="4"/><circle cx="53" cy="196" r="3"/><circle cx="144" cy="184" r="4"/><circle cx="158" cy="203" r="3"/><circle cx="257" cy="184" r="4"/><circle cx="276" cy="200" r="3"/></g>
+    <text x="210" y="242" text-anchor="middle" fill="#e5be64" font-size="13">kleine waxdeeltjes blijven achter</text>
+  </g>
+</svg>

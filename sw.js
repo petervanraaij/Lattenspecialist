@@ -1,11 +1,11 @@
-const CACHE_NAME = 'lattenspecialist-v89-wax-wednesday';
+const CACHE_NAME = 'lattenspecialist-v90-wax-on-snow';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
   '/webshop.html',
-  '/homepage.css?v=20261027-wax-1',
+  '/homepage.css?v=20261027-piste-2',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=9',
   '/package-choice.js?v=14',
@@ -24,9 +24,9 @@ const APP_SHELL = [
   '/service-options.js?v=1',
   '/test-reservation-modal.js?v=20261027-wax-1',
   '/images/holmenkol-natural-skiwax-stick.png',
-  '/images/wax-inwerken.svg',
-  '/images/wax-afwerken.svg',
-  '/images/wax-reinigen.svg',
+  '/images/wax-piste-start.svg',
+  '/images/wax-piste-contact.svg',
+  '/images/wax-piste-slijtage.svg',
   '/customer-booking.css?v=1',
   '/customer-booking.js?v=2',
   '/customer-app.css?v=1',
