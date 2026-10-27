@@ -2,6 +2,7 @@ import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsa
 import {handleMetrics} from './metrics.js';
 import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, ensureTeamRecord, saveOwnerRecord} from './team.js';
 import {handleOperations, verifyAdminAccessCode} from './operations.js';
+import {handleInventory, validMaintenanceSelection} from './inventory.js';
 
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
@@ -124,6 +125,7 @@ const readAndValidateLattenspecialist = (raw, trustedAdmin = false) => {
     rentto: clean(raw.rentto, 10), name: clean(raw.name, 80), phone: clean(raw.phone, 30),
     email: clean(raw.email, 120), postcode: clean(raw.postcode, 12), houseNumber: clean(raw.houseNumber, 16), address: clean(raw.address, 180), addressCity: clean(raw.addressCity, 100),
     notes: clean(raw.notes, 800), maintenanceSelection: clean(raw.maintenanceSelection, 5000), performanceWax: clean(raw.performanceWax, 100),
+    firstWaxCount: Number(raw.firstWaxCount ?? 0), waxstickCount: Number(raw.waxstickCount ?? 0),
     website: clean(raw.website, 120), turnstileToken: clean(raw.turnstileToken, 2048),
     privacyConsent: raw.privacyConsent === true, termsConsent: raw.termsConsent === true, whatsappConsent: raw.whatsappConsent === true,
     quickReservation: raw.quickReservation === true, sourceChannel: clean(raw.sourceChannel, 30)
@@ -133,6 +135,8 @@ const readAndValidateLattenspecialist = (raw, trustedAdmin = false) => {
   if (!data.name || !data.phone || (!trustedAdmin && !data.quickReservation && !data.email)) throw new ValidationError(trustedAdmin || data.quickReservation ? 'Vul naam en telefoonnummer in.' : 'Vul naam, telefoonnummer en e-mailadres in.');
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new ValidationError('Controleer het e-mailadres.');
   if (data.service === 'Onderhoud' && (!data.material || !/^\d{1,2}$/.test(data.amount) || Number(data.amount) < 1 || Number(data.amount) > 20 || !data.package)) throw new ValidationError('Controleer het materiaal, aantal en pakket.');
+  if (data.service === 'Onderhoud' && !validMaintenanceSelection(data.maintenanceSelection)) throw new ValidationError('De gekozen onderhoudspakketten of meerwerken zijn ongeldig.');
+  if (![data.firstWaxCount,data.waxstickCount].every(value => Number.isInteger(value) && value >= 0 && value <= 20)) throw new ValidationError('Controleer de aantallen voor extra reiniging en waxsticks.');
   if (data.service === 'Onderhoud' && !data.pickupDate) throw new ValidationError('Kies een beschikbare ophaaldatum of kies in overleg.');
   if (data.service === 'Onderhoud' && data.pickupDate !== 'In overleg' && !isIsoDate(data.pickupDate)) throw new ValidationError('Controleer de gekozen ophaaldatum.');
   if (data.service === 'Onderhoud' && data.logistics.includes('Gratis ophalen') && (!/^\d{4}\s?[A-Z]{2}$/i.test(data.postcode) || !data.houseNumber || !data.address)) throw new ValidationError('Vul de ophaal- en terugbrenglocatie volledig in.');
@@ -447,6 +451,10 @@ export default {
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
     if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-HRM-PIN', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/admin/inventory') || url.pathname === '/api/team/practice' || /^\/api\/team\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || /^\/api\/team\/operations\/steps\/[a-f0-9-]{36}\/(start|pause|finish)$/.test(url.pathname)) {
+      if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
+      return handleInventory(request, env, {owner:await isAdminAuthorized(request,env), json, origin});
+    }
     if (url.pathname.startsWith('/api/team/operations') || url.pathname.startsWith('/api/admin/operations') || url.pathname.startsWith('/api/team/hrm') || url.pathname.startsWith('/api/admin/hrm') || url.pathname.startsWith('/api/admin/settings') || url.pathname.startsWith('/api/feedback/')) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleOperations(request, env, {owner:await isAdminAuthorized(request,env), json, origin});

@@ -1,3 +1,12 @@
+# Voorraad, werkstappen en oefenmodus — 27 oktober 2026
+
+- Newsports en de Holmenkol-bestellijst zijn als leverancier en openstaande bestelling toegevoegd; voorraad ontstaat pas na bevestiging van ontvangst.
+- De medewerkersapp toont per ski of snowboard de gekozen onderhoudsstappen, instructies en benodigdheden en meet de tijd per stap.
+- Wax wordt vóór en na de handeling gewogen, zodat werkelijk verbruik en kostprijs automatisch worden vastgelegd.
+- Gereedschap telt alleen mee bij de relevante, aangevinkte handeling en wordt standaard over 300 gebruiken verdeeld.
+- Een aparte Oefenklant laat medewerkers alleen waxen of vijlen trainen. Werkelijk materiaal, gereedschap en tijd worden geboekt, maar blijven buiten alle productiecijfers.
+- Beheer bevat aparte overzichten voor voorraad, bestelling, kostprijs, gereedschapslevensduur en oefensessies.
+
 # Servicegebied — 25 september 2026
 
 ## 25 september 2026 — Facebookpagina
