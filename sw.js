@@ -1,11 +1,11 @@
-const CACHE_NAME = 'lattenspecialist-v96-pierfinity-digital';
+const CACHE_NAME = 'lattenspecialist-v97-site-polish';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
   '/webshop.html',
-  '/homepage.css?v=20261027-cleaning-1',
+  '/homepage.css?v=20261027-polish-1',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=10',
   '/package-choice.js?v=15',
@@ -20,7 +20,7 @@ const APP_SHELL = [
   '/images/pierfinity-digital.png',
   '/script.js?v=10',
   '/booking-config.js?v=2',
-  '/booking.js?v=20261027-cleaning-1',
+  '/booking.js?v=20261027-polish-1',
   '/service-options.js?v=1',
   '/test-reservation-modal.js?v=20261027-cleaning-1',
   '/images/holmenkol-natural-skiwax-stick.png',

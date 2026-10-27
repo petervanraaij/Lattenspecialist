@@ -29,7 +29,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=20">
-  <link rel="stylesheet" href="homepage.css?v=20261027-cleaning-1">
+  <link rel="stylesheet" href="homepage.css?v=20261027-polish-1">
   <link rel="stylesheet" href="test-environment.css?v=4">
   <link rel="stylesheet" href="wax-illustration.css?v=4">
   <script src="homepage.js?v=2"></script>
@@ -64,7 +64,7 @@
         <a href="#haalbreng">Brengen &amp; ophalen</a>
         <a href="app.html">Mijn Lattenspecialist</a>
         <a href="verhuur.html">Verhuur</a>
-        <a href="webshop.html">Webshop</a>
+        <a href="webshop.html">Producten &amp; advies</a>
       </nav>
     </div>
   </header>
@@ -78,6 +78,7 @@
           <span class="hero-kicker">Persoonlijk ski- en snowboardonderhoud</span>
           <h1 id="hero-title">Zorgeloos<br><span>skiplezier.</span></h1>
           <p class="hero-lead">Kanten slijpen, belag repareren en waxen. Met aandacht onderhouden, klaar voor de sneeuw.</p>
+          <div class="hero-actions"><a class="btn btn-gold" href="#pakketten">Bekijk pakketten</a><a class="btn btn-ghost" href="afspraak.html">Reserveer onderhoud</a></div>
           <p class="hero-region"><strong>Woensdag brengen. Een week later ophalen.</strong><span>Of op afspraak · altijd eerst reserveren.</span></p>
         </div>
       </div>
@@ -89,6 +90,16 @@
         </div>
       </section>
     </section>
+
+    <nav class="home-route" aria-label="Snel naar">
+      <div class="container home-route-links">
+        <a href="#snowLive"><span>01</span>Sneeuwtemperatuur</a>
+        <a href="#onderhoud-keuze"><span>02</span>Onderhoud kiezen</a>
+        <a href="#pakketten"><span>03</span>Pakketten &amp; prijzen</a>
+        <a href="#haalbreng"><span>04</span>Brengen &amp; ophalen</a>
+        <a href="webshop.html"><span>05</span>Producten &amp; advies</a>
+      </div>
+    </nav>
 
     <section class="section snow-conditions-top" id="snowLive" aria-labelledby="snow-live-title">
       <div class="container">
@@ -146,7 +157,7 @@
         <div class="packages-main">
         <div class="package-grid" role="group" aria-label="Kies je onderhoudspakketten">
           <article id="pakket-waxen" data-package="brons" class="package-card package-card--bronze">
-            <span class="tier copper-dot">Koper</span><h3>Waxen</h3>
+            <span class="tier copper-dot">Koper · alleen waxen</span><h3>Waxen</h3>
             <div class="price-row"><div><small>Ski vanaf</small><strong>€ 19,95</strong></div><div><small>Snowboard vanaf</small><strong>€ 24,95</strong></div></div>
             <details class="package-details"><summary>Alle werkzaamheden</summary>
             <ul class="package-highlights">
@@ -164,7 +175,7 @@
           <div class="package-bindings" hidden><strong>Bindingen demonteren + monteren</strong><small class="package-bindings-price">Optioneel · € 7,50 per snowboard</small><div class="quantity-row"><label for="brons-bindings">Aantal</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder bindingen bij Koper" disabled>−</button><input id="brons-bindings" type="number" name="homepageBindings" min="0" max="0" step="1" value="0" aria-label="Aantal snowboards met bindingsservice bij Koper"><button type="button" data-step="1" aria-label="Meer bindingen bij Koper" disabled>+</button></div></div></div>
           </article>
           <article id="pakket-slijpen" data-package="slijpen" class="package-card package-card--sharpening">
-            <span class="tier bronze-dot">Brons</span><h3>Kanten slijpen en tunen</h3>
+            <span class="tier bronze-dot">Brons · alleen slijpen</span><h3>Kanten slijpen en tunen</h3>
             <div class="price-row"><div><small>Ski vanaf</small><strong>€ 24,95</strong></div><div><small>Snowboard vanaf</small><strong>€ 29,95</strong></div></div>
             <details class="package-details"><summary>Alle werkzaamheden</summary>
             <ul class="package-highlights">
@@ -179,7 +190,7 @@
             <div class="package-bindings" hidden><strong>Bindingen demonteren + monteren</strong><small class="package-bindings-price">Optioneel · € 7,50 per snowboard</small><div class="quantity-row"><label for="slijpen-bindings">Aantal</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder bindingen bij Brons" disabled>−</button><input id="slijpen-bindings" type="number" name="homepageBindings" min="0" max="0" step="1" value="0" aria-label="Aantal snowboards met bindingsservice bij Brons"><button type="button" data-step="1" aria-label="Meer bindingen bij Brons" disabled>+</button></div></div></div>
           </article>
           <article data-package="zilver" class="package-card package-card--silver">
-            <span class="tier silver-dot">Zilver</span><h3>Waxen + slijpen</h3>
+            <span class="tier silver-dot">Zilver · waxen + slijpen</span><h3>Waxen + slijpen</h3>
             <div class="price-row"><div><small>Ski vanaf</small><strong>€ 34,95</strong></div><div><small>Snowboard vanaf</small><strong>€ 39,95</strong></div></div>
             <details class="package-details"><summary>Alle werkzaamheden</summary>
             <ul class="package-highlights">
@@ -397,7 +408,7 @@
     </section>
 
     <section class="section reviews-preview" id="ervaringen" aria-labelledby="reviews-title">
-      <div class="container reviews-shell"><div><span class="eyebrow">Jouw ervaring telt</span><h2 id="reviews-title">Goed onderhoud geeft vertrouwen op de piste.</h2><p>Hebben we jouw ski’s of snowboard onderhouden? Deel je ervaring en help andere wintersporters kiezen voor zorgvuldig en persoonlijk onderhoud.</p></div><a class="btn btn-dark" href="ervaring.html">Deel jouw ervaring</a></div>
+      <div class="container reviews-shell"><div><span class="eyebrow">Jouw ervaring telt</span><h2 id="reviews-title">Goed onderhoud geeft vertrouwen op de piste.</h2><p>Hebben we jouw ski’s of snowboard onderhouden? Deel eerlijk wat goed ging en wat beter kan. Je controleert je bericht zelf voordat je het verstuurt.</p></div><a class="btn btn-dark" href="ervaring.html">Deel jouw ervaring</a></div>
     </section>
 
     <section class="section before-after-ready" aria-label="Voor en na resultaten" hidden data-ready-for-real-photos="true">
@@ -420,10 +431,10 @@
     <section class="brand-offer brand-offer--portals" aria-labelledby="brand-offer-title">
       <div class="container">
         <span class="eyebrow">Meer voor je wintersport</span>
-        <h2 id="brand-offer-title">Verhuur en webshop.</h2>
+        <h2 id="brand-offer-title">Verhuur, producten &amp; advies.</h2>
         <div class="brand-offer-grid">
           <article><span class="eyebrow">Verhuur</span><h3>Passend materiaal voor je reis.</h3><p>Bekijk complete skisets, ski’s met stokken en dakkoffers op de aparte verhuurpagina.</p><a class="quiet-link" href="verhuur.html">Naar Verhuur <span aria-hidden="true">→</span></a></article>
-          <article><span class="eyebrow">Webshop</span><h3>Wintersportartikelen met advies.</h3><p>Bekijk het actuele aanbod en neem rechtstreeks contact op via de aparte webshop.</p><a class="quiet-link" href="webshop.html">Naar Webshop <span aria-hidden="true">→</span></a></article>
+          <article><span class="eyebrow">Producten &amp; advies</span><h3>Wintersportartikelen met advies.</h3><p>Bekijk het actuele aanbod en neem rechtstreeks contact op voor persoonlijk advies.</p><a class="quiet-link" href="webshop.html">Bekijk producten &amp; advies <span aria-hidden="true">→</span></a></article>
         </div>
       </div>
     </section>
@@ -434,7 +445,7 @@
         <img src="images/logo-lockup.webp" alt="De Lattenspecialist" class="footer-logo">
         <p>Vakkundig ski- en snowboardonderhoud.<br>Zorgeloos skiplezier.</p>
       </div>
-      <div><strong>Snel naar</strong><a href="#pakketten">Pakketten</a><a href="#onderhoud-keuze">Onderhoud</a><a href="#snowLive">Sneeuwtemperatuur</a><a href="#haalbreng">Brengen &amp; ophalen</a><a href="app.html">Mijn Lattenspecialist</a><a href="verhuur.html">Verhuur</a><a href="webshop.html">Webshop</a></div>
+      <div><strong>Snel naar</strong><a href="#pakketten">Pakketten</a><a href="#onderhoud-keuze">Onderhoud</a><a href="#snowLive">Sneeuwtemperatuur</a><a href="#haalbreng">Brengen &amp; ophalen</a><a href="app.html">Mijn Lattenspecialist</a><a href="verhuur.html">Verhuur</a><a href="webshop.html">Producten &amp; advies</a></div>
       <div><strong>Contact & bedrijfsgegevens</strong><a href="mailto:info@lattenspecialist.nl">info@lattenspecialist.nl</a><a href="https://wa.me/31618327132" target="_blank" rel="noopener">WhatsApp · 06 18 32 71 32</a><span>Bezoek uitsluitend op afspraak · Hollenhof 13 · 6659 BB Wamel</span><span>KvK 99668637</span><span>BTW-id NL005403580B64</span></div>
     </div>
     <div class="container footer-legal"><a href="privacy.html">Privacy</a><a href="service.html">Servicevoorwaarden</a><nav class="social-links" aria-label="Social media"><a href="https://www.facebook.com/profile.php?id=61594509161948" target="_blank" rel="noopener noreferrer" aria-label="De Lattenspecialist op Facebook — opent in een nieuw tabblad"><span aria-hidden="true">f</span>Facebook</a><a href="https://www.instagram.com/delattenspecialist/" target="_blank" rel="noopener noreferrer" aria-label="De Lattenspecialist op Instagram — opent in een nieuw tabblad"><span aria-hidden="true">◎</span>Instagram</a><a href="https://www.linkedin.com/company/146672352/" target="_blank" rel="noopener noreferrer" aria-label="De Lattenspecialist op LinkedIn — opent in een nieuw tabblad"><span aria-hidden="true">in</span>LinkedIn</a></nav></div>

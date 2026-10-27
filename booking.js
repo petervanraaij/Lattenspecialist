@@ -211,8 +211,8 @@
     maintenanceSelection = selectionModel.withoutCleaning(requestedSelection);
     form.elements.firstWaxCount.value = String(selectionModel.cleaningCount(requestedSelection));
     const list = document.querySelector('#maintenanceSelectionItems');
-    selectionModel.describe(maintenanceSelection).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
-    document.querySelector('#maintenanceSelectionTotal').textContent = `Totaal vanaf ${selectionModel.estimate(maintenanceSelection).formatted}`;
+    selectionModel.describe(requestedSelection).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
+    document.querySelector('#maintenanceSelectionTotal').textContent = `Totaal vanaf ${selectionModel.estimate(requestedSelection).formatted}`;
     document.querySelector('#editMaintenanceSelection').href = `/?keuze=${encodeURIComponent(JSON.stringify(requestedSelection))}#pakketten`;
   }
   const packageChoice = params.get('pakket');
