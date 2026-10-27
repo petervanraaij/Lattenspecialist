@@ -47,13 +47,13 @@ test('copper and bronze package links work and no package is silently preselecte
  assert.match(d.querySelector('#stickyPackageRequest').textContent,/Reserveren/);
  assert.equal(d.querySelectorAll('.package-details:not([open])').length,5);
  assert.equal(d.querySelectorAll('#pakketten').length,1);
- assert.equal(d.querySelector('.hero').nextElementSibling.id,'wax');
- assert.equal(d.querySelector('#wax').nextElementSibling.id,'pakketten');
+ assert.equal(d.querySelector('.hero').nextElementSibling.id,'snowLive');
+ assert.equal(d.querySelector('#snowLive').nextElementSibling.id,'onderhoud-keuze');
+ assert.equal(d.querySelector('#onderhoud-keuze').nextElementSibling.id,'pakketten');
  assert.equal(d.querySelector('.maintenance-sidebar'),null);
  assert.equal(d.querySelectorAll('[data-extra]').length,0);
- assert.match(d.querySelector('.complex-repair-note').textContent,/Grotere of complexere reparaties/);
- assert.match(d.querySelector('.complex-repair-note').textContent,/Prijs na beoordeling en overleg/);
- assert.match(d.querySelector('.complex-repair-note').textContent,/bespreken de aanpak en kosten vooraf/);
+ assert.match(d.querySelector('.complex-repair-note').textContent,/Bij grotere of diepere schade beoordelen we eerst wat mogelijk is/);
+ assert.match(d.querySelector('.complex-repair-note').textContent,/bespreken we de aanpak en prijs vooraf/);
  assert.equal(d.querySelector('[data-extra="edges"]'),null);
  assert.match(d.querySelector('[data-package="slijpen"] .package-wax-price').textContent,/alleen slijpen/);
  assert.match(d.querySelector('#faq').textContent,/Kan ik alleen mijn kanten laten slijpen/);
