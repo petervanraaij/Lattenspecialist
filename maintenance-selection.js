@@ -27,9 +27,12 @@
       if (!quantity(bindings) || bindings > item.b) return null;
       const repairs = item.r === undefined ? 0 : item.r;
       if (!quantity(repairs) || (repairs && id === 'slijpen')) return null;
+      const cleaning = item.c === undefined ? 0 : item.c;
+      if (!quantity(cleaning) || cleaning > item.s + item.b || (cleaning && id === 'slijpen')) return null;
       if (item.s + item.b) {
         result.p[id] = {s:item.s,b:item.b,d:bindings,w:item.w,u:item.u};
         if (repairs) result.p[id].r = repairs;
+        if (cleaning) result.p[id].c = cleaning;
       }
     }
     for (const [id, item] of Object.entries(value.e)) {
@@ -41,6 +44,12 @@
     return result;
   }
   const hasItems = value => Object.keys(value.p).length > 0 || Object.keys(value.e).length > 0;
+  const cleaningCount = value => Object.values(value.p).reduce((sum,item) => sum + (item.c || 0),0);
+  const withoutCleaning = value => {
+    const result = normalize(value);
+    if (result) Object.values(result.p).forEach(item => { delete item.c; });
+    return result;
+  };
   function estimate(value) {
     const normalized = normalize(value);
     if (!normalized) return null;
@@ -52,6 +61,7 @@
       if (item.w === 'performance') total += item.s * performanceSkiPrice + item.b * performanceSnowboardPrice;
       if (item.u) total += urgentPrice;
       total += item.d * 7.5;
+      total += (item.c || 0) * 5;
       if (item.r) { total += item.r * repairPrice; needsAssessment = true; }
     }
     return {amount,total,formatted:formatPrice(total),needsAssessment};
@@ -67,6 +77,7 @@
       if (!item) continue;
       const materials = [item.s ? `${item.s}× ski's (paar)` : '',item.b ? `${item.b}× snowboard` : ''].filter(Boolean).join(' + ');
       lines.push(`${name}: ${materials}${item.w === 'none' ? '' : ` · ${waxes[item.w]}`}${item.u ? ' · Spoed + € 10,00 · zelf brengen en ophalen · minimaal 2 werkdagen vooraf' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}${item.r ? ` · ${item.r}× kleine belagreparaties in totaal (vanaf € 7,50 per reparatie; definitieve prijs na beoordeling)` : ''}`);
+      if (item.c) lines.push(`${name}: extra waxreiniging ${item.c}× € 5,00 = ${formatPrice(item.c * 5)}`);
     }
     for (const [id,name] of Object.entries(extras)) {
       const item = value.e[id];
@@ -83,6 +94,7 @@
       if (!item) continue;
       const materials = [item.s ? `${item.s}x ski` : '',item.b ? `${item.b}x snowboard` : ''].filter(Boolean).join('+');
       lines.push(`${name}: ${materials}${waxNotes[item.w] ? `; ${waxNotes[item.w]}` : ''}${item.u ? '; spoed+€10' : ''}${item.d ? `; bindingen ${item.d}x à€7,50` : ''}${item.r ? `; kleine rep. ${item.r}x v.a.€7,50/st.` : ''}`);
+      if (item.c) lines.push(`${name}: extra waxreiniging ${item.c}x à€5`);
     }
     for (const [id,name] of Object.entries(extraNotes)) {
       const item = value.e[id];
@@ -109,5 +121,5 @@
       urgent:value.u || Object.values(value.p).some(item => item.u) ? 'Ja, voor komend weekend; minimaal 2 werkdagen vooraf; zelf brengen en ophalen' : 'Nee'
     };
   }
-  window.LATTEN_SELECTION = {packages,waxes,extras,empty,normalize,hasItems,parse,describe,notes,legacy,bindingPrice,estimate};
+  window.LATTEN_SELECTION = {packages,waxes,extras,empty,normalize,hasItems,parse,describe,notes,legacy,bindingPrice,estimate,cleaningCount,withoutCleaning};
 })();

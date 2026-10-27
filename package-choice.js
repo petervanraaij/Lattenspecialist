@@ -25,6 +25,8 @@
       const item = {s:amount(card,'homepageSki'),b:amount(card,'homepageSnowboard'),d:amount(card,'homepageBindings'),w:card.querySelector('[name="homepageWax"]').value,u:card.querySelector('[name="homepageUrgent"]').checked};
       const repairs = card.querySelector('[name="homepageRepairs"]');
       if (repairs) item.r = Number(repairs.value);
+      const cleaning = card.querySelector('[name="homepageCleaning"]');
+      if (cleaning) item.c = Number(cleaning.value);
       value.p[card.dataset.package] = item;
     });
     extras.forEach(extra => { value.e[extra.dataset.extra] = {q:amount(extra,'extraAmount'),m:extra.querySelector('[name="extraMaterial"]').value}; });
@@ -40,6 +42,8 @@
       card.querySelector('[name="homepageUrgent"]').checked = item.u;
       const repairs = card.querySelector('[name="homepageRepairs"]');
       if (repairs) repairs.value = item.r || 0;
+      const cleaning = card.querySelector('[name="homepageCleaning"]');
+      if (cleaning) cleaning.value = item.c || 0;
     });
     extras.forEach(extra => {
       const item = value.e[extra.dataset.extra];
@@ -50,6 +54,17 @@
   function update() {
     cards.forEach(card => {
       const snowboards = amount(card,'homepageSnowboard');
+      const cleaning = card.querySelector('[name="homepageCleaning"]');
+      if (cleaning) {
+        const materials = amount(card,'homepageSki') + snowboards;
+        cleaning.disabled = !(materials > 0);
+        [...cleaning.options].forEach(option => { option.disabled = option.hidden = Number(option.value) > materials; });
+        if (cleaning.disabled) cleaning.value = '0';
+        else if (Number.isInteger(materials) && Number(cleaning.value) > materials) cleaning.value = String(materials);
+        card.querySelector('.package-cleaning-hint').textContent = cleaning.disabled
+          ? 'Optioneel. Kies eerst het aantal ski’s of snowboards.'
+          : '€ 5,00 per paar ski’s of snowboard. Standaard reinigen is inbegrepen.';
+      }
       const repairs = card.querySelector('[name="homepageRepairs"]');
       if (repairs) {
         repairs.disabled = !(amount(card,'homepageSki') + snowboards > 0);
