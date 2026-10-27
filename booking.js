@@ -208,11 +208,12 @@
   const params = new URLSearchParams(location.search);
   const requestedSelection = selectionModel?.parse(params.get('keuze'));
   if (requestedSelection && selectionModel.hasItems(requestedSelection)) {
-    maintenanceSelection = requestedSelection;
+    maintenanceSelection = selectionModel.withoutCleaning(requestedSelection);
+    form.elements.firstWaxCount.value = String(selectionModel.cleaningCount(requestedSelection));
     const list = document.querySelector('#maintenanceSelectionItems');
     selectionModel.describe(maintenanceSelection).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
     document.querySelector('#maintenanceSelectionTotal').textContent = `Totaal vanaf ${selectionModel.estimate(maintenanceSelection).formatted}`;
-    document.querySelector('#editMaintenanceSelection').href = `/?keuze=${encodeURIComponent(JSON.stringify(maintenanceSelection))}#pakketten`;
+    document.querySelector('#editMaintenanceSelection').href = `/?keuze=${encodeURIComponent(JSON.stringify(requestedSelection))}#pakketten`;
   }
   const packageChoice = params.get('pakket');
   if ([...form.elements.package.options].some(option => option.value && option.value === packageChoice)) form.elements.package.value = packageChoice;

@@ -68,3 +68,56 @@ test('direct booking preserves chosen extra services and requested Wednesday wit
   assert.match(posts[0].notes,/Stick 50g 2x à€17,50/);assert.equal(posts[0].address,undefined);
   assert.equal(readAndValidateLattenspecialist(posts[0]).data.notes,posts[0].notes.replace(/\s+/g,' ').trim());
 });
+
+test('package cleaning stays optional, updates the cart, and reaches the modal exactly once',async t=>{
+  const {w,d,f,posts}=setup(t);
+  d.querySelector('.test-dialog-close').click();
+  const clean=d.querySelector('#brons-cleaning');
+  assert.equal(clean.value,'0');assert.equal(clean.disabled,false);
+  assert.equal(d.querySelector('[data-package="slijpen"] [name="homepageCleaning"]'),null);
+  change(w,clean,'2');
+  assert.match(d.querySelector('#bookingCartTotal').textContent,/49,90/);
+  assert.match(d.querySelector('#selectionItems').textContent,/extra waxreiniging 2× € 5,00/);
+  d.querySelector('#packageRequest').click();
+  assert.equal(f.elements.firstWaxCount.value,'2');
+  assert.match(d.querySelector('#testDialogTotal').textContent,/49,90/);
+  change(w,f.elements.firstWaxCount,'1');
+  assert.match(d.querySelector('#testDialogTotal').textContent,/44,90/);
+  f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();
+  assert.equal(posts.length,1);
+  assert.equal((posts[0].notes.match(/Extra waxreiniging 1x à€5/g)||[]).length,1);
+  assert.equal(w.LATTEN_SELECTION.cleaningCount(JSON.parse(posts[0].maintenanceSelection)),0);
+  assert.equal(readAndValidateLattenspecialist(posts[0]).data.notes,posts[0].notes);
+});
+
+test('fewer materials reduces cleaning and URL restoration preserves selections without adding it by default',t=>{
+  const {w,d}=setup(t);d.querySelector('.test-dialog-close').click();
+  change(w,d.querySelector('#brons-cleaning'),'2');
+  change(w,d.querySelector('#brons-ski'),'1');
+  assert.equal(d.querySelector('#brons-cleaning').value,'1');
+  assert.match(d.querySelector('#bookingCartTotal').textContent,/24,95/);
+  const saved=new URL(d.querySelector('#packageRequest').href).searchParams.get('keuze');
+  const restored=new JSDOM(home,{url:`https://lattenspecialist.nl/?keuze=${encodeURIComponent(saved)}`,runScripts:'outside-only'});t.after(()=>restored.window.close());
+  restored.window.eval(selection);restored.window.eval(choice);
+  assert.equal(restored.window.document.querySelector('#brons-cleaning').value,'1');
+  change(w,d.querySelector('#brons-ski'),'0');
+  assert.equal(d.querySelector('#brons-cleaning').value,'0');assert.equal(d.querySelector('#brons-cleaning').disabled,true);
+  assert.match(d.querySelector('#bookingCartTotal').textContent,/0,00/);
+  for(const c of [-1,.5,3]) assert.equal(w.LATTEN_SELECTION.normalize({p:{brons:{s:2,b:0,w:'beta',u:false,c}},e:{},u:false}),null);
+  assert.equal(w.LATTEN_SELECTION.normalize({p:{slijpen:{s:1,b:0,w:'none',u:false,c:1}},e:{},u:false}),null);
+});
+
+test('direct booking carries package cleaning into the editable extras without charging twice',t=>{
+  const value={p:{brons:{s:2,b:0,w:'beta',u:false,c:2}},e:{},u:false};
+  const dom=new JSDOM(bookingHtml,{url:`https://lattenspecialist.nl/afspraak.html?keuze=${encodeURIComponent(JSON.stringify(value))}`,runScripts:'outside-only'});t.after(()=>dom.window.close());
+  const w=dom.window,d=w.document;
+  [selection,options,booking].forEach(code=>w.eval(code));
+  const f=d.querySelector('#requestForm');
+  assert.equal(f.elements.firstWaxCount.value,'2');
+  assert.match(d.querySelector('#requestSummary').textContent,/49,90/);
+  change(w,f.elements.firstWaxCount,'0');
+  assert.match(d.querySelector('#requestSummary').textContent,/39,90/);
+  assert.doesNotMatch(d.querySelector('#requestSummary').textContent,/49,90/);
+  const saved=w.LATTEN_SELECTION.parse(new URL(d.querySelector('#editMaintenanceSelection').href).searchParams.get('keuze'));
+  assert.equal(w.LATTEN_SELECTION.cleaningCount(saved),2);
+});

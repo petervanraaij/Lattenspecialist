@@ -88,7 +88,8 @@
     }
     event.preventDefault();
     activeLink = link;
-    activeSelection = selection;
+    activeSelection = window.LATTEN_SELECTION.withoutCleaning(selection);
+    form.elements.firstWaxCount.value = String(window.LATTEN_SELECTION.cleaningCount(selection));
     resetView();
     const estimate = window.LATTEN_SELECTION.estimate(selection);
     count.textContent = `${estimate.amount} ${estimate.amount === 1 ? 'materiaal' : 'materialen'} gekozen`;
