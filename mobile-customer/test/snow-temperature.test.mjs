@@ -65,7 +65,8 @@ test('wax guide, indoor slopes and customer destination search stay in one tempe
     return {ok:true,json:async()=>row(-7,.3)};
   };
   w.eval(code);await turn();
-  assert.equal(d.querySelectorAll('#snowLive .wax-card').length,4);
+  assert.equal(d.querySelectorAll('.wax-card').length,0);
+  assert.ok(d.querySelector('#snowLive #wax'));
   assert.equal(d.querySelectorAll('.snow-resort-tab').length,8);
   assert.equal(d.querySelectorAll('#snowResortPanel .snow-resort-card').length,1);
   assert.equal(d.querySelectorAll('.snow-indoor-summary').length,0);
