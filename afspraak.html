@@ -12,7 +12,7 @@
   <meta property="og:locale" content="nl_NL">
   <meta property="og:site_name" content="De Lattenspecialist">
   <meta property="og:title" content="De Lattenspecialist | Ski- & snowboardonderhoud">
-  <meta property="og:description" content="Ambachtelijk ski- en snowboardonderhoud vanuit Wamel, met gratis haal- en brengservice in de gemeenten West Maas en Waal en Druten.">
+  <meta property="og:description" content="Ski- en snowboardonderhoud in Wamel. Woensdag brengen, een week later ophalen, of op afspraak. Altijd vooraf reserveren.">
   <meta property="og:url" content="https://lattenspecialist.nl/afspraak.html">
   <meta property="og:image" content="https://lattenspecialist.nl/images/social-preview.png">
   <meta property="og:image:width" content="1200">
@@ -28,7 +28,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=19">
-  <link rel="stylesheet" href="homepage.css?v=42">
+  <link rel="stylesheet" href="homepage.css?v=52">
   <link rel="stylesheet" href="customer-booking.css?v=1">
   <script src="customer-booking.js?v=2"></script>
 </head>
@@ -42,7 +42,7 @@
         <a href="/#pakketten">Pakketten</a>
         <a href="/#onderhoud">Vakwerk</a>
         <a href="/#wax">Wax</a>
-        <a href="/#haalbreng">Haal &amp; breng</a>
+        <a href="/#haalbreng">Brengen &amp; ophalen</a>
         <a href="verhuur.html">Verhuur</a>
         <a href="app.html">Mijn Lattenspecialist</a>
         <a class="nav-cta" href="afspraak.html" aria-current="page">Onderhoud aanvragen</a>
@@ -98,6 +98,7 @@
             </div>
           </div>
 
+          <div id="maintenanceExtras" class="reservation-extras"><h3>Reiniging &amp; waxstick</h3><label><span>Extra waxreiniging (optioneel): voor hoeveel materialen?</span><input type="number" name="firstWaxCount" min="0" max="20" step="1" required value="0"><small>€ 5,00 per paar ski’s of snowboard. Laat op 0 voor standaard reinigen en waxen over de aanwezige wax.</small></label><label><span>Holmenkol Natural Skiwax Stick 50 g meebestellen?</span><input type="number" name="waxstickCount" min="0" max="20" step="1" value="0" required><small>€ 17,50 per stuk · meenemen bij het ophalen.</small></label><p id="reservationExtrasTotal" aria-live="polite"></p></div>
           <div id="rentalFields" hidden>
             <div class="form-grid">
               <label><span>Wat wil je huren?</span><select name="rentaltype"><option value="Complete set">Complete skiset — € 15/dag · € 35/weekend · € 69/week</option><option value="Ski's met stokken">Ski’s met stokken — € 10/dag · € 25/weekend · € 49/week</option><option value="Dakkoffer met daksteunen">Dakkoffer met daksteunen — € 10/dag · € 15/weekend · € 20/week</option></select></label>
@@ -114,14 +115,14 @@
             <legend><span>Stap 2 van 3</span>Planning &amp; wintersport</legend>
             <div id="maintenancePlanningFields">
               <div class="form-grid">
-                <label><span>Halen of brengen</span><select name="logistics"><option>Gratis ophalen &amp; terugbrengen (gemeenten West Maas en Waal en Druten)</option><option value="Zelf brengen en zelf ophalen">Zelf brengen en ophalen in Wamel</option></select></label>
-                <label id="pickupDateField"><span>Ophaaldatum</span><select name="pickupDate" required><option value="">Beschikbare data laden…</option><option>In overleg</option></select></label>
+                <label><span>Brengen &amp; ophalen</span><select name="logistics"><option value="Zelf brengen en zelf ophalen">Zelf brengen en ophalen in Wamel</option></select></label>
+                <label id="pickupDateField"><span>Brengdatum (voorkeur)</span><select name="pickupDate" required><option value="">Kies een woensdag of op afspraak</option><option>In overleg</option></select></label>
                 <label><span>Spoed</span><select name="urgent"><option>Nee</option><option data-urgent="yes">Ja, voor komend weekend (+ € 10,00, minimaal 2 werkdagen vooraf)</option></select></label>
                 <label><span>Skigebied / bestemming</span><input type="text" name="destination" placeholder="bijv. Sölden, Oostenrijk"></label>
                 <label><span>Eerste skidag</span><input type="date" name="skidate"></label>
                 <details class="trip-conditions"><summary>Sneeuwomstandigheden (optioneel)</summary><label><span>Verwachte omstandigheden</span><select name="conditions"><option>Weet ik nog niet</option><option>Zacht / warm</option><option>Rond het vriespunt</option><option>Koud</option><option>Kunstsneeuw / hard / ijzig</option></select></label></details>
               </div>
-              <p class="field-note">Gratis ophalen en terugbrengen geldt in de gemeenten West Maas en Waal en Druten. Bij spoed kies je altijd voor zelf brengen en ophalen in Wamel; er moeten minimaal 2 werkdagen beschikbaar zijn.</p>
+              <p class="field-note">Woensdag brengen en de woensdag erop ophalen, of op afspraak. Reserveer altijd vooraf en wacht onze bevestiging af. Bij spoed moeten minimaal 2 werkdagen beschikbaar zijn.</p>
             </div>
             <div id="rentalPlanningFields" hidden>
               <div class="form-grid"><label><span>Van</span><input type="date" name="rentfrom"></label><label><span>Tot en met</span><input type="date" name="rentto"></label></div>
@@ -146,7 +147,7 @@
             </div>
             <div class="address-status" id="addressStatus" role="status" aria-live="polite">Het adres verschijnt na het invullen van postcode en huisnummer.</div>
             </div>
-            <label class="full-field"><span>Opmerking / schade / bijzonderheden</span><textarea name="notes" rows="4" maxlength="800" aria-describedby="notesRemaining" placeholder="Bijvoorbeeld: lichte kras, gewenste ophaaltijd of vraag over het pakket."></textarea><small id="notesRemaining"></small></label>
+            <label class="full-field"><span>Opmerking / schade / bijzonderheden</span><textarea name="notes" rows="4" maxlength="800" aria-describedby="notesRemaining" placeholder="Bijvoorbeeld: lichte kras, gewenste breng- of ophaaltijd of vraag over het pakket."></textarea><small id="notesRemaining"></small></label>
           </div>
 
           <details class="booking-overview"><summary>Bekijk je aanvraag</summary><div class="request-summary" id="requestSummary"></div></details>
@@ -179,7 +180,7 @@
         <img src="images/logo-lockup.webp" alt="De Lattenspecialist" class="footer-logo">
         <p>Ambachtelijk ski- en snowboardonderhoud.<br>Zorgeloos pisteplezier.</p>
       </div>
-      <div><strong>Snel naar</strong><a href="/#pakketten">Pakketten</a><a href="/#onderhoud">Onderhoud</a><a href="/#wax">Wax</a><a href="/#haalbreng">Haal &amp; breng</a><a href="verhuur.html">Verhuur</a><a href="afspraak.html">Onderhoud aanvragen</a><a href="app.html">Mijn Lattenspecialist</a></div>
+      <div><strong>Snel naar</strong><a href="/#pakketten">Pakketten</a><a href="/#onderhoud">Onderhoud</a><a href="/#wax">Wax</a><a href="/#haalbreng">Brengen &amp; ophalen</a><a href="verhuur.html">Verhuur</a><a href="afspraak.html">Onderhoud aanvragen</a><a href="app.html">Mijn Lattenspecialist</a></div>
       <div><strong>Contact & bedrijfsgegevens</strong><a href="mailto:info@lattenspecialist.nl">info@lattenspecialist.nl</a><a href="https://wa.me/31618327132" target="_blank" rel="noopener">WhatsApp · 06 18 32 71 32</a><span>Bezoek uitsluitend op afspraak · Hollenhof 13 · 6659 BB Wamel</span><span>KvK 99668637</span><span>BTW-id NL005403580B64</span></div>
     </div>
     <div class="container footer-legal"><a href="privacy.html">Privacy</a><a href="service.html">Servicevoorwaarden</a><a href="ervaring.html">Deel je ervaring</a><nav class="social-links" aria-label="Social media"><a href="https://www.facebook.com/profile.php?id=61594509161948" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">f</span>Facebook</a><a href="https://www.instagram.com/delattenspecialist/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">◎</span>Instagram</a><a href="https://www.linkedin.com/company/146672352/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">in</span>LinkedIn</a></nav></div>
@@ -190,7 +191,8 @@
   <script src="script.js?v=10"></script>
   <script src="booking-config.js?v=2"></script>
   <script src="maintenance-selection.js?v=9"></script>
-  <script src="booking.js?v=15"></script>
+  <script src="service-options.js?v=1"></script>
+  <script src="booking.js?v=16"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>
 </html>

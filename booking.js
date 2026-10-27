@@ -37,7 +37,21 @@
   const needsRush = () => selectedService() === 'Onderhoud' && (maintenanceSelection
     ? maintenanceSelection.u || Object.values(maintenanceSelection.p).some(item => item.u)
     : getValue('urgent') !== 'Nee');
-  const usesPickup = () => selectedService() === 'Onderhoud' && getValue('logistics').includes('Gratis ophalen');
+  const usesPickup = () => false;
+  const serviceOptions=window.LATTEN_SERVICE;
+  const waxAmount=()=>selectedService()!=='Onderhoud'||sharpeningOnly()?0:maintenanceSelection?Object.entries(maintenanceSelection.p).reduce((n,[id,item])=>n+(id==='slijpen'?0:item.s+item.b),0):Number(getValue('amount'))||0;
+  const extraOptions=()=>serviceOptions.read(form,waxAmount());
+  const planningNote=()=>getValue('pickupDate')&&getValue('pickupDate')!=='In overleg'?`Brengen ${getValue('pickupDate')}; ophalen ${serviceOptions.plusWeek(getValue('pickupDate'))}; tijdstip na bevestiging`:'Brengen en ophalen op afspraak';
+  const totalWithExtras=()=>{
+    if(selectedService()!=='Onderhoud')return null;
+    if(maintenanceSelection)return selectionModel.estimate(maintenanceSelection).total+extraOptions().total;
+    const id=Object.keys(selectionModel.packages).find(key=>selectionModel.packages[key]===getValue('package'));
+    if(!id||!['Ski','Snowboard'].includes(getValue('material')))return null;
+    const value=selectionModel.empty(), amount=Number(getValue('amount'));
+    value.p[id]={s:getValue('material')==='Ski'?amount:0,b:getValue('material')==='Snowboard'?amount:0,w:id==='slijpen'?'none':form.elements.performanceWax.selectedOptions[0]?.dataset.wax||'beta',u:needsRush()};
+    const estimate=selectionModel.estimate(value);
+    return estimate?estimate.total+extraOptions().total:null;
+  };
   const formatDate = value => {
     if (!value || value === 'In overleg') return value || 'Nog niet ingevuld';
     const date = new Date(`${value}T12:00:00`);
@@ -88,7 +102,9 @@
         lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`);
         if (!sharpeningOnly()) lines.push(`Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`);
       }
-      lines.push(`Halen of brengen: ${getValue('logistics')}`);
+      lines.push(...extraOptions().lines, `Planning: ${planningNote()}`);
+      if (totalWithExtras()!==null) lines.push(`Totaal vanaf inclusief extra’s: ${serviceOptions.price(totalWithExtras())}`);
+      lines.push(`Brengen en ophalen: ${getValue('logistics')}`);
       if (usesPickup()) lines.push(`Ophaaldatum: ${formatDate(getValue('pickupDate'))}`, `Ophaal- en terugbrenglocatie: ${getValue('address') || 'Nog invullen'}`);
       if (!maintenanceSelection) lines.push(`Spoed: ${getValue('urgent')}`);
       if (getValue('destination')) lines.push(`Bestemming: ${getValue('destination')}`);
@@ -101,7 +117,8 @@
     if (getValue('notes')) lines.push(`Opmerking: ${getValue('notes')}`);
     return lines.join('\n');
   };
-  const selectionNotes = () => selectedService() !== 'Onderhoud' ? '' : maintenanceSelection ? selectionModel.notes(maintenanceSelection) : sharpeningOnly() ? 'Alleen kanten slijpen en tunen; geen wax.' : `Waxkeuze: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`;
+  const baseSelectionNotes = () => selectedService() !== 'Onderhoud' ? '' : maintenanceSelection ? selectionModel.notes(maintenanceSelection) : sharpeningOnly() ? 'Alleen kanten slijpen en tunen; geen wax.' : `Waxkeuze: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`;
+  const selectionNotes = () => selectedService()!=='Onderhoud'?'':[serviceOptions.compactNote(baseSelectionNotes()),extraOptions().note,planningNote()].filter(Boolean).join(' | ');
   const updateForm = () => {
     toggleFields(maintenanceFields, selectedService() === 'Onderhoud');
     toggleFields(rentalFields, selectedService() === 'Verhuur');
@@ -124,9 +141,12 @@
     document.querySelector('#waxChoiceNote').hidden = hideWax;
     form.elements.performanceWax.disabled = hideWax;
     if (rentalPrice && selectedService() === 'Verhuur') rentalPrice.textContent = `${rentalLabels[getValue('rentaltype')] || getValue('rentaltype')}: ${rentalPrices[getValue('rentaltype')] || ''}. Prijzen zijn inclusief btw.`;
-    toggleFields(addressFields, usesPickup());
-    toggleFields(pickupDateField, usesPickup());
-    ['postcode','houseNumber','address','pickupDate'].forEach(name => { form.elements[name].required = usesPickup(); });
+    toggleFields(addressFields, false);
+    toggleFields(pickupDateField, selectedService()==='Onderhoud');
+    toggleFields(document.querySelector('#maintenanceExtras'),selectedService()==='Onderhoud');
+    if(selectedService()==='Onderhoud'){const extra=extraOptions(),total=totalWithExtras();document.querySelector('#reservationExtrasTotal').textContent=extra.valid?`Gekozen extra’s: ${serviceOptions.price(extra.total)}${total!==null?` · Totaal vanaf ${serviceOptions.price(total)}`:''}`:'Controleer de aantallen.';}
+    ['postcode','houseNumber','address'].forEach(name=>{form.elements[name].required=false;});
+    form.elements.pickupDate.required=selectedService()==='Onderhoud';
     form.elements.address.setCustomValidity(usesPickup() && outsidePickupArea ? 'Deze plaats valt buiten het gratis servicegebied. Kies zelf brengen in Wamel of in overleg.' : '');
     form.elements.rentto.setCustomValidity(selectedService() === 'Verhuur' && getValue('rentfrom') && getValue('rentto') && getValue('rentto') < getValue('rentfrom') ? 'Kies een einddatum op of na de begindatum.' : '');
     const reservedNotes = selectionNotes();
@@ -136,24 +156,7 @@
     document.querySelector('#notesRemaining').textContent = `Nog ${Math.max(0,noteLimit - form.elements.notes.value.length)} tekens voor je opmerking.`;
     summary.textContent = buildSummary();
   };
-  const loadAvailability = async () => {
-    const select = form.elements.pickupDate;
-    const chosen = select.value;
-    select.replaceChildren(new Option('Beschikbare data laden…', ''));
-    try {
-      if (!endpoint) throw new Error();
-      const response = await fetch(`${endpoint}/api/availability`, {cache:'no-store'});
-      const result = await response.json();
-      if (!response.ok || !Array.isArray(result.dates)) throw new Error();
-      const dates = [...new Set(result.dates.filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date)))].sort();
-      const options = dates.length ? [new Option('Kies een ophaaldatum', '')] : [];
-      dates.forEach(date => options.push(new Option(formatDate(date), date)));
-      options.push(new Option('In overleg', 'In overleg'));
-      select.replaceChildren(...options);
-      select.value = [...select.options].some(option => option.value === chosen) ? chosen : dates.length ? '' : 'In overleg';
-    } catch { select.replaceChildren(new Option('In overleg — data niet beschikbaar', 'In overleg')); }
-    updateForm();
-  };
+  const loadAvailability = async () => { serviceOptions.dates(form.elements.pickupDate);updateForm(); };
   const lookupAddress = async () => {
     const postcode = getValue('postcode').toUpperCase().replace(/\s+/g, '');
     const houseNumber = getValue('houseNumber');
@@ -260,6 +263,7 @@
     payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
     if (selectedService() === 'Onderhoud') {
       payload.logistics = getValue('logistics');
+      if (maintenanceSelection) payload.maintenanceSelection = JSON.stringify(maintenanceSelection);
       payload.notes = [selectionNotes(),String(payload.notes || '').trim()].filter(Boolean).join('\n');
     }
     payload.turnstileToken = turnstileToken;
