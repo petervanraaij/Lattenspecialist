@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="styles.css?v=19">
   <link rel="stylesheet" href="homepage.css?v=20261027-snowtop-1">
   <link rel="stylesheet" href="test-environment.css?v=4">
+  <link rel="stylesheet" href="wax-illustration.css?v=3">
   <script src="homepage.js?v=2"></script>
   <script type="application/ld+json">
   {
@@ -281,14 +282,83 @@
 
     <section class="section wax-explained" id="warme-wax" aria-labelledby="wax-explained-title">
       <div class="container">
-        <div class="section-head"><span class="eyebrow">Tijdens het skiën en snowboarden</span><h2 id="wax-explained-title">Waar blijft je wax op de piste?</h2><p>Terwijl je glijdt, nemen sneeuwkristallen telkens minuscule hoeveelheden wax van het glijvlak mee. De wax verdwijnt dus geleidelijk door contact met de sneeuw. Zo werkt dat onder je ski’s of snowboard.</p></div>
-        <div class="wax-process-grid">
-          <article><span class="wax-step">01 / AAN DE START</span><img src="images/wax-piste-start.svg" alt="Doorsnede van een board boven de sneeuw, met wax in en aan het belag. Goud stelt wax voor." width="420" height="260" loading="lazy"><h3>Wax in en aan het belag</h3><p>Het belag is de kunststof onderkant van je ski of board. Bij warm waxen neemt vooral gesinterd belag wax op. Na schrapen en borstelen blijft wax in en aan het belag achter: klaar om soepel over de sneeuw te glijden.</p></article>
-          <article><span class="wax-step">02 / TIJDENS HET GLIJDEN</span><img src="images/wax-piste-contact.svg" alt="Het board beweegt naar rechts. Sneeuwkorrels raken het glijvlak en nemen kleine, goud getekende waxdeeltjes mee die in de sneeuw achterblijven." width="420" height="260" loading="lazy"><h3>De sneeuw neemt wax mee</h3><p>Onder je gewicht schuren sneeuwkristallen langs het glijvlak. Daardoor komen heel kleine hoeveelheden wax aan het oppervlak los en blijven in de sneeuw achter. Zo raakt je board tijdens het glijden geleidelijk wax kwijt.</p></article>
-          <article><span class="wax-step">03 / NA MEER AFDALINGEN</span><img src="images/wax-piste-slijtage.svg" alt="Vergelijking van een pas gewaxt glijvlak met een glijvlak na gebruik. Na gebruik zijn minder gouden waxmarkeringen zichtbaar, ongelijk verdeeld over het oppervlak." width="420" height="260" loading="lazy"><h3>De wax slijt geleidelijk</h3><p>De slijtage is niet overal even groot. Hoe snel wax verdwijnt, hangt onder meer af van de sneeuw, de belasting, de afstand en de waxsoort. Harde, schurende sneeuw vraagt extra veel van je wax. Daarom blijft regelmatig opnieuw waxen nodig.</p></article>
+        <div class="section-head"><span class="eyebrow">Van glijvlak naar sneeuw</span><h2 id="wax-explained-title">Waar blijft je wax?</h2><p>Bekijk wat er tijdens het glijden onder je ski’s of snowboard gebeurt.</p></div>
+        <div class="wax-storyboard" data-wax-stage="glide">
+          <figure>
+<svg class="wax-scene" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 650" role="img" aria-labelledby="wax-scene-title wax-scene-desc">
+  <title id="wax-scene-title">Een snowboard glijdt over sneeuw, met een uitvergrote doorsnede van het belag</title>
+  <desc id="wax-scene-desc">De donkere onderkant bevat wax, hier goud getekend. In het detailvenster schuren sneeuwkristallen langs het glijvlak en nemen ze kleine waxdeeltjes mee. Na gebruik is aan het oppervlak minder wax aanwezig. De kleuren en afmetingen zijn schematisch.</desc>
+  <defs>
+    <linearGradient id="waxSky" x2=".9" y2="1"><stop stop-color="#243743"/><stop offset="1" stop-color="#101b23"/></linearGradient>
+    <linearGradient id="waxDeck" x2=".4" y2="1"><stop stop-color="#78858b"/><stop offset=".25" stop-color="#3b4850"/><stop offset="1" stop-color="#172028"/></linearGradient>
+    <linearGradient id="waxEdge" x2="0" y2="1"><stop stop-color="#b9c6ca"/><stop offset=".45" stop-color="#57666c"/><stop offset="1" stop-color="#131c22"/></linearGradient>
+    <linearGradient id="waxSnow" x2=".2" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#afc5cf"/></linearGradient>
+    <linearGradient id="waxGold" gradientUnits="userSpaceOnUse" x1="62" x2="838" y1="0" y2="0"><stop stop-color="#bd8b31"/><stop offset=".5" stop-color="#ffdfa0"/><stop offset="1" stop-color="#dfb451"/></linearGradient>
+    <linearGradient id="waxBase" x2="0" y2="1"><stop stop-color="#60717a"/><stop offset="1" stop-color="#34454f"/></linearGradient>
+    <radialGradient id="waxHalo"><stop stop-color="#56717e" stop-opacity=".5"/><stop offset="1" stop-color="#56717e" stop-opacity="0"/></radialGradient>
+    <pattern id="waxTexture" width="19" height="15" patternUnits="userSpaceOnUse"><path d="M2 5l7-2m5 8 3-1" stroke="#b9cad1" stroke-opacity=".14" stroke-width="1.2"/></pattern>
+    <filter id="waxShadow" x="-.3" y="-.5" width="1.6" height="2"><feGaussianBlur stdDeviation="10"/></filter>
+    <marker id="waxArrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#ebc675" stroke-width="1.4"/></marker>
+    <path id="waxBoardShape" d="M125 263C80 278 97 302 143 307C169 310 195 305 224 300L688 216C736 207 778 186 767 164C754 140 701 136 650 146L177 246C155 251 139 257 125 263Z"/>
+    <g id="waxBinding"><path d="M-34-10Q-25-25 0-25Q26-24 33-10L26 20Q2 32-28 17Z" fill="#101820" stroke="#7d8b92" stroke-width="2"/><path d="M-27-10Q-12-23 10-16L28-8L24 0L-27 4Z" fill="#a0acb2"/><path d="M-24 10L24 7L21 18Q2 24-23 18Z" fill="#60727b" stroke="#a0acb2"/><path d="M-31-6L-35-38Q-21-49-8-39L-7-21" fill="#384a55" stroke="#9eaeb5" stroke-width="2"/><path d="M-29-34L-17-36L-16-27" fill="none" stroke="#e5c06a" stroke-width="2"/><path d="M-4-16L1-4M-3 10L1 20" stroke="#111c24" stroke-width="4"/></g>
+  </defs>
+  <rect width="900" height="650" rx="26" fill="url(#waxSky)"/>
+  <ellipse cx="477" cy="205" rx="420" ry="240" fill="url(#waxHalo)"/>
+  <g fill="none" stroke="#91a8b5" stroke-opacity=".12"><path d="M28 180Q140 96 280 133T580 71T882 93M20 199Q156 117 281 153T583 91T880 113M40 220Q155 142 288 176T592 113T882 137"/></g>
+  <text x="38" y="43" class="wax-svg-kicker">ONDER JE SKI OF SNOWBOARD</text>
+  <g class="wax-direction"><path d="M610 84L780 51" stroke="#ebc675" stroke-width="2" marker-end="url(#waxArrow)"/><text x="616" y="63" transform="rotate(-11 616 63)" class="wax-svg-label gold">GLIJRICHTING</text></g>
+  <path d="M48 356Q178 312 312 307T540 266T824 244L867 350Q756 398 543 400T56 425Z" fill="#91acb9" opacity=".2"/>
+  <path d="M48 340Q177 303 323 291T565 249T823 229L856 324Q719 374 507 376T65 400Z" fill="url(#waxSnow)"/>
+  <path d="M48 340Q177 303 323 291T565 249T823 229" fill="none" stroke="#fff" stroke-width="4"/>
+  <g fill="none" stroke="#7699ac" stroke-opacity=".25"><path d="M89 365L234 336M159 380L402 333M463 327L697 280M574 348L803 298"/><path d="M138 345l87-16M305 362l100-19M682 338l87-17" stroke-width="3"/></g>
+  <g class="wax-snow-motion" stroke="#fff" stroke-linecap="round" opacity=".6"><path d="M29 303l74-17M17 320l46-11M82 337l54-12" stroke-width="3"/><circle cx="71" cy="273" r="2" fill="#fff"/><circle cx="41" cy="295" r="2" fill="#fff"/><circle cx="113" cy="321" r="3" fill="#fff"/></g>
+  <use href="#waxBoardShape" transform="translate(3 32)" fill="#142b38" opacity=".5" filter="url(#waxShadow)"/>
+  <use href="#waxBoardShape" transform="translate(0 14)" fill="url(#waxEdge)" stroke="#11202a" stroke-width="2"/>
+  <path d="M129 313Q173 319 224 309L690 225Q737 216 761 195" fill="none" stroke="url(#waxGold)" stroke-width="3" class="wax-board-highlight"/>
+  <use href="#waxBoardShape" fill="url(#waxDeck)" stroke="#899ba4" stroke-width="1.5"/>
+  <path d="M129 283Q165 294 222 281L690 192Q735 183 746 170M181 261L663 163" fill="none" stroke="#e9c875" stroke-width="1.5" opacity=".8"/>
+  <path d="M210 267L647 182" stroke="#9babb2" stroke-width="2" opacity=".3"/>
+  <path d="M625 164l30 14-18 23M644 160l31 14-18 23M664 156l30 14-18 23" fill="none" stroke="#c7a85f" stroke-width="2" opacity=".7"/>
+  <use href="#waxBinding" transform="translate(313 245) rotate(-22)"/>
+  <use href="#waxBinding" transform="translate(529 204) rotate(11)"/>
+  <g class="wax-zoom-marker"><circle cx="461" cy="271" r="23" fill="#172833" fill-opacity=".5" stroke="#f2ce7c" stroke-width="2"/><circle cx="461" cy="271" r="31" fill="none" stroke="#e8c473" stroke-opacity=".3"/><path d="M468 301L504 393" fill="none" stroke="#e8c473" stroke-width="1.5" stroke-dasharray="5 6"/><circle cx="504" cy="393" r="4" fill="#e8c473"/></g>
+  <g class="wax-macro">
+    <rect x="38" y="395" width="824" height="215" rx="18" fill="#101a22" stroke="#8399a5" stroke-opacity=".4"/>
+    <text x="62" y="428" class="wax-svg-kicker gold">UITVERGROOT: HET GLIJVLAK</text>
+    <path d="M62 446H838V504H62Z" fill="url(#waxBase)"/>
+    <path d="M62 446H838V504H62Z" fill="url(#waxTexture)"/>
+    <text x="80" y="474" class="wax-svg-label">BELAG</text>
+    <text x="738" y="474" class="wax-svg-label gold">WAX</text>
+    <path d="M771 481L787 501" stroke="#edca7c" fill="none"/>
+    <g class="wax-reservoir" fill="#e7be65"><circle cx="91" cy="492" r="2.8"/><circle cx="137" cy="486" r="2.3"/><circle cx="194" cy="495" r="2.8"/><circle cx="235" cy="482" r="2.3"/><circle cx="290" cy="494" r="2.5"/><circle cx="339" cy="485" r="2.8"/><circle cx="387" cy="495" r="2.4"/><circle cx="440" cy="483" r="2.5"/><circle cx="484" cy="494" r="2.8"/><circle cx="536" cy="486" r="2.2"/><circle cx="589" cy="495" r="2.8"/><circle cx="632" cy="483" r="2.5"/><circle cx="681" cy="494" r="2.5"/><circle cx="729" cy="486" r="2.3"/><circle cx="816" cy="491" r="2.8"/></g>
+    <path class="wax-layer wax-layer-fresh" d="M62 505H838" stroke="url(#waxGold)" stroke-width="5"/>
+    <path class="wax-layer wax-layer-glide" d="M62 505H175M185 505H354M366 505H534M546 505H716M729 505H838" stroke="url(#waxGold)" stroke-width="4"/>
+    <path class="wax-layer wax-layer-worn" d="M81 505H129M205 505H260M325 505H359M439 505H506M593 505H626M709 505H773M811 505H833" stroke="url(#waxGold)" stroke-width="3"/>
+    <g class="wax-crystals">
+      <path d="M62 571L102 540L138 558L179 508L209 557L254 532L294 560L360 508L399 557L438 537L478 558L540 508L583 559L628 535L671 559L722 508L763 553L799 536L838 568V586H62Z" fill="url(#waxSnow)"/>
+      <g stroke="#7f9da9" stroke-opacity=".7" fill="none"><path d="M179 508L165 560L138 558M179 508L191 542L209 557M360 508L342 553L294 560M360 508L375 539L399 557M540 508L523 550L478 558M540 508L553 540L583 559M722 508L707 548L671 559M722 508L738 539L763 553"/></g>
+    </g>
+    <g class="wax-traces" fill="#edc56f" stroke="#71521f" stroke-width=".8"><path d="M179 512Q172 530 158 542M360 512Q350 534 334 550M540 512Q532 532 516 542M722 512Q713 533 699 547" fill="none" stroke="#d6ab54" stroke-width="1.7" stroke-dasharray="3 4"/><circle cx="157" cy="546" r="3.4"/><circle cx="332" cy="554" r="3"/><circle cx="514" cy="546" r="3.6"/><circle cx="697" cy="551" r="3"/></g>
+    <g class="wax-moving-particles" fill="#f6ce78" stroke="#725321" stroke-width=".7"><circle class="wax-particle wax-particle-a" cx="179" cy="510" r="4"/><circle class="wax-particle wax-particle-b" cx="360" cy="510" r="3.5"/><circle class="wax-particle wax-particle-c" cx="540" cy="510" r="4"/><circle class="wax-particle wax-particle-d" cx="722" cy="510" r="3.5"/></g>
+  </g>
+  <g class="wax-scene-status wax-status-fresh"><text x="450" y="637" text-anchor="middle">KLAAR VOOR DE EERSTE AFDALING</text></g>
+  <g class="wax-scene-status wax-status-glide"><text x="450" y="637" text-anchor="middle">KLEINE WAXDEELTJES BLIJVEN IN DE SNEEUW ACHTER</text></g>
+  <g class="wax-scene-status wax-status-worn"><text x="450" y="637" text-anchor="middle">NA GEBRUIK: MINDER WAX AAN HET OPPERVLAK</text></g>
+</svg>
+
+            <figcaption class="wax-legend"><span><i aria-hidden="true"></i>Belag</span><span><i class="wax-key" aria-hidden="true"></i>Wax</span><span><i class="snow-key" aria-hidden="true"></i>Sneeuw</span></figcaption>
+          </figure>
+          <div class="wax-story-controls">
+            <p>Bekijk de drie stappen</p>
+            <ol>
+              <li><button type="button" data-wax-select="fresh" aria-pressed="false"><span class="wax-number" aria-hidden="true">01</span><span><strong>Een verzorgde start</strong><span class="wax-short-copy">Na het afwerken blijft wax in en aan het belag achter.</span></span></button></li>
+              <li><button type="button" data-wax-select="glide" aria-pressed="true"><span class="wax-number" aria-hidden="true">02</span><span><strong>De sneeuw neemt wax mee</strong><span class="wax-short-copy">Sneeuwkristallen schuren heel kleine hoeveelheden wax van het glijvlak.</span></span></button></li>
+              <li><button type="button" data-wax-select="worn" aria-pressed="false"><span class="wax-number" aria-hidden="true">03</span><span><strong>Tijd voor nieuwe wax</strong><span class="wax-short-copy">Na gebruik is minder wax aanwezig. Regelmatig waxen houdt het glijvlak verzorgd.</span></span></button></li>
+            </ol>
+            <p class="wax-controls-hint">Kies een stap en bekijk het verschil in de afbeelding.</p>
+          </div>
         </div>
-        <div class="wax-friction-note"><h3>En de warmte door wrijving?</h3><p>Wrijving veroorzaakt plaatselijk warmte en kan bijdragen aan een heel dun waterfilmpje tussen belag en sneeuw. Wax slijt óók bij koude sneeuw: het hoeft daarvoor niet eerst te smelten. Het is dus geen voorraad die pas uit je board stroomt zodra dat warm wordt.</p></div>
-        <p class="wax-diagram-note">Schematische doorsneden, niet op schaal. Goud stelt wax voor; de deeltjes en laagdiktes zijn voor de uitleg sterk uitvergroot.</p>
+        <div class="wax-graphic-notes"><p>Schematische illustratie. Goud stelt wax voor; het detail en de waxdeeltjes zijn sterk uitvergroot. De slijtage verschilt per sneeuwsoort, wax en gebruik.</p><details class="wax-heat"><summary>Welke rol speelt warmte?</summary><p>Warmte door wrijving kan bijdragen aan een dun waterfilmpje tussen belag en sneeuw. Wax slijt ook bij koude sneeuw; hij hoeft daarvoor niet eerst te smelten.</p></details></div>
         <aside class="first-service-note" id="extra-reiniging"><div><span class="eyebrow">Jij kiest de behandeling</span><h3>Waarom oude wax verwijderen?</h3></div><div><p>Oude wax kan vuil bevatten of van mindere kwaliteit zijn. Grondige reiniging geeft de nieuwe Holmenkol-wax een schone basis, zodat die beter zijn werk kan doen. Laat je je ski’s of snowboard daarna steeds bij ons onderhouden, dan volstaat normaal gesproken de standaardreiniging.</p><p><strong>Extra waxreiniging is optioneel: € 5,00 per paar ski’s of snowboard.</strong> Je kunt ook kiezen voor standaard reinigen en waxen over de aanwezige wax, zonder deze toeslag. Extra waxreiniging staat standaard uit.</p><a class="quiet-link" href="service.html">Lees onze serviceafspraken →</a></div></aside>
       </div>
     </section>
@@ -426,6 +496,7 @@
   <script src="service-options.js?v=1"></script>
   <script src="test-reservation-modal.js?v=20261027-wax-1"></script>
   <script src="snow-temperature.js?v=10"></script>
+  <script src="wax-illustration.js?v=1"></script>
   <script src="booking-config.js?v=2"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>

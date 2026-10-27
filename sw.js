@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v92-snow-temperature-top';
+const CACHE_NAME = 'lattenspecialist-v93-graphic-wax';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -24,9 +24,8 @@ const APP_SHELL = [
   '/service-options.js?v=1',
   '/test-reservation-modal.js?v=20261027-wax-1',
   '/images/holmenkol-natural-skiwax-stick.png',
-  '/images/wax-piste-start.svg',
-  '/images/wax-piste-contact.svg',
-  '/images/wax-piste-slijtage.svg',
+  '/wax-illustration.css?v=3',
+  '/wax-illustration.js?v=1',
   '/customer-booking.css?v=1',
   '/customer-booking.js?v=2',
   '/customer-app.css?v=1',
