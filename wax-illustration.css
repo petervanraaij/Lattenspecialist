@@ -1,0 +1,48 @@
+/* Interactive, schematic view of wax wear. All styling stays inside this component. */
+.home-page .wax-explained{background:#fffdf8;padding:64px 0}
+.wax-explained .section-head{margin-bottom:32px}
+.wax-explained .section-head>p{max-width:740px}
+.wax-storyboard{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr);gap:28px;padding:26px;border:1px solid #3e515e;border-radius:26px;background:#16212a;box-shadow:0 22px 50px #11202c18;overflow:hidden}
+.wax-storyboard figure{min-width:0;margin:0}
+.wax-scene{display:block;width:100%;height:auto;border-radius:20px;overflow:visible}
+.wax-scene text{font-family:inherit;fill:#dce8ec}
+.wax-scene .wax-svg-kicker{font-size:14px;font-weight:750;letter-spacing:1.8px}
+.wax-scene .wax-svg-label{font-size:17px;font-weight:650;letter-spacing:.5px}
+.wax-scene .gold{fill:#edc97b}
+.wax-scene .wax-scene-status text{font-size:14px;font-weight:650;letter-spacing:1px;fill:#edc97b}
+.wax-legend{display:flex;justify-content:center;flex-wrap:wrap;gap:22px;padding:15px 0 4px;color:#cbd7de;font-size:.78rem;line-height:1.5}
+.wax-legend span{display:inline-flex;align-items:center;gap:7px}
+.wax-legend i{width:9px;height:9px;border-radius:50%;background:#72858e}
+.wax-legend .wax-key{background:#e8c16b}
+.wax-legend .snow-key{background:#e1edf2}
+.wax-story-controls{display:flex;flex-direction:column;justify-content:center;gap:14px;min-width:0}
+.wax-story-controls>p{margin:0 0 3px;color:#bbcbd3;font-size:.7rem;font-weight:750;letter-spacing:.12em;text-transform:uppercase}
+.wax-story-controls ol{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.wax-story-controls button{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start;width:100%;min-height:124px;padding:21px 17px;border:1px solid #43535e;border-radius:14px;background:#1e2d37;color:#f3f5f5;text-align:left;font:inherit;cursor:pointer;transition:border-color .2s,background .2s,box-shadow .2s}
+.wax-story-controls button:hover{border-color:#b3a278;background:#293943}
+.wax-story-controls button[aria-pressed="true"]{border-color:#dfbb6b;background:#334046;box-shadow:inset 3px 0 #dfbb6b}
+.wax-story-controls .wax-number{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid #667881;border-radius:50%;color:#bfcbd1;font-size:.75rem;font-weight:700}
+.wax-story-controls button[aria-pressed="true"] .wax-number{background:#e9c574;border-color:#e9c574;color:#1b252b}
+.wax-story-controls strong{display:block;font-size:1.08rem;line-height:1.3;margin:3px 0 8px;color:#fff}
+.wax-story-controls .wax-short-copy{display:block;font-size:.84rem;line-height:1.6;color:#c4d0d6}
+.wax-story-controls .wax-controls-hint{font-size:.75rem;line-height:1.5;color:#aebfc9;letter-spacing:0;text-transform:none;font-weight:400}
+.wax-layer,.wax-scene-status{display:none}
+[data-wax-stage="fresh"] .wax-layer-fresh,[data-wax-stage="glide"] .wax-layer-glide,[data-wax-stage="worn"] .wax-layer-worn,[data-wax-stage="fresh"] .wax-status-fresh,[data-wax-stage="glide"] .wax-status-glide,[data-wax-stage="worn"] .wax-status-worn{display:block}
+.wax-moving-particles,.wax-traces,.wax-snow-motion{display:none}
+[data-wax-stage="glide"] .wax-moving-particles,[data-wax-stage="glide"] .wax-traces,[data-wax-stage="worn"] .wax-traces,[data-wax-stage="glide"] .wax-snow-motion{display:block}
+[data-wax-stage="fresh"] .wax-crystals{transform:translateY(13px)}
+[data-wax-stage="worn"] .wax-reservoir{opacity:.48}
+[data-wax-stage="worn"] .wax-board-highlight{stroke-dasharray:36 22;opacity:.7}
+.wax-particle{animation:wax-grain-release 2.5s ease-out both}
+.wax-particle-b{animation-delay:.2s}.wax-particle-c{animation-delay:.4s}.wax-particle-d{animation-delay:.6s}
+@keyframes wax-grain-release{0%{transform:translate(0,0);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translate(-31px,41px);opacity:0}}
+.wax-graphic-notes{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:30px;align-items:start;margin:20px 0 38px}
+.wax-graphic-notes>p{font-size:.78rem;line-height:1.6;color:#676155;margin:0}
+.wax-heat{border-bottom:1px solid #d7cdb9;padding-bottom:10px;color:#514c44}
+.wax-heat summary{font-size:.88rem;font-weight:750;cursor:pointer;color:#725519}
+.wax-heat p{font-size:.84rem;line-height:1.65;margin:12px 0 0}
+@media(max-width:950px){.wax-storyboard{grid-template-columns:1fr;gap:24px}.wax-story-controls ol{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.wax-story-controls button{grid-template-columns:1fr;gap:9px;height:100%;padding:18px 15px}.wax-story-controls strong{font-size:1rem}.wax-story-controls>p{margin-bottom:4px}.wax-story-controls .wax-controls-hint{margin:0}}
+@media(max-width:600px){.wax-storyboard{padding:12px;border-radius:18px;gap:20px}.wax-scene{width:calc(100% + 12px);max-width:none;margin:0 -6px}.wax-story-controls{padding:0 4px 7px}.wax-story-controls ol{grid-template-columns:1fr}.wax-story-controls button{grid-template-columns:32px minmax(0,1fr);min-height:0;padding:16px;gap:12px}.wax-story-controls .wax-short-copy{font-size:.82rem}.wax-legend{padding:10px 0 0;gap:15px;font-size:.72rem}.wax-graphic-notes{grid-template-columns:1fr;gap:15px;margin-bottom:30px}}
+@media(prefers-reduced-motion:reduce){.wax-particle{animation:none}.wax-story-controls button{transition:none}.wax-moving-particles{display:none!important}}
+
+@media(max-width:600px){.wax-scene .wax-svg-kicker{font-size:25px;letter-spacing:.6px}.wax-scene .wax-svg-label{font-size:26px}.wax-scene .wax-scene-status text{font-size:20px;letter-spacing:0}}
