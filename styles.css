@@ -93,8 +93,8 @@
 @media(max-width:560px){.address-result{grid-column:auto}.availability-admin{padding:20px}.availability-admin-head{align-items:stretch;flex-direction:column}.availability-calendar{grid-template-columns:1fr}.availability-custom{align-items:stretch;flex-direction:column}.availability-custom .btn{width:100%}.payment-fields{grid-template-columns:1fr}}
 
 /* Website development and maintenance credit. */
-.footer-credit{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px 24px;margin-bottom:0;font-size:.8rem;line-height:1.6}.footer-credit .solutions-logo-link{display:block;flex:0 1 252px;width:252px;max-width:100%;overflow:hidden;border-radius:8px;background:#faf9f7}.solutions-logo-link img{display:block;width:100%;height:82px;object-fit:cover;object-position:center}.footer-credit .solutions-logo-link:focus-visible{outline:2px solid currentColor;outline-offset:5px}.footer-credit .solutions-logo-link:hover{box-shadow:0 0 0 2px rgba(255,255,255,.3)}
-@media(max-width:560px){.footer-credit{flex-direction:column;align-items:flex-start;gap:10px}.footer-credit .solutions-logo-link{flex-basis:auto}}
+.footer-credit{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px 24px;margin-bottom:0;font-size:.8rem;line-height:1.6}.footer-credit .digital-logo-link{display:block;flex:0 1 252px;width:252px;max-width:100%;overflow:hidden;border-radius:8px;background:#faf9f7}.digital-logo-link img{display:block;width:100%;height:82px;object-fit:cover;object-position:center}.footer-credit .digital-logo-link:focus-visible{outline:2px solid currentColor;outline-offset:5px}.footer-credit .digital-logo-link:hover{box-shadow:0 0 0 2px rgba(255,255,255,.3)}
+@media(max-width:560px){.footer-credit{flex-direction:column;align-items:flex-start;gap:10px}.footer-credit .digital-logo-link{flex-basis:auto}}
 .footer-credit{margin-top:20px;color:#aaa69f}.compact-footer .footer-credit{margin-top:0}
 
 /* Shared social links, mobile conversion action and rental page. */
@@ -103,3 +103,8 @@
 @media(max-width:900px){.rental-hero-grid,.rental-process-grid{grid-template-columns:1fr;gap:35px}.rental-offer-grid{grid-template-columns:1fr}.rental-offer-card{display:grid;grid-template-columns:.7fr 1.3fr}.rental-photo-slot{height:auto;min-height:270px}.rental-terms-teaser .reviews-shell{align-items:flex-start;flex-direction:column}}
 @media(max-width:720px){.legal-nav>a:not(.nav-cta){display:none}.rental-hero{padding:75px 0 60px}.rental-offer-card{display:block}.rental-photo-slot{height:230px;min-height:0}.mobile-sticky-cta{display:flex;position:fixed;z-index:90;left:12px;right:12px;bottom:max(10px,env(safe-area-inset-bottom));min-height:48px;align-items:center;justify-content:center;border:1px solid #e0bd65;border-radius:999px;background:linear-gradient(135deg,#e2c26c,#c99a2c);color:#111;font-weight:900;box-shadow:0 9px 28px rgba(0,0,0,.28)}body:has(.mobile-sticky-cta){padding-bottom:76px}.site-footer .footer-legal{align-items:flex-start}.social-links{width:100%;margin-top:4px}}
 @media(max-width:720px){.mobile-sticky-cta{left:auto;right:12px;min-height:44px;max-width:240px;padding:0 20px;font-size:.86rem}}
+
+/* Show the complete Pierfinity Digital logo without cropping. */
+.footer-credit .digital-logo-link{flex-basis:220px;width:220px;background:#071722}
+.digital-logo-link img{width:100%;height:auto;aspect-ratio:520/283;object-fit:contain}
+@media(max-width:560px){.footer-credit .digital-logo-link{flex-basis:auto}}

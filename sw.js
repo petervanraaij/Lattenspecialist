@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v95-cleaning-menu';
+const CACHE_NAME = 'lattenspecialist-v96-pierfinity-digital';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -16,8 +16,8 @@ const APP_SHELL = [
   '/ervaring.html',
   '/privacy.html',
   '/service.html',
-  '/styles.css?v=19',
-  '/images/van-raaij-solutions-logo.webp',
+  '/styles.css?v=20',
+  '/images/pierfinity-digital.png',
   '/script.js?v=10',
   '/booking-config.js?v=2',
   '/booking.js?v=20261027-cleaning-1',
