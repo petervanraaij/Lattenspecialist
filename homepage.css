@@ -600,3 +600,28 @@
 .wax-friction-note p{margin:0;line-height:1.65;color:#514c44}
 #extra-reiniging{scroll-margin-top:110px}
 @media(max-width:600px){.wax-cleaning-highlight{grid-template-columns:1fr;gap:18px;padding:22px}.wax-cleaning-price{max-width:none;border-left:0;border-top:1px solid #d8caa7;padding:16px 0 0}.wax-cleaning-price strong{font-size:1.75rem}}
+
+/* Give the three maintenance services equal prominence before the packages. */
+.home-page .maintenance-overview{background:#fffdf8;padding:68px 0}
+.maintenance-overview .section-head{max-width:850px}
+.maintenance-service-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.maintenance-service-grid article{display:flex;flex-direction:column;align-items:flex-start;padding:28px;border:1px solid #ded6c6;border-top:3px solid #b68b37;border-radius:14px;background:#f7f4ed}
+.maintenance-service-icon{width:60px;height:60px;padding:10px;border-radius:12px;background:#ece3ce;color:#735317;margin-bottom:22px;box-sizing:border-box}
+.maintenance-service-grid h3{font-size:1.6rem;line-height:1.2;margin:10px 0 16px;color:#26231e}
+.maintenance-service-grid p{font-size:.94rem;line-height:1.65;color:#514c44;margin:0 0 14px}
+.maintenance-service-grid .maintenance-service-detail{font-size:.85rem}
+.maintenance-service-price{display:grid;gap:4px;margin-top:auto;padding-top:16px;font-size:.9rem;line-height:1.5;color:#403a2e}
+.maintenance-service-price strong{font-weight:800}
+.maintenance-service-grid .quiet-link{font-size:.83rem;margin-top:12px}
+.maintenance-overview-note{font-size:.78rem;line-height:1.5;color:#625b50;margin:18px 0 0}
+.maintenance-overview .wax-cleaning-highlight{background:#fff;border:1px solid #ded6c6;padding:20px 24px;gap:28px;margin:24px 0 0}
+.home-page .maintenance-overview .wax-cleaning-highlight h3{font-size:1.05rem;margin:5px 0 8px}
+.home-page .maintenance-overview .wax-cleaning-highlight p{font-size:.85rem;line-height:1.6}
+.maintenance-overview .wax-cleaning-price strong{font-size:1.65rem}
+.wax-comparison{border:1px solid #6a5a36;border-radius:12px;margin-top:22px;background:#1b1c1e}
+.wax-comparison>summary{padding:20px 24px;font-weight:750;color:#edcf83;cursor:pointer;line-height:1.5}
+.wax-comparison[open]>summary{border-bottom:1px solid #6a5a36}
+.wax-comparison-content{padding:20px}
+.home-page .wax-comparison .snow-live{margin-top:0}
+#pakket-slijpen,#pakket-waxen,#reparaties{scroll-margin-top:108px}
+@media(max-width:800px){.maintenance-service-grid{grid-template-columns:1fr}.maintenance-service-grid article{padding:24px}.maintenance-service-icon{margin-bottom:16px}.maintenance-service-price{padding-top:6px}.home-page .maintenance-overview{padding:48px 0}.wax-comparison-content{padding:12px}}

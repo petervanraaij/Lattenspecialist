@@ -1,11 +1,11 @@
-const CACHE_NAME = 'lattenspecialist-v90-wax-on-snow';
+const CACHE_NAME = 'lattenspecialist-v91-balanced-maintenance';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/verhuur.html',
   '/webshop.html',
-  '/homepage.css?v=20261027-piste-2',
+  '/homepage.css?v=20261027-onderhoud-1',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=9',
   '/package-choice.js?v=14',
