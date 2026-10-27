@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 const read = name => readFile(new URL('../../'+name,import.meta.url),'utf8');
-const [html,code,home,choice,metrics,selection] = await Promise.all(['afspraak.html','booking.js','index.html','package-choice.js','website-metrics.js','maintenance-selection.js'].map(read));
+const [html,code,home,choice,metrics,selection,serviceOptions] = await Promise.all(['afspraak.html','booking.js','index.html','package-choice.js','website-metrics.js','maintenance-selection.js','service-options.js'].map(read));
 const turn=()=>new Promise(resolve=>setTimeout(resolve,25));
 async function setup(t, {url='https://lattenspecialist.nl/afspraak.html',confirmationSent=true,fail=false}={}) {
  const dom=new JSDOM(html,{url,runScripts:'outside-only'});t.after(()=>dom.window.close());
@@ -14,12 +14,12 @@ async function setup(t, {url='https://lattenspecialist.nl/afspraak.html',confirm
   if(options.method==='POST') {posts.push(JSON.parse(options.body)); await turn();return {ok:!fail,json:async()=>fail?{message:'Tijdelijk niet beschikbaar'}:{ok:true,reference:'LS-2609-ABC234',confirmationSent}};}
   return {ok:true,json:async()=>({dates:['2099-12-12','2099-12-13']})};
  };
- w.eval(selection);w.eval(code);d.querySelector('script[src*="turnstile/v0"]').dispatchEvent(new w.Event('load'));await turn();
+ w.eval(selection);w.eval(serviceOptions);w.eval(code);d.querySelector('script[src*="turnstile/v0"]').dispatchEvent(new w.Event('load'));await turn();
  return {w,d,f:d.querySelector('form'),posts};
 }
 const change=(w,input,value)=>{input.value=value;input.dispatchEvent(new w.Event('change',{bubbles:true}));};
 function complete(w,f) {
- change(w,f.elements.package,'Zilver');change(w,f.elements.logistics,'Zelf brengen en zelf ophalen');
+ change(w,f.elements.package,'Zilver');change(w,f.elements.logistics,'Zelf brengen en zelf ophalen');change(w,f.elements.pickupDate,'In overleg');
  f.elements.name.value='Voorbeeld';f.elements.phone.value='0612345678';f.elements.email.value='test@example.com';f.elements.privacyConsent.checked=true;
 }
 const submit=(w,f)=>f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
@@ -287,7 +287,7 @@ test('rush can be declined in the form and does not leak into rentals or invalid
 test('dropoff does not send hidden address, pickup date or stale rental fields; success is clear and duplicate clicks are ignored',async t=>{
  const {w,d,f,posts}=await setup(t,{confirmationSent:false});complete(w,f);
  f.elements.address.value='Should not be sent';f.elements.rentfrom.value='2020-01-02';f.elements.rentto.value='2020-01-01';
- assert.equal(d.querySelector('#pickupAddressFields').hidden,true);assert.equal(f.elements.pickupDate.disabled,true);
+ assert.equal(d.querySelector('#pickupAddressFields').hidden,true);assert.equal(f.elements.pickupDate.disabled,false);
  assert.equal(f.checkValidity(),true);submit(w,f);submit(w,f);await turn();await turn();
  assert.equal(posts.length,1);assert.equal(posts[0].pickupDate,'In overleg');assert.equal(posts[0].address,undefined);assert.equal(posts[0].rentfrom,undefined);
  assert.equal(d.querySelector('#bookingConfirmation').hidden,false);assert.equal(f.hidden,true);
@@ -296,7 +296,7 @@ test('dropoff does not send hidden address, pickup date or stale rental fields; 
 });
 test('pickup requires an explicit date and address, rental excludes maintenance, failed send preserves entered data',async t=>{
  const {w,d,f,posts}=await setup(t,{fail:true});
- assert.equal(f.elements.pickupDate.value,'');assert.equal(f.elements.address.required,true);
+ assert.equal(f.elements.pickupDate.value,'');assert.equal(f.elements.address.required,false);assert.equal(f.elements.pickupDate.required,true);
  complete(w,f);const rental=f.querySelector('[name="service"][value="Verhuur"]');rental.checked=true;rental.dispatchEvent(new w.Event('change',{bubbles:true}));
  assert.equal(f.elements.package.disabled,true);assert.equal(f.elements.address.disabled,true);submit(w,f);await turn();await turn();
  assert.equal(posts[0].package,undefined);assert.equal(posts[0].rentaltype,'Complete set');

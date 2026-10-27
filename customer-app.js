@@ -855,13 +855,7 @@
     }
   });
   async function loadDates() {
-    try {
-      const data = await fetchResource(`${endpoint}/api/availability`);
-      const dates = Array.isArray(data.dates) ? data.dates.filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x) && x >= today()) : [];
-      $("pickupDates").textContent = dates.length ? dates.slice(0, 3).map(formatDate).join(" \xB7 ") : "We stemmen de eerstvolgende mogelijkheid graag met je af.";
-    } catch {
-      $("pickupDates").textContent = "De data konden niet worden opgehaald. Controleer ze in het aanvraagformulier.";
-    }
+    $("pickupDates").textContent = "Woensdag brengen, de woensdag erop ophalen. Of op afspraak.";
   }
   function loadBooking() {
     clearTimeout(bookingTimer);
