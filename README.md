@@ -54,3 +54,10 @@ De Android-beheerapp heeft twee beginschermwidgets: het bestaande statusoverzich
 ## Onderhoudsinstructies
 
 De bestaande materiaalworkflow begeleidt gekozen ski- en snowboardbehandelingen met uitvoering, benodigdheden, controlepunten en instructievideo’s. Zie [gebruik, pakketkeuzes, verificatie en grenzen](docs/ONDERHOUDSINSTRUCTIES.md).
+
+
+## Onderhoud kiezen
+
+De homepage begint na de hero met drie duidelijke ingangen: alleen waxen (Koper), alleen kanten slijpen (Brons) of beide (Zilver). De kaarten linken naar de bestaande pakketten zonder aantallen, spoed, extra reiniging of andere producten te kiezen. Prijzen inclusief btw, betaalmoment en voorafgaand overleg over extra werk staan bij de keuzehulp. Sneeuwinformatie blijft bereikbaar en volgt na het pakkettenoverzicht. De Goud-badge beschrijft de inhoud in plaats van onbewezen populariteit. De aanvraagpagina legt de drie stappen en persoonlijke bevestiging uit.
+
+`customer-choice.css` verzorgt de responsive keuzehulp; de bestaande boekingslogica en tarieven blijven gelijk. `npm run check` controleert de 53 klant-/websitegevallen en alle Worker-suites. Desktop (1440px) en mobiel (390px) zijn aanvullend gecontroleerd op werkende pakketankers, een lege winkelkeuze en geen automatisch aangevinkte extra’s. Publieke screenshots: `docs/screenshots/customer-choice-*.png`.

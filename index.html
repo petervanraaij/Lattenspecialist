@@ -30,6 +30,7 @@
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=20">
   <link rel="stylesheet" href="homepage.css?v=20261027-polish-1">
+  <link rel="stylesheet" href="customer-choice.css?v=1">
   <link rel="stylesheet" href="test-environment.css?v=4">
   <link rel="stylesheet" href="wax-illustration.css?v=4">
   <script src="homepage.js?v=2"></script>
@@ -77,8 +78,8 @@
         <div class="hero-copy">
           <span class="hero-kicker">Persoonlijk ski- en snowboardonderhoud</span>
           <h1 id="hero-title">Zorgeloos<br><span>skiplezier.</span></h1>
-          <p class="hero-lead">Kanten slijpen, belag repareren en waxen. Met aandacht onderhouden, klaar voor de sneeuw.</p>
-          <div class="hero-actions"><a class="btn btn-gold" href="#pakketten">Bekijk pakketten</a><a class="btn btn-ghost" href="afspraak.html">Reserveer onderhoud</a></div>
+          <p class="hero-lead">Kanten slijpen, belag repareren en waxen. Meer grip en soepel glijden beginnen bij onderhoud dat bij jouw materiaal past.</p>
+          <div class="hero-actions"><a class="btn btn-gold" href="#onderhoudhulp">Vind je onderhoud</a><a class="btn btn-ghost" href="afspraak.html">Reserveer onderhoud</a></div>
           <p class="hero-region"><strong>Woensdag brengen. Een week later ophalen.</strong><span>Of op afspraak · altijd eerst reserveren.</span></p>
         </div>
       </div>
@@ -93,31 +94,24 @@
 
     <nav class="home-route" aria-label="Snel naar">
       <div class="container home-route-links">
-        <a href="#snowLive"><span>01</span>Sneeuwtemperatuur</a>
-        <a href="#onderhoud-keuze"><span>02</span>Onderhoud kiezen</a>
-        <a href="#pakketten"><span>03</span>Pakketten &amp; prijzen</a>
-        <a href="#haalbreng"><span>04</span>Brengen &amp; ophalen</a>
+        <a href="#onderhoudhulp"><span>01</span>Onderhoud kiezen</a>
+        <a href="#pakketten"><span>02</span>Pakketten &amp; prijzen</a>
+        <a href="#haalbreng"><span>03</span>Brengen &amp; ophalen</a>
+        <a href="#snowLive"><span>04</span>Sneeuwtemperatuur</a>
         <a href="webshop.html"><span>05</span>Producten &amp; advies</a>
       </div>
     </nav>
 
-    <section class="section snow-conditions-top" id="snowLive" aria-labelledby="snow-live-title">
+    <section class="section customer-choice" id="onderhoudhulp" aria-labelledby="choice-title">
       <div class="container">
-        <section class="snow-live" id="wax" aria-label="Sneeuwtemperatuur en waxadvies">
-          <div class="snow-live-current">
-            <div class="snow-live-current-head">
-              <div><span>Live per skigebied</span><h2 id="snow-live-title">Sneeuwtemperatuur op jouw bestemming</h2></div>
-              <form class="snow-search" id="snowSearchForm" role="search"><label for="snowSearchInput">Zoek je eigen bestemming</label><div><input id="snowSearchInput" name="destination" type="search" placeholder="Bijv. Saalbach of Winterberg" autocomplete="off" required><button type="submit">Zoeken</button></div></form>
-            </div>
-            <div class="snow-search-result" id="snowSearchResult" aria-live="polite" hidden></div>
-            <div class="snow-resort-grid" id="snowResortGrid" aria-live="polite" aria-busy="true">
-              <article class="snow-resort-card is-loading"><span>Live gegevens laden…</span></article>
-            </div>
-            <p class="snow-live-status" id="snowLiveStatus" role="status">De sneeuwcondities worden opgehaald.</p>
-          </div>
-          <p class="snow-live-note">Buitenlocaties tonen een schatting op basis van de actuele luchttemperatuur op de vermelde modelhoogte en alleen wanneer het weermodel daar sneeuwdek ziet. De 7-daagse weersindicatie geeft alleen context en bepaalt de waxkeuze niet.</p>
-          <p class="snow-temperature-note"><strong>Waxkeuze:</strong> de actuele geschatte sneeuwtemperatuur is alleen een hulpmiddel. Voor recreatief gebruik zijn de praktische verschillen meestal beperkt. Bij skihallen gebruiken we de vermelde binnentemperatuur.</p>
-        </section>
+        <div class="section-head"><span class="eyebrow">In één oogopslag</span><h2 id="choice-title">Wat wil je laten doen?</h2><p>Begin bij jouw wens. Je bekijkt eerst het passende pakket en kiest daarna zelf je aantallen en extra’s.</p></div>
+        <div class="choice-routes">
+          <a href="#pakket-waxen"><span class="choice-number" aria-hidden="true">01</span><strong>Alleen waxen</strong><span>Belag verzorgen en soepel glijden.</span><small>Koper · ski vanaf € 19,95<br>Snowboard vanaf € 24,95</small><b>Bekijk Koper →</b></a>
+          <a href="#pakket-slijpen"><span class="choice-number" aria-hidden="true">02</span><strong>Alleen kanten slijpen</strong><span>Grip en controle op de piste.</span><small>Brons · ski vanaf € 24,95<br>Snowboard vanaf € 29,95</small><b>Bekijk Brons →</b></a>
+          <a href="#pakket-zilver"><span class="choice-number" aria-hidden="true">03</span><strong>Waxen én slijpen</strong><span>De twee behandelingen in één pakket.</span><small>Zilver · ski vanaf € 34,95<br>Snowboard vanaf € 39,95</small><b>Bekijk Zilver →</b></a>
+        </div>
+        <div class="choice-reassurance"><p><strong>Schade of nog niet zeker?</strong> Stuur een foto voor advies. We beoordelen welk onderhoud past; extra werk bespreken we eerst.</p><a class="quiet-link" href="https://wa.me/31618327132?text=Hallo%20De%20Lattenspecialist%2C%20ik%20twijfel%20welk%20onderhoud%20mijn%20materiaal%20nodig%20heeft.%20Kan%20ik%20een%20foto%20sturen%20voor%20advies%3F" target="_blank" rel="noopener">Vraag persoonlijk advies ↗</a></div>
+        <ul class="choice-promises" aria-label="Vooraf duidelijk"><li>Prijzen inclusief btw</li><li>Extra’s kies je zelf</li><li>Betalen na onderhoud, vóór ophalen</li></ul>
       </div>
     </section>
 
@@ -189,7 +183,7 @@
             <fieldset class="package-amounts"><legend>Aantal</legend><div class="quantity-row"><label for="slijpen-ski">Ski’s (paar)</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder paar ski’s Brons" disabled>−</button><input id="slijpen-ski" type="number" name="homepageSki" min="0" max="20" step="1" value="0" aria-label="Aantal paar ski’s Brons"><button type="button" data-step="1" aria-label="Meer paar ski’s Brons">+</button></div></div><div class="quantity-row"><label for="slijpen-snowboard">Snowboards</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder snowboards Brons" disabled>−</button><input id="slijpen-snowboard" type="number" name="homepageSnowboard" min="0" max="20" step="1" value="0" aria-label="Aantal snowboards Brons"><button type="button" data-step="1" aria-label="Meer snowboards Brons">+</button></div></div></fieldset>
             <div class="package-bindings" hidden><strong>Bindingen demonteren + monteren</strong><small class="package-bindings-price">Optioneel · € 7,50 per snowboard</small><div class="quantity-row"><label for="slijpen-bindings">Aantal</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder bindingen bij Brons" disabled>−</button><input id="slijpen-bindings" type="number" name="homepageBindings" min="0" max="0" step="1" value="0" aria-label="Aantal snowboards met bindingsservice bij Brons"><button type="button" data-step="1" aria-label="Meer bindingen bij Brons" disabled>+</button></div></div></div>
           </article>
-          <article data-package="zilver" class="package-card package-card--silver">
+          <article id="pakket-zilver" data-package="zilver" class="package-card package-card--silver">
             <span class="tier silver-dot">Zilver · waxen + slijpen</span><h3>Waxen + slijpen</h3>
             <div class="price-row"><div><small>Ski vanaf</small><strong>€ 34,95</strong></div><div><small>Snowboard vanaf</small><strong>€ 39,95</strong></div></div>
             <details class="package-details"><summary>Alle werkzaamheden</summary>
@@ -209,7 +203,7 @@
           <div class="package-bindings" hidden><strong>Bindingen demonteren + monteren</strong><small class="package-bindings-price">Optioneel · € 7,50 per snowboard</small><div class="quantity-row"><label for="zilver-bindings">Aantal</label><div class="quantity-control"><button type="button" data-step="-1" aria-label="Minder bindingen bij Zilver" disabled>−</button><input id="zilver-bindings" type="number" name="homepageBindings" min="0" max="0" step="1" value="0" aria-label="Aantal snowboards met bindingsservice bij Zilver"><button type="button" data-step="1" aria-label="Meer bindingen bij Zilver" disabled>+</button></div></div></div>
           </article>
           <article data-package="goud" class="package-card package-card--gold featured">
-            <span class="featured-badge">Meest gekozen</span><span class="tier gold-dot">Goud</span><h3>Zilver + structuur opfrissen</h3>
+            <span class="featured-badge">Waxen, slijpen &amp; structuur</span><span class="tier gold-dot">Goud</span><h3>Zilver + structuur opfrissen</h3>
             <div class="price-row"><div><small>Ski vanaf</small><strong>€ 44,95</strong></div><div><small>Snowboard vanaf</small><strong>€ 49,95</strong></div></div>
             <details class="package-details"><summary>Alle werkzaamheden</summary>
             <ul class="package-highlights">
@@ -273,6 +267,26 @@
         </div>
         <p class="price-note">Alle genoemde consumentenprijzen zijn inclusief btw. Aantallen bij ski’s zijn per paar. Extra waxreiniging kies je optioneel per pakket: € 5,00 per paar ski’s of snowboard. In het reserveringsformulier kun je de Holmenkol waxstick (€ 17,50 per stuk) toevoegen.</p>
         <p class="package-help">Twijfel je? Wij adviseren wat nodig is. Extra werk doen we alleen na overleg. Spoed is bedoeld voor materiaal dat voor het eerstvolgende weekend klaar moet zijn, met minimaal 2 werkdagen speling. Bij spoed breng en haal je het materiaal altijd zelf.</p>
+      </div>
+    </section>
+
+    <section class="section snow-conditions-top" id="snowLive" aria-labelledby="snow-live-title">
+      <div class="container">
+        <section class="snow-live" id="wax" aria-label="Sneeuwtemperatuur en waxadvies">
+          <div class="snow-live-current">
+            <div class="snow-live-current-head">
+              <div><span>Live per skigebied</span><h2 id="snow-live-title">Sneeuwtemperatuur op jouw bestemming</h2></div>
+              <form class="snow-search" id="snowSearchForm" role="search"><label for="snowSearchInput">Zoek je eigen bestemming</label><div><input id="snowSearchInput" name="destination" type="search" placeholder="Bijv. Saalbach of Winterberg" autocomplete="off" required><button type="submit">Zoeken</button></div></form>
+            </div>
+            <div class="snow-search-result" id="snowSearchResult" aria-live="polite" hidden></div>
+            <div class="snow-resort-grid" id="snowResortGrid" aria-live="polite" aria-busy="true">
+              <article class="snow-resort-card is-loading"><span>Live gegevens laden…</span></article>
+            </div>
+            <p class="snow-live-status" id="snowLiveStatus" role="status">De sneeuwcondities worden opgehaald.</p>
+          </div>
+          <p class="snow-live-note">Buitenlocaties tonen een schatting op basis van de actuele luchttemperatuur op de vermelde modelhoogte en alleen wanneer het weermodel daar sneeuwdek ziet. De 7-daagse weersindicatie geeft alleen context en bepaalt de waxkeuze niet.</p>
+          <p class="snow-temperature-note"><strong>Waxkeuze:</strong> de actuele geschatte sneeuwtemperatuur is alleen een hulpmiddel. Voor recreatief gebruik zijn de praktische verschillen meestal beperkt. Bij skihallen gebruiken we de vermelde binnentemperatuur.</p>
+        </section>
       </div>
     </section>
 
