@@ -1,5 +1,7 @@
 # Medewerkers en beheer
 
+De materiaalworkflow heeft nu [uitgebreide onderhoudsinstructies](docs/ONDERHOUDSINSTRUCTIES.md): uitvoering, benodigdheden, productgebonden aandachtspunten, passende videolinks en vastgelegde controlebevestigingen per werkstap. Open een materiaal vanuit de toegewezen opdracht of met de sticker. Beheer kan hetzelfde onderhoudsplan bekijken bij de QR-stickers.
+
 ## Gebruik
 
 1. Open `https://lattenspecialist.nl/beheer.html` met de bestaande eigenaarssleutel.

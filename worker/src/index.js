@@ -456,7 +456,7 @@ export default {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleAccounting(request, env, {owner:await isAdminAuthorized(request,env), json, origin});
     }
-    if (url.pathname.startsWith('/api/admin/inventory') || url.pathname === '/api/team/practice' || /^\/api\/team\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || /^\/api\/team\/operations\/steps\/[a-f0-9-]{36}\/(start|pause|finish)$/.test(url.pathname)) {
+    if (/^\/api\/admin\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || url.pathname.startsWith('/api/admin/inventory') || url.pathname === '/api/team/practice' || /^\/api\/team\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || /^\/api\/team\/operations\/steps\/[a-f0-9-]{36}\/(start|pause|finish)$/.test(url.pathname)) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleInventory(request, env, {owner:await isAdminAuthorized(request,env), json, origin});
     }

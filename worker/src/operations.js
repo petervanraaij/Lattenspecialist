@@ -378,6 +378,12 @@ export async function handleOperations(request,env,{owner,json,origin}) {
         else if(['arrive','depart'].includes(action)){const stopId=clean(raw.stopId,40),column=action==='arrive'?'arrived_at':'departed_at',status=action==='arrive'?'arrived':'collected';await db.prepare(`UPDATE route_stops SET ${column}=?,status=? WHERE id=? AND route_id=?`).bind(timestamp,status,stopId,route.id).run();}
         else throw new OperationsError('Onbekende routeactie.');return json({route:await routeDetails(db,route.id)},200,origin);
       }
+      if(path==='/api/team/operations/materials'&&request.method==='GET'){
+        const reference=clean(new URL(request.url).searchParams.get('reference'),30),record=await db.prepare('SELECT assigned_to,payload FROM records WHERE reference=? AND assigned_to=?').bind(reference,member.id).first();
+        if(!record||JSON.parse(record.payload).closedAt)throw new OperationsError('Werkopdracht niet gevonden.',404);
+        const rows=await db.prepare('SELECT * FROM materials WHERE reference=? AND (assigned_to=? OR assigned_to IS NULL) AND is_training=0 ORDER BY item_number').bind(reference,member.id).all();
+        return json({materials:rows.results.map(materialView)},200,origin);
+      }
       const scan=path.match(/^\/api\/team\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6})$/i);
       if(scan&&request.method==='GET'){const key=scan[1],material=await db.prepare('SELECT * FROM materials WHERE scan_token=? OR display_code=?').bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);if(material.assigned_to&&material.assigned_to!==member.id)throw new OperationsError('Deze opdracht is aan een andere medewerker toegewezen.',403);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),work:{customerName:material.is_training?'Oefenklant':clean(record?.name,100),address:clean(record?.address,240),conditions:clean(record?.conditions,100),notes:clean(record?.notes,500),package:clean(material.package_name||record?.package,100),waxType:clean(material.wax_type||record?.waxType||'',100)},workflow:await getWorkflow(db,material)},200,origin);}
       const action=path.match(/^\/api\/team\/operations\/materials\/([a-f0-9-]{36})\/action$/);

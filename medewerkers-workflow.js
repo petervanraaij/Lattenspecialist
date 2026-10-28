@@ -117,7 +117,7 @@
     return `<fieldset class="workflow-tool-choices"><legend>Welke gereedschappen heb je echt gebruikt?</legend>${tools.map(item => `<label><input type="checkbox" name="toolSkus" value="${escape(item.sku)}" checked><span>${escape(item.name || item.sku)}</span></label>`).join('')}<small>Alleen aangevinkte gereedschappen tellen mee voor levensduur en kosten.</small></fieldset>`;
   }
 
-  function finishForm(step) {
+  function finishFormFields(step) {
     const tools = toolChoices(step), toolFlag = tools ? ' data-has-tool-choices="true"' : '';
     if (waxStep(step)) return `<div class="workflow-actions"><form data-workflow-action="finish" data-step-id="${escape(step.id)}" data-start-weight="${step.startWeight || ''}"${toolFlag}><label>Gewicht waxblok na afloop (gram)<input name="endWeight" type="number" inputmode="decimal" min="0" max="5000" step="0.1" required${step.startWeight ? ` max="${step.startWeight}"` : ''} placeholder="lager dan het begingewicht"></label>${tools}<button class="primary" type="submit">Afronden &amp; verbruik boeken</button><button type="button" data-workflow-pause>Pauzeer timer</button><p class="workflow-help">Begingewicht: <strong>${step.startWeight ? `${step.startWeight.toLocaleString('nl-NL')} g` : 'nog niet ontvangen'}</strong>. Het verschil gaat automatisch van de voorraad af.</p><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
     if (cleaningStep(step)) return `<div class="workflow-actions"><form class="workflow-consumption-form" data-workflow-action="finish" data-step-id="${escape(step.id)}"${toolFlag}><label>Cleaner gebruikt (ml)<input name="cleanerMl" type="number" inputmode="decimal" min="0" max="1000" step="0.1" value="0"></label><label>Fleece gebruikt (cm)<input name="fleeceCm" type="number" inputmode="decimal" min="0" max="1000" step="0.1" value="0"></label>${tools}<button class="primary" type="submit">Stap afronden</button><button type="button" data-workflow-pause>Pauzeer timer</button><p class="workflow-help">Vul het echte verbruik in; ook bij een oefening wordt dit van de voorraad afgeboekt.</p><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
@@ -125,12 +125,16 @@
     return `<div class="workflow-actions"><form data-workflow-action="finish" data-step-id="${escape(step.id)}"${toolFlag}><p class="workflow-help">De tijd en het gebruik van toegewezen gereedschappen worden bij afronden vastgelegd.</p>${tools}<button class="primary" type="submit">Stap afronden</button><button type="button" data-workflow-pause>Pauzeer timer</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
   }
 
+  function finishForm(step) {
+    return finishFormFields(step).replace(/(<form\b[^>]*>)/,match=>match+(window.LSMaintenanceGuide?.checks(step)||''));
+  }
+
   function stepCard(step, actionable) {
     const state = completed(step) ? 'is-completed' : active(step) || paused(step) ? 'is-active' : actionable ? 'is-next' : 'is-locked';
     const requirements = step.requirements.length ? `<div class="workflow-needs" aria-label="Benodigdheden">${step.requirements.map(item => `<span>${escape(requirementLabel(item))}</span>`).join('')}</div>` : '<div class="workflow-needs"><span>Geen voorraadartikel geregistreerd</span></div>';
     const results = usageValues(step);
     const actions = active(step) ? finishForm(step) : (paused(step) || actionable) && !completed(step) ? startForm(step) : '';
-    return `<article class="workflow-step ${state}" data-step-id="${escape(step.id)}"><div class="workflow-step-main"><div class="workflow-step-head"><h4>${escape(step.title)}</h4><span>${completed(step) ? 'Afgerond' : active(step) ? 'Bezig' : paused(step) ? 'Gepauzeerd' : actionable ? 'Volgende stap' : 'Wacht'}</span></div>${step.instruction ? `<p class="workflow-instruction">${escape(step.instruction)}</p>` : ''}${requirements}<div class="workflow-timing">${timing(step)}</div>${results.length ? `<div class="workflow-result">${results.map(value => `<span>${escape(value)}</span>`).join('')}</div>` : ''}${actions}</div></article>`;
+    return `<article class="workflow-step ${state}" data-step-id="${escape(step.id)}"><div class="workflow-step-main"><div class="workflow-step-head"><h4>${escape(step.title)}</h4><span>${completed(step) ? 'Afgerond' : active(step) ? 'Bezig' : paused(step) ? 'Gepauzeerd' : actionable ? 'Volgende stap' : 'Wacht'}</span></div>${step.instruction ? `<p class="workflow-instruction">${escape(step.instruction)}</p>` : ''}${requirements}${window.LSMaintenanceGuide?.instruction(step,actionable||active(step)||paused(step))||''}<div class="workflow-timing">${timing(step)}</div>${results.length ? `<div class="workflow-result">${results.map(value => `<span>${escape(value)}</span>`).join('')}</div>` : ''}${actions}</div></article>`;
   }
 
   function render(host, data, materialId) {
@@ -148,16 +152,18 @@
       return;
     }
     const summary = workflow.summary || {}, totalCost = number(summary.totalCost ?? summary.total_cost), totalSeconds = number(summary.totalSeconds ?? summary.total_seconds);
-    host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3><p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Voorraad automatisch bijgewerkt</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div><div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
+    host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3><p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
     updateTimers();
   }
 
   async function loadInto(host, materialId, initialData) {
+    const expectedToken=sessionStorage.getItem('ls-team-session');
     host.className = 'workflow-shell';
     host.dataset.materialId = materialId;
     host.innerHTML = '<p>Werkstappen laden…</p>';
     try {
       const data = initialData && (initialData.steps || initialData.workflow?.steps || initialData.job?.steps) ? initialData : await request(`/api/team/operations/materials/${encodeURIComponent(materialId)}/workflow`);
+      if(!host.isConnected||host.dataset.materialId!==materialId||sessionStorage.getItem('ls-team-session')!==expectedToken)return;
       render(host, data, materialId);
     } catch (error) {
       host.innerHTML = `<p class="workflow-message is-error">${escape(error.message)}</p>`;
@@ -174,11 +180,12 @@
   }
 
   async function submitStep(form) {
+    if(!form.reportValidity())return;
     const button = form.querySelector('button[type=submit]'), message = form.querySelector('.workflow-message');
     const action = form.dataset.workflowAction, formData = new FormData(form), values = Object.fromEntries(formData);
     const body = {};
     for (const [name, raw] of Object.entries(values)) {
-      if (name === 'toolSkus') continue;
+      if (name === 'toolSkus' || name === 'guideChecks') continue;
       if (name === 'repairColor') { body[name] = String(raw); continue; }
       if (raw === '') continue;
       const value = Number(String(raw).replace(',', '.'));
@@ -186,6 +193,8 @@
       body[name] = value;
     }
     if (form.dataset.hasToolChoices === 'true') body.toolSkus = formData.getAll('toolSkus').map(String);
+    const guide=form.querySelector('[data-guide-version]');
+    if(guide)body.guideChecks={version:guide.dataset.guideVersion,checkedIds:formData.getAll('guideChecks').map(String)};
     if (action === 'start' && Object.hasOwn(body, 'startWeight') && body.startWeight <= 0) { message.textContent = 'Vul een begingewicht groter dan 0 gram in.'; message.classList.add('is-error'); return; }
     const startWeight = Number(form.dataset.startWeight);
     if (action === 'finish' && Object.hasOwn(body, 'endWeight') && form.dataset.startWeight && Number.isFinite(startWeight) && body.endWeight > startWeight) { message.textContent = 'Het eindgewicht kan niet hoger zijn dan het begingewicht.'; message.classList.add('is-error'); return; }
@@ -237,7 +246,7 @@
       card.dataset.workflowRequested = 'true';
       const host = document.createElement('section');
       card.append(host);
-      loadInto(host, card.dataset.id);
+      loadInto(host, card.dataset.id,card.workflowData);
     };
     new MutationObserver(openWorkflow).observe(result, {childList:true, subtree:true});
     openWorkflow();
