@@ -105,10 +105,30 @@
     return '';
   }
 
+  function stamp(value) {
+    const time=new Date(value).getTime();
+    return value&&Number.isFinite(time)?new Date(time).toLocaleString('nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+  }
+
+  function stepPositions(step,actionable) {
+    const done=completed(step),running=active(step),resume=paused(step),mayStart=(actionable||resume)&&!running&&!done;
+    const startText=done||running?'Gestart':resume?'Hervat stap':'Start stap';
+    const startTime=stamp(step.startedAt),endTime=stamp(step.completedAt);
+    return `<div class="workflow-step-positions" role="group" aria-label="Start en klaar van ${escape(step.title)}"><div class="workflow-start-position ${startTime?'is-started':''}"><span class="workflow-position-label">1 · START</span><button type="button" data-workflow-start class="${mayStart?'primary':''}"${mayStart?'':' disabled'}><span aria-hidden="true">${startTime?'✓':'▶'}</span> ${startText}</button><small>${startTime?`Gestart ${escape(startTime)}`:done?'Geen starttijd vastgelegd':mayStart?'Start de handeling en de timer':'Eerst de vorige stap afronden'}</small></div><div class="workflow-done-position ${done?'is-done':''}"><span class="workflow-position-label">2 · KLAAR</span><label><input type="checkbox" data-workflow-complete aria-label="${escape(step.title)} klaar"${done?' checked':''}${running?'':' disabled'}><span>Klaar – afvinken</span></label><small>${done?endTime?`Afgerond ${escape(endTime)}`:'Afgerond geregistreerd':running?'Controleer de stap en vink hem af':resume?'Hervat de stap vóór je afvinkt':'Eerst deze stap starten'}</small></div></div>`;
+  }
+
+  function lockStep(form) {
+    if(form.dataset.submitting)return null;
+    form.dataset.submitting='true';
+    const controls=[...form.closest('.workflow-step').querySelectorAll('button,input,select,textarea')].map(element=>({element,disabled:element.disabled}));
+    controls.forEach(({element})=>element.disabled=true);
+    return ()=>{if(form.isConnected){delete form.dataset.submitting;controls.forEach(({element,disabled})=>element.disabled=disabled);}};
+  }
+
   function startForm(step) {
     const resume = paused(step);
     const weight = waxStep(step) && !step.startWeight ? `<label>Gewicht waxblok vóór start (gram)<input name="startWeight" type="number" inputmode="decimal" min="0.1" max="5000" step="0.1" required placeholder="bijv. 182,4"></label><p class="workflow-help">Weeg het gekozen waxblok zonder losse verpakking. Na afloop weeg je hetzelfde blok opnieuw.</p>` : `<p class="workflow-help">${resume ? 'De eerder gemeten tijd en het begingewicht blijven bewaard.' : 'De timer start zodra je op de knop drukt. Rond deze stap af voordat je doorgaat.'}</p>`;
-    return `<div class="workflow-actions"><form data-workflow-action="start" data-step-id="${escape(step.id)}">${weight}<button class="primary" type="submit">${resume ? 'Hervat stap &amp; timer' : 'Start stap &amp; timer'}</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
+    return `<div class="workflow-actions"><form data-workflow-action="start" data-step-id="${escape(step.id)}">${weight}<button type="submit" hidden>Start stap</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
   }
 
   function toolChoices(step) {
@@ -126,7 +146,7 @@
   }
 
   function finishForm(step) {
-    return finishFormFields(step).replace(/(<form\b[^>]*>)/,match=>match+(window.LSMaintenanceGuide?.checks(step)||''));
+    return finishFormFields(step).replace(/<button class="primary" type="submit">[^<]*<\/button>/,'<button type="submit" hidden>Klaar – afvinken</button>').replace(/(<form\b[^>]*>)/,match=>match+(window.LSMaintenanceGuide?.checks(step)||''));
   }
 
   function stepCard(step, actionable) {
@@ -134,7 +154,7 @@
     const requirements = step.requirements.length ? `<div class="workflow-needs" aria-label="Benodigdheden">${step.requirements.map(item => `<span>${escape(requirementLabel(item))}</span>`).join('')}</div>` : '<div class="workflow-needs"><span>Geen voorraadartikel geregistreerd</span></div>';
     const results = usageValues(step);
     const actions = active(step) ? finishForm(step) : (paused(step) || actionable) && !completed(step) ? startForm(step) : '';
-    return `<article class="workflow-step ${state}" data-step-id="${escape(step.id)}"><div class="workflow-step-main"><div class="workflow-step-head"><h4>${escape(step.title)}</h4><span>${completed(step) ? 'Afgerond' : active(step) ? 'Bezig' : paused(step) ? 'Gepauzeerd' : actionable ? 'Volgende stap' : 'Wacht'}</span></div>${step.instruction ? `<p class="workflow-instruction">${escape(step.instruction)}</p>` : ''}${requirements}${window.LSMaintenanceGuide?.instruction(step,actionable||active(step)||paused(step))||''}<div class="workflow-timing">${timing(step)}</div>${results.length ? `<div class="workflow-result">${results.map(value => `<span>${escape(value)}</span>`).join('')}</div>` : ''}${actions}</div></article>`;
+    return `<article class="workflow-step ${state}" data-step-id="${escape(step.id)}"><div class="workflow-step-main"><div class="workflow-step-head"><h4>${escape(step.title)}</h4><span>${completed(step) ? 'Afgerond' : active(step) ? 'Bezig' : paused(step) ? 'Gepauzeerd' : actionable ? 'Volgende stap' : 'Wacht'}</span></div>${stepPositions(step,actionable)}${step.instruction ? `<p class="workflow-instruction">${escape(step.instruction)}</p>` : ''}${requirements}${window.LSMaintenanceGuide?.instruction(step,actionable||active(step)||paused(step))||''}<div class="workflow-timing">${timing(step)}</div>${results.length ? `<div class="workflow-result">${results.map(value => `<span>${escape(value)}</span>`).join('')}</div>` : ''}${actions}</div></article>`;
   }
 
   function render(host, data, materialId) {
@@ -180,7 +200,7 @@
   }
 
   async function submitStep(form) {
-    if(!form.reportValidity())return;
+    if(form.dataset.submitting||!form.reportValidity())return;
     const button = form.querySelector('button[type=submit]'), message = form.querySelector('.workflow-message');
     const action = form.dataset.workflowAction, formData = new FormData(form), values = Object.fromEntries(formData);
     const body = {};
@@ -198,25 +218,31 @@
     if (action === 'start' && Object.hasOwn(body, 'startWeight') && body.startWeight <= 0) { message.textContent = 'Vul een begingewicht groter dan 0 gram in.'; message.classList.add('is-error'); return; }
     const startWeight = Number(form.dataset.startWeight);
     if (action === 'finish' && Object.hasOwn(body, 'endWeight') && form.dataset.startWeight && Number.isFinite(startWeight) && body.endWeight > startWeight) { message.textContent = 'Het eindgewicht kan niet hoger zijn dan het begingewicht.'; message.classList.add('is-error'); return; }
+    const unlock=lockStep(form);if(!unlock)return;
     button.disabled = true; message.classList.remove('is-error'); message.textContent = action === 'start' ? 'Timer starten…' : 'Verbruik en tijd opslaan…';
     try {
       await request(`/api/team/operations/steps/${encodeURIComponent(form.dataset.stepId)}/${action}`, {method:'POST', body:JSON.stringify(body)});
       const host = form.closest('.workflow-shell');
       await loadInto(host, host.dataset.materialId);
     } catch (error) {
-      message.textContent = error.message; message.classList.add('is-error'); button.disabled = false;
+      message.textContent = error.message; message.classList.add('is-error');
+    } finally {
+      unlock();
     }
   }
 
   async function pauseStep(button) {
     const form = button.closest('[data-workflow-action]'), message = form.querySelector('.workflow-message');
+    const unlock=lockStep(form);if(!unlock)return;
     button.disabled = true; message.classList.remove('is-error'); message.textContent = 'Timer pauzeren…';
     try {
       await request(`/api/team/operations/steps/${encodeURIComponent(form.dataset.stepId)}/pause`, {method:'POST', body:'{}'});
       const host = form.closest('.workflow-shell');
       await loadInto(host, host.dataset.materialId);
     } catch (error) {
-      message.textContent = error.message; message.classList.add('is-error'); button.disabled = false;
+      message.textContent = error.message; message.classList.add('is-error');
+    } finally {
+      unlock();
     }
   }
 
@@ -265,8 +291,15 @@
     event.preventDefault(); submitStep(form);
   });
   document.addEventListener('click', event => {
+    const start=event.target.closest('[data-workflow-start]');if(start){const form=start.closest('.workflow-step').querySelector('[data-workflow-action="start"]');if(form&&!form.dataset.submitting)form.requestSubmit();return;}
     const button = event.target.closest('[data-workflow-pause]');
     if (button) pauseStep(button);
+  });
+  document.addEventListener('change',event=>{
+    const input=event.target.closest('[data-workflow-complete]');if(!input)return;
+    input.checked=false; // Only the stored response may display a completed checkmark.
+    const form=input.closest('.workflow-step').querySelector('[data-workflow-action="finish"]');
+    if(form&&!form.dataset.submitting)form.requestSubmit();
   });
   watchScans();
   setInterval(updateTimers, 1000);
