@@ -5,7 +5,7 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),site=resolve(ro
 await mkdir(join(out,'images'),{recursive:true});
 await mkdir(join(out,'vendor'),{recursive:true});
 await copyFile(join(site,'medewerkers.html'),join(out,'index.html'));
-for(const file of ['medewerkers.js','medewerkers-workflow.js','medewerkers.css','medewerkers-extra.css','medewerkers-workflow.css','booking-config.js'])await copyFile(join(site,file),join(out,file));
+for(const file of ['medewerkers.js','medewerkers-workflow.js','maintenance-guide-ui.js','maintenance-guide.css','medewerkers.css','medewerkers-extra.css','medewerkers-workflow.css','booking-config.js'])await copyFile(join(site,file),join(out,file));
 await copyFile(join(site,'images/badge.webp'),join(out,'images/badge.webp'));
 await copyFile(join(site,'vendor/html5-qrcode.min.js'),join(out,'vendor/html5-qrcode.min.js'));
 const js=(await readFile(join(out,'medewerkers.js'),'utf8'))+(await readFile(join(out,'medewerkers-workflow.js'),'utf8'));

@@ -40,3 +40,6 @@ worker/.team-preview/
 worker/.team-backups/
 keystore.properties
 .wrangler/
+
+# Root browser test dependencies.
+/node_modules/

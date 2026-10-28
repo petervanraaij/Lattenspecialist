@@ -51,3 +51,6 @@ De repository moet `CNAME` met exact `lattenspecialist.nl` behouden.
 `mobile-admin/` is uitsluitend **Lattenspecialist Beheer** voor de eigenaar. De beheerapp wordt niet aan klanten aangeboden. Klanten gebruiken hun persoonlijke onderhoudscode; de beheercode blijft alleen voor de eigenaar.
 
 De Android-beheerapp heeft twee beginschermwidgets: het bestaande statusoverzicht en een extra widget voor een snelle nieuwe aanvraag. De tweede widget biedt een grote knop voor **Ski** en **Snowboard**. Na een tik opent de beheerapp het compacte aanvraagformulier met het materiaal al ingevuld. Daar worden pakket, extra opties, ophalen of brengen, adres en voorkeursmoment vastgelegd; de aanvraag verschijnt daarna in hetzelfde beheeroverzicht als een online reservering.
+## Onderhoudsinstructies
+
+De bestaande materiaalworkflow begeleidt gekozen ski- en snowboardbehandelingen met uitvoering, benodigdheden, controlepunten en instructievideo’s. Zie [gebruik, pakketkeuzes, verificatie en grenzen](docs/ONDERHOUDSINSTRUCTIES.md).
