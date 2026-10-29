@@ -49,10 +49,9 @@ test('copper and bronze package links work and no package is silently preselecte
  assert.equal(d.querySelectorAll('#pakketten').length,1);
  assert.ok(d.querySelector('.hero > .trust-strip'));
  assert.ok(d.querySelector('.hero').nextElementSibling.matches('.home-route'));
- assert.equal(d.querySelector('.home-route').nextElementSibling.id,'onderhoudhulp');
- assert.equal(d.querySelector('#onderhoudhulp').nextElementSibling.id,'onderhoud-keuze');
+ assert.equal(d.querySelector('.home-route').nextElementSibling.id,'snowLive');
+ assert.equal(d.querySelector('#snowLive').nextElementSibling.id,'onderhoud-keuze');
  assert.equal(d.querySelector('#onderhoud-keuze').nextElementSibling.id,'pakketten');
- assert.equal(d.querySelector('#pakketten').nextElementSibling.id,'snowLive');
  assert.equal(d.querySelector('.maintenance-sidebar'),null);
  assert.equal(d.querySelectorAll('[data-extra]').length,0);
  assert.match(d.querySelector('.complex-repair-note').textContent,/Bij grotere of diepere schade beoordelen we eerst wat mogelijk is/);
