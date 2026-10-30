@@ -27,7 +27,7 @@ Nieuwe werkplannen krijgen deze volgorde. Alleen volledig ongestarte bestaande p
 
 ## Slijpset en premium afwerking
 
-De bron is de bestellijst V3, werkblad 20551: Racing File M-MINI 25527, Racing File S 25529, Diamond File World Cup medium 24483, 88-graden geleider 24478, klem 24681 en Base Edge File Guide 24686. De losse bestelling bevat tevens Cross File MINI 25521, Filebrush 25564 en Diamond File Coarse 24684. Setonderdelen worden niet nogmaals als losse voorraad ontvangen.
+De bron is de bestellijst V3, werkblad 20551: Racing File M-MINI 25527, Racing File S 25529, Diamond File World Cup medium 24483, 88-graden geleider 24478, klem 24681 en Base Edge File Guide 24686. De losse bestelling bevat tevens Cross File MINI 25521, Filebrush 25564 en Diamond File Coarse 24684. Setonderdelen worden niet nogmaals als losse voorraad ontvangen. De Speedborstelset premium bevat volgens tab 20687set Bronze 24674, Horsehair 24672, Nylon 24671, houder 20685, bescherming 20686 en koffer 24694.
 
 De uitleg onderscheidt basisbewerking en afgesproken premium afwerking met Racing File S en diamant medium. Geen nieuwe premium toeslag ingesteld; geen onbevestigde korrel 400/600 als aanwezig voorgesteld. Een andere hoek vereist een passende geleider.
 
