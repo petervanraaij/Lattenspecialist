@@ -4,6 +4,8 @@ import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 
 const html = await readFile(new URL('../../beheer.html', import.meta.url), 'utf8');
+const selection = await readFile(new URL('../../maintenance-selection.js', import.meta.url), 'utf8');
+const manual = await readFile(new URL('../../manual-maintenance.js', import.meta.url), 'utf8');
 const script = await readFile(new URL('../../beheer.js', import.meta.url), 'utf8');
 const turn = () => new Promise(resolve => setTimeout(resolve, 20));
 async function admin(t, serviceCode = 'LS-ABC234') {
@@ -17,7 +19,7 @@ async function admin(t, serviceCode = 'LS-ABC234') {
     requests.push({url, options});
     return {ok:true, status:200, json:async () => url.endsWith('/reservations') ? {records:[{reference:'LS-2609-ABC234', name:'Testklant', serviceCode, createdAt:'2026-09-24T10:00:00Z'}]} : {dates:[]}};
   };
-  w.eval(script); await turn();
+  w.eval(selection);w.eval(manual);w.eval(script); await turn();
   return {w, d:w.document, requests};
 }
 
