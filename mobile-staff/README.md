@@ -1,6 +1,6 @@
 # Lattenspecialist Medewerkers
 
-Android-app `nl.lattenspecialist.medewerkers`, versie 1.3.0 (5). Dezelfde schermen als `medewerkers.html`; bronbestanden staan in de repositoryroot. Bouw met `npm ci`, `npm run sync`, `npm run prepare:assets` en `android/gradlew bundleRelease` (Windows: `gradlew.bat`). Java 21 en Android SDK 36 zijn vereist. GitHub voert dezelfde bouwstappen uit.
+Android-app `nl.lattenspecialist.medewerkers`, versie 1.4.0 (6). Dezelfde schermen als `medewerkers.html`; bronbestanden staan in de repositoryroot. Bouw met `npm ci`, `npm run sync`, `npm run prepare:assets` en `android/gradlew bundleRelease` (Windows: `gradlew.bat`). Java 21 en Android SDK 36 zijn vereist. GitHub voert dezelfde bouwstappen uit.
 
 Voor de lokale demonstratie en beheer van medewerkers: [TEAM.md](../TEAM.md). Alle rechten worden door de Worker gecontroleerd; de app bevat geen gedeelde beheersleutel. DEV gebruikt pakket-ID `nl.lattenspecialist.medewerkers.dev` en kan naast de release staan.
 
@@ -8,7 +8,7 @@ De registratie staat in Google Play Console. Een AAB bouwen is geen winkelpublic
 
 ## Gewone Android-app bijwerken
 
-De reguliere app heeft ID `nl.lattenspecialist.medewerkers`. De update 1.3.0 (5) gebruikt dezelfde ondertekening als de bestaande reguliere versie 1.1.1 (3). De download staat op `https://lattenspecialist.nl/downloads/De-Lattenspecialist-Medewerkersapp.apk`. Installeren hoort een update van de bestaande app te zijn; verwijder de oude app niet vooraf. De DEV-app is hiervoor niet nodig.
+De reguliere app heeft ID `nl.lattenspecialist.medewerkers`. De update 1.4.0 (6) gebruikt dezelfde ondertekening als de bestaande reguliere versie 1.1.1 (3). De download staat op `https://lattenspecialist.nl/downloads/De-Lattenspecialist-Medewerkersapp.apk`. Installeren hoort een update van de bestaande app te zijn; verwijder de oude app niet vooraf. De DEV-app is hiervoor niet nodig.
 
 Bouw `assembleRelease` na de normale web-assetsynchronisatie. Onderteken lokaal met `scripts/sign-release.ps1`, met Android SDK 36 en Java 21. De oorspronkelijke staff-upload-sleutel en het DPAPI-beveiligde wachtwoord blijven buiten de repository. Het script weigert een DEV-app en controleert ondertekening en uitlijning. Er worden geen wachtwoorden of sleutels in de app, downloadmetadata of GitHub opgeslagen.
 

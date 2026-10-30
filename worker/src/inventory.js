@@ -1,3 +1,4 @@
+import {materialPhotos} from './material-photos.js';
 import {guideCatalog,saveGuide,resolvedGuide,guideResolverFor,ensureGuideStore} from './guide-store.js';
 import {ensureToolStock,activateTools,replaceToolFromStock} from './tool-stock.js';
 import {maintenanceGuide,guideConfirmation} from './maintenance-guides.js';
@@ -224,6 +225,7 @@ export async function handleInventory(request,env,{owner,json,origin}){
    const receive=path.match(/^\/api\/admin\/inventory\/orders\/([a-z0-9-]+)\/receive$/);if(receive&&request.method==='POST'){await receiveOrder(db,receive[1],'owner');return json(await inventoryOverview(db),200,origin);}
    const replace=path.match(/^\/api\/admin\/inventory\/tools\/([a-f0-9-]{36})\/replace$/);if(replace&&request.method==='POST'){const replacementId=await replaceTool(db,replace[1],await readBody(request),'owner');return json({replacementId,...await inventoryOverview(db)},201,origin);}throw new InventoryError('Niet gevonden.',404);
   }
+  const photos=path.match(/^\/api\/(team|admin)\/operations\/materials\/([a-f0-9-]{36})\/photos(?:\/([a-f0-9-]{36}))?$/);if(photos){if(photos[1]==='admin'&&!owner)throw new InventoryError('Geen toegang tot beheer.',401);const photoMember=photos[1]==='team'?await memberIdentity(request,db):null;return await materialPhotos(request,env,{db,materialId:photos[2],photoId:photos[3],member:photoMember,owner:photos[1]==='admin',json,origin,ErrorType:InventoryError});}
   const ownerWorkflow=path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/workflow$/);
   if(ownerWorkflow&&request.method==='GET'){if(!owner)throw new InventoryError('Geen toegang tot beheer.',401);await ensureToolStock(db);const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(ownerWorkflow[1]).first();if(!material)throw new InventoryError('Materiaal niet gevonden.',404);return json({material:materialView(material),workflow:await getWorkflow(db,material)},200,origin);}
   const member=await memberIdentity(request,db);if(path==='/api/team/guides'&&request.method==='GET')return json(await guideCatalog(db),200,origin);
