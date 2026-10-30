@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v109-premium';
+const CACHE_NAME = 'lattenspecialist-v110-material-photos';
 const APP_SHELL = [
   '/',
   '/index.html',

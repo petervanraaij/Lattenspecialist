@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import worker from './src/index.js';import {maintenanceFixture} from './maintenance-fixture.mjs';
+const f=await maintenanceFixture(),base='http://127.0.0.1:8898',kv=f.env.LATTENSPECIALIST_RESERVATIONS_KV,binary=new Map(),originalPut=kv.put.bind(kv),originalGet=kv.get.bind(kv);kv.put=async(k,v)=>v instanceof Uint8Array?binary.set(k,v.slice()):originalPut(k,v);kv.get=async(k,t)=>t==='arrayBuffer'?binary.get(k)?.buffer||null:originalGet(k,t);kv.delete=async k=>{binary.delete(k);kv.values.delete(k);};
+const jpg=readFileSync(new URL('./fixtures/material-photo.jpg',import.meta.url)),meta=Buffer.from('GPS-PRIVATE-TEST'),withExif=Buffer.concat([jpg.subarray(0,2),Buffer.from([255,225,0,meta.length+2]),meta,jpg.subarray(2)]);
+try{const material=f.materials[0],path='/api/team/operations/materials/'+material.id+'/photos',upload={stage:'intake',note:'Fictieve kras',requestId:crypto.randomUUID(),image:withExif.toString('base64')};
+ assert.equal((await f.call(path,'POST',upload,'')).status,401);
+ assert.equal((await f.call(path,'POST',null,f.staff)).status,400);
+ let result=await f.call(path,'POST',upload,f.staff);assert.equal(result.status,201,JSON.stringify(result));const id=result.data.id;
+ assert.equal((await f.call(path,'POST',upload,f.staff)).data.id,id);assert.equal(f.sql.prepare('SELECT COUNT(*) n FROM material_photos').get().n,1);assert.equal(binary.size,1);
+ assert.equal((await f.call(path,'POST',{...upload,note:'ander'},f.staff)).status,409);
+ const list=await f.call(path,'GET',undefined,f.staff);assert.equal(list.data.photos[0].stage,'intake');assert.equal(list.data.photos[0].note,'Fictieve kras');assert.ok(list.data.photos[0].addedBy);
+ const image=await worker.fetch(new Request(base+path+'/'+id,{headers:{Origin:base,Authorization:'Bearer '+f.staff}}),f.env);assert.equal(image.status,200);assert.equal(image.headers.get('Content-Type'),'image/jpeg');assert.match(image.headers.get('Cache-Control'),/no-store/);assert.ok(!Buffer.from(await image.arrayBuffer()).includes(meta));
+ const other=await f.call('/api/admin/team/members','POST',{name:'Andere fictieve medewerker',login:'photo.other'});const auth=await f.call('/api/team/login','POST',{login:'photo.other',accessKey:other.data.accessKey},'');assert.equal((await f.call(path,'GET',undefined,auth.data.token)).status,403);assert.equal((await f.call(path,'POST',{...upload,requestId:crypto.randomUUID()},auth.data.token)).status,403);
+ assert.equal((await f.call(path,'POST',{...upload,requestId:crypto.randomUUID(),image:btoa('<svg onload=alert(1)>')},f.staff)).status,400);
+ assert.equal((await f.call(path,'POST',{...upload,requestId:crypto.randomUUID(),stage:'public'},f.staff)).status,400);
+ const delivery=await f.call(path,'POST',{...upload,requestId:crypto.randomUUID(),stage:'delivery'},f.staff);assert.equal(delivery.status,201);assert.equal((await f.call(path,'GET',undefined,f.staff)).data.photos.length,2);
+ assert.equal((await f.call('/api/admin/operations/materials/'+material.id+'/photos','GET')).status,200);
+ const wrong=await worker.fetch(new Request(base+'/api/team/operations/materials/'+f.materials[1].id+'/photos/'+id,{headers:{Origin:base,Authorization:'Bearer '+f.staff}}),f.env);assert.equal(wrong.status,404);
+ const oldPut=kv.put;kv.put=async()=>{throw Error('offline');};assert.equal((await f.call(path,'POST',{...upload,requestId:crypto.randomUUID()},f.staff)).status,503);kv.put=oldPut;assert.equal(f.sql.prepare('SELECT COUNT(*) n FROM material_photos').get().n,2);
+ assert.equal(f.sql.prepare("SELECT COUNT(*) n FROM material_events WHERE event_type='photo_added'").get().n,2);
+ console.log('PASS private material photos, assignment and auth, intake/delivery, binary retrieval, stripped metadata, invalid image, idempotency, no cross-material access, owner review, storage failure and audit');
+}finally{f.close();}
