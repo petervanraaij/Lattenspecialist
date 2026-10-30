@@ -6,7 +6,7 @@
   const completed = step => ['done','completed','complete','finished','afgerond'].includes(statusKey(step.status));
   const active = step => ['active','started','in_progress','running','bezig'].includes(statusKey(step.status));
   const paused = step => ['paused','pause','gepauzeerd'].includes(statusKey(step.status));
-  const waxStep = step => Boolean(step.needsStartWeight) || ['wax','practice_wax'].includes(statusKey(step.code));
+  const waxStep = step => Boolean(step.needsStartWeight) || ['base_wax','wax','practice_wax'].includes(statusKey(step.code));
   const cleaningStep = step => /clean|reinig/.test(`${step.code || ''} ${step.procedure || ''} ${step.title || ''}`.toLowerCase());
   const repairStep = step => /repair|repar/.test(`${step.code || ''} ${step.procedure || ''} ${step.title || ''}`.toLowerCase());
   const formatDuration = seconds => {
@@ -127,7 +127,7 @@
 
   function startForm(step) {
     const resume = paused(step);
-    const weight = waxStep(step) && !step.startWeight ? `<label>Gewicht waxblok vóór start (gram)<input name="startWeight" type="number" inputmode="decimal" min="0.1" max="5000" step="0.1" required placeholder="bijv. 182,4"></label><p class="workflow-help">Weeg het gekozen waxblok zonder losse verpakking. Na afloop weeg je hetzelfde blok opnieuw.</p>` : `<p class="workflow-help">${resume ? 'De eerder gemeten tijd en het begingewicht blijven bewaard.' : 'De timer start zodra je op de knop drukt. Rond deze stap af voordat je doorgaat.'}</p>`;
+    const weight = waxStep(step) && !step.startWeight ? `<label>Gewicht waxblok vóór start (gram)<input name="startWeight" type="number" inputmode="decimal" min="0.1" max="5000" step="0.1" required placeholder="bijv. 182,4"></label><p class="workflow-help">${step.cleaningWaxSku?"Reiniging: gebruik altijd Alpha Mix Yellow. Dit verbruik staat los van de volgende glijwax.":"Weeg het gekozen waxblok zonder losse verpakking."} Na afloop weeg je hetzelfde blok opnieuw.</p>` : `<p class="workflow-help">${resume ? 'De eerder gemeten tijd en het begingewicht blijven bewaard.' : 'De timer start zodra je op de knop drukt. Rond deze stap af voordat je doorgaat.'}</p>`;
     return `<div class="workflow-actions"><form data-workflow-action="start" data-guide-version-start="${escape(step.guide?.version||'')}" data-step-id="${escape(step.id)}">${weight}<button type="submit" hidden>Start stap</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
   }
 

@@ -1,3 +1,4 @@
+import {maintenancePriceQuote} from './maintenance-pricing.js';
 import {centralHrm,centralHrmEnabled,verifyHrmExport} from './hrm-bridge.js';
 import {legacyHrmMembers} from './operations.js';
 import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
@@ -152,6 +153,7 @@ const readAndValidateLattenspecialist = (raw, trustedAdmin = false) => {
   if (!trustedAdmin && data.quickReservation && !data.termsConsent) throw new ValidationError('Ga akkoord met de servicevoorwaarden voordat je reserveert.');
   if (!trustedAdmin && data.quickReservation && !data.whatsappConsent) throw new ValidationError('Geef toestemming om via WhatsApp contact op te nemen over deze aanvraag.');
   if (!trustedAdmin && !data.turnstileToken) throw new ValidationError('Voltooi de beveiligingscontrole.');
+  if(data.service==='Onderhoud'&&data.maintenanceSelection)data.priceQuote=maintenancePriceQuote(data.maintenanceSelection,data);
   return {data, spam: false};
 };
 

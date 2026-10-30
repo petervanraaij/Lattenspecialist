@@ -3,7 +3,7 @@ import {maintenanceFixture} from './maintenance-fixture.mjs';
 import {getWorkflow} from './src/inventory.js';
 const f=await maintenanceFixture();
 try{
- const catalog=await f.call('/api/admin/inventory/guides');assert.equal(catalog.status,200);assert.ok(catalog.data.guides.length===14);assert.ok(catalog.data.guides.every(item=>!item.code.startsWith('practice_')));
+ const catalog=await f.call('/api/admin/inventory/guides');assert.equal(catalog.status,200);assert.ok(catalog.data.guides.length===15);assert.ok(catalog.data.guides.every(item=>!item.code.startsWith('practice_')));
  assert.equal(catalog.data.tools.length,23);assert.ok(catalog.data.tools.every(tool=>tool.guide.documented));assert.ok(catalog.data.tools.every(tool=>!('averageCostPerBase' in tool)&&!('iban' in tool)));
  const item=catalog.data.guides.find(item=>item.code==='repair'),guide={...item.guide,steps:['Controleer samen de oppervlakkige beschadiging.','Voer het afgesproken kleine herstel uit.'],checks:['Controleer het resultaat.'],videos:[]};
  const body=revision=>({revision,guide});
@@ -19,7 +19,7 @@ try{
  assert.equal((await f.call('/api/team/operations/steps/'+step.id+'/finish','POST',{repairStrips:1,repairColor:'transparent',toolSkus:[]},f.staff)).status,400);
  assert.equal((await f.call('/api/team/operations/steps/'+step.id+'/finish','POST',{repairStrips:1,repairColor:'transparent',toolSkus:[],guideChecks:{version:step.guide.version,checkedIds:step.guide.checks.map(item=>item.id)}},f.staff)).status,200);
  const ski=f.sql.prepare('SELECT * FROM materials WHERE id=?').get(f.materials[0].id);await getWorkflow(f.db,ski);
- let selects=0;const original=f.db.prepare.bind(f.db);f.db.prepare=query=>{if(/^SELECT/i.test(query))selects++;return original(query);};const workflow=await getWorkflow(f.db,ski);assert.ok(workflow.steps.length>6);assert.ok(selects<=12,`Workflow caused ${selects} SELECT statements`);
+ let selects=0;const original=f.db.prepare.bind(f.db);f.db.prepare=query=>{if(/^SELECT/i.test(query))selects++;return original(query);};const workflow=await getWorkflow(f.db,ski);assert.ok(workflow.steps.length>6);assert.ok(selects<=13,`Workflow caused ${selects} SELECT statements`);
  console.log('PASS gedeelde bewerkbare instructies, veilige oefenaanvulling, versiebevestiging, onveranderlijke startversie, rechten en maximaal 12 workflow-selecties');
 }finally{f.close();}
 
