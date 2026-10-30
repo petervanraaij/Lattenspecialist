@@ -312,3 +312,5 @@ test('metrics contain only event name, do not run on preview, and respect browse
   if(expected) {assert.deepEqual(JSON.parse(calls[0].options.body),{event:'form_opened'});assert.equal(calls[0].options.referrerPolicy,'no-referrer');assert.equal(calls[0].options.credentials,'omit');}
  }
 });
+
+ test('premium filing is explicit, costs 7.50 per material and survives booking',async t=>{const {w,d,model}=homepage(t);assert.equal(d.querySelector('[data-package=brons] [name=homepagePremium]'),null);const premium=d.querySelector('[data-package=slijpen] [name=homepagePremium]');assert.equal(premium.checked,false);premium.click();const selection=chosen(d);assert.equal(selection.p.slijpen.f,true);assert.equal(model.estimate(selection).total,32.45);const env=await setup(t,{url:'https://lattenspecialist.nl/afspraak.html?keuze='+encodeURIComponent(JSON.stringify(selection))});complete(env.w,env.f);submit(env.w,env.f);await turn();await turn();assert.equal(env.posts.length,1);assert.equal(JSON.parse(env.posts[0].maintenanceSelection).p.slijpen.f,true);assert.match(env.posts[0].notes,/premium/);});

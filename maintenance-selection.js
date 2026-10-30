@@ -23,6 +23,8 @@
     for (const [id, item] of Object.entries(value.p)) {
       if (!own(packages,id) || !item || !quantity(item.s) || !quantity(item.b) || !own(waxes,item.w) || typeof item.u !== 'boolean') return null;
       if ((id === 'slijpen' && item.w !== 'none') || (id !== 'slijpen' && item.w === 'none')) return null;
+      if (item.f !== undefined && typeof item.f !== 'boolean') return null;
+      if (item.f && id === 'brons') return null;
       const bindings = item.d === undefined ? 0 : item.d;
       if (!quantity(bindings) || bindings > item.b) return null;
       const repairs = item.r === undefined ? 0 : item.r;
@@ -31,6 +33,7 @@
       if (!quantity(cleaning) || cleaning > item.s + item.b || (cleaning && id === 'slijpen')) return null;
       if (item.s + item.b) {
         result.p[id] = {s:item.s,b:item.b,d:bindings,w:item.w,u:item.u};
+        if (item.f) result.p[id].f = true;
         if (repairs) result.p[id].r = repairs;
         if (cleaning) result.p[id].c = cleaning;
       }
@@ -60,6 +63,7 @@
       total += item.s * packagePrice.s + item.b * packagePrice.b;
       if (['alpha','ultra'].includes(item.w)) total += (item.s + item.b) * 2.5;
       if (item.w === 'performance') total += item.s * performanceSkiPrice + item.b * performanceSnowboardPrice;
+      if (item.f) total += (item.s + item.b) * 7.5;
       if (item.u) total += urgentPrice;
       total += item.d * 7.5;
       total += (item.c || 0) * 5;
@@ -78,6 +82,7 @@
       if (!item) continue;
       const materials = [item.s ? `${item.s}× ski's (paar)` : '',item.b ? `${item.b}× snowboard` : ''].filter(Boolean).join(' + ');
       lines.push(`${name}: ${materials}${item.w === 'none' ? '' : ` · ${waxes[item.w]}`}${item.u ? ' · Spoed + € 10,00 · zelf brengen en ophalen · minimaal 2 werkdagen vooraf' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}${item.r ? ` · ${item.r}× kleine belagreparaties in totaal (vanaf € 7,50 per reparatie; definitieve prijs na beoordeling)` : ''}`);
+      if (item.f) lines.push(`${name}: premium slijpen (fijne vijl + diamant medium), ${item.s + item.b}x EUR 7,50 = ${formatPrice((item.s + item.b)*7.5)}`);
       if (item.c) lines.push(`${name}: extra waxreiniging ${item.c}× € 5,00 = ${formatPrice(item.c * 5)}`);
     }
     for (const [id,name] of Object.entries(extras)) {
@@ -95,6 +100,7 @@
       if (!item) continue;
       const materials = [item.s ? `${item.s}x ski` : '',item.b ? `${item.b}x snowboard` : ''].filter(Boolean).join('+');
       lines.push(`${name}: ${materials}${waxNotes[item.w] ? `; ${waxNotes[item.w]}` : ''}${item.u ? '; spoed+€10' : ''}${item.d ? `; bindingen ${item.d}x à€7,50` : ''}${item.r ? `; kleine rep. ${item.r}x v.a.€7,50/st.` : ''}`);
+      if (item.f) lines.push(`${name}: premium ${item.s + item.b}x EUR7,50`);
       if (item.c) lines.push(`${name}: extra waxreiniging ${item.c}x à€5`);
     }
     for (const [id,name] of Object.entries(extraNotes)) {

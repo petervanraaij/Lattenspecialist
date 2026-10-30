@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "node test.mjs && node stuiterbaas-whatsapp.test.mjs && node metrics.test.mjs && node team.test.mjs && node operations.test.mjs && node inventory.test.mjs && node accounting.test.mjs && node maintenance-guides.test.mjs && node practice-repair.test.mjs && node tool-stock.test.mjs && node hrm-bridge.test.mjs && node guide-store.test.mjs && node material-explanations.test.mjs && node yellow-cleaning.test.mjs && node wax-pricing.test.mjs"
+    "test": "node test.mjs && node stuiterbaas-whatsapp.test.mjs && node metrics.test.mjs && node team.test.mjs && node operations.test.mjs && node inventory.test.mjs && node accounting.test.mjs && node maintenance-guides.test.mjs && node practice-repair.test.mjs && node tool-stock.test.mjs && node hrm-bridge.test.mjs && node guide-store.test.mjs && node material-explanations.test.mjs && node yellow-cleaning.test.mjs && node wax-pricing.test.mjs && node premium-filing.test.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
