@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v102-restore-public-layout';
+const CACHE_NAME = 'lattenspecialist-v103-repair-bulk-tools';
 const APP_SHELL = [
   '/',
   '/index.html',
