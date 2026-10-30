@@ -35,7 +35,7 @@
     const waxMatch = element('div','snow-resort-wax-match');
     waxMatch.append(element('span','snow-resort-wax-label','Waxsuggestie bij deze temperatuur'));
     const waxOptions = element('div','snow-resort-wax-options');
-    waxOptions.append(element('strong','snow-resort-wax snow-resort-wax--included',`${includedWax} · inbegrepen`));
+    waxOptions.append(element('strong','snow-resort-wax snow-resort-wax--included',`${includedWax} · ${includedWax === 'BetaMix Red' ? 'inbegrepen' : 'extra eindwax + € 2,50'}`));
     if (estimatedSnow >= -12) {
       waxOptions.append(element('strong','snow-resort-wax snow-resort-wax--performance','Performance Purple · ski + € 5,00 · snowboard + € 7,50'));
     }

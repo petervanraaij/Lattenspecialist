@@ -1,5 +1,7 @@
 # De Lattenspecialist website v11
 
+**Materiaaluitleg:** open in de werkplaats **Werkinstructies → Materiaal & gereedschap**. Alle 23 aangeschafte artikelen hebben een definitie, toepassing en werkwijze; zoeken, borstel-/vijlverschillen, waxinstellingen en printetiketten staan erbij. Reiniging vóór waxen gebruikt altijd Alpha Mix Yellow met eigen begin-/eindgewicht en voorraadverbruik, los van de glijwax. Zie [Materiaaluitleg](docs/MATERIAL_EXPLANATIONS.md).
+
 GitHub Pages-website voor De Lattenspecialist, inclusief de installeerbare webapp **Mijn Lattenspecialist**.
 
 ## Native beheerapp

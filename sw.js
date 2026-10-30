@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v106-tools-hrm';
+const CACHE_NAME = 'lattenspecialist-v108-wax-final';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -7,13 +7,13 @@ const APP_SHELL = [
   '/webshop.html',
   '/homepage.css?v=20261027-polish-1',
   '/homepage.js?v=2',
-  '/maintenance-selection.js?v=10',
-  '/manual-maintenance.js?v=20261030-1',
-  '/maintenance-guide-ui.js?v=20261030-tools-1',
-  '/maintenance-guide.css?v=20261030-guides-2',
-  '/work-instructions.js?v=20261030-tools-1',
-  '/package-choice.js?v=15',
-  '/snow-temperature.js?v=10',
+  '/maintenance-selection.js?v=20261030-wax-final-1',
+  '/manual-maintenance.js?v=20261030-wax-final-1',
+  '/maintenance-guide-ui.js?v=20261030-wax-final-1',
+  '/maintenance-guide.css?v=20261030-materials-3',
+  '/work-instructions.js?v=20261030-wax-final-1',
+  '/package-choice.js?v=20261030-wax-final-1',
+  '/snow-temperature.js?v=20261030-wax-final-1',
   '/website-metrics.js?v=1',
   '/app.html',
   '/beheer.html',

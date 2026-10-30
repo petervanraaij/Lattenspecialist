@@ -96,6 +96,7 @@
     if (!price || !Number.isInteger(count) || count < 1 || count > 20) return null;
     let total = price * count;
     if (!sharpeningOnly() && getValue('performanceWax') === 'Performance Wax (ski + € 5,00 · snowboard + € 7,50)') total += count * (material === 'Snowboard' ? 7.5 : 5);
+    if (!sharpeningOnly() && /AlphaMix Yellow|UltraMix Blue/.test(getValue('performanceWax'))) total += count * 2.5;
     if (needsRush()) total += 10;
     return total;
   };
