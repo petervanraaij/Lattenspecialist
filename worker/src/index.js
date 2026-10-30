@@ -1,4 +1,4 @@
-import {verifyHrmExport} from './hrm-bridge.js';
+import {centralHrm,centralHrmEnabled,verifyHrmExport} from './hrm-bridge.js';
 import {legacyHrmMembers} from './operations.js';
 import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
 import {handleMetrics} from './metrics.js';
@@ -447,6 +447,7 @@ const saveLattenspecialistReservation = async (data, reference, env) => {
 };
 
 export default {
+ async scheduled(_event,env,ctx){if(!centralHrmEnabled(env)||!env.LATTENSPECIALIST_TEAM_DB)return;ctx.waitUntil((async()=>{const source=await legacyHrmMembers(env,env.LATTENSPECIALIST_TEAM_DB);await centralHrm(env,{operation:'bootstrap',members:source.members.map(member=>{const {items,seconds,month_items,month_seconds}=member.totals;return{...member,totals:{items,seconds,month_items,month_seconds}};})});})().catch(()=>console.error('Centrale HRM-synchronisatie kon niet worden afgerond; bestaande gegevens zijn behouden.')));},
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
     if(new URL(request.url).pathname==='/api/internal/hrm-export'){try{if(!env.LATTENSPECIALIST_TEAM_DB||!await verifyHrmExport(request,env,env.LATTENSPECIALIST_TEAM_DB))return new Response(null,{status:401});return Response.json(await legacyHrmMembers(env,env.LATTENSPECIALIST_TEAM_DB),{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}catch{return Response.json({error:'HRM export niet beschikbaar.'},{status:503,headers:{'Cache-Control':'no-store'}});}}

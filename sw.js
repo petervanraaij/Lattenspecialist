@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v105-shared-guides';
+const CACHE_NAME = 'lattenspecialist-v106-tools-hrm';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -9,9 +9,9 @@ const APP_SHELL = [
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=10',
   '/manual-maintenance.js?v=20261030-1',
-  '/maintenance-guide-ui.js?v=1',
+  '/maintenance-guide-ui.js?v=20261030-tools-1',
   '/maintenance-guide.css?v=20261030-guides-2',
-  '/work-instructions.js?v=20261030-1',
+  '/work-instructions.js?v=20261030-tools-1',
   '/package-choice.js?v=15',
   '/snow-temperature.js?v=10',
   '/website-metrics.js?v=1',
