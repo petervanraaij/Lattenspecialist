@@ -128,7 +128,7 @@
   function startForm(step) {
     const resume = paused(step);
     const weight = waxStep(step) && !step.startWeight ? `<label>Gewicht waxblok vóór start (gram)<input name="startWeight" type="number" inputmode="decimal" min="0.1" max="5000" step="0.1" required placeholder="bijv. 182,4"></label><p class="workflow-help">${step.cleaningWaxSku?"Reiniging: gebruik altijd Alpha Mix Yellow. Dit verbruik staat los van de volgende glijwax.":"Weeg het gekozen waxblok zonder losse verpakking."} Na afloop weeg je hetzelfde blok opnieuw.</p>` : `<p class="workflow-help">${resume ? 'De eerder gemeten tijd en het begingewicht blijven bewaard.' : 'De timer start zodra je op de knop drukt. Rond deze stap af voordat je doorgaat.'}</p>`;
-    return `<div class="workflow-actions"><form data-workflow-action="start" data-guide-version-start="${escape(step.guide?.version||'')}" data-step-id="${escape(step.id)}">${weight}<button type="submit" hidden>Start stap</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
+    return `<div class="workflow-actions"><form data-workflow-action="start" data-guide-version-start="${escape(step.guide?.version||'')}" data-step-id="${escape(step.id)}">${weight}<button type="submit" class="primary">Start deze werkstap</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
   }
 
   document.addEventListener('change',event=>{const input=event.target;if(input.name==='toolSkus'){const select=input.closest('fieldset')?.querySelector(`[name="asset_${CSS.escape(input.value)}"]`);if(select)select.disabled=!input.checked;}});
@@ -148,7 +148,7 @@
   }
 
   function finishForm(step) {
-    return finishFormFields(step).replace(/<button class="primary" type="submit">[^<]*<\/button>/,'<button type="submit" hidden>Klaar – afvinken</button>').replace(/(<form\b[^>]*>)/,match=>match+(window.LSMaintenanceGuide?.checks(step)||''));
+    return finishFormFields(step).replace(/(<form\b[^>]*>)/,match=>match+(window.LSMaintenanceGuide?.checks(step)||''));
   }
 
   function stepCard(step, actionable) {
@@ -175,7 +175,7 @@
     }
     const summary = workflow.summary || {}, totalCost = number(summary.totalCost ?? summary.total_cost), totalSeconds = number(summary.totalSeconds ?? summary.total_seconds);
     host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3><p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
-    if(!workflow.isTraining&&window.LSMaterialPhotos){const details=document.createElement('details');details.className='material-photo-disclosure';details.innerHTML='<summary>Foto’s bij binnenkomst en oplevering</summary><div data-material-photos></div>';host.querySelector('.workflow-head').after(details);details.addEventListener('toggle',()=>{const target=details.querySelector('[data-material-photos]');if(details.open&&!target.children.length)window.LSMaterialPhotos.mount(target,materialId);});}
+    if(!workflow.isTraining&&window.LSMaterialPhotos){const details=document.createElement('details');details.className='material-photo-disclosure';details.innerHTML='<summary>Foto’s bij binnenkomst en oplevering</summary><div data-material-photos></div>';const photoActions=document.createElement('div');photoActions.className='workflow-photo-shortcuts';photoActions.innerHTML='<button type="button" data-photo-stage="intake">📷 Binnenkomstfoto maken</button><button type="button" data-photo-stage="delivery">📷 Opleverfoto maken</button>';host.querySelector('.workflow-head').after(photoActions,details);photoActions.addEventListener('click',event=>{const button=event.target.closest('[data-photo-stage]');if(!button)return;details.open=true;const target=details.querySelector('[data-material-photos]');if(!target.children.length)window.LSMaterialPhotos.mount(target,materialId);const select=target.querySelector('[name="stage"]');if(select)select.value=button.dataset.photoStage;target.querySelector('[data-photo-camera]')?.click();});details.addEventListener('toggle',()=>{const target=details.querySelector('[data-material-photos]');if(details.open&&!target.children.length)window.LSMaterialPhotos.mount(target,materialId);});}
     const currentGuide=host.querySelector('.workflow-step.is-next .maintenance-guide details,.workflow-step.is-active .maintenance-guide details');if(currentGuide)currentGuide.open=true;
     updateTimers();
   }
