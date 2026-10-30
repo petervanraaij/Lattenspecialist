@@ -3,7 +3,7 @@ import {maintenanceFixture} from './maintenance-fixture.mjs';
 import {getWorkflow} from './src/inventory.js';
 const f=await maintenanceFixture();
 try{
- const catalog=await f.call('/api/admin/inventory/guides');assert.equal(catalog.status,200);assert.ok(catalog.data.guides.length===15);assert.ok(catalog.data.guides.every(item=>!item.code.startsWith('practice_')));
+ const catalog=await f.call('/api/admin/inventory/guides');assert.equal(catalog.status,200);assert.ok(catalog.data.guides.length===17);assert.ok(catalog.data.guides.every(item=>!item.code.startsWith('practice_')));
  assert.equal(catalog.data.tools.length,23);assert.ok(catalog.data.tools.every(tool=>tool.guide.documented));assert.ok(catalog.data.tools.every(tool=>!('averageCostPerBase' in tool)&&!('iban' in tool)));
  const item=catalog.data.guides.find(item=>item.code==='repair'),guide={...item.guide,steps:['Controleer samen de oppervlakkige beschadiging.','Voer het afgesproken kleine herstel uit.'],checks:['Controleer het resultaat.'],videos:[]};
  const body=revision=>({revision,guide});

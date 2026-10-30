@@ -254,6 +254,7 @@
   async function createPractice(form) {
     const status = document.getElementById('practiceStatus'), result = document.getElementById('practiceResult'), button = form.querySelector('button[type=submit]');
     const values = Object.fromEntries(new FormData(form));
+    values.premiumFiling = values.activity === 'filing' && form.elements.premiumFiling?.checked === true;
     if (values.activity !== 'wax') delete values.waxSku;
     button.disabled = true; status.classList.remove('is-error'); status.textContent = 'Oefenopdracht aanmaken…'; result.replaceChildren();
     try {
@@ -286,7 +287,8 @@
   const practiceForm = document.getElementById('practiceForm');
   if (practiceForm) {
     const activity = practiceForm.elements.activity, wax = practiceForm.querySelector('[data-practice-wax]');
-    const update = () => { const visible = activity.value === 'wax'; wax.hidden = !visible; practiceForm.elements.waxSku.disabled = !visible; };
+    const update = () => { const visible = activity.value === 'wax'; wax.hidden = !visible; const premium = practiceForm.querySelector('[data-practice-premium]'); if(premium) premium.hidden = activity.value !== 'filing'; practiceForm.elements.waxSku.disabled = !visible; };
+    document.querySelectorAll('[data-practice-activity]').forEach(button => button.addEventListener('click', () => { activity.value = button.dataset.practiceActivity; update(); }));
     activity.addEventListener('change', update); update();
     practiceForm.addEventListener('submit', event => { event.preventDefault(); createPractice(practiceForm); });
   }

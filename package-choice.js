@@ -3,6 +3,9 @@
   const section = document.querySelector('#pakketten');
   if (!model || !section) return;
   const cards = [...section.querySelectorAll('[data-package]')];
+  cards.filter(card => card.dataset.package !== 'brons').forEach(card => {
+    card.querySelector('.package-wax').insertAdjacentHTML('afterend','<label class="package-urgent"><input type="checkbox" name="homepagePremium"><span>Premium slijpen + &euro; 7,50 per paar ski’s of snowboard<small>Extra afwerking met fijne Racing File S en World Cup-diamant medium; dezelfde afgesproken hoek. Geldt voor alle materialen binnen dit pakket.</small></span></label>');
+  });
   const extras = [...section.querySelectorAll('[data-extra]')];
   const message = document.querySelector('#packageSelection');
   const list = document.querySelector('#selectionItems');
@@ -23,6 +26,8 @@
     const value = model.empty();
     cards.forEach(card => {
       const item = {s:amount(card,'homepageSki'),b:amount(card,'homepageSnowboard'),d:amount(card,'homepageBindings'),w:card.querySelector('[name="homepageWax"]').value,u:card.querySelector('[name="homepageUrgent"]').checked};
+      const premium = card.querySelector('[name=homepagePremium]');
+      if (premium?.checked) item.f = true;
       const repairs = card.querySelector('[name="homepageRepairs"]');
       if (repairs) item.r = Number(repairs.value);
       const cleaning = card.querySelector('[name="homepageCleaning"]');
@@ -40,6 +45,8 @@
       card.querySelector('[name="homepageBindings"]').value = item.d || 0;
       card.querySelector('[name="homepageWax"]').value = item.w;
       card.querySelector('[name="homepageUrgent"]').checked = item.u;
+      const premium = card.querySelector('[name=homepagePremium]');
+      if (premium) premium.checked = Boolean(item.f);
       const repairs = card.querySelector('[name="homepageRepairs"]');
       if (repairs) repairs.value = item.r || 0;
       const cleaning = card.querySelector('[name="homepageCleaning"]');
@@ -155,7 +162,7 @@
   section.addEventListener('input',event => { if (event.target.type === 'number') update(); });
   section.addEventListener('change',event => {
     const card = event.target.closest('[data-package]');
-    if (card && ['homepageWax','homepageUrgent'].includes(event.target.name) && !amount(card,'homepageSki') && !amount(card,'homepageSnowboard')) {
+    if (card && ['homepageWax','homepageUrgent','homepagePremium'].includes(event.target.name) && !amount(card,'homepageSki') && !amount(card,'homepageSnowboard')) {
       if (event.target.name === 'homepageWax' || event.target.checked) card.querySelector('[name="homepageSki"]').value = 1;
     }
     update();
