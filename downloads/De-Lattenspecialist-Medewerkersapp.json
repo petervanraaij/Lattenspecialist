@@ -1,0 +1,18 @@
+{
+  "version": "1.3.0",
+  "versionCode": 5,
+  "package": "nl.lattenspecialist.medewerkers",
+  "distribution": "Gewone Android-app; update voor versie 1.1.1 zonder verwijderen.",
+  "minimumAndroid": 7,
+  "sha256": "a2edbd5fbc087f9ef184ef6fbb0791f44e189983ffe037fb1babec47cb5f7efa",
+  "bytes": 4055002,
+  "signingCertificateSha256": "c172da4620f071b693ae1e673c14ed733b2c7601627c57cc7ef0fa0f4bf3e81c",
+  "previousVersion": "1.1.1",
+  "features": [
+    "Oefenen",
+    "Kleine reparaties",
+    "Premium slijpen",
+    "Gereedschapshandleidingen"
+  ],
+  "debuggable": false
+}
