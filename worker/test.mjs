@@ -15,7 +15,7 @@ const baseEnv = {
   LATTENSPECIALIST_ADMIN_TOKEN: 'admin-secret-test',
   RESEND_API_KEY: 'resend-secret'
 };
-const lattenPayload = {service: 'Onderhoud', material: 'Ski', amount: '1', package: 'Goud', logistics: 'Gratis ophalen & terugbrengen (servicegebied)', pickupDate: '2099-11-28', urgent: 'Nee', destination: 'Sölden', skidate: '2099-12-01', conditions: 'Koud', name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', postcode: '6659 BB', houseNumber: '13', address: 'Hollenhof 13, 6659 BB Wamel', addressCity: 'Wamel', notes: 'Lichte kras', privacyConsent: true, whatsappConsent: true, website: '', turnstileToken: 'verified-token'};
+const lattenPayload = {service: 'Onderhoud', material: 'Ski', amount: '1', package: 'Goud', logistics: 'Zelf brengen en zelf ophalen', pickupDate: '2099-11-28', urgent: 'Nee', destination: 'Sölden', skidate: '2099-12-01', conditions: 'Koud', name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', postcode: '6659 BB', houseNumber: '13', address: 'Hollenhof 13, 6659 BB Wamel', addressCity: 'Wamel', notes: 'Lichte kras', privacyConsent: true, whatsappConsent: true, website: '', turnstileToken: 'verified-token'};
 const stuiterPayload = {name: 'Peter', phone: '06 12 34 56 78', email: 'peter@example.nl', date: '2099-06-12', location: 'Wamel', startTime: '10:00', endTime: '18:00', notes: 'Graag bellen.', website: '', turnstileToken: 'verified-token'};
 
 assert.equal(getSite(lattenOrigin, baseEnv), 'lattenspecialist');
@@ -33,7 +33,7 @@ assert.match(createServiceCode(), /^LS-[A-Z2-9]{6}$/);
 assert.equal(normalizeServiceCode(' ls-ab2cde '), 'LS-AB2CDE');
 assert.equal(STATUS_STEPS.length, 8);
 assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, email: 'fout'}), /e-mailadres/);
-assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, addressCity: 'Winssen'}), /buiten het gratis servicegebied/);
+assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, logistics:'Gratis ophalen & terugbrengen (servicegebied)'}), /niet meer aangeboden/);
 assert.throws(() => readAndValidateLattenspecialist({...lattenPayload, privacyConsent: false}), /toestemming/);
 // All villages in both municipalities qualify for free pickup.
 for (const addressCity of ['Alphen','Altforst','Appeltern','Beneden-Leeuwen','Boven-Leeuwen','Dreumel','Maasbommel','Wamel','Afferden','Deest','Druten','Horssen','Puiflijk']) {
@@ -138,7 +138,7 @@ try {
   assert.match(lattenMessage.subject, /^\[Lattenspecialist aanvraag\].*Onderhoud/);
   assert.match(lattenMessage.text, /Bestemming: Sölden/);
   assert.match(lattenMessage.text, /WhatsApp-statusupdates: Ja, toestemming gegeven/);
-  assert.match(lattenMessage.text, /Ophaalweekend: 2099-11-28/);
+  assert.match(lattenMessage.text, /Gewenste brengdatum: 2099-11-28/);
   assert.deepEqual(JSON.parse(requests[2].options.body).to, ['peter@example.nl']);
   assert.equal((await store.list({prefix: 'reservation:'})).keys.length, 1);
 

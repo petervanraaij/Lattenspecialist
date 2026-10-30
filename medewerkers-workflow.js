@@ -128,7 +128,7 @@
   function startForm(step) {
     const resume = paused(step);
     const weight = waxStep(step) && !step.startWeight ? `<label>Gewicht waxblok vóór start (gram)<input name="startWeight" type="number" inputmode="decimal" min="0.1" max="5000" step="0.1" required placeholder="bijv. 182,4"></label><p class="workflow-help">Weeg het gekozen waxblok zonder losse verpakking. Na afloop weeg je hetzelfde blok opnieuw.</p>` : `<p class="workflow-help">${resume ? 'De eerder gemeten tijd en het begingewicht blijven bewaard.' : 'De timer start zodra je op de knop drukt. Rond deze stap af voordat je doorgaat.'}</p>`;
-    return `<div class="workflow-actions"><form data-workflow-action="start" data-step-id="${escape(step.id)}">${weight}<button type="submit" hidden>Start stap</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
+    return `<div class="workflow-actions"><form data-workflow-action="start" data-guide-version-start="${escape(step.guide?.version||'')}" data-step-id="${escape(step.id)}">${weight}<button type="submit" hidden>Start stap</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
   }
 
   document.addEventListener('change',event=>{const input=event.target;if(input.name==='toolSkus'){const select=input.closest('fieldset')?.querySelector(`[name="asset_${CSS.escape(input.value)}"]`);if(select)select.disabled=!input.checked;}});
@@ -175,6 +175,7 @@
     }
     const summary = workflow.summary || {}, totalCost = number(summary.totalCost ?? summary.total_cost), totalSeconds = number(summary.totalSeconds ?? summary.total_seconds);
     host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3><p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
+    const currentGuide=host.querySelector('.workflow-step.is-next .maintenance-guide details,.workflow-step.is-active .maintenance-guide details');if(currentGuide)currentGuide.open=true;
     updateTimers();
   }
 
@@ -216,6 +217,7 @@
     }
     if (form.dataset.hasToolChoices === 'true') body.toolSkus = formData.getAll('toolSkus').map(String);
     body.toolAssets=Object.fromEntries([...formData].filter(([name])=>name.startsWith('asset_')).map(([name,value])=>[name.slice(6),String(value)]));
+    if(form.dataset.guideVersionStart)body.guideVersion=form.dataset.guideVersionStart;
     const guide=form.querySelector('[data-guide-version]');
     if(guide)body.guideChecks={version:guide.dataset.guideVersion,checkedIds:formData.getAll('guideChecks').map(String)};
     if (action === 'start' && Object.hasOwn(body, 'startWeight') && body.startWeight <= 0) { message.textContent = 'Vul een begingewicht groter dan 0 gram in.'; message.classList.add('is-error'); return; }

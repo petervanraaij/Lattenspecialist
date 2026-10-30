@@ -54,3 +54,13 @@ De Android-beheerapp heeft twee beginschermwidgets: het bestaande statusoverzich
 ## Onderhoudsinstructies
 
 De bestaande materiaalworkflow begeleidt gekozen ski- en snowboardbehandelingen met uitvoering, benodigdheden, controlepunten en instructievideo’s. Zie [gebruik, pakketkeuzes, verificatie en grenzen](docs/ONDERHOUDSINSTRUCTIES.md).
+
+## Centrale werkinstructies en volledige handmatige intake (30 oktober 2026)
+
+Beheer en medewerkers hebben één bibliotheek met veertien basiswerkzaamheden. Alleen de eigenaar kan stappen, benodigdheden, controlepunten en YouTube-videolinks wijzigen. Oefeningen gebruiken dezelfde centrale instructie met aanvullende oefenveiligheid. Een gestarte stap bewaart zijn versie; nieuwe instructies wijzigen geen lopend of afgerond werk. Gewijzigde instructies vereisen de actuele startversie en volledige bevestiging.
+
+De handmatige onderhoudsaanvraag gebruikt hetzelfde selectiemodel als de klantaanvraag: ski-paren en snowboards, verschillende pakketten, waxsoort, bindingen, reparaties en extra reiniging. Spoed wordt per pakket gekozen; losse werkzaamheden hebben hun eigen spoedkeuze. Haal- en brengservice wordt niet meer aangeboden en nieuwe aanvragen hiervoor worden ook serverzijdig geweigerd. Oude aanvragen blijven bewaard.
+
+Het openen van een volledig materiaalplan haalt voorraad, actieve gereedschappen, metingen, verbruik en instructieversies gebundeld op. De regressiecontrole begrenst dit tot maximaal twaalf SELECT-verzoeken, onafhankelijk van het aantal werkstappen. Dit is geen productiemeting van kosten of gelijktijdige capaciteit.
+
+Controle: volledige Worker-reeks inclusief `guide-store.test.mjs`, twaalf browserprocessen met fictieve gegevens en mobiele bediening. De volledige gekochte-gereedschappenhandleiding en het activeren van de centrale Pierfinity-HRM-koppeling zijn afzonderlijke vervolgstappen; deze wijziging claimt die niet als afgerond.

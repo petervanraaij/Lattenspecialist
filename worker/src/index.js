@@ -140,10 +140,9 @@ const readAndValidateLattenspecialist = (raw, trustedAdmin = false) => {
   if (data.service === 'Onderhoud' && (!data.material || !/^\d{1,2}$/.test(data.amount) || Number(data.amount) < 1 || Number(data.amount) > 20 || !data.package)) throw new ValidationError('Controleer het materiaal, aantal en pakket.');
   if (data.service === 'Onderhoud' && !validMaintenanceSelection(data.maintenanceSelection)) throw new ValidationError('De gekozen onderhoudspakketten of meerwerken zijn ongeldig.');
   if (![data.firstWaxCount,data.waxstickCount].every(value => Number.isInteger(value) && value >= 0 && value <= 20)) throw new ValidationError('Controleer de aantallen voor extra reiniging en waxsticks.');
-  if (data.service === 'Onderhoud' && !data.pickupDate) throw new ValidationError('Kies een beschikbare ophaaldatum of kies in overleg.');
-  if (data.service === 'Onderhoud' && data.pickupDate !== 'In overleg' && !isIsoDate(data.pickupDate)) throw new ValidationError('Controleer de gekozen ophaaldatum.');
-  if (data.service === 'Onderhoud' && data.logistics.includes('Gratis ophalen') && (!/^\d{4}\s?[A-Z]{2}$/i.test(data.postcode) || !data.houseNumber || !data.address)) throw new ValidationError('Vul de ophaal- en terugbrenglocatie volledig in.');
-  if (data.service === 'Onderhoud' && data.logistics.includes('Gratis ophalen') && data.addressCity && !FREE_PICKUP_CITIES.includes(data.addressCity)) throw new ValidationError('Deze plaats valt buiten het gratis servicegebied. Kies zelf brengen in Wamel of neem contact op.');
+  if (data.service === 'Onderhoud' && !data.pickupDate) throw new ValidationError('Kies een brengdatum of kies in overleg.');
+  if (data.service === 'Onderhoud' && data.pickupDate !== 'In overleg' && !isIsoDate(data.pickupDate)) throw new ValidationError('Controleer de gekozen brengdatum.');
+  if (data.service === 'Onderhoud' && /gratis ophalen|terugbrengen|ophaalservice|bezorg/i.test(data.logistics)) throw new ValidationError('Haal- en brengservice wordt niet meer aangeboden. Kies zelf brengen en ophalen in Wamel.');
   if (data.service === 'Verhuur' && !data.rentaltype) throw new ValidationError('Kies wat je wilt huren.');
   for (const dateValue of [data.skidate, data.rentfrom, data.rentto].filter(Boolean)) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) throw new ValidationError('Controleer de ingevulde datum.');
@@ -411,9 +410,9 @@ const sendWhatsAppTemplate = async (record, type, env) => {
 };
 
 const lattenspecialistFields = data => {
-  const common = [['Dienst', data.service], ['Naam', data.name], ['Telefoon', data.phone], ['WhatsApp-statusupdates', data.whatsappConsent ? 'Ja, toestemming gegeven' : 'Nee'], ['E-mail', data.email], ['Ophaal- en terugbrenglocatie', data.address || 'Niet ingevuld']];
+  const common = [['Dienst', data.service], ['Naam', data.name], ['Telefoon', data.phone], ['WhatsApp-statusupdates', data.whatsappConsent ? 'Ja, toestemming gegeven' : 'Nee'], ['E-mail', data.email], ['Contactadres', data.address || 'Niet ingevuld']];
   const specific = data.service === 'Onderhoud' ? [
-    ['Materiaal', data.material], ['Aantal', data.amount], ['Pakket', data.package], ['Logistiek', data.logistics], [data.logistics.toLowerCase().includes('zelf brengen') ? 'Brengweekend' : 'Ophaalweekend', data.pickupDate], ['Spoed', data.urgent], ['Bestemming', data.destination || 'Niet ingevuld'], ['Eerste skidag', data.skidate || 'Niet ingevuld'], ['Omstandigheden', data.conditions || 'Niet ingevuld']
+    ['Materiaal', data.material], ['Aantal', data.amount], ['Pakket', data.package], ['Logistiek', data.logistics], [data.logistics.toLowerCase().includes('zelf brengen') ? 'Gewenste brengdatum' : 'Ophaalweekend', data.pickupDate], ['Spoed', data.urgent], ['Bestemming', data.destination || 'Niet ingevuld'], ['Eerste skidag', data.skidate || 'Niet ingevuld'], ['Omstandigheden', data.conditions || 'Niet ingevuld']
   ] : [
     ['Verhuur', data.rentaltype], ['Lengte persoon', data.height ? `${data.height} cm` : 'Niet ingevuld'], ['Schoenmaat', data.shoesize || 'Niet ingevuld'], ['Niveau', data.level || 'Niet ingevuld'], ['Van', data.rentfrom || 'Niet ingevuld'], ['Tot en met', data.rentto || 'Niet ingevuld']
   ];
@@ -427,8 +426,8 @@ const sendLattenspecialistEmail = async (data, reference, env) => {
     from: env.LATTENSPECIALIST_FROM_EMAIL || 'De Lattenspecialist via Stuiterbaas <reserveringen@stuiterbaas.nl>',
     to: [env.LATTENSPECIALIST_TO_EMAIL || 'info@lattenspecialist.nl'],
     subject: `[Lattenspecialist aanvraag] ${data.service} ${reference} – ${data.name}`,
-    text: [data.paymentAmount ? 'Nieuwe betaalde aanvraag via lattenspecialist.nl' : 'Nieuwe onderhoudsaanvraag via lattenspecialist.nl', `Aanvraagcode: ${reference}`, data.paymentAmount ? `Betaald: € ${data.paymentAmount}` : '', '', ...fields.map(([label, value]) => `${label}: ${value}`), '', 'Neem contact op om het onderhoud en de exacte ophaaldag te bevestigen.'].filter(Boolean).join('\n'),
-    html: `<h1 style="font-size:20px">${data.paymentAmount ? 'Nieuwe betaalde aanvraag' : 'Nieuwe onderhoudsaanvraag'}</h1><p><strong>Aanvraagcode: ${escapeHtml(reference)}</strong>${data.paymentAmount ? `<br>Betaald: € ${escapeHtml(data.paymentAmount)}` : ''}</p><table style="border-collapse:collapse">${rows}</table><p><strong>Neem contact op om het onderhoud en de exacte ophaaldag te bevestigen.</strong></p>`
+    text: [data.paymentAmount ? 'Nieuwe betaalde aanvraag via lattenspecialist.nl' : 'Nieuwe onderhoudsaanvraag via lattenspecialist.nl', `Aanvraagcode: ${reference}`, data.paymentAmount ? `Betaald: € ${data.paymentAmount}` : '', '', ...fields.map(([label, value]) => `${label}: ${value}`), '', 'Bevestig de onderhoudswerkzaamheden en wanneer de klant het materiaal in Wamel brengt en weer ophaalt.'].filter(Boolean).join('\n'),
+    html: `<h1 style="font-size:20px">${data.paymentAmount ? 'Nieuwe betaalde aanvraag' : 'Nieuwe onderhoudsaanvraag'}</h1><p><strong>Aanvraagcode: ${escapeHtml(reference)}</strong>${data.paymentAmount ? `<br>Betaald: € ${escapeHtml(data.paymentAmount)}` : ''}</p><table style="border-collapse:collapse">${rows}</table><p><strong>Bevestig de onderhoudswerkzaamheden en wanneer de klant het materiaal in Wamel brengt en weer ophaalt.</strong></p>`
   };
   if (data.email) message.reply_to = data.email;
   await sendResendEmail(message, env);
@@ -459,7 +458,7 @@ export default {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleAccounting(request, env, {owner:await isAdminAuthorized(request,env), json, origin});
     }
-    if (/^\/api\/admin\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || url.pathname.startsWith('/api/admin/inventory') || url.pathname === '/api/team/practice' || /^\/api\/team\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || /^\/api\/team\/operations\/steps\/[a-f0-9-]{36}\/(start|pause|finish)$/.test(url.pathname)) {
+    if (/^\/api\/admin\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || url.pathname.startsWith('/api/admin/inventory') || url.pathname === '/api/team/guides' || url.pathname === '/api/team/practice' || /^\/api\/team\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || /^\/api\/team\/operations\/steps\/[a-f0-9-]{36}\/(start|pause|finish)$/.test(url.pathname)) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleInventory(request, env, {owner:await isAdminAuthorized(request,env), json, origin});
     }
