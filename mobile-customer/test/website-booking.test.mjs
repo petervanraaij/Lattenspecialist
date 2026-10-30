@@ -32,7 +32,7 @@ function homepage(t,url='https://lattenspecialist.nl/') {
  return {w,d,model:w.LATTEN_SELECTION};
 }
 const chosen=d=>JSON.parse(new URL(d.querySelector('#packageRequest').href).searchParams.get('keuze'));
-const waxChoices={beta:'Holmenkol BetaMix Red (standaard inbegrepen)',alpha:'Holmenkol AlphaMix Yellow (inbegrepen)',ultra:'Holmenkol UltraMix Blue (inbegrepen)',performance:'Performance Wax (ski + € 5,00 · snowboard + € 7,50)'};
+const waxChoices={beta:'Holmenkol BetaMix Red (standaard inbegrepen)',alpha:'Holmenkol AlphaMix Yellow (+ € 2,50)',ultra:'Holmenkol UltraMix Blue (+ € 2,50)',performance:'Performance Wax (ski + € 5,00 · snowboard + € 7,50)'};
 test('copper and bronze package links work and no package is silently preselected',async t=>{
  for(const name of ['Koper','Brons','Zilver','Goud','Platinum']) {
   const {f}=await setup(t,{url:`https://lattenspecialist.nl/afspraak.html?pakket=${name}`});assert.equal(f.elements.package.value,name);
