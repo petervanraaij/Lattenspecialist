@@ -1,3 +1,5 @@
+import {verifyHrmExport} from './hrm-bridge.js';
+import {legacyHrmMembers} from './operations.js';
 import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
 import {handleMetrics} from './metrics.js';
 import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, ensureTeamRecord, saveOwnerRecord} from './team.js';
@@ -448,6 +450,7 @@ const saveLattenspecialistReservation = async (data, reference, env) => {
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
+    if(new URL(request.url).pathname==='/api/internal/hrm-export'){try{if(!env.LATTENSPECIALIST_TEAM_DB||!await verifyHrmExport(request,env,env.LATTENSPECIALIST_TEAM_DB))return new Response(null,{status:401});return Response.json(await legacyHrmMembers(env,env.LATTENSPECIALIST_TEAM_DB),{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}catch{return Response.json({error:'HRM export niet beschikbaar.'},{status:503,headers:{'Cache-Control':'no-store'}});}}
     const site = getSite(origin, env);
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
     if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-HRM-PIN', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});

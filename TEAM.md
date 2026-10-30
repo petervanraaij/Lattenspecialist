@@ -80,3 +80,11 @@ Automatische betalingstransacties, instelbare rollen, pushmeldingen en meerdere 
 - Het bedrijfsdashboard toont actieve materialen, gemiddelde en mediane onderhoudstijd, vergelijking met de vorige 30 dagen, op-tijd-percentage, routetijd, productie en klanttevredenheid.
 
 Technische referentie: [Cloudflare D1-transacties](https://developers.cloudflare.com/d1/worker-api/d1-database/).
+
+## Oefenen, bulkvoorraad en centrale HRM (30 oktober 2026)
+
+- Kleine belagreparaties zijn een eigen oefenkeuze met werkinstructie, start/afronden, controlepunten en werkelijk stripverbruik. Geen klantrecord of productie-/beloningstelling.
+- Gereedschap verschijnt per SKU op één kaart. Ontvangen exemplaren zijn reserve; beheer neemt bewust één of meerdere exemplaren in gebruik. Vervanging neemt exact één reserve-exemplaar over, bewaart de oude levensduur en is bij herhaling idempotent. Bij meerdere actieve exemplaren kiest de medewerker het werkelijk gebruikte exemplaar.
+- Additieve omzetting behoudt alle gebruikshistorie. Bestaande gebruikte exemplaren blijven actief, ongebruikte overtollige exemplaren worden reserve. Voorraad scheidt reserve van in gebruik; geen negatieve voorraad of impliciete aankoop bij vervangen.
+- HRM heeft een beveiligde connector naar de generieke Pierfinity-module, met ondertekende, kort geldige verzoeken en replaycontrole. De bestaande HRM-PIN blijft tijdens migratie een extra afscherming. De connector is standaard uit en vereist expliciete serverinrichting (`HRM_CENTRAL_ENABLED`, gedeeld servergeheim); geen sleutel in de apps. De persoon is het centrale Pierfinity-user-id, nooit een automatisch op naam/e-mail samengevoegd account.
+- Centrale planning toont alleen toegewezen zakelijke taken na een geautoriseerde persoonskoppeling. Beschikbaarheid kan naar HRM worden overgenomen. Bestaande lokale gegevens blijven behouden bij een storing of migratie.

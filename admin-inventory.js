@@ -148,7 +148,7 @@
   }
 
   function toolCard(tool) {
-    const uses = number(field(tool, 'uses', 'usesCount', 'uses_count')), planned = number(field(tool, 'plannedUses', 'planned_uses', 'targetUses', 'target_uses')) || 300;
+    const uses = number(field(tool, 'uses', 'usesCount', 'uses_count')), planned = number(field(tool, 'plannedUses', 'planned_uses', 'targetUses', 'target_uses','allocation_target')) || 300;
     const cost = number(field(tool, 'acquisitionCost', 'acquisition_cost', 'cost')), actual = number(field(tool, 'actualCostPerUse', 'actual_cost_per_use')) || (uses ? cost / uses : 0), allocated = number(field(tool, 'plannedCostPerUse', 'planned_cost_per_use')) || (planned ? cost / planned : 0);
     const activeFlag = field(tool, 'active'), status = field(tool, 'status') || (activeFlag === 0 || activeFlag === '0' ? 'retired' : 'active'), id = field(tool, 'id');
     return `<article class="tool-card" data-tool-id="${escape(id)}">
@@ -156,12 +156,13 @@
       <div class="tool-meter" aria-label="${uses} van ${planned} geplande gebruiken"><i style="--tool-progress:${Math.min(100, uses / planned * 100)}%"></i></div>
       <div class="tool-numbers"><span><small>Gebruikt</small><b>${uses}×</b></span><span><small>Nog begroot</small><b>${number(field(tool, 'remainingPlannedUses', 'remaining_planned_uses')) || Math.max(0, planned - uses)}×</b></span><span><small>Tijd</small><b>${duration(field(tool, 'lifetimeSeconds', 'lifetime_seconds', 'totalSeconds', 'total_seconds'))}</b></span></div>
       <dl class="tool-dates"><div><dt>Eerste gebruik</dt><dd>${escape(date(field(tool, 'firstUsedAt', 'first_used_at')))}</dd></div><div><dt>Laatste gebruik</dt><dd>${escape(date(field(tool, 'lastUsedAt', 'last_used_at')))}</dd></div><div><dt>Begroot per gebruik</dt><dd>${money(allocated)}</dd></div><div><dt>Werkelijk tot nu toe</dt><dd>${uses ? money(actual) : 'Na eerste gebruik'}</dd></div></dl>
-      ${status === 'active' ? `<details class="tool-replace"><summary>Vervangen door een nieuwe</summary><form><label>Nieuwe aanschafprijs (€)<input name="cost" type="number" min="0" step="0.01" required></label><label>Naam / opmerking<input name="label" maxlength="120" placeholder="Bijv. nieuwe vijl"></label><button class="btn btn-dark" type="submit"${id ? '' : ' disabled'}>Oude afsluiten en nieuwe starten</button><p role="status" aria-live="polite"></p></form></details>` : `<p class="inventory-confirmed">Levensduur afgesloten op ${escape(date(field(tool, 'retiredAt', 'retired_at')))}</p>`}
+      ${status === 'active' ? `<details class="tool-replace"><summary>Vervangen door een nieuwe</summary><form><p>Eén nieuw exemplaar uit de reservevoorraad. De kostprijs komt uit de ontvangen bestelling.</p><button class="btn btn-dark" type="submit"${id ? '' : ' disabled'}>Vervangen uit reservevoorraad</button><p role="status" aria-live="polite"></p></form></details>` : `<p class="inventory-confirmed">Levensduur afgesloten op ${escape(date(field(tool, 'retiredAt', 'retired_at')))}</p>`}
     </article>`;
   }
 
   function toolsSection(tools) {
-    return `<section class="inventory-section"><div class="inventory-section-head"><div><span class="inventory-kicker">GEREEDSCHAPSLEVENSDUUR</span><h3>Van eerste gebruik tot vervanging</h3><p>Een vijl of ander langzaam slijtend gereedschap wordt standaard over 300 relevante onderhoudsbeurten verdeeld. Alleen de stappen waarin het echt gebruikt is tellen mee.</p></div></div><div class="tool-grid">${tools.map(toolCard).join('') || '<div class="inventory-empty"><b>Nog geen actief gereedschap</b><p>Na ontvangst verschijnen de aangeschafte gereedschappen hier.</p></div>'}</div></section>`;
+    const grouped=new Map();for(const tool of tools){if(!grouped.has(tool.sku))grouped.set(tool.sku,[]);grouped.get(tool.sku).push(tool);}
+    return `<section class="inventory-section"><div class="inventory-section-head"><div><span class="inventory-kicker">GEREEDSCHAP & RESERVEVOORRAAD</span><h3>Eén artikel, zelf kiezen hoeveel je gebruikt</h3><p>Neem bijvoorbeeld twee schrapers in gebruik voor twee medewerkers. Reservevoorraad blijft apart. Vervangen wisselt één gebruikt exemplaar om voor één reserve-exemplaar.</p></div></div><div class="tool-grid">${[...grouped].map(([sku,list])=>{const active=list.filter(t=>t.status==='active'),reserve=list.filter(t=>t.status==='reserve'),retired=list.filter(t=>t.status==='retired'),name=list[0].itemName||list[0].item_name||list[0].label;return `<article class="tool-card tool-bulk" data-tool-sku="${escape(sku)}"><header><div><h4>${escape(name)}</h4><small>${escape(sku)}</small></div><span class="inventory-state is-received">${active.length} in gebruik · ${reserve.length} reserve</span></header><form class="tool-activate"><label>Extra exemplaren in gebruik nemen<input name="quantity" type="number" min="1" max="${Math.min(50,reserve.length)}" step="1" value="1" required${reserve.length?'':' disabled'}></label><button class="btn btn-dark" type="submit"${reserve.length?'':' disabled'}>Uit reserve in gebruik nemen</button><p role="status" aria-live="polite"></p></form><details><summary>Exemplaren in gebruik (${active.length})</summary>${active.map(toolCard).join('')||'<p>Nog geen exemplaren in gebruik.</p>'}</details><details><summary>Vervangingshistorie (${retired.length})</summary>${retired.map(toolCard).join('')||'<p>Nog geen vervangingen.</p>'}</details></article>`;}).join('')||'<p>Nog geen ontvangen gereedschap.</p>'}</div></section>`;
   }
 
   function movementSection(movements) {
@@ -258,6 +259,7 @@
   function bindPanel(panel) {
     panel.querySelector('[data-refresh-inventory]')?.addEventListener('click', load);
     panel.querySelectorAll('[data-receive-order]').forEach(button => button.addEventListener('click', receiveOrder));
+    panel.querySelectorAll('.tool-activate').forEach(form=>form.addEventListener('submit',activateToolStock));
     panel.querySelectorAll('.tool-replace form').forEach(form => form.addEventListener('submit', replaceTool));
     panel.querySelectorAll('[data-adjust-stock]').forEach(form => form.addEventListener('submit', adjustStock));
     panel.querySelectorAll('[data-update-minimum]').forEach(form => form.addEventListener('submit', updateMinimum));
@@ -292,13 +294,14 @@
     catch (error) { status.textContent = error.message; button.disabled = false; }
   }
 
+  async function activateToolStock(event){event.preventDefault();const form=event.currentTarget,sku=form.closest('[data-tool-sku]').dataset.toolSku,status=form.querySelector('[role=status]'),button=form.querySelector('button'),quantity=Number(new FormData(form).get('quantity'));if(!Number.isInteger(quantity)||quantity<1)return;form.dataset.requestId ||= crypto.randomUUID();button.disabled=true;try{await client(`/api/admin/inventory/items/${encodeURIComponent(sku)}/activate`,{method:'POST',body:JSON.stringify({quantity,requestId:form.dataset.requestId})});await load();}catch(error){status.textContent=error.message;button.disabled=false;}}
+
   async function replaceTool(event) {
     event.preventDefault();
     const form = event.currentTarget, card = form.closest('[data-tool-id]'), id = card.dataset.toolId, status = form.querySelector('[role=status]'), values = Object.fromEntries(new FormData(form));
-    const cost = Number(values.cost);
-    if (!Number.isFinite(cost) || cost < 0) { status.textContent = 'Vul een geldige aanschafprijs in.'; return; }
+
     const button = form.querySelector('button'); button.disabled = true; status.textContent = 'Vervanging opslaan…';
-    try { await client(`/api/admin/inventory/tools/${encodeURIComponent(id)}/replace`, {method:'POST', body:JSON.stringify({cost, label:values.label || '', allocationTarget:300})}); await load(); }
+    try { await client(`/api/admin/inventory/tools/${encodeURIComponent(id)}/replace`, {method:'POST', body:JSON.stringify({})}); await load(); }
     catch (error) { status.textContent = error.message; button.disabled = false; }
   }
 

@@ -131,10 +131,12 @@
     return `<div class="workflow-actions"><form data-workflow-action="start" data-step-id="${escape(step.id)}">${weight}<button type="submit" hidden>Start stap</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
   }
 
+  document.addEventListener('change',event=>{const input=event.target;if(input.name==='toolSkus'){const select=input.closest('fieldset')?.querySelector(`[name="asset_${CSS.escape(input.value)}"]`);if(select)select.disabled=!input.checked;}});
+
   function toolChoices(step) {
     const tools = step.requirements.filter(item => item && typeof item === 'object' && ['tool','equipment'].includes(String(item.trackingMode || item.tracking_mode || '').toLowerCase()));
     if (!tools.length) return '';
-    return `<fieldset class="workflow-tool-choices"><legend>Welke gereedschappen heb je echt gebruikt?</legend>${tools.map(item => `<label><input type="checkbox" name="toolSkus" value="${escape(item.sku)}" checked><span>${escape(item.name || item.sku)}</span></label>`).join('')}<small>Alleen aangevinkte gereedschappen tellen mee voor levensduur en kosten.</small></fieldset>`;
+    return `<fieldset class="workflow-tool-choices"><legend>Welke gereedschappen heb je echt gebruikt?</legend>${tools.map(item => `<label><input type="checkbox" name="toolSkus" value="${escape(item.sku)}" checked><span>${escape(item.name || item.sku)}</span></label>${item.assets?.length>1?`<label>Gebruikt exemplaar van ${escape(item.name||item.sku)}<select name="asset_${escape(item.sku)}" required><option value="">Kies exemplaar</option>${item.assets.map(a=>`<option value="${escape(a.id)}">${escape(a.label)}</option>`).join('')}</select></label>`:''}`).join('')}<small>Alleen aangevinkte gereedschappen tellen mee voor levensduur en kosten.</small></fieldset>`;
   }
 
   function finishFormFields(step) {
@@ -205,7 +207,7 @@
     const action = form.dataset.workflowAction, formData = new FormData(form), values = Object.fromEntries(formData);
     const body = {};
     for (const [name, raw] of Object.entries(values)) {
-      if (name === 'toolSkus' || name === 'guideChecks') continue;
+      if (name === 'toolSkus' || name === 'guideChecks' || name.startsWith('asset_')) continue;
       if (name === 'repairColor') { body[name] = String(raw); continue; }
       if (raw === '') continue;
       const value = Number(String(raw).replace(',', '.'));
@@ -213,6 +215,7 @@
       body[name] = value;
     }
     if (form.dataset.hasToolChoices === 'true') body.toolSkus = formData.getAll('toolSkus').map(String);
+    body.toolAssets=Object.fromEntries([...formData].filter(([name])=>name.startsWith('asset_')).map(([name,value])=>[name.slice(6),String(value)]));
     const guide=form.querySelector('[data-guide-version]');
     if(guide)body.guideChecks={version:guide.dataset.guideVersion,checkedIds:formData.getAll('guideChecks').map(String)};
     if (action === 'start' && Object.hasOwn(body, 'startWeight') && body.startWeight <= 0) { message.textContent = 'Vul een begingewicht groter dan 0 gram in.'; message.classList.add('is-error'); return; }
