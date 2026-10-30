@@ -1,21 +1,23 @@
 {
-  "version": "1.4.0",
-  "versionCode": 6,
+  "version": "1.5.0",
+  "versionCode": 7,
   "package": "nl.lattenspecialist.medewerkers",
   "minimumAndroid": 7,
-  "sha256": "7dee959861af85b5ddd9a647f6f8bc481f4c5ef313440ad6029107d98b726fde",
+  "sha256": "52565eb9ace9d073163d03180625f7eabc730fdeae9ba7bbfe2dc64c34bd8eba",
   "bytes": 4059176,
   "signingCertificateSha256": "c172da4620f071b693ae1e673c14ed733b2c7601627c57cc7ef0fa0f4bf3e81c",
   "previousVersions": [
     "1.1.1",
-    "1.3.0"
+    "1.3.0",
+    "1.4.0"
   ],
   "features": [
     "Oefenen",
     "Kleine reparaties",
     "Premium slijpen",
     "Gereedschapshandleidingen",
-    "Intake- en opleverfoto’s"
+    "Intake- en opleverfoto’s",
+    "Gele en rode oefenwax met afzonderlijke begin- en eindgewichten"
   ],
   "debuggable": false,
   "distribution": "Gewone Android-app. Play Protect-classificatie wordt afzonderlijk onderzocht."

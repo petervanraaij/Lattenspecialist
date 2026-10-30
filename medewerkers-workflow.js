@@ -93,7 +93,7 @@
       const unit = item.unit || '';
       return `${label}${quantity !== '' ? `: ${quantity}${unit ? ` ${unit}` : ''}` : ''}`;
     });
-    if (step.startWeight && step.endWeight) result.unshift(`Wax gebruikt: ${(step.startWeight - step.endWeight).toLocaleString('nl-NL', {maximumFractionDigits:2})} g`);
+    if (step.startWeight && completed(step)) result.unshift(`Begin: ${step.startWeight.toLocaleString('nl-NL')} g · Eind: ${step.endWeight.toLocaleString('nl-NL')} g`, `Wax gebruikt: ${(step.startWeight - step.endWeight).toLocaleString('nl-NL', {maximumFractionDigits:2})} g`);
     if (step.cost) result.push(`Kosten: ${money(step.cost)}`);
     return result;
   }
@@ -256,6 +256,7 @@
     const status = document.getElementById('practiceStatus'), result = document.getElementById('practiceResult'), button = form.querySelector('button[type=submit]');
     const values = Object.fromEntries(new FormData(form));
     values.premiumFiling = values.activity === 'filing' && form.elements.premiumFiling?.checked === true;
+    if (values.activity === 'wax') values.waxProtocol = 'yellow-red';
     if (values.activity !== 'wax') delete values.waxSku;
     button.disabled = true; status.classList.remove('is-error'); status.textContent = 'Oefenopdracht aanmaken…'; result.replaceChildren();
     try {
