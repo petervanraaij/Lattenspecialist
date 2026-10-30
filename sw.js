@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v104-workplace-menu';
+const CACHE_NAME = 'lattenspecialist-v105-shared-guides';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -8,6 +8,10 @@ const APP_SHELL = [
   '/homepage.css?v=20261027-polish-1',
   '/homepage.js?v=2',
   '/maintenance-selection.js?v=10',
+  '/manual-maintenance.js?v=20261030-1',
+  '/maintenance-guide-ui.js?v=1',
+  '/maintenance-guide.css?v=20261030-guides-2',
+  '/work-instructions.js?v=20261030-1',
   '/package-choice.js?v=15',
   '/snow-temperature.js?v=10',
   '/website-metrics.js?v=1',
@@ -32,12 +36,12 @@ const APP_SHELL = [
   '/customer-status.css',
   '/customer-app.js?v=20261027-wax-1',
   '/pwa-install.js?v=1',
-  '/beheer.js?v=8',
+  '/beheer.js?v=20261030-manual-2',
   '/admin-team.js?v=1',
   '/team.css?v=1',
   '/admin-metrics.css?v=1',
-  '/admin-operations.js?v=1',
-  '/admin-operations.css?v=1',
+  '/admin-operations.js?v=20261030-guides-2',
+  '/admin-operations.css?v=20261030-guides-2',
   '/admin-operations-extra.css?v=1',
   '/vendor/qrcode.js',
   '/vendor/html5-qrcode.min.js',

@@ -3,3 +3,4 @@
 @media(max-width:560px){.scan-card{padding:14px}#scanResult .scan-detail{padding:10px;margin:0 -8px;border:0;background:transparent}#scanResult .workflow-shell{padding:12px;margin:16px -8px 0}.workflow-step{display:block;scroll-margin-top:80px}.workflow-step:before{position:absolute;top:13px;left:13px}.workflow-step-head{padding-left:43px;min-height:36px}.guide-preparation h4{font-size:18px}}
 
 .workflow-step.is-locked{opacity:1;background:#f7f8f4}
+.guide-library{display:grid;gap:20px}.guide-library label,.guide-edit-form label{display:grid;gap:8px;font-weight:700}.guide-library select,.guide-edit-form input,.guide-edit-form textarea{width:100%;font:inherit;padding:12px;border:1px solid #cfc6b7;border-radius:10px;background:#fff}.guide-edit-form{display:grid;gap:16px;padding-top:20px;border-top:1px solid #d9cebb}.guide-library .maintenance-guide{margin:0}.guide-library-tools ul{padding-left:20px}.guide-library-tools li{margin-block:8px}

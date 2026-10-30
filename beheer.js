@@ -19,6 +19,7 @@
   const manualDialog = document.querySelector('#manualRequestDialog');
   const manualForm = document.querySelector('#manualRequestForm');
   const manualStatus = document.querySelector('#manualRequestStatus');
+  const manualSelection=window.LattenManualSelection.mount(manualForm);
   const manualAddress = document.querySelector('#manualPickupAddress');
   const manualAddressStatus = document.querySelector('#manualAddressStatus');
   let manualAddressTimer, manualAddressController;
@@ -195,18 +196,13 @@
   };
   document.querySelector('#metricsPeriod').addEventListener('change', loadMetrics);
   const updateManualAddress = () => {
-    const pickup = manualForm.elements.logistics.value.includes('Gratis ophalen');
+    const pickup = false;
     manualAddress.hidden = !pickup;
     manualAddress.querySelectorAll('input').forEach(input => { input.required = pickup; input.disabled = !pickup; });
   };
-  const fillManualWeekends = () => {
-    const select=manualForm.elements.pickupDate;if(select.options.length>1)return;
-    const today=new Date();today.setHours(12,0,0,0);const until=(6-today.getDay()+7)%7||7;const first=new Date(today);first.setDate(today.getDate()+until);
-    for(let index=0;index<8;index+=1){const saturday=new Date(first);saturday.setDate(first.getDate()+index*7);const sunday=new Date(saturday);sunday.setDate(saturday.getDate()+1);const value=saturday.toISOString().slice(0,10);select.append(new Option(`Weekend ${saturday.getDate()}–${sunday.getDate()} ${sunday.toLocaleDateString('nl-NL',{month:'long'})}`,value));}
-  };
   let pendingManualOpen = false;
   let pendingManualMaterial = '';
-  const openManualRequest = material => { manualForm.reset(); if(material)manualForm.elements.material.value=material; manualStatus.textContent='';fillManualWeekends();updateManualAddress();manualDialog.showModal();manualForm.elements.name.focus(); };
+  const openManualRequest = material => { manualForm.reset(); manualSelection.reset(); manualStatus.textContent='';updateManualAddress();manualDialog.showModal();manualForm.elements.name.focus(); };
   const requestManualOpen = material => {
     pendingManualOpen = true;
     pendingManualMaterial = material || '';
@@ -232,10 +228,11 @@
     event.preventDefault();
     if (!manualForm.reportValidity()) return;
     const values=Object.fromEntries(new FormData(manualForm));
-    const extraNotes=[values.bindings?'Bindingen demonteren':'',values.planningMoment?`Voorkeursmoment: ${values.planningMoment}`:'',values.notes||''].filter(Boolean).join('\n');
+    const chosen=manualSelection.get();if(!chosen){manualStatus.textContent='Kies minimaal één geldig pakket of losse werkzaamheid.';return;}
+    const extraNotes=[chosen.notes,values.planningMoment?`Voorkeursmoment: ${values.planningMoment}`:'',values.notes||''].filter(Boolean).join('\n');
     const submit=manualForm.querySelector('[type="submit"]');submit.disabled=true;manualStatus.textContent='Aanvraag opslaan…';manualStatus.className='admin-record-message';
     try {
-      const result=await api('/api/admin/reservations',{method:'POST',body:JSON.stringify({...values,service:'Onderhoud',pickupDate:values.pickupDate||'In overleg',urgent:manualForm.elements.urgent.checked?'Spoed + € 10,00':'Nee',notes:extraNotes,whatsappConsent:manualForm.elements.whatsappConsent.checked})});
+      const result=await api('/api/admin/reservations',{method:'POST',body:JSON.stringify({...values,...chosen.legacy,maintenanceSelection:JSON.stringify(chosen.selection),service:'Onderhoud',pickupDate:values.pickupDate||'In overleg',urgent:chosen.legacy.urgent,notes:extraNotes,whatsappConsent:manualForm.elements.whatsappConsent.checked})});
       records.unshift(result.record);render();manualDialog.close();
       const card=document.querySelector(`[data-reference="${CSS.escape(result.record.reference)}"]`);card?.scrollIntoView({behavior:'smooth',block:'start'});
     } catch(error){manualStatus.textContent=error.message;manualStatus.className='admin-record-message is-error';}

@@ -12,11 +12,11 @@
   <link rel="stylesheet" href="styles.css?v=21">
   <link rel="stylesheet" href="admin-metrics.css?v=1">
   <link rel="stylesheet" href="team.css?v=1">
-  <link rel="stylesheet" href="admin-operations.css?v=20261030-workplace-menu-1">
+  <link rel="stylesheet" href="admin-operations.css?v=20261030-guides-2">
   <link rel="stylesheet" href="admin-operations-extra.css?v=3">
   <link rel="stylesheet" href="admin-wallboard.css?v=2">
   <link rel="stylesheet" href="admin-inventory.css?v=20261030-bulk-1">
-<link rel="stylesheet" href="maintenance-guide.css?v=1"></head>
+<link rel="stylesheet" href="maintenance-guide.css?v=20261030-guides-2"></head>
 <body class="admin-body">
   <header class="site-header">
     <div class="container nav-wrap">
@@ -85,14 +85,12 @@
         <label><span>Naam</span><input name="name" autocomplete="name" required></label>
         <label><span>Telefoonnummer</span><input name="phone" type="tel" autocomplete="tel" required></label>
         <label><span>E-mail <small>(optioneel)</small></span><input name="email" type="email" autocomplete="email"></label>
-        <label><span>Materiaal</span><select name="material" required><option>Ski</option><option>Snowboard</option></select></label>
-        <label><span>Aantal</span><input name="amount" type="number" min="1" max="20" value="1" required></label>
-        <label><span>Pakket</span><select name="package" required><option>Koper</option><option>Brons</option><option>Zilver</option><option selected>Goud</option><option>Platinum</option><option>Nog te bepalen</option></select></label>
-        <label><span>Halen of brengen</span><select name="logistics" required><option value="Planning nog afspreken">Nog afspreken</option><option value="Gratis ophalen & terugbrengen (servicegebied)">Gratis ophalen</option><option value="Zelf brengen en zelf ophalen">Zelf brengen</option></select></label>
-        <label><span>Gewenst weekend</span><select name="pickupDate"><option value="In overleg">Nog afspreken</option></select></label>
-        <label><span>Voorkeursmoment</span><select name="planningMoment"><option value="">Nog afspreken</option><option>Vrijdagavond</option><option>Zaterdag 08:00–12:00</option><option>Zaterdag 12:00–16:00</option><option>Zondag 08:00–12:00</option><option>Zondag 12:00–16:00</option></select></label>
+        <label><span>Brengen en ophalen</span><select name="logistics" required><option value="Zelf brengen en zelf ophalen">Klant brengt en haalt zelf in Wamel</option></select></label>
+        <label><span>Gewenste brengdatum (optioneel)</span><input name="pickupDate" type="date"></label>
+        <label><span>Voorkeursmoment</span><select name="planningMoment"><option value="">Nog afspreken</option><option>Ochtend, op afspraak</option><option>Middag, op afspraak</option><option>Avond, op afspraak</option></select></label>
       </div>
-      <div class="manual-extra-options"><label><input type="checkbox" name="urgent"><span>Spoed + € 10,00</span></label><label><input type="checkbox" name="bindings"><span>Bindingen demonteren</span></label></div>
+      <div id="manualMaintenanceSelection"></div>
+      <div class="manual-extra-options"><label><input type="checkbox" name="urgent"><span>Spoed losse werkzaamheden + € 10,00</span></label></div>
       <fieldset id="manualPickupAddress" hidden><legend>Ophaaladres</legend><div class="manual-request-grid"><label><span>Postcode</span><input name="postcode" placeholder="1234 AB"></label><label><span>Huisnummer + toevoeging</span><input name="houseNumber"></label></div><input name="addressCity" type="hidden"><label><span>Gevonden adres</span><input name="address" readonly></label><p id="manualAddressStatus" class="address-status">Vul postcode en huisnummer in.</p></fieldset>
       <label><span>Aanvullende informatie <small>(optioneel)</small></span><textarea name="notes" rows="3" maxlength="800"></textarea></label>
       <label class="admin-consent-confirm"><input type="checkbox" name="whatsappConsent"><span>Klant heeft toestemming gegeven voor WhatsApp-statusupdates</span><small>Alleen aanvinken als de klant dit heeft gezegd of geschreven.</small></label>
@@ -106,7 +104,8 @@
   <script src="vendor/html5-qrcode.min.js"></script>
   <script src="admin-team.js?v=2"></script>
   <script src="admin-inventory.js?v=20261030-bulk-1"></script>
-  <script src="maintenance-guide-ui.js?v=1"></script><script src="admin-operations.js?v=20261030-workplace-menu-1"></script>
-  <script src="beheer.js?v=14"></script>
+  <script src="maintenance-guide-ui.js?v=1"></script><script src="work-instructions.js?v=20261030-1"></script><script src="admin-operations.js?v=20261030-guides-2"></script>
+  <script src="maintenance-selection.js?v=10"></script><script src="manual-maintenance.js?v=20261030-1"></script>
+  <script src="beheer.js?v=20261030-manual-2"></script>
 </body>
 </html>
