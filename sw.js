@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v111-two-wax';
+const CACHE_NAME = 'lattenspecialist-v112-workbench';
 const APP_SHELL = [
   '/',
   '/index.html',
