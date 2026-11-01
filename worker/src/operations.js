@@ -1,3 +1,4 @@
+import {customerDossiers} from './customer-dossiers.js';
 import {centralHrm,centralHrmEnabled} from './hrm-bridge.js';
 import {ensureWorkflow,getWorkflow,materialPlans} from './inventory.js';
 const now = () => new Date().toISOString();
@@ -333,6 +334,7 @@ export async function handleOperations(request,env,{owner,json,origin}) {
     if(!db)throw new OperationsError('Bedrijfsdatabase niet beschikbaar.',503);
     if(path.startsWith('/api/admin/operations')||path.startsWith('/api/admin/hrm')||path.startsWith('/api/admin/settings')){
       if(!owner)throw new OperationsError('Geen toegang tot beheer.',401);
+      if(path.startsWith('/api/admin/operations/customers')||/^\/api\/admin\/operations\/materials\/[a-f0-9-]{36}\/dossier$/.test(path))return await customerDossiers(request,db,{json,origin,ErrorType:OperationsError});
       if(path==='/api/admin/settings/access-code'&&request.method==='POST'){
         const raw=await body(request),stored=await db.prepare("SELECT setting_value FROM hrm_settings WHERE setting_key='admin_access_hash'").first();
         const currentValid=stored?await verifyAdminAccessCode(raw.currentCode,stored.setting_value,env):clean(raw.currentCode,128)===String(env.LATTENSPECIALIST_ADMIN_TOKEN||'');
