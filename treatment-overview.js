@@ -1,49 +1,49 @@
-(() => {
-  const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const price = value => Number(value).toLocaleString('nl-NL',{style:'currency',currency:'EUR'});
-  const rates = () => window.LATTEN_SELECTION.treatmentPrices;
-  const waxes = {alpha:['AlphaMix Yellow','Voor zachte, nieuwe sneeuw'],ultra:['UltraMix Blue','Voor koude, oudere sneeuw'],performance:['Performance Purple','Slijtvaste performancewax voor sneeuw van 0 tot -12 °C, met weinig vuilopname']};
-  const skuKey = value => ({'24101':'alpha','24121':'ultra','27933':'performance','24057':'beta'})[String(value)] || '';
-  const filing = ['Staalkanten controleren.','Handmatig slijpen op de afgesproken hoek.','Bramen verwijderen, kanten tunen en het resultaat nalopen.'];
-  const waxing = ['Normale voorbereiding: belag beoordelen, afnemen en borstelen.','BetaMix Red als rode basiswax aanbrengen.','Afkoelen, schrapen en zorgvuldig uitborstelen.'];
-  function group(scope) {
-    const standard=[],extra=[];
-    if(scope.filing)standard.push(...filing);
-    if(scope.wax)standard.push(...waxing);
-    if(scope.structure)standard.push('Bestaande structuur vrijmaken en opfrissen; geen nieuwe steenslijpstructuur.');
-    if(scope.repair)standard.push('Afgesproken kleine, oppervlakkige belagreparaties beoordelen, vullen en vlak afwerken.');
-    if(scope.premiumIncluded)standard.push('Premium slijpen inbegrepen: na de basisbewerking fijn afwerken met Racing File S en World Cup-diamant medium, op dezelfde afgesproken hoek.');
-    if(scope.premium&&!scope.premiumIncluded)extra.push({title:'Premium slijpen',fee:price(rates().premiumFiling)+' per materiaal',steps:['Na de standaardbewerking fijn afwerken met Racing File S.','Resterende bramen nalopen met World Cup-diamant medium.','Dezelfde afgesproken hoek aanhouden; geen automatische hoekwijziging.']});
-    if(waxes[scope.finishWax])extra.push({title:'Extra eindwax · '+waxes[scope.finishWax][0],fee:scope.finishWax==='performance'?'ski’s '+price(rates().purpleSki)+' · snowboard '+price(rates().purpleSnowboard):price(rates().extraEndWax)+' per materiaal',steps:['Eerst de rode basis aanbrengen, laten afkoelen, schrapen en borstelen.','Daarna de gekozen eindwax aanbrengen, laten afkoelen, schrapen en borstelen.',waxes[scope.finishWax][1]+'. Elke wax apart wegen.']});
-    if(scope.intensive)extra.push({title:'Intensieve extra reiniging',fee:price(rates().intensiveCleaning)+' per materiaal',steps:['Alleen na akkoord; gebruik AlphaMix Yellow als reinigingswax.','Warme reinigingswax verwijderen en het gele verbruik apart registreren.']});
-    return {title:scope.title||'Gekozen behandeling',standard,extra,training:!!scope.training,yellowPractice:!!scope.yellowPractice};
-  }
-  function selection(value,{intensiveCount=0}={}) {
-    if(!value)return[];
-    const groups=Object.entries(value.p||{}).filter(([,item])=>item.s+item.b>0).map(([id,item])=>group({title:window.LATTEN_SELECTION.packages[id],filing:id!=='brons',wax:id!=='slijpen',premium:!!item.f,premiumIncluded:['goud','platinum'].includes(id),finishWax:item.w,intensive:item.c>0,repair:id==='platinum'||item.r>0}));
-    if(intensiveCount>0){const extra=group({title:'Intensieve reiniging · '+intensiveCount+' materiaal',intensive:true});groups.push(extra);}
-    return groups;
-  }
-  function workflow(value) {
-    const steps=value.steps||[],has=code=>steps.some(step=>step.code===code),material=value.material||{};
-    const wax=steps.find(step=>['practice_finish_wax','wax'].includes(step.code));
-    const finish=skuKey(wax?.waxDetails?.sku || wax?.requiredItems?.find(i=>skuKey(i.sku))?.sku || '') || (/alpha|yellow/i.test(material.waxType||'')?'alpha':/ultra|blue/i.test(material.waxType||'')?'ultra':/purple|performance/i.test(material.waxType||'')?'performance':'beta');
-    const base=has('base_wax')||steps.some(step=>['practice_wax','wax'].includes(step.code)&&(step.waxDetails?.sku==='24057'||step.requiredItems?.some(i=>i.sku==='24057')));
-    const result=group({title:material.package||'Deze opdracht',filing:has('filing')||has('practice_filing'),wax:base,premium:has('premium_file')||has('premium_diamond'),premiumIncluded:!!material.premiumIncluded,finishWax:finish!=='beta'&&wax?finish:'',intensive:has('deep_clean'),structure:has('structure'),repair:has('repair')||has('practice_repair'),training:!!value.isTraining||!!value.summary?.isTraining,yellowPractice:has('practice_clean')});
-    // Historical workplans describe their actual stored steps, never promise a newly inserted base layer.
-    if(wax&&!base)result.standard.push('Voer de vastgelegde waxbewerking uit volgens de bewaarde instructie bij deze stap.');
-    return result.standard.length||result.extra.length||result.yellowPractice?[result]:[];
-  }
-  function offer(id){
-    const groups=selection({p:{[id]:{s:1,b:0,w:id==='slijpen'?'none':'beta',u:false}},e:{},u:false});const item=groups[0];if(!item)return[];
-    if(['slijpen','zilver'].includes(id))item.extra.push(...group({premium:true}).extra);
-    if(id!=='slijpen'){for(const finishWax of ['alpha','ultra','performance'])item.extra.push(...group({finishWax}).extra);item.extra.push(...group({intensive:true}).extra);}
-    if(!['slijpen','platinum'].includes(id))item.extra.push({title:'Kleine belagreparaties',fee:'vanaf '+price(rates().repair)+' per beschadiging',steps:['Kleine, oppervlakkige beschadigingen beoordelen, vullen en handmatig vlak afwerken. Grotere schade en de definitieve prijs bespreken we vooraf.']});
-    item.extra.push({title:'Spoedonderhoud',fee:price(rates().urgent)+' per gekozen pakket',steps:['Voor het eerstvolgende weekend, minimaal twee werkdagen vooraf en na bevestiging. Je brengt en haalt het materiaal zelf in Wamel.']});return groups;
-  }
-  function render(groups,{open=false,extraHeading='Gekozen extra’s',publicOffer=false}={}) {
-    if(!groups?.length)return '';
-    return `<details class="treatment-overview"${open?' open':''}><summary>Standaard werkzaamheden en gekozen extra’s</summary><div class="treatment-overview-body">${groups.map(g=>`<article><h4>${escape(g.title)}</h4><div class="treatment-scope-columns"><div><strong>Standaard inbegrepen</strong><ul>${g.standard.map(text=>`<li>${escape(text)}</li>`).join('')||'<li>Volg de vastgelegde afzonderlijke handeling.</li>'}</ul></div><div><strong>${escape(extraHeading)}</strong>${g.extra.length?g.extra.map(item=>`<section><b>${escape(item.title)}</b><small>${g.training?'Klanttoeslag ter informatie: ':''}${escape(item.fee)}</small><ol>${item.steps.map(text=>`<li>${escape(text)}</li>`).join('')}</ol></section>`).join(''):'<p>Geen extra afwerking gekozen. Voeg geen betaald meerwerk toe zonder akkoord.</p>'}</div></div>${g.yellowPractice?'<p class="treatment-scope-note">Deze oefening bevat bewust een gele reinigingsgang en daarna rode basiswax. Bij klantwerk is intensieve reiniging een afzonderlijk gekozen extra; de normale voorbereiding blijft inbegrepen.</p>':''}${g.training?'<p class="treatment-scope-note">Oefenen maakt geen klantfactuur. Tijd, gereedschap en werkelijk materiaalverbruik worden wel geregistreerd.</p>':''}</article>`).join('')}<p class="treatment-scope-note">Gele reinigingswax is iets anders dan gele eindwax. Een materiaal is één paar ski’s of één snowboard. We voeren het werk uit zoals afgesproken op de bevestigde aanvraag.</p></div></details>`;
-  }
-  window.LSTreatmentOverview={selection,workflow,offer,render};
-})();
+(() => {
+  const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const price = value => Number(value).toLocaleString('nl-NL',{style:'currency',currency:'EUR'});
+  const rates = () => window.LATTEN_SELECTION.treatmentPrices;
+  const waxes = {alpha:['AlphaMix Yellow','Voor zachte, nieuwe sneeuw'],ultra:['UltraMix Blue','Voor koude, oudere sneeuw'],performance:['Performance Purple','Voor de fijnproever: onze meest luxe waxafwerking, als extra op de rode basis. Slijtvaste wax voor sneeuw van 0 tot -12 °C, met weinig vuilopname']};
+  const skuKey = value => ({'24101':'alpha','24121':'ultra','27933':'performance','24057':'beta'})[String(value)] || '';
+  const filing = ['Staalkanten controleren.','Handmatig slijpen op de afgesproken hoek.','Bramen verwijderen, kanten tunen en het resultaat nalopen.'];
+  const waxing = ['Normale voorbereiding: belag beoordelen, afnemen en borstelen.','BetaMix Red als rode basiswax aanbrengen.','Afkoelen, schrapen en zorgvuldig uitborstelen.'];
+  function group(scope) {
+    const standard=[],extra=[];
+    if(scope.filing)standard.push(...filing);
+    if(scope.wax)standard.push(...waxing);
+    if(scope.structure)standard.push('Bestaande structuur vrijmaken en opfrissen; geen nieuwe steenslijpstructuur.');
+    if(scope.repair)standard.push('Afgesproken kleine, oppervlakkige belagreparaties beoordelen, vullen en vlak afwerken.');
+    if(scope.premiumIncluded)standard.push('Premium slijpen inbegrepen: na de basisbewerking fijn afwerken met Racing File S en World Cup-diamant medium, op dezelfde afgesproken hoek.');
+    if(scope.premium&&!scope.premiumIncluded)extra.push({title:'Premium slijpen',fee:price(rates().premiumFiling)+' per materiaal',steps:['Na de standaardbewerking fijn afwerken met Racing File S.','Resterende bramen nalopen met World Cup-diamant medium.','Dezelfde afgesproken hoek aanhouden; geen automatische hoekwijziging.']});
+    if(waxes[scope.finishWax])extra.push({title:'Extra eindwax · '+waxes[scope.finishWax][0],fee:scope.finishWax==='performance'?'ski’s '+price(rates().purpleSki)+' · snowboard '+price(rates().purpleSnowboard):price(rates().extraEndWax)+' per materiaal',steps:['Eerst de rode basis aanbrengen, laten afkoelen, schrapen en borstelen.','Daarna de gekozen eindwax aanbrengen, laten afkoelen, schrapen en borstelen.',waxes[scope.finishWax][1]+'. Elke wax apart wegen.']});
+    if(scope.intensive)extra.push({title:'Intensieve extra reiniging',fee:price(rates().intensiveCleaning)+' per materiaal',steps:['Alleen na akkoord; gebruik AlphaMix Yellow als reinigingswax.','Warme reinigingswax verwijderen en het gele verbruik apart registreren.']});
+    return {title:scope.title||'Gekozen behandeling',standard,extra,training:!!scope.training,yellowPractice:!!scope.yellowPractice};
+  }
+  function selection(value,{intensiveCount=0}={}) {
+    if(!value)return[];
+    const groups=Object.entries(value.p||{}).filter(([,item])=>item.s+item.b>0).map(([id,item])=>group({title:window.LATTEN_SELECTION.packages[id],filing:id!=='brons',wax:id!=='slijpen',premium:!!item.f,premiumIncluded:['goud','platinum'].includes(id),finishWax:item.w,intensive:item.c>0,repair:id==='platinum'||item.r>0}));
+    if(intensiveCount>0){const extra=group({title:'Intensieve reiniging · '+intensiveCount+' materiaal',intensive:true});groups.push(extra);}
+    return groups;
+  }
+  function workflow(value) {
+    const steps=value.steps||[],has=code=>steps.some(step=>step.code===code),material=value.material||{};
+    const wax=steps.find(step=>['practice_finish_wax','wax'].includes(step.code));
+    const finish=skuKey(wax?.waxDetails?.sku || wax?.requiredItems?.find(i=>skuKey(i.sku))?.sku || '') || (/alpha|yellow/i.test(material.waxType||'')?'alpha':/ultra|blue/i.test(material.waxType||'')?'ultra':/purple|performance/i.test(material.waxType||'')?'performance':'beta');
+    const base=has('base_wax')||steps.some(step=>['practice_wax','wax'].includes(step.code)&&(step.waxDetails?.sku==='24057'||step.requiredItems?.some(i=>i.sku==='24057')));
+    const result=group({title:material.package||'Deze opdracht',filing:has('filing')||has('practice_filing'),wax:base,premium:has('premium_file')||has('premium_diamond'),premiumIncluded:!!material.premiumIncluded,finishWax:finish!=='beta'&&wax?finish:'',intensive:has('deep_clean'),structure:has('structure'),repair:has('repair')||has('practice_repair'),training:!!value.isTraining||!!value.summary?.isTraining,yellowPractice:has('practice_clean')});
+    // Historical workplans describe their actual stored steps, never promise a newly inserted base layer.
+    if(wax&&!base)result.standard.push('Voer de vastgelegde waxbewerking uit volgens de bewaarde instructie bij deze stap.');
+    return result.standard.length||result.extra.length||result.yellowPractice?[result]:[];
+  }
+  function offer(id){
+    const groups=selection({p:{[id]:{s:1,b:0,w:id==='slijpen'?'none':'beta',u:false}},e:{},u:false});const item=groups[0];if(!item)return[];
+    if(['slijpen','zilver'].includes(id))item.extra.push(...group({premium:true}).extra);
+    if(id!=='slijpen'){for(const finishWax of ['alpha','ultra','performance'])item.extra.push(...group({finishWax}).extra);item.extra.push(...group({intensive:true}).extra);}
+    if(!['slijpen','platinum'].includes(id))item.extra.push({title:'Kleine belagreparaties',fee:'vanaf '+price(rates().repair)+' per beschadiging',steps:['Kleine, oppervlakkige beschadigingen beoordelen, vullen en handmatig vlak afwerken. Grotere schade en de definitieve prijs bespreken we vooraf.']});
+    item.extra.push({title:'Spoedonderhoud',fee:price(rates().urgent)+' per gekozen pakket',steps:['Voor het eerstvolgende weekend, minimaal twee werkdagen vooraf en na bevestiging. Je brengt en haalt het materiaal zelf in Wamel.']});return groups;
+  }
+  function render(groups,{open=false,extraHeading='Gekozen extra’s',publicOffer=false}={}) {
+    if(!groups?.length)return '';
+    return `<details class="treatment-overview"${open?' open':''}><summary>Standaard werkzaamheden en gekozen extra’s</summary><div class="treatment-overview-body">${groups.map(g=>`<article><h4>${escape(g.title)}</h4><div class="treatment-scope-columns"><div><strong>Standaard inbegrepen</strong><ul>${g.standard.map(text=>`<li>${escape(text)}</li>`).join('')||'<li>Volg de vastgelegde afzonderlijke handeling.</li>'}</ul></div><div><strong>${escape(extraHeading)}</strong>${g.extra.length?g.extra.map(item=>`<section><b>${escape(item.title)}</b><small>${g.training?'Klanttoeslag ter informatie: ':''}${escape(item.fee)}</small><ol>${item.steps.map(text=>`<li>${escape(text)}</li>`).join('')}</ol></section>`).join(''):'<p>Geen extra afwerking gekozen. Voeg geen betaald meerwerk toe zonder akkoord.</p>'}</div></div>${g.yellowPractice?'<p class="treatment-scope-note">Deze oefening bevat bewust een gele reinigingsgang en daarna rode basiswax. Bij klantwerk is intensieve reiniging een afzonderlijk gekozen extra; de normale voorbereiding blijft inbegrepen.</p>':''}${g.training?'<p class="treatment-scope-note">Oefenen maakt geen klantfactuur. Tijd, gereedschap en werkelijk materiaalverbruik worden wel geregistreerd.</p>':''}</article>`).join('')}<p class="treatment-scope-note">Gele reinigingswax is iets anders dan gele eindwax. Een materiaal is één paar ski’s of één snowboard. We voeren het werk uit zoals afgesproken op de bevestigde aanvraag.</p></div></details>`;
+  }
+  window.LSTreatmentOverview={selection,workflow,offer,render};
+})();

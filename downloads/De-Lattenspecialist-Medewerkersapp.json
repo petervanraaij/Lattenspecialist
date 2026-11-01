@@ -1,9 +1,9 @@
 {
-  "version": "1.7.0",
-  "versionCode": 10,
+  "version": "1.7.1",
+  "versionCode": 11,
   "package": "nl.lattenspecialist.medewerkers",
   "minimumAndroid": 7,
-  "sha256": "1d7c588978567860bb95e3eb973e891008a1a9b0f58bab12de6723319b07badd",
+  "sha256": "98f47e688ff7a5cb41958dc8ec4e56814b6099ea66e49b7c930402ee63896e17",
   "bytes": 4311763,
   "signingCertificateSha256": "c172da4620f071b693ae1e673c14ed733b2c7601627c57cc7ef0fa0f4bf3e81c",
   "previousVersions": [
@@ -12,7 +12,8 @@
     "1.4.0",
     "1.5.0",
     "1.5.1",
-    "1.6.0"
+    "1.6.0",
+    "1.7.0"
   ],
   "features": [
     "Oefenen",
