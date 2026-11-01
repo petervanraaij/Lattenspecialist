@@ -1,0 +1,209 @@
+window.LSToolImages={
+  "20516": {
+    "photos": [
+      "images/tools/20516.webp"
+    ],
+    "source": "https://holmenkol.it/products/board-freeridefix-20516",
+    "label": "Board / FreerideFix"
+  },
+  "20551": {
+    "photos": [
+      "images/tools/25529.webp",
+      "images/tools/24483.webp",
+      "images/tools/24478.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-racingfile-s-150x15mm",
+    "label": "Onderdelen van set PRO: fijne vijl, diamantsteen en hoekgeleider"
+  },
+  "20606": {
+    "photos": [
+      "images/tools/20606.webp"
+    ],
+    "source": "https://holmenkol.it/products/wax-iron-storage-plate-20606",
+    "label": "Wax Iron Storage plate"
+  },
+  "24057": {
+    "photos": [
+      "images/tools/24057.webp"
+    ],
+    "source": "https://holmenkol.it/products/beta-mix-red-24057",
+    "label": "Beta Mix Red 5x190g"
+  },
+  "24101": {
+    "photos": [
+      "images/tools/24101.webp"
+    ],
+    "source": "https://holmenkol.it/products/alpha-mix-yellow-24101",
+    "label": "Alpha Mix Yellow 150g"
+  },
+  "24121": {
+    "photos": [
+      "images/tools/24121.webp"
+    ],
+    "source": "https://holmenkol.it/products/ultra-mix-blue-24121",
+    "label": "Ultra Mix Blue 150g"
+  },
+  "24408": {
+    "photos": [
+      "images/tools/24408.webp"
+    ],
+    "source": "https://holmenkol.it/products/repair-strips-transparent-24408",
+    "label": "Repair-Strips transparent 50 pezzi"
+  },
+  "24409": {
+    "photos": [
+      "images/tools/24409.webp"
+    ],
+    "source": "https://holmenkol.it/products/repair-strips-transparent-24409",
+    "label": "Repair-Strips black 50 pezzi"
+  },
+  "24432": {
+    "photos": [
+      "images/tools/24432.webp"
+    ],
+    "source": "https://holmenkol.it/products/super-pro-plus-worldcup-24432",
+    "label": "Super Pro Plus Worldcup"
+  },
+  "24478": {
+    "photos": [
+      "images/tools/24478.webp"
+    ],
+    "source": "https://holmenkol.it/products/worldcup-file-guide-88-24478",
+    "label": "Worldcup File Guide  88 °"
+  },
+  "24483": {
+    "photos": [
+      "images/tools/24483.webp"
+    ],
+    "source": "https://holmenkol.it/products/diamond-file-world-cup-medium-24483",
+    "label": "Diamond File World Cup medium"
+  },
+  "24491": {
+    "photos": [
+      "images/tools/24491.webp"
+    ],
+    "source": "https://holmenkol.it/products/care-fleece-24491",
+    "label": "Care Fleece 102m x 20cm"
+  },
+  "24498": {
+    "photos": [
+      "images/tools/24498.webp"
+    ],
+    "source": "https://holmenkol.it/products/side-wall-planer-pro-24498",
+    "label": "Side Wall Planer Pro"
+  },
+  "24580": {
+    "photos": [
+      "images/tools/24580.webp"
+    ],
+    "source": "https://holmenkol.it/products/digital-racing-waxer-15mm-plate-230-v-24580",
+    "label": "Digital Racing Waxer 15mm Plate 230 V"
+  },
+  "24622": {
+    "photos": [
+      "images/tools/24622.webp"
+    ],
+    "source": "https://holmenkol.it/products/srcaper-sharpener-racing-24622",
+    "label": "Srcaper Sharpener Racing"
+  },
+  "24671": {
+    "photos": [
+      "images/tools/24671.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-speed-brush-nylon",
+    "label": "Speed Brush Nylon"
+  },
+  "24672": {
+    "photos": [
+      "images/tools/24672.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-speed-brush-horsehair",
+    "label": "Speed Brush Horsehair"
+  },
+  "24674": {
+    "photos": [
+      "images/tools/24674.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-speed-brush-bronze",
+    "label": "Speed Brush Bronze"
+  },
+  "24684": {
+    "photos": [
+      "images/tools/24684.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-diamond-file-coarse",
+    "label": "Diamond File coarse"
+  },
+  "25018": {
+    "photos": [
+      "images/tools/25018.webp"
+    ],
+    "source": "https://holmenkol.it/products/natural-skiwax-stick-25018",
+    "label": "Natural Skiwax Stick 50g"
+  },
+  "25422": {
+    "photos": [
+      "images/tools/25422.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-cleaner-1l",
+    "label": "Cleaner 1000ml"
+  },
+  "25502": {
+    "photos": [
+      "images/tools/25502.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-stopper-holder-12pz",
+    "label": "Stopper Holder 12 pezzi"
+  },
+  "25521": {
+    "photos": [
+      "images/tools/25521.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-cross-file-mini-100x30mm",
+    "label": "Cross File MINI"
+  },
+  "25529": {
+    "photos": [
+      "images/tools/25529.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-racingfile-s-150x15mm",
+    "label": "Racing File S"
+  },
+  "25564": {
+    "photos": [
+      "images/tools/25564.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-file-brush",
+    "label": "Filebrush"
+  },
+  "25631": {
+    "photos": [
+      "images/tools/25631.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-plastic-scraper-5mm",
+    "label": "Plastic Scraper 5mm"
+  },
+  "25635": {
+    "photos": [
+      "images/tools/25635.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-stainless-steel-scraper",
+    "label": "Stainless steel scraper"
+  },
+  "27933": {
+    "photos": [
+      "images/tools/27933.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-performance-bar-purple",
+    "label": "Performance Bar Purple 150g"
+  },
+  "20687set": {
+    "photos": [
+      "images/tools/24674.webp",
+      "images/tools/24672.webp",
+      "images/tools/24671.webp"
+    ],
+    "source": "https://holmenkol.it/products/holmenkol-speed-brush-bronze",
+    "label": "Onderdelen van de borstelset: brons, paardenhaar en nylon"
+  }
+};

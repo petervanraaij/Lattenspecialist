@@ -26,7 +26,7 @@
       cache: 'no-store'
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.message || 'De werkstap kon niet worden bijgewerkt.');
+    if (!response.ok) {const error=new Error(data.message || 'De werkstap kon niet worden bijgewerkt.');error.activeWork=data.activeWork;throw error;}
     return data;
   }
 
@@ -127,8 +127,9 @@
 
   function startForm(step) {
     const resume = paused(step);
+    const wax=step.waxDetails,info=wax?`<aside class="wax-weight-hint" style="border-left:6px solid ${{Geel:'#e1bb35',Rood:'#bc3838',Blauw:'#2d71af',Paars:'#80519c'}[wax.color]||'#666'}"><strong>${escape(wax.color)} · ${escape(wax.name)}</strong><p>${wax.lastMeasuredWeight!==null?`Richtgewicht vóór start: <b>${Number(wax.lastMeasuredWeight).toLocaleString('nl-NL')} gram</b> · laatst gemeten ${escape(stamp(wax.measuredAt))}`:'Nog geen eerder eindgewicht bekend.'}</p><small>Dit is het laatst gewogen blok van deze wax, niet de totale voorraad. Gebruik je een ander of nieuw blok, dan kan het gewicht afwijken. Weeg altijd zelf.</small></aside>`:'';
     const weight = waxStep(step) && !step.startWeight ? `<label>Gewicht waxblok vóór start (gram)<input name="startWeight" type="number" inputmode="decimal" min="0.1" max="5000" step="0.1" required placeholder="bijv. 182,4"></label><p class="workflow-help">${step.cleaningWaxSku?"Reiniging: gebruik altijd Alpha Mix Yellow. Dit verbruik staat los van de volgende glijwax.":"Weeg het gekozen waxblok zonder losse verpakking."} Na afloop weeg je hetzelfde blok opnieuw.</p>` : `<p class="workflow-help">${resume ? 'De eerder gemeten tijd en het begingewicht blijven bewaard.' : 'De timer start zodra je op de knop drukt. Rond deze stap af voordat je doorgaat.'}</p>`;
-    return `<div class="workflow-actions"><form data-workflow-action="start" data-guide-version-start="${escape(step.guide?.version||'')}" data-step-id="${escape(step.id)}">${weight}<button type="submit" class="primary">Start deze werkstap</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
+    return `<div class="workflow-actions"><form data-workflow-action="start" data-guide-version-start="${escape(step.guide?.version||'')}" data-step-id="${escape(step.id)}">${info}${weight}<button type="submit" class="primary">Start deze werkstap</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
   }
 
   document.addEventListener('change',event=>{const input=event.target;if(input.name==='toolSkus'){const select=input.closest('fieldset')?.querySelector(`[name="asset_${CSS.escape(input.value)}"]`);if(select)select.disabled=!input.checked;}});
@@ -232,6 +233,7 @@
       await loadInto(host, host.dataset.materialId);
     } catch (error) {
       message.textContent = error.message; message.classList.add('is-error');
+      if(error.activeWork){const work=error.activeWork,button=document.createElement('button');button.type='button';button.textContent=`Open actieve opdracht: ${work.displayCode} · ${work.kind} · ${work.stepTitle}`;button.onclick=()=>document.dispatchEvent(new CustomEvent('ls-open-material',{detail:{token:work.token}}));message.append(document.createElement('br'),button);}
     } finally {
       unlock();
     }
@@ -247,6 +249,7 @@
       await loadInto(host, host.dataset.materialId);
     } catch (error) {
       message.textContent = error.message; message.classList.add('is-error');
+      if(error.activeWork){const work=error.activeWork,button=document.createElement('button');button.type='button';button.textContent=`Open actieve opdracht: ${work.displayCode} · ${work.kind} · ${work.stepTitle}`;button.onclick=()=>document.dispatchEvent(new CustomEvent('ls-open-material',{detail:{token:work.token}}));message.append(document.createElement('br'),button);}
     } finally {
       unlock();
     }

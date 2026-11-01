@@ -21,7 +21,7 @@ html = html
   .replace('</body>', '  <script src="native.js"></script>\n</body>');
 
 await writeFile(join(webRoot, 'index.html'), html);
-for (const file of ['beheer.js','maintenance-selection.js','manual-maintenance.js', 'admin-team.js', 'admin-operations.js', 'maintenance-guide-ui.js','work-instructions.js', 'maintenance-guide.css', 'admin-inventory.js', 'team.css', 'admin-metrics.css', 'admin-operations.css', 'admin-operations-extra.css', 'admin-wallboard.css', 'admin-inventory.css', 'booking-config.js', 'styles.css']) {
+for (const file of ['tool-images.js','admin-dossiers.js','admin-dossiers.css','material-photos.js','medewerkers-workflow.css','beheer.js','maintenance-selection.js','manual-maintenance.js', 'admin-team.js', 'admin-operations.js', 'maintenance-guide-ui.js','work-instructions.js', 'maintenance-guide.css', 'admin-inventory.js', 'team.css', 'admin-metrics.css', 'admin-operations.css', 'admin-operations-extra.css', 'admin-wallboard.css', 'admin-inventory.css', 'booking-config.js', 'styles.css']) {
   await cp(join(siteRoot, file), join(webRoot, file));
 }
 for (const file of ['qrcode.js','html5-qrcode.min.js']) await cp(join(siteRoot,'vendor',file),join(webRoot,'vendor',file));
@@ -51,3 +51,5 @@ if(quickMaterial)window.dispatchEvent(new CustomEvent('lattenspecialist:new-requ
 `);
 
 console.log('Beheerbestanden voor de mobiele app zijn bijgewerkt.');
+
+await cp(join(siteRoot,'images/tools'),join(webRoot,'images/tools'),{recursive:true});
