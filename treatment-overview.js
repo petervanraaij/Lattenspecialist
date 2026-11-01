@@ -14,8 +14,8 @@
     if(scope.repair)standard.push('Afgesproken kleine, oppervlakkige belagreparaties beoordelen, vullen en vlak afwerken.');
     if(scope.premiumIncluded)standard.push('Premium slijpen inbegrepen: na de basisbewerking fijn afwerken met Racing File S en World Cup-diamant medium, op dezelfde afgesproken hoek.');
     if(scope.premium&&!scope.premiumIncluded)extra.push({title:'Premium slijpen',fee:price(rates().premiumFiling)+' per materiaal',steps:['Na de standaardbewerking fijn afwerken met Racing File S.','Resterende bramen nalopen met World Cup-diamant medium.','Dezelfde afgesproken hoek aanhouden; geen automatische hoekwijziging.']});
-    if(waxes[scope.finishWax])extra.push({title:'Extra eindwax · '+waxes[scope.finishWax][0],fee:scope.finishWax==='performance'?'ski’s '+price(rates().purpleSki)+' · snowboard '+price(rates().purpleSnowboard):price(rates().extraEndWax)+' per materiaal',steps:['Eerst de rode basis aanbrengen, laten afkoelen, schrapen en borstelen.','Daarna de gekozen eindwax aanbrengen, laten afkoelen, schrapen en borstelen.',waxes[scope.finishWax][1]+'. Elke wax apart wegen.']});
-    if(scope.intensive)extra.push({title:'Intensieve extra reiniging',fee:price(rates().intensiveCleaning)+' per materiaal',steps:['Alleen na akkoord; gebruik AlphaMix Yellow als reinigingswax.','Warme reinigingswax verwijderen en het gele verbruik apart registreren.']});
+    if(waxes[scope.finishWax])extra.push({title:'Extra eindwax · '+waxes[scope.finishWax][0],fee:scope.finishWax==='performance'?'ski’s '+price(rates().purpleSki)+' · snowboard '+price(rates().purpleSnowboard):price(rates().extraEndWax)+' per materiaal',steps:['Eerst de rode basis aanbrengen, laten afkoelen, schrapen en borstelen.','Daarna de gekozen eindwax aanbrengen, laten afkoelen, schrapen en borstelen.',waxes[scope.finishWax][1]+'.']});
+    if(scope.intensive)extra.push({title:'Intensieve extra reiniging',fee:price(rates().intensiveCleaning)+' per materiaal',steps:['Een vrijwillige aanvulling die je vooraf zelf kiest; normale voorbereiding blijft inbegrepen.','Met een warme waxreiniging verwijderen we zoveel mogelijk oude waxresten en vuil vóór de nieuwe waxbeurt.']});
     return {title:scope.title||'Gekozen behandeling',standard,extra,training:!!scope.training,yellowPractice:!!scope.yellowPractice};
   }
   function selection(value,{intensiveCount=0}={}) {
@@ -39,7 +39,7 @@
     if(['slijpen','zilver'].includes(id))item.extra.push(...group({premium:true}).extra);
     if(id!=='slijpen'){for(const finishWax of ['alpha','ultra','performance'])item.extra.push(...group({finishWax}).extra);item.extra.push(...group({intensive:true}).extra);}
     if(!['slijpen','platinum'].includes(id))item.extra.push({title:'Kleine belagreparaties',fee:'vanaf '+price(rates().repair)+' per beschadiging',steps:['Kleine, oppervlakkige beschadigingen beoordelen, vullen en handmatig vlak afwerken. Grotere schade en de definitieve prijs bespreken we vooraf.']});
-    item.extra.push({title:'Spoedonderhoud',fee:price(rates().urgent)+' per gekozen pakket',steps:['Voor het eerstvolgende weekend, minimaal twee werkdagen vooraf en na bevestiging. Je brengt en haalt het materiaal zelf in Wamel.']});return groups;
+    item.extra.push({title:'Spoedonderhoud',fee:price(rates().urgent)+' per gekozen pakket',steps:['Spoed in overleg, minimaal twee werkdagen vooraf en na bevestiging. Je brengt en haalt het materiaal zelf in Wamel.']});return groups;
   }
   function render(groups,{open=false,extraHeading='Gekozen extra’s',publicOffer=false}={}) {
     if(!groups?.length)return '';

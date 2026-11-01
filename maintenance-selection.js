@@ -127,7 +127,7 @@
       material:materials.size === 1 ? [...materials][0] : 'Meerdere / combinatie',
       amount:String(amount || Math.max(1,...Object.values(value.e).map(item => item.q))),
       package:names.length === 1 && !Object.keys(value.e).length ? packages[names[0]] : names.length ? 'Meerdere pakketten / losse werkzaamheden' : 'Losse werkzaamheden / advies',
-      urgent:value.u || Object.values(value.p).some(item => item.u) ? 'Ja, voor komend weekend; minimaal 2 werkdagen vooraf; zelf brengen en ophalen' : 'Nee'
+      urgent:value.u || Object.values(value.p).some(item => item.u) ? 'Ja, in overleg; minimaal 2 werkdagen vooraf; zelf brengen en ophalen' : 'Nee'
     };
   }
   window.LATTEN_SELECTION = {treatmentPrices,packages,waxes,extras,empty,normalize,hasItems,parse,describe,notes,legacy,bindingPrice,estimate,cleaningCount,withoutCleaning};

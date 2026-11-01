@@ -16,12 +16,10 @@
     if (!values || typeof values !== 'object') return;
     const form=document.getElementById('requestForm');
     if (['Onderhoud','Verhuur'].includes(values.service)) form.querySelector(`input[name="service"][value="${values.service}"]`).checked=true;
-    for (const name of ['package','conditions']) {
+    for (const name of ['package']) {
       const select=form.elements[name];
-      if ([...select.options].some(option=>option.value===values[name])) select.value=values[name];
+      if (select && [...select.options].some(option=>option.value===values[name])) select.value=values[name];
     }
-    if (typeof values.destination==='string') form.elements.destination.value=values.destination.trim().slice(0,100);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(values.skidate || '')) form.elements.skidate.value=values.skidate;
     form.dispatchEvent(new Event('change',{bubbles:true}));
     size();
   });

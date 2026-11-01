@@ -11,14 +11,10 @@
   const message = document.querySelector('#packageSelection');
   const list = document.querySelector('#selectionItems');
   const emptyMessage = document.querySelector('#selectionEmpty');
-  const bindingsDialog = document.querySelector('#bindingsDialog');
-  const bindingsYes = document.querySelector('#bindingsYes');
   const selectionTotal = document.querySelector('#selectionTotal');
   const bookingCart = document.querySelector('#bookingCart');
   const bookingCartCount = document.querySelector('#bookingCartCount');
   const bookingCartTotal = document.querySelector('#bookingCartTotal');
-  const snowboardCounts = new WeakMap();
-  let pendingBindings = null;
   const bookingUrl = document.body.dataset.bookingUrl || 'afspraak.html';
   const requestLinks = [...document.querySelectorAll(`a[href="${bookingUrl}"]`)];
   let valid = true;
@@ -120,45 +116,12 @@
     const href = !valid ? '#pakketten' : selected ? `${bookingUrl}?keuze=${encodeURIComponent(JSON.stringify(value))}` : bookingUrl;
     requestLinks.forEach(link => { link.href = href; if (valid) link.removeAttribute('aria-disabled'); else link.setAttribute('aria-disabled','true'); });
   }
-  function askAboutBindings(input, previous) {
-    const next = Number(input.value);
-    snowboardCounts.set(input,next);
-    const added = next - previous;
-    if (!valid || !Number.isInteger(added) || added <= 0) return;
-    const card = input.closest('[data-package]');
-    pendingBindings = {card,added};
-    const name = model.packages[card.dataset.package];
-    document.querySelector('#bindingsQuestion').textContent = added === 1
-      ? `Wil je dat wij de bindingen van dit extra snowboard bij ${name} demonteren en weer monteren?`
-      : `Wil je dat wij de bindingen van deze ${added} extra snowboards bij ${name} demonteren en weer monteren?`;
-    const price = model.bindingPrice(added);
-    document.querySelector('#bindingsPrice').textContent = `${price} extra${added > 1 ? ' · € 7,50 per snowboard' : ' voor dit snowboard'}`;
-    const existing = document.querySelector('#bindingsExisting');
-    existing.hidden = false;
-    existing.textContent = `We voegen dit toe aan pakket ${name}. Je kunt het aantal daar aanpassen.`;
-    bindingsYes.disabled = false;
-    bindingsDialog.showModal();
-  }
-  bindingsYes.addEventListener('click',() => {
-    if (!pendingBindings || bindingsYes.disabled) return;
-    const {card,added} = pendingBindings;
-    const input = card.querySelector('[name="homepageBindings"]');
-    input.value = Math.min(amount(card,'homepageSnowboard'),Number(input.value) + added);
-    pendingBindings = null;
-    update();
-    bindingsDialog.close();
-  });
-  document.querySelector('#bindingsNo').addEventListener('click',() => { pendingBindings = null; bindingsDialog.close(); });
-  bindingsDialog.addEventListener('cancel',() => { pendingBindings = null; });
-  bindingsDialog.addEventListener('close',() => { pendingBindings = null; });
   section.addEventListener('click',event => {
     const button = event.target.closest('button[data-step]');
     if (!button) return;
     const input = button.closest('.quantity-control').querySelector('input');
-    const previous = Number(input.value);
     input.value = Math.max(0,Math.min(Number(input.max),Math.trunc(Number(input.value) || 0) + Number(button.dataset.step)));
     update();
-    if (input.name === 'homepageSnowboard') askAboutBindings(input,previous);
   });
   section.addEventListener('input',event => { if (event.target.type === 'number') update(); });
   section.addEventListener('change',event => {
@@ -167,12 +130,10 @@
       if (event.target.name === 'homepageWax' || event.target.checked) card.querySelector('[name="homepageSki"]').value = 1;
     }
     update();
-    if (event.target.name === 'homepageSnowboard') askAboutBindings(event.target,snowboardCounts.get(event.target) || 0);
   });
   requestLinks.forEach(link => link.addEventListener('click',event => { if (!valid) { event.preventDefault(); message.scrollIntoView({block:'center'}); } }));
   const saved = model.parse(new URLSearchParams(location.search).get('keuze'));
   if (saved) restore(saved);
-  cards.forEach(card => { const input = card.querySelector('[name="homepageSnowboard"]'); snowboardCounts.set(input,Number(input.value)); });
   window.addEventListener('pageshow',update);
   update();
   const openChosen = () => { const id=window.location.hash.slice(1);const card=cards.find(c=>c.id===id);if(card)card.querySelector('.package-config').open=true; };

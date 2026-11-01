@@ -23,13 +23,20 @@ test('practice preview and posted choice agree on extra wax and premium, with no
  const {w,d}=page(t,staff,'https://lattenspecialist.nl/medewerkers.html');w.LATTENSPECIALIST_BOOKING={endpoint:'https://example.invalid'};w.sessionStorage.setItem('ls-team-session','synthetic-session');const posts=[];w.fetch=async(url,config)=>{posts.push(JSON.parse(config.body));return{ok:false,json:async()=>({message:'Synthetic preview request captured'})};};w.eval(staffCode);const f=d.querySelector('#practiceForm');change(w,f.elements.finishWax,'ultra');assert.match(d.querySelector('#practiceTreatmentOverview').textContent,/UltraMix Blue/);assert.match(d.querySelector('#practiceTreatmentOverview').textContent,/geen klantfactuur/);f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();assert.equal(posts[0].finishWax,'ultra');assert.equal(posts[0].waxProtocol,'yellow-red');change(w,f.elements.activity,'filing');f.elements.premiumFiling.checked=true;f.elements.premiumFiling.dispatchEvent(new w.Event('change',{bubbles:true}));assert.match(d.querySelector('#practiceTreatmentOverview').textContent,/Racing File S/);assert.doesNotMatch(d.querySelector('#practiceTreatmentOverview').textContent,/UltraMix Blue/);f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();assert.equal(posts[1].premiumFiling,true);assert.equal(Object.hasOwn(posts[1],'finishWax'),false);
 });
 
-test('five short homepage offers open detailed dialogs and keep all extras optional',async t=>{
- const {w,d}=page(t,await read('index.html'),'https://lattenspecialist.nl/');w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.eval(await read('treatment-offer-popup.js'));
- assert.equal(d.querySelectorAll('.offer-card').length,5);assert.equal(d.querySelectorAll('.offer-card select,.offer-card input').length,0);
+test('five visible homepage offers lead directly to choice without a popup and explain optional extras',async t=>{
+ const {d}=page(t,await read('index.html'),'https://lattenspecialist.nl/');
+ const targetDom=new JSDOM(await read('onderhoud-kiezen.html'));t.after(()=>targetDom.window.close());const targets=targetDom.window.document;
+ assert.equal(d.querySelectorAll('.offer-card').length,5);
+ assert.equal(d.querySelectorAll('.offer-card select,.offer-card input').length,0);
+ assert.equal(d.querySelector('dialog'),null);assert.equal(d.querySelector('script[src*="treatment-offer-popup"]'),null);
  for(const key of ['brons','slijpen','zilver','goud','platinum']){
-  const card=d.querySelector(`[data-offer-card=${key}]`);card.querySelector('[data-offer-open]').click();const dialog=d.querySelector('#packageInfoDialog');assert.equal(dialog.open,true);assert.match(dialog.textContent,/Mogelijke extra’s/);assert.equal(new URL(d.querySelector('#packageInfoChoose').href).hash,'#'+card.id);
-  if(key==='brons'){assert.match(dialog.textContent,/BetaMix Red/);assert.doesNotMatch(dialog.textContent,/Racing File S/);}else assert.match(dialog.textContent,/Racing File S/);
-  if(key==='slijpen')assert.doesNotMatch(dialog.textContent,/Extra eindwax ·/);else assert.match(dialog.textContent,/Extra eindwax · UltraMix Blue/);
-  dialog.querySelector('.package-info-close').click();assert.equal(dialog.open,false);
+  const card=d.querySelector(`[data-offer-card=${key}]`),next=card.querySelector('a.btn');
+  const target=targets.querySelector(`[data-package=${key}]`);assert.ok(target,`Choice page must contain package ${key}`);
+  assert.equal(new URL(next.href).pathname,'/onderhoud-kiezen.html');assert.equal(new URL(next.href).hash,'#'+target.id,`Homepage CTA must target the real ${key} package article`);
+  assert.ok([...card.querySelectorAll('li')].every(li=>!li.closest('[hidden]')));
  }
+ const explanation=d.getElementById('standaard-en-extra').textContent;
+ assert.match(explanation,/Extra’s kies je zelf/);assert.match(explanation,/vooraf zelf/);assert.match(explanation,/Racing File S/);
+ assert.match(explanation,/0 tot −12 °C/);assert.doesNotMatch(explanation,/gele verbruik apart/);
+ assert.doesNotMatch(d.getElementById('haalbreng').textContent,/woensdag erop|week later/);
 });

@@ -12,6 +12,7 @@
   const summary = document.querySelector('#requestSummary');
   const selectionModel = window.LATTEN_SELECTION;
   let maintenanceSelection = null;
+  let cleaningPreferences = {};
   const selectionPanel = document.querySelector('#maintenanceSelection');
   const singleMaintenanceFields = document.querySelector('#singleMaintenanceFields');
   const status = document.querySelector('#bookingStatus');
@@ -41,7 +42,7 @@
   const serviceOptions=window.LATTEN_SERVICE;
   const waxAmount=()=>selectedService()!=='Onderhoud'||sharpeningOnly()?0:maintenanceSelection?Object.entries(maintenanceSelection.p).reduce((n,[id,item])=>n+(id==='slijpen'?0:item.s+item.b),0):Number(getValue('amount'))||0;
   const extraOptions=()=>serviceOptions.read(form,waxAmount());
-  const planningNote=()=>getValue('pickupDate')&&getValue('pickupDate')!=='In overleg'?`Brengen ${getValue('pickupDate')}; ophalen ${serviceOptions.plusWeek(getValue('pickupDate'))}; tijdstip na bevestiging`:'Brengen en ophalen op afspraak';
+  const planningNote=()=>getValue('pickupDate')&&getValue('pickupDate')!=='In overleg'?`Brengen ${getValue('pickupDate')}; ophalen op afspraak`:'Brengen en ophalen op afspraak';
   const totalWithExtras=()=>{
     if(selectedService()!=='Onderhoud')return null;
     if(maintenanceSelection)return selectionModel.estimate(maintenanceSelection).total+extraOptions().total;
@@ -103,14 +104,11 @@
         if (!sharpeningOnly()) lines.push(`Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`);
       }
       if(!maintenanceSelection&&form.elements.premiumFiling?.checked)lines.push('Premium slijpen: Racing File S en World Cup-diamant medium · + € 7,50 per materiaal');
-      lines.push(...extraOptions().lines, `Planning: ${planningNote()}`);
+      lines.push(...extraOptions().lines, `Brengafspraak: ${planningNote()}`);
       if (totalWithExtras()!==null) lines.push(`Totaal vanaf inclusief extra’s: ${serviceOptions.price(totalWithExtras())}`);
       lines.push(`Brengen en ophalen: ${getValue('logistics')}`);
       if (usesPickup()) lines.push(`Ophaaldatum: ${formatDate(getValue('pickupDate'))}`, `Ophaal- en terugbrenglocatie: ${getValue('address') || 'Nog invullen'}`);
       if (!maintenanceSelection) lines.push(`Spoed: ${getValue('urgent')}`);
-      if (getValue('destination')) lines.push(`Bestemming: ${getValue('destination')}`);
-      if (getValue('skidate')) lines.push(`Eerste skidag: ${formatDate(getValue('skidate'))}`);
-      if (getValue('conditions') !== 'Weet ik nog niet') lines.push(`Omstandigheden: ${getValue('conditions')}`);
     } else {
       lines.push(`Verhuur: ${rentalLabels[getValue('rentaltype')] || getValue('rentaltype')}`, `Huurprijs: ${rentalPrices[getValue('rentaltype')] || '-'}`, `Lengte persoon: ${getValue('height') ? `${getValue('height')} cm` : '-'}`, `Schoenmaat: ${getValue('shoesize') || '-'}`, `Niveau: ${getValue('level')}`, `Periode: ${formatDate(getValue('rentfrom'))} t/m ${formatDate(getValue('rentto'))}`);
     }
@@ -130,7 +128,25 @@
   }
   const baseSelectionNotes = () => selectedService() !== 'Onderhoud' ? '' : maintenanceSelection ? selectionModel.notes(maintenanceSelection) : form.elements.premiumFiling?.checked&&singleSelection()?selectionModel.notes(singleSelection()):sharpeningOnly() ? 'Alleen kanten slijpen en tunen; geen wax.' : `Waxkeuze: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`;
   const selectionNotes = () => selectedService()!=='Onderhoud'?'':[serviceOptions.compactNote(baseSelectionNotes()),extraOptions().note,planningNote()].filter(Boolean).join(' | ');
+  function currentEditingSelection(){
+    const value=selectionModel.normalize(maintenanceSelection);
+    let remaining=Math.max(0,Math.min(waxAmount(),Math.trunc(Number(form.elements.firstWaxCount.value)||0)));
+    // Preserve the selected package distribution where possible, then distribute any added cleaning.
+    for(const [id,preferred] of Object.entries(cleaningPreferences)){
+      const item=value.p[id];if(!item||id==='slijpen')continue;
+      const count=Math.min(remaining,preferred,item.s+item.b);if(count)item.c=count;remaining-=count;
+    }
+    for(const [id,item] of Object.entries(value.p)){
+      if(id==='slijpen'||!remaining)continue;
+      const count=Math.min(remaining,item.s+item.b-(item.c||0));if(count)item.c=(item.c||0)+count;remaining-=count;
+    }
+    return value;
+  }
   const updateForm = () => {
+    const planningTitle=selectedService()==='Onderhoud'?'Brengafspraak':'Huurperiode';
+    document.getElementById('planningStepTitle').textContent=planningTitle;
+    document.getElementById('planningProgressLabel').textContent=planningTitle;
+    document.getElementById('planningNextLabel').textContent='Volgende: '+planningTitle.toLowerCase();
     toggleFields(maintenanceFields, selectedService() === 'Onderhoud');
     toggleFields(rentalFields, selectedService() === 'Verhuur');
     toggleFields(maintenancePlanningFields, selectedService() === 'Onderhoud');
@@ -158,6 +174,7 @@
     toggleFields(pickupDateField, selectedService()==='Onderhoud');
     toggleFields(document.querySelector('#maintenanceExtras'),selectedService()==='Onderhoud');
     if(selectedService()==='Onderhoud'){const extra=extraOptions(),total=totalWithExtras();document.querySelector('#reservationExtrasTotal').textContent=extra.valid?`Gekozen extra’s: ${serviceOptions.price(extra.total)}${total!==null?` · Totaal vanaf ${serviceOptions.price(total)}`:''}`:'Controleer de aantallen.';}
+    if(maintenanceSelection&&selectedService()==='Onderhoud')document.getElementById('editMaintenanceSelection').href=`/onderhoud-kiezen.html?keuze=${encodeURIComponent(JSON.stringify(currentEditingSelection()))}#pakketten`;
     ['postcode','houseNumber','address'].forEach(name=>{form.elements[name].required=false;});
     form.elements.pickupDate.required=selectedService()==='Onderhoud';
     form.elements.address.setCustomValidity(usesPickup() && outsidePickupArea ? 'Deze plaats valt buiten het gratis servicegebied. Kies zelf brengen in Wamel of in overleg.' : '');
@@ -218,11 +235,12 @@
   };
   const today = new Date();
   const minimum = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
-  ['skidate','rentfrom','rentto'].forEach(name => { form.elements[name].min = minimum; });
+  ['rentfrom','rentto'].forEach(name => { form.elements[name].min = minimum; });
   const params = new URLSearchParams(location.search);
   const requestedSelection = selectionModel?.parse(params.get('keuze'));
   if (requestedSelection && selectionModel.hasItems(requestedSelection)) {
     maintenanceSelection = selectionModel.withoutCleaning(requestedSelection);
+    cleaningPreferences=Object.fromEntries(Object.entries(requestedSelection.p).map(([id,item])=>[id,item.c||0]));
     form.elements.firstWaxCount.value = String(selectionModel.cleaningCount(requestedSelection));
     const list = document.querySelector('#maintenanceSelectionItems');
     selectionModel.describe(requestedSelection).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
@@ -274,6 +292,8 @@
     if (!turnstileToken) { showStatus('Voltooi eerst de beveiligingscontrole en verstuur de aanvraag opnieuw.', 'error'); return; }
     const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
+    // Ignore trip data from older embedded app versions; appointments need no ski holiday details.
+    ['skidate','destination','conditions'].forEach(name=>{delete payload[name];});
     payload.privacyConsent = formData.get('privacyConsent') === 'on';
     payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
     if (selectedService() === 'Onderhoud') {

@@ -10,7 +10,7 @@
     for(let i=0;i<8;i++) {
       const d=new Date(start);d.setUTCDate(d.getUTCDate()+i*7);
       const value=d.toISOString().slice(0,10);
-      select.append(new Option(`${label(value)} · ophalen ${label(plusWeek(value))}`,value));
+      select.append(new Option(label(value),value));
     }
     select.append(new Option('Op afspraak · moment in overleg','In overleg'));
     if ([...select.options].some(o=>o.value===chosen)) select.value=chosen;

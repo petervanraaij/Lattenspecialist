@@ -45,7 +45,7 @@ test('copper and bronze package links work and no package is silently preselecte
  assert.match(d.querySelector('#selectionTotal').textContent,/0,00/);
  assert.match(d.querySelector('#bookingCartTotal').textContent,/0,00/);
  assert.match(d.querySelector('#stickyPackageRequest').textContent,/Reserveren/);
- assert.equal(d.querySelectorAll('.package-details:not([open])').length,5);
+ assert.equal(d.querySelectorAll('.package-highlights').length,5);
  assert.equal(d.querySelectorAll('#pakketten').length,1);
  const landingDom=new JSDOM(await read('index.html'));t.after(()=>landingDom.window.close());const landing=landingDom.window.document;
  assert.ok(landing.querySelector('.hero > .trust-strip'));
@@ -53,7 +53,7 @@ test('copper and bronze package links work and no package is silently preselecte
  assert.equal(landing.querySelectorAll('.offer-card').length,5);
  assert.equal(landing.querySelectorAll('#pakketten input,#pakketten select').length,0);
  assert.equal(landing.querySelector('#bookingCart'),null);
- assert.equal(landing.querySelectorAll('.offer-card button[data-offer-open]').length,10);
+ assert.equal(landing.querySelectorAll('.offer-card a.btn[href^="onderhoud-kiezen.html#pakket-"]').length,5);assert.equal(landing.querySelector('dialog'),null);
  assert.equal(d.querySelectorAll('.package-config').length,5);
  assert.equal(d.querySelector('.maintenance-sidebar'),null);
  assert.equal(d.querySelectorAll('[data-extra]').length,0);
@@ -104,7 +104,7 @@ test('visible total includes package, performance wax, rush, bindings and repair
  const copper=d.querySelector('[data-package="brons"]');
  change(w,d.querySelector('#brons-ski'),'1');
  change(w,d.querySelector('#brons-snowboard'),'1');
- d.querySelector('#bindingsYes').click();
+ change(w,d.querySelector('#brons-bindings'),'1');
  change(w,copper.querySelector('[name="homepageWax"]'),'performance');
  copper.querySelector('[name="homepageUrgent"]').click();
  change(w,d.querySelector('#brons-repairs'),'2');
@@ -118,45 +118,30 @@ test('visible total includes package, performance wax, rush, bindings and repair
  assert.match(request.d.querySelector('#maintenanceSelectionTotal').textContent,/89,90/);
  assert.match(request.d.querySelector('#requestSummary').textContent,/Totaal vanaf:.*89,90/);
 });
-test('snowboard prompts add bindings and their cost to the correct package, never to separate work',async t=>{
- const {d}=homepage(t),dialog=d.querySelector('#bindingsDialog');
- for (const id of ['slijpen','brons','zilver','goud','platinum']) {
-  const plus=d.querySelector(`#${id}-snowboard`).closest('.quantity-control').querySelector('[data-step="1"]');
-  plus.click();assert.equal(dialog.open,true);
-  assert.match(d.querySelector('#bindingsPrice').textContent,/7,50/);
-  d.querySelector('#bindingsYes').click();d.querySelector('#bindingsYes').click();
-  assert.equal(dialog.open,false);assert.equal(chosen(d).p[id].d,1);
-  plus.click();d.querySelector('#bindingsNo').click();
-  assert.equal(chosen(d).p[id].b,2);assert.equal(chosen(d).p[id].d,1);
-  plus.click();d.querySelector('#bindingsYes').click();
-  assert.equal(chosen(d).p[id].d,2);
-  assert.match(d.querySelector(`[data-package="${id}"] .package-bindings-price`).textContent,/15,00 extra in dit pakket/);
+test('inline bindings are optional, belong to each package and survive the real booking route',async t=>{
+ const {w,d}=homepage(t);assert.equal(d.querySelector('dialog'),null);
+ for(const id of ['slijpen','brons','zilver','goud','platinum']){
+  const boards=d.querySelector(`#${id}-snowboard`),bindings=d.querySelector(`#${id}-bindings`);
+  change(w,boards,'2');assert.equal(bindings.value,'0');
+  change(w,bindings,'2');assert.equal(chosen(d).p[id].d,2);
+  assert.match(d.querySelector(`[data-package="${id}"] .package-bindings-price`).textContent,/15,00/);
  }
- assert.equal(d.querySelector('#extra-bindings'),null);assert.deepEqual(chosen(d).e,{});
- const {w,f,posts,d:rd}=await setup(t,{url:d.querySelector('#packageRequest').href});
- assert.match(rd.querySelector('#maintenanceSelectionItems').textContent,/2× bindingen demonteren \+ monteren \(\+ €\s15,00\)/);
- complete(w,f);submit(w,f);await turn();await turn();
- assert.match(posts[0].notes,/Brons:.*bindingen 2x/);
- assert.match(posts[0].notes,/bindingen 2x à€7,50/);
- const restored=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
- assert.deepEqual(chosen(restored.d),chosen(d));assert.equal(restored.d.querySelector('#bindingsDialog').open,false);
+ assert.deepEqual(chosen(d).e,{});
+ const request=await setup(t,{url:d.querySelector('#packageRequest').href});
+ assert.match(request.d.querySelector('#maintenanceSelectionItems').textContent,/2× bindingen demonteren/);
+ complete(request.w,request.f);submit(request.w,request.f);await turn();await turn();
+ assert.match(request.posts[0].notes,/bindingen 2x/);
+ const restored=homepage(t,request.d.querySelector('#editMaintenanceSelection').href);
+ assert.deepEqual(chosen(restored.d),chosen(d));
 });
 
-test('bindings decline, escape, fewer snowboards and manual quantity changes do not add unwanted services',t=>{
- const {w,d,model}=homepage(t),dialog=d.querySelector('#bindingsDialog');
- const board=d.querySelector('#goud-snowboard'),bindings=d.querySelector('#goud-bindings');
- change(w,board,'2');assert.equal(dialog.open,true);
- assert.match(d.querySelector('#bindingsQuestion').textContent,/2 extra snowboards bij Goud/);
- d.querySelector('#bindingsYes').click();assert.equal(bindings.value,'2');
- change(w,board,'1');assert.equal(dialog.open,false);assert.equal(bindings.value,'1');
- change(w,board,'0');assert.equal(bindings.value,'0');assert.equal(d.querySelector('[data-package="goud"] .package-bindings').hidden,true);
- board.closest('.quantity-control').querySelector('[data-step="1"]').click();
- dialog.dispatchEvent(new w.Event('cancel'));dialog.close();
- assert.equal(bindings.value,'0');assert.equal(chosen(d).p.goud.b,1);
- const ski=d.querySelector('#brons-ski');ski.closest('.quantity-control').querySelector('[data-step="1"]').click();
- assert.equal(dialog.open,false);
- bindings.closest('.quantity-control').querySelector('[data-step="1"]').click();
- assert.equal(bindings.value,'1');assert.equal(bindings.closest('.quantity-control').querySelector('[data-step="1"]').disabled,true);
+test('fewer boards clamp binding count, new boards never add paid services automatically',t=>{
+ const {w,d,model}=homepage(t),board=d.querySelector('#goud-snowboard'),bindings=d.querySelector('#goud-bindings');
+ change(w,board,'2');assert.equal(bindings.value,'0');change(w,bindings,'2');
+ change(w,board,'1');assert.equal(bindings.value,'1');
+ change(w,board,'0');assert.equal(bindings.value,'0');assert.equal(bindings.closest('.package-bindings').hidden,true);
+ change(w,board,'1');assert.equal(bindings.value,'0');
+ bindings.closest('.quantity-control').querySelector('[data-step="1"]').click();assert.equal(bindings.value,'1');
  assert.equal(model.normalize({p:{goud:{s:0,b:1,d:2,w:'beta',u:false}},e:{},u:false}),null);
  assert.equal(model.normalize({p:{goud:{s:0,b:1,d:-1,w:'beta',u:false}},e:{},u:false}),null);
 });
@@ -254,7 +239,7 @@ test('wax choices survive submission, invalid URL choices stay on the included d
   assert.equal(f.elements.performanceWax.value,waxChoices.beta);
  }
 });
-const urgentChoice='Ja, voor komend weekend (+ € 10,00, minimaal 2 werkdagen vooraf)';
+const urgentChoice='Ja, in overleg (+ € 10,00, minimaal 2 werkdagen vooraf)';
 test('rush remains optional and scoped to each selected package',async t=>{
  const {d,w}=homepage(t);
  for(const id of ['slijpen','brons','zilver','goud','platinum']) {
