@@ -174,4 +174,7 @@
   cards.forEach(card => { const input = card.querySelector('[name="homepageSnowboard"]'); snowboardCounts.set(input,Number(input.value)); });
   window.addEventListener('pageshow',update);
   update();
+  const openChosen = () => { const id=window.location.hash.slice(1);const card=cards.find(c=>c.id===id);if(card)card.querySelector('.package-config').open=true; };
+  cards.forEach(card=>{if(card.classList.contains('is-selected'))card.querySelector('.package-config').open=true;});
+  openChosen();window.addEventListener('hashchange',openChosen);
 })();

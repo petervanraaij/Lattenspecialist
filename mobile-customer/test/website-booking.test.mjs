@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 const read = name => readFile(new URL('../../'+name,import.meta.url),'utf8');
-const [html,code,home,choice,metrics,selection,serviceOptions] = await Promise.all(['afspraak.html','booking.js','index.html','package-choice.js','website-metrics.js','maintenance-selection.js','service-options.js'].map(read));
+const [html,code,home,choice,metrics,selection,serviceOptions] = await Promise.all(['afspraak.html','booking.js','onderhoud-kiezen.html','package-choice.js','website-metrics.js','maintenance-selection.js','service-options.js'].map(read));
 const turn=()=>new Promise(resolve=>setTimeout(resolve,25));
 async function setup(t, {url='https://lattenspecialist.nl/afspraak.html',confirmationSent=true,fail=false}={}) {
  const dom=new JSDOM(html,{url,runScripts:'outside-only'});t.after(()=>dom.window.close());
@@ -23,7 +23,7 @@ function complete(w,f) {
  f.elements.name.value='Voorbeeld';f.elements.phone.value='0612345678';f.elements.email.value='test@example.com';f.elements.privacyConsent.checked=true;
 }
 const submit=(w,f)=>f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
-function homepage(t,url='https://lattenspecialist.nl/') {
+function homepage(t,url='https://lattenspecialist.nl/onderhoud-kiezen.html') {
  const dom=new JSDOM(home,{url,runScripts:'outside-only'});t.after(()=>dom.window.close());
  const w=dom.window,d=w.document;
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
@@ -47,18 +47,21 @@ test('copper and bronze package links work and no package is silently preselecte
  assert.match(d.querySelector('#stickyPackageRequest').textContent,/Reserveren/);
  assert.equal(d.querySelectorAll('.package-details:not([open])').length,5);
  assert.equal(d.querySelectorAll('#pakketten').length,1);
- assert.ok(d.querySelector('.hero > .trust-strip'));
- assert.ok(d.querySelector('.hero').nextElementSibling.matches('.home-route'));
- assert.equal(d.querySelector('.home-route').nextElementSibling.id,'snowLive');
- assert.equal(d.querySelector('#snowLive').nextElementSibling.id,'onderhoud-keuze');
- assert.equal(d.querySelector('#onderhoud-keuze').nextElementSibling.id,'pakketten');
+ const landingDom=new JSDOM(await read('index.html'));t.after(()=>landingDom.window.close());const landing=landingDom.window.document;
+ assert.ok(landing.querySelector('.hero > .trust-strip'));
+ assert.equal(landing.querySelector('.hero').nextElementSibling.id,'snowLive');
+ assert.equal(landing.querySelectorAll('.offer-card').length,5);
+ assert.equal(landing.querySelectorAll('#pakketten input,#pakketten select').length,0);
+ assert.equal(landing.querySelector('#bookingCart'),null);
+ for(const link of landing.querySelectorAll('.offer-card a'))assert.match(link.getAttribute('href'),/^onderhoud-kiezen\.html#pakket-/);
+ assert.equal(d.querySelectorAll('.package-config').length,5);
  assert.equal(d.querySelector('.maintenance-sidebar'),null);
  assert.equal(d.querySelectorAll('[data-extra]').length,0);
  assert.match(d.querySelector('.complex-repair-note').textContent,/Bij grotere of diepere schade beoordelen we eerst wat mogelijk is/);
  assert.match(d.querySelector('.complex-repair-note').textContent,/bespreken we de aanpak en prijs vooraf/);
  assert.equal(d.querySelector('[data-extra="edges"]'),null);
  assert.match(d.querySelector('[data-package="slijpen"] .package-wax-price').textContent,/alleen slijpen/);
- assert.match(d.querySelector('#faq').textContent,/Kan ik alleen mijn kanten laten slijpen/);
+ assert.match(landing.querySelector('#faq').textContent,/Kan ik alleen mijn kanten laten slijpen/);
  const bronze=await setup(t,{url:'https://lattenspecialist.nl/afspraak.html?pakket=Brons'});
  assert.equal(bronze.f.elements.performanceWax.disabled,true);
  assert.equal(bronze.d.querySelector('#waxChoiceField').hidden,true);

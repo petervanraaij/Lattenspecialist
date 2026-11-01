@@ -2,6 +2,9 @@
 (() => {
   const goToBooking = () => {
     const current = new URL(window.location.href);
+    if (current.pathname.endsWith('/') || current.pathname.endsWith('/index.html')) {
+      if (current.searchParams.has('keuze')) { const target=new URL('onderhoud-kiezen.html',current);target.search=current.search;target.hash=current.hash;window.location.replace(target.href);return; }
+    }
     if (current.hash !== '#afspraak' && current.searchParams.get('app') !== 'klant') return;
     const destination = new URL('afspraak.html', current);
     destination.search = current.search;

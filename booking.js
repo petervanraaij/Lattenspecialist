@@ -213,7 +213,7 @@
     const list = document.querySelector('#maintenanceSelectionItems');
     selectionModel.describe(requestedSelection).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
     document.querySelector('#maintenanceSelectionTotal').textContent = `Totaal vanaf ${selectionModel.estimate(requestedSelection).formatted}`;
-    document.querySelector('#editMaintenanceSelection').href = `/?keuze=${encodeURIComponent(JSON.stringify(requestedSelection))}#pakketten`;
+    document.querySelector('#editMaintenanceSelection').href = `/onderhoud-kiezen.html?keuze=${encodeURIComponent(JSON.stringify(requestedSelection))}#pakketten`;
   }
   const packageChoice = params.get('pakket');
   if ([...form.elements.package.options].some(option => option.value && option.value === packageChoice)) form.elements.package.value = packageChoice;

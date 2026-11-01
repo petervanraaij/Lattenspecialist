@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 import {readAndValidateLattenspecialist} from '../../worker/src/index.js';
 const read=name=>readFile(new URL('../../'+name,import.meta.url),'utf8');
-const [home,selection,choice,options,modal,bookingHtml,booking]=await Promise.all(['index.html','maintenance-selection.js','package-choice.js','service-options.js','test-reservation-modal.js','afspraak.html','booking.js'].map(read));
+const [home,selection,choice,options,modal,bookingHtml,booking]=await Promise.all(['onderhoud-kiezen.html','maintenance-selection.js','package-choice.js','service-options.js','test-reservation-modal.js','afspraak.html','booking.js'].map(read));
 const tick=()=>new Promise(resolve=>setTimeout(resolve,10));
 const change=(w,el,value)=>{el.value=value;el.dispatchEvent(new w.Event('change',{bubbles:true}));};
 function setup(t){
