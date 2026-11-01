@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Onderhoud aanvragen | De Lattenspecialist</title>
-  <meta name="description" content="Vraag ski- of snowboardonderhoud aan bij De Lattenspecialist. Kies je pakket, planning en wax in drie rustige stappen.">
+  <meta name="description" content="Vraag ski- of snowboardonderhoud aan bij De Lattenspecialist. Kies je pakket, wax en brengafspraak in drie rustige stappen.">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="google-site-verification" content="jAJ5Rp_uk-YnodPuMr8gK2VtJBOcbYpHct2pxnJP464">
   <link rel="canonical" href="https://lattenspecialist.nl/afspraak.html">
@@ -12,7 +12,7 @@
   <meta property="og:locale" content="nl_NL">
   <meta property="og:site_name" content="De Lattenspecialist">
   <meta property="og:title" content="De Lattenspecialist | Ski- & snowboardonderhoud">
-  <meta property="og:description" content="Ski- en snowboardonderhoud in Wamel. Woensdag brengen, een week later ophalen, of op afspraak. Altijd vooraf reserveren.">
+  <meta property="og:description" content="Ski- en snowboardonderhoud in Wamel. Woensdag is onze vaste breng- en ophaaldag, op afspraak. Andere dagen in overleg. App vooraf om een tijdstip af te spreken.">
   <meta property="og:url" content="https://lattenspecialist.nl/afspraak.html">
   <meta property="og:image" content="https://lattenspecialist.nl/images/social-preview.png">
   <meta property="og:image:width" content="1200">
@@ -28,9 +28,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=20">
-  <link rel="stylesheet" href="homepage.css?v=20261101-gold-3">
+  <link rel="stylesheet" href="homepage.css?v=20261101-clear-1">
   <link rel="stylesheet" href="customer-booking.css?v=1">
-  <script src="customer-booking.js?v=20261101-gold-3"></script>
+  <script src="customer-booking.js?v=20261101-clear-1"></script>
 <link rel="stylesheet" href="treatment-overview.css?v=20261101-gold-3">
 </head>
 <body class="booking-page">
@@ -65,7 +65,7 @@
         <form id="requestForm" class="request-form step-form" method="post">
           <ol class="form-progress" aria-label="Voortgang aanvraag">
             <li class="is-active" data-progress-step="1"><span>1</span><small>Materiaal &amp; pakket</small></li>
-            <li data-progress-step="2"><span>2</span><small>Planning &amp; reis</small></li>
+            <li data-progress-step="2"><span>2</span><small id="planningProgressLabel">Brengafspraak</small></li>
             <li data-progress-step="3"><span>3</span><small>Gegevens &amp; bevestigen</small></li>
           </ol>
 
@@ -85,7 +85,7 @@
               <ul id="maintenanceSelectionItems"></ul>
               <p id="maintenanceSelectionTotal" class="maintenance-selection-total"></p>
               <a id="editMaintenanceSelection" class="quiet-link" href="/#pakketten">Aantallen of werkzaamheden aanpassen</a>
-              <p class="field-note">De wax- en spoedkeuze geldt voor alle materialen binnen het betreffende pakket. Spoed is voor het eerstvolgende weekend, met minimaal 2 werkdagen speling; je brengt en haalt het materiaal dan altijd zelf.</p>
+              <p class="field-note">De wax- en spoedkeuze geldt voor alle materialen binnen het betreffende pakket. Spoed is in overleg mogelijk, met minimaal 2 werkdagen beschikbaar voor het onderhoud.</p>
             </div>
             <div id="singleMaintenanceFields">
             <div class="form-grid">
@@ -94,13 +94,13 @@
               <label><span>Pakket</span><select name="package" required><option value="">Kies je pakket</option><option>Koper</option><option>Brons</option><option>Zilver</option><option>Goud</option><option>Platinum</option><option>Losse werkzaamheden / advies</option><option value="Meerdere pakketten / losse werkzaamheden" hidden>Meerdere pakketten / losse werkzaamheden</option></select></label>
               <label id="waxChoiceField"><span>Waxkeuze</span><select id="performanceWax" name="performanceWax"><option value="Holmenkol BetaMix Red (standaard inbegrepen)" data-wax="beta">BetaMix Red (standaard inbegrepen)</option><option value="Holmenkol AlphaMix Yellow (+ € 2,50)" data-wax="alpha">AlphaMix Yellow (+ € 2,50)</option><option value="Holmenkol UltraMix Blue (+ € 2,50)" data-wax="ultra">UltraMix Blue (+ € 2,50)</option><option value="Performance Wax (ski + € 5,00 · snowboard + € 7,50)" data-wax="performance">Performance Purple (ski + € 5,00 · snowboard + € 7,50)</option></select></label>
             </div>
-            <p class="field-note" id="waxChoiceNote">Normale voorbereiding en BetaMix Red zijn inbegrepen. AlphaMix Yellow of UltraMix Blue als extra eindwax: + € 2,50 per paar ski’s of snowboard. Intensieve extra reiniging: € 5,00, na akkoord. Performance Purple kost + € 5,00 per paar ski’s en + € 7,50 per snowboard. <a href="/#wax">Meer over onze wax</a>.</p>
+            <p class="field-note" id="waxChoiceNote">Normale voorbereiding en BetaMix Red zijn inbegrepen. AlphaMix Yellow of UltraMix Blue als extra eindwax: + € 2,50 per paar ski’s of snowboard. Intensieve warme waxreiniging kies je zelf voor € 5,00 per paar ski’s of snowboard. Performance Purple kost + € 5,00 per paar ski’s en + € 7,50 per snowboard. <a href="/#wax">Meer over onze wax</a>.</p>
             <label id="singlePremiumField" hidden><span>Premium slijpen · + € 7,50 per materiaal</span><input type="checkbox" name="premiumFiling"><small>Na standaard slijpen: Racing File S en World Cup-diamant medium, op dezelfde afgesproken hoek.</small></label>
             <a class="quiet-link" href="onderhoud-kiezen.html#pakketten">Meerdere pakketten en kleine reparaties kiezen</a>
             </div>
           </div>
 
-          <div id="maintenanceExtras" class="reservation-extras"><h3>Reiniging &amp; waxstick</h3><label><span>Extra waxreiniging (optioneel): voor hoeveel materialen?</span><input type="number" name="firstWaxCount" min="0" max="20" step="1" required value="0"><small>€ 5,00 per paar ski’s of snowboard. Laat op 0 voor standaard reinigen en waxen over de aanwezige wax.</small></label><label><span>Holmenkol Natural Skiwax Stick 50 g meebestellen?</span><input type="number" name="waxstickCount" min="0" max="20" step="1" value="0" required><small>€ 17,50 per stuk · meenemen bij het ophalen.</small></label><p id="reservationExtrasTotal" aria-live="polite"></p></div>
+          <div id="maintenanceExtras" class="reservation-extras"><h3>Reiniging &amp; waxstick</h3><label><span>Extra waxreiniging (optioneel): voor hoeveel materialen?</span><input type="number" name="firstWaxCount" min="0" max="20" step="1" required value="0"><small>€ 5,00 per paar ski’s of snowboard om oude waxresten zoveel mogelijk te verwijderen. Deze aanvulling kies je zelf; normale voorbereiding is inbegrepen.</small></label><label><span>Holmenkol Natural Skiwax Stick 50 g meebestellen?</span><input type="number" name="waxstickCount" min="0" max="20" step="1" value="0" required><small>€ 17,50 per stuk · meenemen bij het ophalen.</small></label><p id="reservationExtrasTotal" aria-live="polite"></p></div>
           <div id="rentalFields" hidden>
             <div class="form-grid">
               <label><span>Wat wil je huren?</span><select name="rentaltype"><option value="Complete set">Complete skiset — € 15/dag · € 35/weekend · € 69/week</option><option value="Ski's met stokken">Ski’s met stokken — € 10/dag · € 25/weekend · € 49/week</option><option value="Dakkoffer met daksteunen">Dakkoffer met daksteunen — € 10/dag · € 15/weekend · € 20/week</option></select></label>
@@ -110,21 +110,18 @@
             </div>
             <p class="field-note" id="rentalPrice">Complete skiset: € 15 per dag, € 35 per weekend of € 69 per week. Prijzen zijn inclusief btw.</p>
           </div>
-          <div class="form-step-actions"><span></span><button class="btn btn-dark step-next" type="button">Volgende: planning</button></div>
+          <div class="form-step-actions"><span></span><button class="btn btn-dark step-next" id="planningNextLabel" type="button">Volgende: brengafspraak</button></div>
           </fieldset>
 
           <fieldset class="form-step" data-form-step="2" hidden>
-            <legend><span>Stap 2 van 3</span>Planning &amp; wintersport</legend>
+            <legend><span>Stap 2 van 3</span><b id="planningStepTitle">Brengafspraak</b></legend>
             <div id="maintenancePlanningFields">
               <div class="form-grid">
                 <label><span>Brengen &amp; ophalen</span><select name="logistics"><option value="Zelf brengen en zelf ophalen">Zelf brengen en ophalen in Wamel</option></select></label>
                 <label id="pickupDateField"><span>Brengdatum (voorkeur)</span><select name="pickupDate" required><option value="">Kies een woensdag of op afspraak</option><option>In overleg</option></select></label>
-                <label><span>Spoed</span><select name="urgent"><option>Nee</option><option data-urgent="yes">Ja, voor komend weekend (+ € 10,00, minimaal 2 werkdagen vooraf)</option></select></label>
-                <label><span>Skigebied / bestemming</span><input type="text" name="destination" placeholder="bijv. Sölden, Oostenrijk"></label>
-                <label><span>Eerste skidag</span><input type="date" name="skidate"></label>
-                <details class="trip-conditions"><summary>Sneeuwomstandigheden (optioneel)</summary><label><span>Verwachte omstandigheden</span><select name="conditions"><option>Weet ik nog niet</option><option>Zacht / warm</option><option>Rond het vriespunt</option><option>Koud</option><option>Kunstsneeuw / hard / ijzig</option></select></label></details>
+                <label><span>Spoed</span><select name="urgent"><option>Nee</option><option data-urgent="yes">Ja, in overleg (+ € 10,00, minimaal 2 werkdagen vooraf)</option></select></label>
               </div>
-              <p class="field-note">Woensdag brengen en de woensdag erop ophalen, of op afspraak. Reserveer altijd vooraf en wacht onze bevestiging af. Bij spoed moeten minimaal 2 werkdagen beschikbaar zijn.</p>
+              <p class="field-note">Woensdag is onze vaste breng- en ophaaldag, op afspraak. App vooraf om een tijdstip af te spreken. Een andere dag kan in overleg; kies dan ‘In overleg’. We bevestigen je breng- en ophaalmoment persoonlijk. Spoed is in overleg mogelijk met minimaal 2 werkdagen beschikbaar.</p>
             </div>
             <div id="rentalPlanningFields" hidden>
               <div class="form-grid"><label><span>Van</span><input type="date" name="rentfrom"></label><label><span>Tot en met</span><input type="date" name="rentto"></label></div>
@@ -192,9 +189,9 @@
 
   <script src="script.js?v=10"></script>
   <script src="booking-config.js?v=2"></script>
-  <script src="maintenance-selection.js?v=20261101-gold-3"></script><script src="treatment-overview.js?v=20261101-gold-3"></script>
-  <script src="service-options.js?v=1"></script>
-  <script src="booking.js?v=20261101-gold-3"></script>
+  <script src="maintenance-selection.js?v=20261101-clear-1"></script><script src="treatment-overview.js?v=20261101-clear-1"></script>
+  <script src="service-options.js?v=20261101-clear-1"></script>
+  <script src="booking.js?v=20261101-clear-1"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>
 </html>
