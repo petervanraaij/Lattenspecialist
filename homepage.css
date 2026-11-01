@@ -649,3 +649,22 @@
 .home-page .snow-conditions-top .snow-live-current-head h2{margin:5px 0 0;color:#191713;font-size:1.5rem;line-height:1.25}
 .snow-conditions-top .quiet-link{font-size:.8rem;margin-top:6px}
 @media(max-width:560px){.home-page .snow-conditions-top{padding:24px 0}.snow-conditions-top .snow-live{padding:16px}.home-page .snow-conditions-top .snow-live-current-head h2{font-size:1.3rem}}
+
+/* Public overview and the separate maintenance selector share the same prices. */
+.offer-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:stretch}
+.offer-card{display:flex;flex-direction:column;min-width:0;background:#fff;border:1px solid #ded6c6;border-radius:18px;padding:28px;scroll-margin-top:110px}
+.offer-card h3{font-size:1.6rem;line-height:1.2;margin:10px 0 16px;color:#25251f}
+.offer-card>p{color:#625b50;font-size:.95rem;line-height:1.6;min-height:3.2em}
+.offer-card dl{margin:18px 0;padding:16px 0;border-block:1px solid #e9e2d6}
+.offer-card dl>div,.offer-extras dl>div{display:flex;justify-content:space-between;gap:16px;padding:5px 0;align-items:baseline}
+.offer-card dt{font-size:.82rem;color:#625b50}.offer-card dd{font-size:1.3rem;font-weight:800;margin:0;white-space:nowrap}
+.offer-card ul{padding-left:20px;line-height:1.9;margin:4px 0 24px;font-size:.9rem}.offer-card .btn{margin-top:auto;justify-content:space-between}
+.offer-grid .offer-card:nth-child(3){border-color:#b9913d;border-top:4px solid #b9913d}
+.offer-footnote{font-size:.8rem;line-height:1.6;color:#625b50;margin:22px 0}
+.offer-extras{border:1px solid #ded6c6;border-radius:12px;background:#fff}.offer-extras>summary{padding:20px 24px;font-weight:750;cursor:pointer}.offer-extras>div{padding:0 24px 20px;font-size:.9rem;line-height:1.7}.offer-extras dd{margin:0;text-align:right;font-weight:700}.offer-extras dl>div{border-bottom:1px solid #eee8dd;padding:10px 0}.offer-help{text-align:center;margin-top:26px;color:#625b50}.offer-help a{font-weight:750;text-decoration:underline}
+.wax-learn-more{margin-top:28px;margin-bottom:28px;border-block:1px solid #ded6c6}.wax-learn-more>summary{padding:24px 0;cursor:pointer;font-size:1.1rem;font-weight:750}.wax-learn-more .section{padding:32px 0}.wax-learn-more .container{width:100%;max-width:none}
+.booking-choice-page .packages{padding-top:55px}.booking-choice-page .section-head h1{font-size:clamp(2rem,4vw,3.4rem);line-height:1.15}.booking-choice-page .package-grid{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}.package-config{margin-top:20px;border-top:1px solid #d8caa7}.package-config>summary{padding:16px 0;font-weight:800;cursor:pointer;color:#654c18}.package-config-body{display:grid;gap:14px}.booking-choice-page .package-card:target{outline:2px solid #b9913d;outline-offset:4px}.booking-choice-page .booking-cart[data-empty="true"]{display:none}
+@media(max-width:1000px){.offer-grid,.booking-choice-page .package-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.offer-grid,.booking-choice-page .package-grid{grid-template-columns:1fr}.offer-card{padding:24px}.offer-card>p{min-height:0}.offer-extras dl>div{display:block}.offer-extras dd{text-align:left}.home-page .compact-offers{padding:48px 0}.booking-choice-page .package-grid{gap:18px}.package-config>summary{font-size:.95rem}}
+.offer-card.package-card{min-height:0;box-shadow:none}.offer-card .price-row{display:block;margin:18px 0;padding:16px 0;border-block:1px solid #e9e2d6}.offer-card .price-row>div{display:flex;justify-content:space-between;gap:16px;padding:5px 0;align-items:baseline}.offer-card .price-row small{font-size:.82rem;color:#625b50}.offer-card .price-row strong{font-size:1.3rem;white-space:nowrap}.offer-card .tier{margin-bottom:0}
+.pickup-directions{display:inline-block;margin:18px 0 0 20px;text-decoration:underline;color:inherit;font-weight:700}@media(max-width:650px){.pickup-directions{display:block;margin-left:0}}

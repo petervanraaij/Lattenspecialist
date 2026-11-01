@@ -28,3 +28,5 @@ test('normal browsing stays on the homepage, while a later legacy anchor still w
   session.events.hashchange();
   assert.deepEqual(session.redirects,['https://lattenspecialist.nl/afspraak.html#afspraak']);
 });
+
+test('existing encoded selections redirect to the dedicated selector without losing the choice',()=>{const value=encodeURIComponent(JSON.stringify({p:{zilver:{s:2,b:0,w:'beta'}}}));const {redirects}=visit('https://lattenspecialist.nl/?keuze='+value+'#pakketten');assert.deepEqual(redirects,['https://lattenspecialist.nl/onderhoud-kiezen.html?keuze='+value+'#pakketten']);});
