@@ -53,7 +53,7 @@ test('copper and bronze package links work and no package is silently preselecte
  assert.equal(landing.querySelectorAll('.offer-card').length,5);
  assert.equal(landing.querySelectorAll('#pakketten input,#pakketten select').length,0);
  assert.equal(landing.querySelector('#bookingCart'),null);
- for(const link of landing.querySelectorAll('.offer-card a'))assert.match(link.getAttribute('href'),/^onderhoud-kiezen\.html#pakket-/);
+ assert.equal(landing.querySelectorAll('.offer-card button[data-offer-open]').length,10);
  assert.equal(d.querySelectorAll('.package-config').length,5);
  assert.equal(d.querySelector('.maintenance-sidebar'),null);
  assert.equal(d.querySelectorAll('[data-extra]').length,0);
@@ -80,8 +80,8 @@ test('counts, multiple packages, different materials and wax survive one complet
  assert.equal(value.p.brons.s,2);assert.equal(value.p.goud.b,1);assert.equal(value.p.slijpen.s,1);assert.equal(value.p.slijpen.w,'none');assert.equal(value.p.goud.u,true);assert.equal(value.p.goud.w,'performance');
  assert.equal(d.querySelectorAll('.package-card.is-selected').length,3);
  assert.equal(d.querySelector('.mobile-sticky-cta').href,d.querySelector('#packageRequest').href);
- assert.match(d.querySelector('#selectionTotal').textContent,/132,30/);
- assert.match(d.querySelector('#bookingCartTotal').textContent,/132,30/);
+ assert.match(d.querySelector('#selectionTotal').textContent,/129,80/);
+ assert.match(d.querySelector('#bookingCartTotal').textContent,/129,80/);
  assert.match(d.querySelector('#bookingCartCount').textContent,/4 materialen gekozen/);
  const {w:rw,d:rd,f,posts}=await setup(t,{url:d.querySelector('#packageRequest').href});
  assert.equal(rd.querySelector('#maintenanceSelection').hidden,false);

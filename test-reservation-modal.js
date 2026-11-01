@@ -61,6 +61,7 @@
     const heading=document.createElement('strong');heading.textContent='Controleer je bestelling';review.append(heading);
     lines.forEach(line=>{const item=document.createElement('span');item.textContent=line;review.append(item);});
     const planning=document.createElement('span');planning.textContent=`Zelf brengen in Wamel · ${chosenMoment()} · tijdstip na bevestiging`;review.append(planning);
+    if(window.LSTreatmentOverview){const scope=document.createElement('div');scope.innerHTML=window.LSTreatmentOverview.render(window.LSTreatmentOverview.selection(activeSelection,{intensiveCount:Number(form.elements.firstWaxCount.value)||0}));review.append(scope);}
     const finalTotal=document.createElement('strong');finalTotal.textContent=extra.valid?`Totaal vanaf inclusief gekozen extra’s: ${service.price(sum)}`:'Controleer de aantallen';review.append(finalTotal);
   };
   const loadTurnstile = () => {

@@ -48,7 +48,7 @@
     const id=Object.keys(selectionModel.packages).find(key=>selectionModel.packages[key]===getValue('package'));
     if(!id||!['Ski','Snowboard'].includes(getValue('material')))return null;
     const value=selectionModel.empty(), amount=Number(getValue('amount'));
-    value.p[id]={s:getValue('material')==='Ski'?amount:0,b:getValue('material')==='Snowboard'?amount:0,w:id==='slijpen'?'none':form.elements.performanceWax.selectedOptions[0]?.dataset.wax||'beta',u:needsRush()};
+    value.p[id]={s:getValue('material')==='Ski'?amount:0,b:getValue('material')==='Snowboard'?amount:0,w:id==='slijpen'?'none':form.elements.performanceWax.selectedOptions[0]?.dataset.wax||'beta',u:needsRush(),...(form.elements.premiumFiling?.checked&&id!=='brons'?{f:true}:{})};
     const estimate=selectionModel.estimate(value);
     return estimate?estimate.total+extraOptions().total:null;
   };
@@ -102,6 +102,7 @@
         lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`);
         if (!sharpeningOnly()) lines.push(`Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`);
       }
+      if(!maintenanceSelection&&form.elements.premiumFiling?.checked)lines.push('Premium slijpen: Racing File S en World Cup-diamant medium · + € 7,50 per materiaal');
       lines.push(...extraOptions().lines, `Planning: ${planningNote()}`);
       if (totalWithExtras()!==null) lines.push(`Totaal vanaf inclusief extra’s: ${serviceOptions.price(totalWithExtras())}`);
       lines.push(`Brengen en ophalen: ${getValue('logistics')}`);
@@ -117,7 +118,17 @@
     if (getValue('notes')) lines.push(`Opmerking: ${getValue('notes')}`);
     return lines.join('\n');
   };
-  const baseSelectionNotes = () => selectedService() !== 'Onderhoud' ? '' : maintenanceSelection ? selectionModel.notes(maintenanceSelection) : sharpeningOnly() ? 'Alleen kanten slijpen en tunen; geen wax.' : `Waxkeuze: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`;
+  function singleSelection(){
+    const id=Object.keys(selectionModel.packages).find(key=>selectionModel.packages[key]===getValue('package'));
+    if(!id||!['Ski','Snowboard'].includes(getValue('material')))return null;
+    const value=selectionModel.empty();value.p[id]={s:getValue('material')==='Ski'?Number(getValue('amount')):0,b:getValue('material')==='Snowboard'?Number(getValue('amount')):0,w:id==='slijpen'?'none':form.elements.performanceWax.selectedOptions[0]?.dataset.wax||'beta',u:needsRush(),...(id!=='brons'&&form.elements.premiumFiling?.checked?{f:true}:{})};return selectionModel.normalize(value);
+  }
+  function updateTreatmentOverview(){
+    const value=maintenanceSelection||singleSelection();
+    let scope=document.querySelector('#requestTreatmentOverview');if(!scope){scope=document.createElement('div');scope.id='requestTreatmentOverview';summary.after(scope);}
+    if(window.LSTreatmentOverview)scope.innerHTML=selectedService()==='Onderhoud'?window.LSTreatmentOverview.render(window.LSTreatmentOverview.selection(value,{intensiveCount:Number(form.elements.firstWaxCount.value)||0})):'';
+  }
+  const baseSelectionNotes = () => selectedService() !== 'Onderhoud' ? '' : maintenanceSelection ? selectionModel.notes(maintenanceSelection) : form.elements.premiumFiling?.checked&&singleSelection()?selectionModel.notes(singleSelection()):sharpeningOnly() ? 'Alleen kanten slijpen en tunen; geen wax.' : `Waxkeuze: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`;
   const selectionNotes = () => selectedService()!=='Onderhoud'?'':[serviceOptions.compactNote(baseSelectionNotes()),extraOptions().note,planningNote()].filter(Boolean).join(' | ');
   const updateForm = () => {
     toggleFields(maintenanceFields, selectedService() === 'Onderhoud');
@@ -136,6 +147,8 @@
     if (rush) form.elements.logistics.value = 'Zelf brengen en zelf ophalen';
     form.elements.logistics.disabled = rush;
     form.elements.logistics.closest('label').title = rush ? 'Bij spoed breng en haal je het materiaal altijd zelf.' : '';
+    const premiumField=document.querySelector('#singlePremiumField');
+    if(premiumField){const allowed=selectedService()==='Onderhoud'&&!maintenanceSelection&&['Brons','Zilver'].includes(getValue('package'))&&['Ski','Snowboard'].includes(getValue('material'));premiumField.hidden=!allowed;form.elements.premiumFiling.disabled=!allowed;if(!allowed)form.elements.premiumFiling.checked=false;}
     const hideWax = selectedService() !== 'Onderhoud' || !!maintenanceSelection || sharpeningOnly();
     document.querySelector('#waxChoiceField').hidden = hideWax;
     document.querySelector('#waxChoiceNote').hidden = hideWax;
@@ -155,6 +168,7 @@
     form.elements.notes.setCustomValidity(getValue('notes').length > noteLimit ? `Maak je opmerking korter: er is ruimte voor ${noteLimit} tekens.` : '');
     document.querySelector('#notesRemaining').textContent = `Nog ${Math.max(0,noteLimit - form.elements.notes.value.length)} tekens voor je opmerking.`;
     summary.textContent = buildSummary();
+    updateTreatmentOverview();
   };
   const loadAvailability = async () => { serviceOptions.dates(form.elements.pickupDate);updateForm(); };
   const lookupAddress = async () => {
@@ -265,6 +279,8 @@
     if (selectedService() === 'Onderhoud') {
       payload.logistics = getValue('logistics');
       if (maintenanceSelection) payload.maintenanceSelection = JSON.stringify(maintenanceSelection);
+      else if(form.elements.premiumFiling?.checked&&singleSelection())payload.maintenanceSelection=JSON.stringify(singleSelection());
+      delete payload.premiumFiling;
       payload.notes = [selectionNotes(),String(payload.notes || '').trim()].filter(Boolean).join('\n');
     }
     payload.turnstileToken = turnstileToken;

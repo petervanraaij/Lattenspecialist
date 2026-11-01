@@ -175,7 +175,7 @@
       return;
     }
     const summary = workflow.summary || {}, totalCost = number(summary.totalCost ?? summary.total_cost), totalSeconds = number(summary.totalSeconds ?? summary.total_seconds);
-    host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3><p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
+    host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3><p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSTreatmentOverview?window.LSTreatmentOverview.render(window.LSTreatmentOverview.workflow(workflow),{open:true}):''}${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
     if(!workflow.isTraining&&window.LSMaterialPhotos){const details=document.createElement('details');details.className='material-photo-disclosure';details.innerHTML='<summary>Foto’s bij binnenkomst en oplevering</summary><div data-material-photos></div>';const photoActions=document.createElement('div');photoActions.className='workflow-photo-shortcuts';photoActions.innerHTML='<button type="button" data-photo-stage="intake">📷 Binnenkomstfoto maken</button><button type="button" data-photo-stage="delivery">📷 Opleverfoto maken</button>';host.querySelector('.workflow-head').after(photoActions,details);photoActions.addEventListener('click',event=>{const button=event.target.closest('[data-photo-stage]');if(!button)return;details.open=true;const target=details.querySelector('[data-material-photos]');if(!target.children.length)window.LSMaterialPhotos.mount(target,materialId);const select=target.querySelector('[name="stage"]');if(select)select.value=button.dataset.photoStage;target.querySelector('[data-photo-camera]')?.click();});details.addEventListener('toggle',()=>{const target=details.querySelector('[data-material-photos]');if(details.open&&!target.children.length)window.LSMaterialPhotos.mount(target,materialId);});}
     const currentGuide=host.querySelector('.workflow-step.is-next .maintenance-guide details,.workflow-step.is-active .maintenance-guide details');if(currentGuide)currentGuide.open=true;
     updateTimers();
@@ -259,7 +259,7 @@
     const status = document.getElementById('practiceStatus'), result = document.getElementById('practiceResult'), button = form.querySelector('button[type=submit]');
     const values = Object.fromEntries(new FormData(form));
     values.premiumFiling = values.activity === 'filing' && form.elements.premiumFiling?.checked === true;
-    if (values.activity === 'wax') values.waxProtocol = 'yellow-red';
+    if (values.activity === 'wax') values.waxProtocol = 'yellow-red'; else delete values.finishWax;
     if (values.activity !== 'wax') delete values.waxSku;
     button.disabled = true; status.classList.remove('is-error'); status.textContent = 'Oefenopdracht aanmaken…'; result.replaceChildren();
     try {
@@ -292,9 +292,11 @@
   const practiceForm = document.getElementById('practiceForm');
   if (practiceForm) {
     const activity = practiceForm.elements.activity, wax = practiceForm.querySelector('[data-practice-wax]');
-    const update = () => { const visible = activity.value === 'wax'; wax.hidden = !visible; const premium = practiceForm.querySelector('[data-practice-premium]'); if(premium) premium.hidden = activity.value !== 'filing'; practiceForm.elements.waxSku.disabled = !visible; };
+    const update = () => { const visible=activity.value==='wax';wax.hidden=!visible;const premium=practiceForm.querySelector('[data-practice-premium]');if(premium)premium.hidden=activity.value!=='filing';practiceForm.elements.waxSku.disabled=!visible;if(practiceForm.elements.finishWax)practiceForm.elements.finishWax.disabled=!visible;
+      const preview=document.getElementById('practiceTreatmentOverview');if(preview&&window.LSTreatmentOverview){const finish=practiceForm.elements.finishWax?.value||'none',sku={alpha:'24101',ultra:'24121',performance:'27933'}[finish],steps=visible?[{code:'practice_clean'},{code:'practice_wax',waxDetails:{sku:'24057'}}]:[{code:activity.value==='filing'?'practice_filing':'practice_repair'}];if(visible&&sku)steps.push({code:'practice_finish_wax',waxDetails:{sku}});if(activity.value==='filing'&&practiceForm.elements.premiumFiling?.checked)steps.push({code:'premium_file'},{code:'premium_diamond'});preview.innerHTML=window.LSTreatmentOverview.render(window.LSTreatmentOverview.workflow({steps,isTraining:true,material:{package:'Deze oefening'}}),{open:true});}
+    };
     document.querySelectorAll('[data-practice-activity]').forEach(button => button.addEventListener('click', () => { activity.value = button.dataset.practiceActivity; update(); }));
-    activity.addEventListener('change', update); update();
+    practiceForm.addEventListener('change', update); update();
     practiceForm.addEventListener('submit', event => { event.preventDefault(); createPractice(practiceForm); });
   }
   document.addEventListener('submit', event => {

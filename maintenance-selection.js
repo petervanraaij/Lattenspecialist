@@ -8,14 +8,15 @@
     brons:{s:19.95,b:24.95},
     slijpen:{s:24.95,b:29.95},
     zilver:{s:34.95,b:39.95},
-    goud:{s:44.95,b:49.95},
-    platinum:{s:52.5,b:57.5}
+    goud:{s:42.45,b:47.45},
+    platinum:{s:49.95,b:54.95}
   };
-  const performanceSkiPrice = 5, performanceSnowboardPrice = 7.5, urgentPrice = 10, repairPrice = 7.5;
+  const treatmentPrices=Object.freeze({premiumFiling:7.5,extraEndWax:2.5,purpleSki:5,purpleSnowboard:7.5,intensiveCleaning:5,urgent:10,repair:7.5,bindings:7.5});
+  const performanceSkiPrice = treatmentPrices.purpleSki, performanceSnowboardPrice = treatmentPrices.purpleSnowboard, urgentPrice = treatmentPrices.urgent, repairPrice = treatmentPrices.repair;
   const own = (map, key) => Object.prototype.hasOwnProperty.call(map, key);
   const quantity = value => Number.isInteger(value) && value >= 0 && value <= 20;
   const empty = () => ({p:{}, e:{}, u:false});
-  const bindingPrice = count => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(count * 7.5);
+  const bindingPrice = count => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(count * treatmentPrices.bindings);
   const formatPrice = amount => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(amount);
   function normalize(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value) || !value.p || !value.e || typeof value.p !== 'object' || typeof value.e !== 'object' || Array.isArray(value.p) || Array.isArray(value.e) || typeof value.u !== 'boolean') return null;
@@ -61,12 +62,12 @@
       const packagePrice = prices[id];
       amount += item.s + item.b;
       total += item.s * packagePrice.s + item.b * packagePrice.b;
-      if (['alpha','ultra'].includes(item.w)) total += (item.s + item.b) * 2.5;
+      if (['alpha','ultra'].includes(item.w)) total += (item.s + item.b) * treatmentPrices.extraEndWax;
       if (item.w === 'performance') total += item.s * performanceSkiPrice + item.b * performanceSnowboardPrice;
-      if (item.f) total += (item.s + item.b) * 7.5;
+      if (item.f && !['goud','platinum'].includes(id)) total += (item.s + item.b) * treatmentPrices.premiumFiling;
       if (item.u) total += urgentPrice;
-      total += item.d * 7.5;
-      total += (item.c || 0) * 5;
+      total += item.d * treatmentPrices.bindings;
+      total += (item.c || 0) * treatmentPrices.intensiveCleaning;
       if (item.r) { total += item.r * repairPrice; needsAssessment = true; }
     }
     return {amount,total,formatted:formatPrice(total),needsAssessment};
@@ -82,7 +83,8 @@
       if (!item) continue;
       const materials = [item.s ? `${item.s}× ski's (paar)` : '',item.b ? `${item.b}× snowboard` : ''].filter(Boolean).join(' + ');
       lines.push(`${name}: ${materials}${item.w === 'none' ? '' : ` · ${waxes[item.w]}`}${item.u ? ' · Spoed + € 10,00 · zelf brengen en ophalen · minimaal 2 werkdagen vooraf' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}${item.r ? ` · ${item.r}× kleine belagreparaties in totaal (vanaf € 7,50 per reparatie; definitieve prijs na beoordeling)` : ''}`);
-      if (item.f) lines.push(`${name}: premium slijpen (fijne vijl + diamant medium), ${item.s + item.b}x EUR 7,50 = ${formatPrice((item.s + item.b)*7.5)}`);
+      if (['goud','platinum'].includes(id)) lines.push(`${name}: premium slijpen inbegrepen (Racing File S + diamant medium)`);
+      else if (item.f) lines.push(`${name}: premium slijpen (fijne vijl + diamant medium), ${item.s + item.b}x EUR 7,50 = ${formatPrice((item.s + item.b)*7.5)}`);
       if (item.c) lines.push(`${name}: extra waxreiniging ${item.c}× € 5,00 = ${formatPrice(item.c * 5)}`);
     }
     for (const [id,name] of Object.entries(extras)) {
@@ -100,7 +102,7 @@
       if (!item) continue;
       const materials = [item.s ? `${item.s}x ski` : '',item.b ? `${item.b}x snowboard` : ''].filter(Boolean).join('+');
       lines.push(`${name}: ${materials}${waxNotes[item.w] ? `; ${waxNotes[item.w]}` : ''}${item.u ? '; spoed+€10' : ''}${item.d ? `; bindingen ${item.d}x à€7,50` : ''}${item.r ? `; kleine rep. ${item.r}x v.a.€7,50/st.` : ''}`);
-      if (item.f) lines.push(`${name}: premium ${item.s + item.b}x EUR7,50`);
+      if (item.f && !['goud','platinum'].includes(id)) lines.push(`${name}: premium ${item.s + item.b}x EUR7,50`);
       if (item.c) lines.push(`${name}: extra waxreiniging ${item.c}x à€5`);
     }
     for (const [id,name] of Object.entries(extraNotes)) {
@@ -128,5 +130,5 @@
       urgent:value.u || Object.values(value.p).some(item => item.u) ? 'Ja, voor komend weekend; minimaal 2 werkdagen vooraf; zelf brengen en ophalen' : 'Nee'
     };
   }
-  window.LATTEN_SELECTION = {packages,waxes,extras,empty,normalize,hasItems,parse,describe,notes,legacy,bindingPrice,estimate,cleaningCount,withoutCleaning};
+  window.LATTEN_SELECTION = {treatmentPrices,packages,waxes,extras,empty,normalize,hasItems,parse,describe,notes,legacy,bindingPrice,estimate,cleaningCount,withoutCleaning};
 })();
