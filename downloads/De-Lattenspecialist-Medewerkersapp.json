@@ -1,17 +1,18 @@
 {
-  "version": "1.6.0",
-  "versionCode": 9,
+  "version": "1.7.0",
+  "versionCode": 10,
   "package": "nl.lattenspecialist.medewerkers",
   "minimumAndroid": 7,
-  "sha256": "edc3e8e71b7d478f6ccb1a7595d379dd31fdf02e6d376d7b9c28b6f7c1856743",
-  "bytes": 4307420,
+  "sha256": "1d7c588978567860bb95e3eb973e891008a1a9b0f58bab12de6723319b07badd",
+  "bytes": 4311763,
   "signingCertificateSha256": "c172da4620f071b693ae1e673c14ed733b2c7601627c57cc7ef0fa0f4bf3e81c",
   "previousVersions": [
     "1.1.1",
     "1.3.0",
     "1.4.0",
     "1.5.0",
-    "1.5.1"
+    "1.5.1",
+    "1.6.0"
   ],
   "features": [
     "Oefenen",
@@ -24,7 +25,10 @@
     "Magazijn en gereedschap vervangen",
     "Klikbare productfotokaarten",
     "Waxkleur en laatst gewogen richtgewicht",
-    "Doorklikken naar actieve werkstap"
+    "Doorklikken naar actieve werkstap",
+    "Goud en Platinum inclusief premium slijpen, zonder dubbele toeslag",
+    "Gedeelde standaardwerkzaamheden en extra’s",
+    "Extra eindwax oefenen met een eigen gewichtsregistratie"
   ],
   "debuggable": false,
   "distribution": "Gewone Android-app. Play Protect-classificatie wordt afzonderlijk onderzocht."

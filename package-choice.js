@@ -4,6 +4,7 @@
   if (!model || !section) return;
   const cards = [...section.querySelectorAll('[data-package]')];
   cards.filter(card => card.dataset.package !== 'brons').forEach(card => {
+    if(['goud','platinum'].includes(card.dataset.package)){card.querySelector('.package-wax').insertAdjacentHTML('afterend','<p class="package-premium-included">Premium slijpen inbegrepen · Racing File S + diamant medium</p>');return;}
     card.querySelector('.package-wax').insertAdjacentHTML('afterend','<label class="package-urgent"><input type="checkbox" name="homepagePremium"><span>Premium slijpen + &euro; 7,50 per paar ski’s of snowboard<small>Extra afwerking met fijne Racing File S en World Cup-diamant medium; dezelfde afgesproken hoek. Geldt voor alle materialen binnen dit pakket.</small></span></label>');
   });
   const extras = [...section.querySelectorAll('[data-extra]')];
