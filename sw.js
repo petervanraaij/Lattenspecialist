@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v123-five-offers';
+const CACHE_NAME = 'lattenspecialist-v124-package-explanations';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -8,7 +8,7 @@ const APP_SHELL = [
   '/treatment-overview.css?v=20261101-gold-3',
   '/verhuur.html',
   '/webshop.html',
-  '/homepage.css?v=20261102-five-2',
+  '/homepage.css?v=20261102-explanation-2',
   '/homepage.js?v=3',
   '/maintenance-selection.js?v=20261101-clear-1',
   '/manual-maintenance.js?v=20261101-gold-3',

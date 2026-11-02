@@ -692,3 +692,12 @@
 @media(max-width:1099px) { .home-page .compact-offers .offer-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media(max-width:900px) { .home-page .compact-offers .offer-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:650px) { .home-page .compact-offers .offer-grid { grid-template-columns:1fr; } }
+
+/* Explain the chosen work below the compact package comparison. */
+.home-page .maintenance-choices { padding:48px 0; }
+.maintenance-choices .section-head { margin-bottom:28px; }
+.maintenance-choices .section-head h2 { font-size:clamp(1.6rem,3vw,2.1rem); line-height:1.2; margin:8px 0 12px; }
+.maintenance-choices .included-treatment-grid { gap:24px 36px; }
+.maintenance-choices .included-treatment-grid h3 { font-size:clamp(1.2rem,2vw,1.5rem); margin:10px 0 12px; }
+.maintenance-choices .included-treatment-grid p { font-size:.9rem; line-height:1.7; }
+.maintenance-choices .extras-title { margin:8px 0 22px; font-size:1.5rem; line-height:1.3; }
