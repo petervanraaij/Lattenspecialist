@@ -8,7 +8,7 @@ const descriptions={
  '24408':'Transparant vulmateriaal voor kleine, oppervlakkige beschadigingen in geschikt ski- of snowboardbelag. Het is geen wax en geen lijm voor de kern.',
  '24409':'Zwart vulmateriaal voor kleine, oppervlakkige belagreparaties. De kleur past bij zwart belag; de strip herstelt geen losse staalkant of constructie.',
  '25502':'Een elastische houder die de remarmen van een skibinding ingetrokken houdt. Hierdoor blijven remarmen buiten het gebied waar je reinigt, schraapt en borstelt.',
- '20687set':'Een set roterende borstels en toebehoren voor belag- en waxbewerking. Welke borstel je nodig hebt hangt af van de stap; controleer de werkelijke setinhoud vóór gebruik.',
+ '20687set':'Een set roterende borstels en toebehoren om de bestaande structuur vrij te borstelen en het belag te polijsten. Welke borstel je nodig hebt hangt af van de stap; controleer de werkelijke setinhoud vóór gebruik.',
  '20551':'Een leveranciersset voor het verzorgen van staalkanten, met geleiding en bijpassende bewerkingsmiddelen. Bestellijst V3, tab 20551: Racing File M-MINI 25527, Racing File S 25529, Worldcup File Guide 88 graden 24478, klem 24681, Diamond File World Cup medium 24483 en Base Edge File Guide 24686. Controleer bij ontvangst de fysieke set.',
  '25422':'Een reinigingsmiddel voor geschikte ski- en snowboardbelagen. Het maakt vuil en waxresten los; het is geen glijwax en geen middel om de ski mee te smeren.',
  '24491':'Een pluisarm reinigingsvlies op rol. Je gebruikt een schoon stuk als drager voor geschikt reinigingsmiddel en om losgemaakt vuil op te nemen.',
@@ -32,9 +32,9 @@ const wax={
  '25018':{snow:'Alle temperaturen',iron:'Geen waxijzer nodig',use:'Tussendoor de glijlaag bijwerken: opwrijven en polijsten.'}
 };
 const brushes=[
- {title:'Brons / metaal',what:'Een relatief stevige borstel voor de bedoelde reinigings- en structuurstap.',purpose:'Vuil of waxresten uit de bestaande structuur helpen verwijderen.',how:'Gebruik alleen een geschikte belagborstel, werk met lichte druk en controleer het resultaat. Een vijlborstel hoort niet op het belag.'},
+ {title:'Brons / metaal',what:'Een relatief stevige borstel voor reinigen en het vrijborstelen van de bestaande structuur.',purpose:'Vuil of waxresten uit de bestaande structuur helpen verwijderen.',how:'Gebruik alleen een geschikte belagborstel, werk met lichte druk en controleer het resultaat. Een vijlborstel hoort niet op het belag.'},
  {title:'Paardenhaar',what:'Een borstel met paardenhaar voor het uitborstelen van wax.',purpose:'Overtollige wax uit de structuur verwijderen na het schrapen.',how:'Werk gelijkmatig in de voorgeschreven richting. Houd een roterende borstel in beweging en volg de snelheid van precies dat model.'},
- {title:'Nylon',what:'Een nylon afwerkborstel voor de bedoelde waxfinish.',purpose:'Losse waxresten verwijderen en de afwerking verzorgen.',how:'Gebruik een schone borstel met weinig druk. Ga niet met extra druk of snelheid warmte op één plek opbouwen.'},
+ {title:'Nylon',what:'Een nylon afwerkborstel voor de bedoelde waxfinish.',purpose:'Losse waxresten verwijderen en het belag polijsten.',how:'Gebruik een schone borstel met weinig druk. Ga niet met extra druk of snelheid warmte op één plek opbouwen.'},
  {title:'Fleece / wol',what:'Een applicator of afwerkrol voor producten die deze verwerking voorschrijven.',purpose:'Het specifiek daarvoor bedoelde finishingproduct verdelen of afwerken.',how:'Gebruik uitsluitend volgens het productvoorschrift. Het is geen universele vervanger voor een borstel die harde wax uit de structuur moet halen.'}
 ];
 const files=[

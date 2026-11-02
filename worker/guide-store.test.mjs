@@ -18,7 +18,11 @@ try{
  const material=f.sql.prepare('SELECT * FROM materials WHERE id=?').get(practice.data.material.id),held=await getWorkflow(f.db,material);assert.equal(held.steps[0].guide.version,step.guide.version);assert.ok(held.steps[0].guide.steps.includes('Controleer samen de oppervlakkige beschadiging.'));
  assert.equal((await f.call('/api/team/operations/steps/'+step.id+'/finish','POST',{repairStrips:1,repairColor:'transparent',toolSkus:[]},f.staff)).status,400);
  assert.equal((await f.call('/api/team/operations/steps/'+step.id+'/finish','POST',{repairStrips:1,repairColor:'transparent',toolSkus:[],guideChecks:{version:step.guide.version,checkedIds:step.guide.checks.map(item=>item.id)}},f.staff)).status,200);
- const ski=f.sql.prepare('SELECT * FROM materials WHERE id=?').get(f.materials[0].id);await getWorkflow(f.db,ski);
+ const ski=f.sql.prepare('SELECT * FROM materials WHERE id=?').get(f.materials[0].id),freshWorkflow=await getWorkflow(f.db,ski);
+ const brushStep=freshWorkflow.steps.find(step=>step.code==='brush');assert.equal(brushStep.title,'Bestaande structuur vrijborstelen en belag polijsten');
+ const oldBrushGuide={...brushStep.guide,title:'Borstelen en finishen',goal:'Werk de waxlaag af en maak de bestaande glijstructuur vrij.',version:'2026-11-01.2',steps:['Borstel met het voor de wax passende materiaal en werk gelijkmatig richting tail.','Verwijder stof en beoordeel het glijvlak bij goed licht.']};
+ f.sql.prepare('INSERT INTO maintenance_step_guides(step_id,content_json) VALUES(?,?)').run(brushStep.id,JSON.stringify(oldBrushGuide));
+ for(const status of ['in_progress','completed']){f.sql.prepare('UPDATE maintenance_steps SET status=? WHERE id=?').run(status,brushStep.id);const heldBrush=(await getWorkflow(f.db,ski)).steps.find(step=>step.id===brushStep.id);assert.deepEqual(heldBrush.guide,oldBrushGuide,'existing '+status+' brush instruction keeps its complete historical snapshot');assert.equal(heldBrush.title,oldBrushGuide.title);}
  let selects=0;const original=f.db.prepare.bind(f.db);f.db.prepare=query=>{if(/^SELECT/i.test(query))selects++;return original(query);};const workflow=await getWorkflow(f.db,ski);assert.ok(workflow.steps.length>6);assert.ok(selects<=13,`Workflow caused ${selects} SELECT statements`);
  console.log('PASS gedeelde bewerkbare instructies, veilige oefenaanvulling, versiebevestiging, onveranderlijke startversie, rechten en maximaal 12 workflow-selecties');
 }finally{f.close();}
