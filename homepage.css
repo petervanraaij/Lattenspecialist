@@ -700,11 +700,16 @@
 .maintenance-choices .included-treatment-grid { gap:24px 36px; }
 .maintenance-choices .included-treatment-grid h3 { font-size:clamp(1.2rem,2vw,1.5rem); margin:10px 0 12px; }
 .maintenance-choices .included-treatment-grid p { font-size:.9rem; line-height:1.7; }
-.maintenance-choices .extras-title { margin:8px 0 22px; font-size:1.5rem; line-height:1.3; }
+.maintenance-choices .extras-title { margin:0 0 14px; font-size:1.25rem; line-height:1.3; }
+.maintenance-choices .optional-treatment-grid { gap:24px 36px; }
+.maintenance-choices .optional-treatment-grid article { background:transparent; border:0; border-bottom:1px solid #d8cbb1; border-radius:0; padding:8px 0 24px; }
+.maintenance-choices .optional-treatment-grid .purple-treatment { border-top:0!important; }
+.maintenance-choices .treatment-pricing-note { margin:10px 0 24px; }
 .maintenance-choices .package-choice-block { margin-top:16px; padding-top:16px; border-top:1px solid #d8cbb1; }
 .maintenance-choices .package-choice-block .section-head { margin-bottom:24px; }
 .maintenance-choices .package-choice-block .offer-footnote { margin-bottom:10px; }
 .maintenance-choices .package-choice-block .offer-help { margin-top:10px; }
 @media(max-width:650px) {
   .maintenance-choices .package-choice-block { margin-top:14px; padding-top:14px; }
+  .maintenance-choices .optional-treatment-grid article { padding:8px 0 22px; }
 }
