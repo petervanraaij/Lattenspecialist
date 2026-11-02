@@ -1,10 +1,10 @@
-const CACHE_NAME = 'lattenspecialist-v120-clear-maintenance';
+const CACHE_NAME = 'lattenspecialist-v121-brush-wording';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
   '/onderhoud-kiezen.html',
-  '/treatment-overview.js?v=20261101-clear-1',
+  '/treatment-overview.js?v=20261102-brush-1',
   '/treatment-overview.css?v=20261101-gold-3',
   '/verhuur.html',
   '/webshop.html',
