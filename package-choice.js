@@ -4,8 +4,8 @@
   if (!model || !section) return;
   const cards = [...section.querySelectorAll('[data-package]')];
   cards.filter(card => card.dataset.package !== 'brons').forEach(card => {
-    if(['goud','platinum'].includes(card.dataset.package)){card.querySelector('.package-wax').insertAdjacentHTML('afterend','<p class="package-premium-included">Premium slijpen inbegrepen · Racing File S + diamant medium</p>');return;}
-    card.querySelector('.package-wax').insertAdjacentHTML('afterend','<label class="package-urgent"><input type="checkbox" name="homepagePremium"><span>Premium slijpen + &euro; 7,50 per paar ski’s of snowboard<small>Extra afwerking met fijne Racing File S en World Cup-diamant medium; dezelfde afgesproken hoek. Geldt voor alle materialen binnen dit pakket.</small></span></label>');
+    if(['goud','platinum'].includes(card.dataset.package)){card.querySelector('.package-wax').insertAdjacentHTML('afterend','<p class="package-premium-included">Premium slijpen inbegrepen · diamant medium, daarna Racing File S</p>');return;}
+    card.querySelector('.package-wax').insertAdjacentHTML('afterend','<label class="package-urgent"><input type="checkbox" name="homepagePremium"><span>Premium slijpen + &euro; 7,50 per paar ski’s of snowboard<small>Extra afwerking met World Cup-diamant medium, daarna de fijne Racing File S; dezelfde afgesproken hoek. Geldt voor alle materialen binnen dit pakket.</small></span></label>');
   });
   const extras = [...section.querySelectorAll('[data-extra]')];
   const message = document.querySelector('#packageSelection');
@@ -27,8 +27,13 @@
       if (premium?.checked) item.f = true;
       const repairs = card.querySelector('[name="homepageRepairs"]');
       if (repairs) item.r = Number(repairs.value);
-      const cleaning = card.querySelector('[name="homepageCleaning"]');
-      if (cleaning) item.c = Number(cleaning.value);
+      const cleaningSki = card.querySelector('[name="homepageCleaningSki"]');
+      const cleaningSnowboard = card.querySelector('[name="homepageCleaningSnowboard"]');
+      if (cleaningSki && cleaningSnowboard) {
+        item.cs = Number(cleaningSki.value);
+        item.cb = Number(cleaningSnowboard.value);
+        item.c = item.cs + item.cb;
+      }
       value.p[card.dataset.package] = item;
     });
     extras.forEach(extra => { value.e[extra.dataset.extra] = {q:amount(extra,'extraAmount'),m:extra.querySelector('[name="extraMaterial"]').value}; });
@@ -46,8 +51,10 @@
       if (premium) premium.checked = Boolean(item.f);
       const repairs = card.querySelector('[name="homepageRepairs"]');
       if (repairs) repairs.value = item.r || 0;
-      const cleaning = card.querySelector('[name="homepageCleaning"]');
-      if (cleaning) cleaning.value = item.c || 0;
+      const cleaningSki = card.querySelector('[name="homepageCleaningSki"]');
+      const cleaningSnowboard = card.querySelector('[name="homepageCleaningSnowboard"]');
+      if (cleaningSki) cleaningSki.value = item.cs || 0;
+      if (cleaningSnowboard) cleaningSnowboard.value = item.cb || 0;
     });
     extras.forEach(extra => {
       const item = value.e[extra.dataset.extra];
@@ -58,17 +65,18 @@
   function update() {
     cards.forEach(card => {
       const snowboards = amount(card,'homepageSnowboard');
-      const cleaning = card.querySelector('[name="homepageCleaning"]');
-      if (cleaning) {
-        const materials = amount(card,'homepageSki') + snowboards;
+      for (const [name,materials] of [['homepageCleaningSki',amount(card,'homepageSki')],['homepageCleaningSnowboard',snowboards]]) {
+        const cleaning = card.querySelector(`[name="${name}"]`);
+        if (!cleaning) continue;
         cleaning.disabled = !(materials > 0);
         [...cleaning.options].forEach(option => { option.disabled = option.hidden = Number(option.value) > materials; });
         if (cleaning.disabled) cleaning.value = '0';
         else if (Number.isInteger(materials) && Number(cleaning.value) > materials) cleaning.value = String(materials);
-        card.querySelector('.package-cleaning-hint').textContent = cleaning.disabled
-          ? 'Optioneel. Kies eerst het aantal ski’s of snowboards.'
-          : '€ 5,00 per paar ski’s of snowboard. Standaard reinigen is inbegrepen.';
       }
+      const cleaningHint = card.querySelector('.package-cleaning-hint');
+      if (cleaningHint) cleaningHint.textContent = amount(card,'homepageSki') + snowboards > 0
+        ? 'Aanbevolen vóór het waxen: € 2,50 per paar ski’s en € 5,00 per snowboard. Je kiest zelf de aantallen.'
+        : 'Kies eerst het aantal ski’s of snowboards. De normale voorbereiding is inbegrepen.';
       const repairs = card.querySelector('[name="homepageRepairs"]');
       if (repairs) {
         repairs.disabled = !(amount(card,'homepageSki') + snowboards > 0);
@@ -97,7 +105,7 @@
     cards.forEach(card => {
       card.classList.toggle('is-selected',amount(card,'homepageSki') + amount(card,'homepageSnowboard') > 0);
       const wax = card.querySelector('[name="homepageWax"]').value;
-      card.querySelector('.package-wax-price').textContent = wax === 'performance' ? 'Ski + € 5,00 · snowboard + € 7,50' : ['alpha','ultra'].includes(wax) ? '+ € 2,50 per paar ski’s of snowboard' : wax === 'none' ? 'Dit pakket is alleen slijpen.' : 'Inbegrepen';
+      card.querySelector('.package-wax-price').textContent = ['alpha','ultra','performance'].includes(wax) ? 'Ski + € 5,00 · snowboard + € 7,50' : wax === 'none' ? 'Dit pakket is alleen slijpen.' : 'Inbegrepen';
     });
     const value = read();
     valid = !!value;

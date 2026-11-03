@@ -28,9 +28,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="De Lattenspecialist">
   <link rel="stylesheet" href="styles.css?v=20">
-  <link rel="stylesheet" href="homepage.css?v=20261101-clear-1">
+  <link rel="stylesheet" href="homepage.css?v=20261103-maintenance-prices">
   <link rel="stylesheet" href="customer-booking.css?v=1">
-  <script src="customer-booking.js?v=20261101-clear-1"></script>
+  <script src="customer-booking.js?v=20261103-maintenance-prices"></script>
 <link rel="stylesheet" href="treatment-overview.css?v=20261101-gold-3">
 </head>
 <body class="booking-page">
@@ -92,15 +92,15 @@
               <label><span>Materiaal</span><select name="material"><option>Ski</option><option>Snowboard</option><option>Meerdere / combinatie</option></select></label>
               <label><span>Aantal</span><input type="number" name="amount" min="1" max="20" value="1" required></label>
               <label><span>Pakket</span><select name="package" required><option value="">Kies je pakket</option><option>Koper</option><option>Brons</option><option>Zilver</option><option>Goud</option><option>Platinum</option><option>Losse werkzaamheden / advies</option><option value="Meerdere pakketten / losse werkzaamheden" hidden>Meerdere pakketten / losse werkzaamheden</option></select></label>
-              <label id="waxChoiceField"><span>Waxkeuze</span><select id="performanceWax" name="performanceWax"><option value="Holmenkol BetaMix Red (standaard inbegrepen)" data-wax="beta">BetaMix Red (standaard inbegrepen)</option><option value="Holmenkol AlphaMix Yellow (+ € 2,50)" data-wax="alpha">AlphaMix Yellow (+ € 2,50)</option><option value="Holmenkol UltraMix Blue (+ € 2,50)" data-wax="ultra">UltraMix Blue (+ € 2,50)</option><option value="Performance Wax (ski + € 5,00 · snowboard + € 7,50)" data-wax="performance">Performance Purple (ski + € 5,00 · snowboard + € 7,50)</option></select></label>
+              <label id="waxChoiceField"><span>Waxkeuze</span><select id="performanceWax" name="performanceWax"><option value="Holmenkol BetaMix Red (standaard inbegrepen)" data-wax="beta">BetaMix Red (standaard inbegrepen)</option><option value="Holmenkol AlphaMix Yellow (+ € 5,00 ski · € 7,50 snowboard)" data-wax="alpha">AlphaMix Yellow (+ € 5,00 ski · € 7,50 snowboard)</option><option value="Holmenkol UltraMix Blue (+ € 5,00 ski · € 7,50 snowboard)" data-wax="ultra">UltraMix Blue (+ € 5,00 ski · € 7,50 snowboard)</option><option value="Performance Wax (ski + € 5,00 · snowboard + € 7,50)" data-wax="performance">Performance Purple (ski + € 5,00 · snowboard + € 7,50)</option></select></label>
             </div>
-            <p class="field-note" id="waxChoiceNote">Normale voorbereiding en BetaMix Red zijn inbegrepen. AlphaMix Yellow of UltraMix Blue als extra eindwax: + € 2,50 per paar ski’s of snowboard. Intensieve warme waxreiniging kies je zelf voor € 5,00 per paar ski’s of snowboard. Performance Purple kost + € 5,00 per paar ski’s en + € 7,50 per snowboard. <a href="/#wax">Meer over onze wax</a>.</p>
-            <label id="singlePremiumField" hidden><span>Premium slijpen · + € 7,50 per materiaal</span><input type="checkbox" name="premiumFiling"><small>Na standaard slijpen: Racing File S en World Cup-diamant medium, op dezelfde afgesproken hoek.</small></label>
+            <p class="field-note" id="waxChoiceNote">Normale voorbereiding en BetaMix Red zijn inbegrepen. Gele, blauwe of paarse extra eindwax: + € 5,00 per paar ski’s en + € 7,50 per snowboard. Extra warme waxreiniging: € 2,50 per paar ski’s en € 5,00 per snowboard. <a href="/#wax">Meer over onze wax</a>.</p>
+            <label id="singlePremiumField" hidden><span>Premium slijpen · + € 7,50 per materiaal</span><input type="checkbox" name="premiumFiling"><small>Na standaard slijpen: World Cup-diamant medium, daarna Racing File S, op dezelfde afgesproken hoek.</small></label>
             <a class="quiet-link" href="onderhoud-kiezen.html#pakketten">Meerdere pakketten en kleine reparaties kiezen</a>
             </div>
           </div>
 
-          <div id="maintenanceExtras" class="reservation-extras"><h3>Reiniging &amp; waxstick</h3><label><span>Extra waxreiniging (optioneel): voor hoeveel materialen?</span><input type="number" name="firstWaxCount" min="0" max="20" step="1" required value="0"><small>€ 5,00 per paar ski’s of snowboard om oude waxresten zoveel mogelijk te verwijderen. Deze aanvulling kies je zelf; normale voorbereiding is inbegrepen.</small></label><label><span>Holmenkol Natural Skiwax Stick 50 g meebestellen?</span><input type="number" name="waxstickCount" min="0" max="20" step="1" value="0" required><small>€ 17,50 per stuk · meenemen bij het ophalen.</small></label><p id="reservationExtrasTotal" aria-live="polite"></p></div>
+          <div id="maintenanceExtras" class="reservation-extras"><h3>Reiniging &amp; waxstick</h3><input type="hidden" name="firstWaxCount" value="0"><label><span>Extra waxreiniging ski’s (aantal paren)</span><input type="number" name="firstWaxSkiCount" min="0" max="20" step="1" required value="0"><small>€ 2,50 per paar ski’s. Aanbevolen om vóór het waxen oude waxresten en vuil zoveel mogelijk te verwijderen.</small></label><label><span>Extra waxreiniging snowboards</span><input type="number" name="firstWaxSnowboardCount" min="0" max="20" step="1" required value="0"><small>€ 5,00 per snowboard. Je kiest zelf de aantallen; de normale voorbereiding blijft inbegrepen.</small></label><label><span>Holmenkol Natural Skiwax Stick 50 g meebestellen?</span><input type="number" name="waxstickCount" min="0" max="20" step="1" value="0" required><small>€ 17,50 per stuk · meenemen bij het ophalen.</small></label><p id="reservationExtrasTotal" aria-live="polite"></p></div>
           <div id="rentalFields" hidden>
             <div class="form-grid">
               <label><span>Wat wil je huren?</span><select name="rentaltype"><option value="Complete set">Complete skiset — € 15/dag · € 35/weekend · € 69/week</option><option value="Ski's met stokken">Ski’s met stokken — € 10/dag · € 25/weekend · € 49/week</option><option value="Dakkoffer met daksteunen">Dakkoffer met daksteunen — € 10/dag · € 15/weekend · € 20/week</option></select></label>
@@ -189,9 +189,9 @@
 
   <script src="script.js?v=10"></script>
   <script src="booking-config.js?v=2"></script>
-  <script src="maintenance-selection.js?v=20261101-clear-1"></script><script src="treatment-overview.js?v=20261102-brush-1"></script>
-  <script src="service-options.js?v=20261101-clear-1"></script>
-  <script src="booking.js?v=20261101-clear-1"></script>
+  <script src="maintenance-selection.js?v=20261103-maintenance-prices"></script><script src="treatment-overview.js?v=20261103-maintenance-prices"></script>
+  <script src="service-options.js?v=20261103-maintenance-prices"></script>
+  <script src="booking.js?v=20261103-maintenance-prices"></script>
   <script src="website-metrics.js?v=1"></script>
 </body>
 </html>

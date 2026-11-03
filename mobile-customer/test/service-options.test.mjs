@@ -31,13 +31,13 @@ test('optional cleaning defaults to zero and can be declined in the single appoi
  const catalog=twoWaxedSkis(t);
  assert.equal(catalog.d.getElementById('testReservationDialog'),null);
  assert.equal(catalog.d.querySelector('script[src*=test-reservation-modal]'),null);
- assert.equal(catalog.d.getElementById('brons-cleaning').value,'0');
+ assert.equal(catalog.d.getElementById('brons-cleaning-ski').value,'0');
  const next=new URL(catalog.next());assert.equal(next.pathname,'/afspraak.html');assert.ok(next.searchParams.get('keuze'));
  const page=appointment(t,next.href),{w,d,f,posts}=page;
- assert.equal(f.elements.firstWaxCount.value,'0');assert.equal(f.elements.waxstickCount.value,'0');
+ assert.equal(f.elements.firstWaxSkiCount.value,'0');assert.equal(f.elements.waxstickCount.value,'0');
  assert.match(d.getElementById('requestSummary').textContent,/39,90/);
- change(w,f.elements.firstWaxCount,'2');change(w,f.elements.waxstickCount,'1');assert.match(d.getElementById('requestSummary').textContent,/67,40/);
- change(w,f.elements.firstWaxCount,'0');assert.match(d.getElementById('requestSummary').textContent,/57,40/);
+ change(w,f.elements.firstWaxSkiCount,'2');change(w,f.elements.waxstickCount,'1');assert.match(d.getElementById('requestSummary').textContent,/62,40/);
+ change(w,f.elements.firstWaxSkiCount,'0');assert.match(d.getElementById('requestSummary').textContent,/57,40/);
  await submit(page);assert.equal(posts.length,1,d.getElementById('bookingStatus').textContent);
  assert.equal(posts[0].logistics,'Zelf brengen en zelf ophalen');assert.equal(posts[0].address,undefined);assert.equal(posts[0].postcode,undefined);
  assert.match(posts[0].notes,/Standaard reiniging/);assert.match(posts[0].notes,/Natural Skiwax Stick 50g 1x/);assert.doesNotMatch(posts[0].notes,/Extra waxreiniging \d+x/);
@@ -46,13 +46,13 @@ test('optional cleaning defaults to zero and can be declined in the single appoi
 
 test('cleaning cannot exceed waxed material count and invalid optional quantities cannot submit',async t=>{
  const catalog=twoWaxedSkis(t),page=appointment(t,catalog.next()),{w,d,f,posts}=page;
- change(w,f.elements.firstWaxCount,'3');assert.equal(f.checkValidity(),false);await submit(page);assert.equal(posts.length,0);
- for(const bad of ['-1','0.5','21']){change(w,f.elements.firstWaxCount,'0');change(w,f.elements.waxstickCount,bad);assert.equal(f.checkValidity(),false);}
+ change(w,f.elements.firstWaxSkiCount,'3');assert.equal(f.checkValidity(),false);await submit(page);assert.equal(posts.length,0);
+ for(const bad of ['-1','0.5','21']){change(w,f.elements.firstWaxSkiCount,'0');change(w,f.elements.waxstickCount,bad);assert.equal(f.checkValidity(),false);}
  const onlyEdges=catalogue(t);change(onlyEdges.w,onlyEdges.d.getElementById('slijpen-ski'),'1');
- const edgePage=appointment(t,onlyEdges.next());assert.equal(edgePage.f.elements.firstWaxCount.disabled,true);assert.equal(edgePage.f.elements.firstWaxCount.value,'0');
+ const edgePage=appointment(t,onlyEdges.next());assert.equal(edgePage.f.elements.firstWaxSkiCount.disabled,true);assert.equal(edgePage.f.elements.firstWaxSkiCount.value,'0');
  const mixed={p:{brons:{s:1,b:0,w:'beta',u:false},slijpen:{s:1,b:0,w:'none',u:false}},e:{},u:false};
  const mixedPage=appointment(t,'https://lattenspecialist.nl/afspraak.html?keuze='+encodeURIComponent(JSON.stringify(mixed)));
- assert.equal(mixedPage.f.elements.firstWaxCount.max,'1');
+ assert.equal(mixedPage.f.elements.firstWaxSkiCount.max,'1');
 });
 
 test('Wednesday bringing preferences cross the Dutch year boundary without promising a collection date',t=>{
@@ -70,44 +70,44 @@ test('Wednesday bringing preferences cross the Dutch year boundary without promi
 
 test('direct booking preserves extra services and a requested Wednesday without calling pickup availability',async t=>{
  const page=appointment(t),{w,d,f,posts}=page;
- change(w,f.elements.firstWaxCount,'1');change(w,f.elements.waxstickCount,'2');
+ change(w,f.elements.firstWaxSkiCount,'1');change(w,f.elements.waxstickCount,'2');
  const date=[...f.elements.pickupDate.options].find(o=>/^\d{4}-/.test(o.value)).value;change(w,f.elements.pickupDate,date);
- assert.match(d.getElementById('requestSummary').textContent,/Extra waxreiniging: 1×/);
+ assert.match(d.getElementById('requestSummary').textContent,/Extra waxreiniging ski’s: 1×/);
  await submit(page);assert.equal(posts.length,1);assert.equal(posts[0].pickupDate,'In overleg');
- assert.match(posts[0].notes,new RegExp(`Brengen ${date}; ophalen op afspraak`));assert.match(posts[0].notes,/Extra waxreiniging 1x/);assert.match(posts[0].notes,/Stick 50g 2x/);
+ assert.match(posts[0].notes,new RegExp(`Brengen ${date}; ophalen op afspraak`));assert.match(posts[0].notes,/Extra waxreiniging ski 1x/);assert.match(posts[0].notes,/Stick 50g 2x/);
  assert.equal(posts[0].address,undefined);assert.equal(readAndValidateLattenspecialist(posts[0]).data.notes,posts[0].notes.replace(/\s+/g,' ').trim());
 });
 
 test('catalogue cleaning reaches the appointment once and remains editable without double charging',async t=>{
- const catalog=twoWaxedSkis(t),clean=catalog.d.getElementById('brons-cleaning');
- assert.equal(clean.value,'0');assert.equal(clean.disabled,false);assert.equal(catalog.d.querySelector('[data-package=slijpen] [name=homepageCleaning]'),null);
- change(catalog.w,clean,'2');assert.match(catalog.d.getElementById('bookingCartTotal').textContent,/49,90/);
+ const catalog=twoWaxedSkis(t),clean=catalog.d.getElementById('brons-cleaning-ski');
+ assert.equal(clean.value,'0');assert.equal(clean.disabled,false);assert.equal(catalog.d.querySelector('[data-package=slijpen] [name=homepageCleaningSki]'),null);
+ change(catalog.w,clean,'2');assert.match(catalog.d.getElementById('bookingCartTotal').textContent,/44,90/);
  const page=appointment(t,catalog.next()),{w,d,f,posts}=page;
- assert.equal(f.elements.firstWaxCount.value,'2');assert.match(d.getElementById('requestSummary').textContent,/49,90/);
- change(w,f.elements.firstWaxCount,'1');assert.match(d.getElementById('requestSummary').textContent,/44,90/);
- await submit(page);assert.equal(posts.length,1);assert.equal((posts[0].notes.match(/Extra waxreiniging 1x/g)||[]).length,1);
- assert.equal(w.LATTEN_SELECTION.cleaningCount(JSON.parse(posts[0].maintenanceSelection)),0);
+ assert.equal(f.elements.firstWaxSkiCount.value,'2');assert.match(d.getElementById('requestSummary').textContent,/44,90/);
+ change(w,f.elements.firstWaxSkiCount,'1');assert.match(d.getElementById('requestSummary').textContent,/42,40/);
+ await submit(page);assert.equal(posts.length,1);assert.equal((posts[0].notes.match(/Extra waxreiniging ski 1x/g)||[]).length,1);
+ assert.equal(w.LATTEN_SELECTION.cleaningCount(JSON.parse(posts[0].maintenanceSelection)),1);
  assert.equal(readAndValidateLattenspecialist(posts[0]).data.notes,posts[0].notes.replace(/\s+/g,' ').trim());
 });
 
 test('reducing material counts clamps optional cleaning and the edit URL restores all remaining choices',t=>{
- const catalog=twoWaxedSkis(t);change(catalog.w,catalog.d.getElementById('brons-cleaning'),'2');change(catalog.w,catalog.d.getElementById('brons-ski'),'1');
- assert.equal(catalog.d.getElementById('brons-cleaning').value,'1');assert.match(catalog.d.getElementById('bookingCartTotal').textContent,/24,95/);
+ const catalog=twoWaxedSkis(t);change(catalog.w,catalog.d.getElementById('brons-cleaning-ski'),'2');change(catalog.w,catalog.d.getElementById('brons-ski'),'1');
+ assert.equal(catalog.d.getElementById('brons-cleaning-ski').value,'1');assert.match(catalog.d.getElementById('bookingCartTotal').textContent,/22,45/);
  const page=appointment(t,catalog.next()),restored=catalogue(t,page.d.getElementById('editMaintenanceSelection').href);
- assert.equal(restored.d.getElementById('brons-ski').value,'1');assert.equal(restored.d.getElementById('brons-cleaning').value,'1');
- change(catalog.w,catalog.d.getElementById('brons-ski'),'0');assert.equal(catalog.d.getElementById('brons-cleaning').value,'0');assert.equal(catalog.d.getElementById('brons-cleaning').disabled,true);assert.match(catalog.d.getElementById('bookingCartTotal').textContent,/0,00/);
+ assert.equal(restored.d.getElementById('brons-ski').value,'1');assert.equal(restored.d.getElementById('brons-cleaning-ski').value,'1');
+ change(catalog.w,catalog.d.getElementById('brons-ski'),'0');assert.equal(catalog.d.getElementById('brons-cleaning-ski').value,'0');assert.equal(catalog.d.getElementById('brons-cleaning-ski').disabled,true);assert.match(catalog.d.getElementById('bookingCartTotal').textContent,/0,00/);
  for(const c of [-1,.5,3])assert.equal(catalog.w.LATTEN_SELECTION.normalize({p:{brons:{s:2,b:0,w:'beta',u:false,c}},e:{},u:false}),null);
 });
 
 test('package cleaning can be explicitly removed in the appointment with the plain package price restored',t=>{
  const value={p:{brons:{s:2,b:0,w:'beta',u:false,c:2}},e:{},u:false};
  const {w,d,f}=appointment(t,'https://lattenspecialist.nl/afspraak.html?keuze='+encodeURIComponent(JSON.stringify(value)));
- assert.equal(f.elements.firstWaxCount.value,'2');assert.match(d.getElementById('requestSummary').textContent,/49,90/);
- change(w,f.elements.firstWaxCount,'0');assert.match(d.getElementById('requestSummary').textContent,/39,90/);assert.doesNotMatch(d.getElementById('requestSummary').textContent,/49,90/);
+ assert.equal(f.elements.firstWaxSkiCount.value,'2');assert.match(d.getElementById('requestSummary').textContent,/44,90/);
+ change(w,f.elements.firstWaxSkiCount,'0');assert.match(d.getElementById('requestSummary').textContent,/39,90/);assert.doesNotMatch(d.getElementById('requestSummary').textContent,/44,90/);
  const editUrl=d.getElementById('editMaintenanceSelection').href,edited=w.LATTEN_SELECTION.parse(new URL(editUrl).searchParams.get('keuze'));
  assert.equal(w.LATTEN_SELECTION.cleaningCount(edited),0,'Declining cleaning must survive the edit link');
- const restored=catalogue(t,editUrl);assert.equal(restored.d.getElementById('brons-cleaning').value,'0');assert.match(restored.d.getElementById('bookingCartTotal').textContent,/39,90/);
- const back=appointment(t,restored.next());assert.equal(back.f.elements.firstWaxCount.value,'0');assert.match(back.d.getElementById('requestSummary').textContent,/39,90/);
+ const restored=catalogue(t,editUrl);assert.equal(restored.d.getElementById('brons-cleaning-ski').value,'0');assert.match(restored.d.getElementById('bookingCartTotal').textContent,/39,90/);
+ const back=appointment(t,restored.next());assert.equal(back.f.elements.firstWaxSkiCount.value,'0');assert.match(back.d.getElementById('requestSummary').textContent,/39,90/);
 });
 
 test('editing retains a preferred cleaning package and distributes newly chosen cleaning without duplication',t=>{
@@ -115,6 +115,58 @@ test('editing retains a preferred cleaning package and distributes newly chosen 
  const {w,d,f}=appointment(t,'https://lattenspecialist.nl/afspraak.html?keuze='+encodeURIComponent(JSON.stringify(value)));
  const editing=()=>w.LATTEN_SELECTION.parse(new URL(d.getElementById('editMaintenanceSelection').href).searchParams.get('keuze'));
  assert.equal(editing().p.goud.c,1);assert.equal(editing().p.brons.c,undefined);
- change(w,f.elements.firstWaxCount,'2');const updated=editing();assert.equal(updated.p.goud.c,1);assert.equal(updated.p.brons.c,1);assert.equal(updated.p.slijpen.c,undefined);assert.equal(w.LATTEN_SELECTION.cleaningCount(updated),2);
- change(w,f.elements.firstWaxCount,'1');assert.equal(editing().p.goud.c,1);assert.equal(editing().p.brons.c,undefined);
+ change(w,f.elements.firstWaxSkiCount,'2');const updated=editing();assert.equal(updated.p.goud.c,1);assert.equal(updated.p.brons.c,1);assert.equal(updated.p.slijpen.c,undefined);assert.equal(w.LATTEN_SELECTION.cleaningCount(updated),2);
+ change(w,f.elements.firstWaxSkiCount,'1');assert.equal(editing().p.goud.c,1);assert.equal(editing().p.brons.c,undefined);
+});
+
+test('mixed ski and snowboard cleaning survives editing and has the same frontend and server price',async t=>{
+ const catalog=catalogue(t);
+ change(catalog.w,catalog.d.getElementById('brons-ski'),'2');
+ change(catalog.w,catalog.d.getElementById('brons-snowboard'),'1');
+ change(catalog.w,catalog.d.getElementById('brons-cleaning-ski'),'1');
+ change(catalog.w,catalog.d.getElementById('brons-cleaning-snowboard'),'1');
+ assert.match(catalog.d.getElementById('bookingCartTotal').textContent,/72,35/);
+ const page=appointment(t,catalog.next()),{w,d,f,posts}=page;
+ assert.equal(f.elements.firstWaxSkiCount.value,'1');assert.equal(f.elements.firstWaxSnowboardCount.value,'1');
+ change(w,f.elements.firstWaxSkiCount,'0');
+ assert.match(d.getElementById('requestSummary').textContent,/69,85/);
+ const edited=catalogue(t,d.getElementById('editMaintenanceSelection').href);
+ assert.equal(edited.d.getElementById('brons-cleaning-ski').value,'0');
+ assert.equal(edited.d.getElementById('brons-cleaning-snowboard').value,'1');
+ await submit(page);assert.equal(posts.length,1);
+ const selected=JSON.parse(posts[0].maintenanceSelection);
+ assert.equal(selected.p.brons.cs,0);assert.equal(selected.p.brons.cb,1);assert.equal(selected.p.brons.c,1);
+ assert.equal(posts[0].firstWaxSkiCount,0);assert.equal(posts[0].firstWaxSnowboardCount,1);assert.equal(posts[0].firstWaxCount,1);
+ assert.equal(readAndValidateLattenspecialist(posts[0]).data.priceQuote.knownTotalCents,6985);
+});
+
+test('storage wax can be booked alone for both materials without a normal waxing package',async t=>{
+ const catalog=catalogue(t);
+ change(catalog.w,catalog.d.getElementById('storage-ski'),'1');
+ change(catalog.w,catalog.d.getElementById('storage-snowboard'),'2');
+ assert.match(catalog.d.getElementById('bookingCartTotal').textContent,/27,50/);
+ assert.match(catalog.d.getElementById('bookingCartCount').textContent,/3 materialen/);
+ const value=JSON.parse(new URL(catalog.next()).searchParams.get('keuze'));
+ assert.deepEqual(value.p,{});assert.equal(value.e.storageSki.q,1);assert.equal(value.e.storageSnowboard.q,2);
+ const page=appointment(t,catalog.next());
+ assert.equal(page.f.elements.firstWaxSkiCount.disabled,true);assert.equal(page.f.elements.firstWaxSnowboardCount.disabled,true);
+ assert.match(page.d.getElementById('requestSummary').textContent,/niet afschrapen/i);
+ await submit(page);assert.equal(page.posts.length,1,page.d.getElementById('bookingStatus').textContent);
+ const saved=readAndValidateLattenspecialist(page.posts[0]).data;
+ assert.equal(saved.amount,'3');assert.equal(saved.priceQuote.knownTotalCents,2750);assert.equal(saved.priceQuote.needsAssessment,false);
+ const edited=catalogue(t,page.d.getElementById('editMaintenanceSelection').href);
+ assert.equal(edited.d.getElementById('storage-ski').value,'1');assert.equal(edited.d.getElementById('storage-snowboard').value,'2');
+});
+
+test('extra wax prices match for all three colours and storage counts respect the shared material limit',async t=>{
+ for(const wax of ['alpha','ultra','performance']){
+  const catalog=catalogue(t);
+  change(catalog.w,catalog.d.getElementById('brons-ski'),'1');change(catalog.w,catalog.d.getElementById('brons-snowboard'),'1');
+  change(catalog.w,catalog.d.querySelector('[data-package=brons] [name=homepageWax]'),wax);
+  assert.match(catalog.d.getElementById('bookingCartTotal').textContent,/57,40/);
+  const page=appointment(t,catalog.next());await submit(page);assert.equal(page.posts.length,1);
+  assert.equal(readAndValidateLattenspecialist(page.posts[0]).data.priceQuote.knownTotalCents,5740);
+ }
+ const catalog=catalogue(t);change(catalog.w,catalog.d.getElementById('brons-ski'),'20');change(catalog.w,catalog.d.getElementById('storage-snowboard'),'1');
+ assert.equal(catalog.d.getElementById('packageRequest').getAttribute('aria-disabled'),'true');
 });

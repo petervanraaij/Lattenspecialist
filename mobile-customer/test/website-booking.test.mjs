@@ -32,7 +32,7 @@ function homepage(t,url='https://lattenspecialist.nl/onderhoud-kiezen.html') {
  return {w,d,model:w.LATTEN_SELECTION};
 }
 const chosen=d=>JSON.parse(new URL(d.querySelector('#packageRequest').href).searchParams.get('keuze'));
-const waxChoices={beta:'Holmenkol BetaMix Red (standaard inbegrepen)',alpha:'Holmenkol AlphaMix Yellow (+ € 2,50)',ultra:'Holmenkol UltraMix Blue (+ € 2,50)',performance:'Performance Wax (ski + € 5,00 · snowboard + € 7,50)'};
+const waxChoices={beta:'Holmenkol BetaMix Red (standaard inbegrepen)',alpha:'Holmenkol AlphaMix Yellow (+ € 5,00 ski · € 7,50 snowboard)',ultra:'Holmenkol UltraMix Blue (+ € 5,00 ski · € 7,50 snowboard)',performance:'Performance Wax (ski + € 5,00 · snowboard + € 7,50)'};
 test('copper and bronze package links work and no package is silently preselected',async t=>{
  for(const name of ['Koper','Brons','Zilver','Goud','Platinum']) {
   const {f}=await setup(t,{url:`https://lattenspecialist.nl/afspraak.html?pakket=${name}`});assert.equal(f.elements.package.value,name);
@@ -56,7 +56,8 @@ test('copper and bronze package links work and no package is silently preselecte
  assert.equal(landing.querySelectorAll('.offer-card a.btn[href^="onderhoud-kiezen.html#pakket-"]').length,5);assert.equal(landing.querySelector('dialog'),null);
  assert.equal(d.querySelectorAll('.package-config').length,5);
  assert.equal(d.querySelector('.maintenance-sidebar'),null);
- assert.equal(d.querySelectorAll('[data-extra]').length,0);
+ assert.equal(d.querySelectorAll('[data-extra]').length,2);
+ assert.ok(d.querySelector('[data-extra=storageSki]'));assert.ok(d.querySelector('[data-extra=storageSnowboard]'));
  assert.match(d.querySelector('.complex-repair-note').textContent,/Bij grotere of diepere schade beoordelen we eerst wat mogelijk is/);
  assert.match(d.querySelector('.complex-repair-note').textContent,/bespreken we de aanpak en prijs vooraf/);
  assert.equal(d.querySelector('[data-extra="edges"]'),null);
@@ -92,7 +93,7 @@ test('counts, multiple packages, different materials and wax survive one complet
  complete(rw,f);f.elements.notes.value='Graag vooraf bellen.';submit(rw,f);await turn();await turn();
  assert.equal(posts.length,1);assert.equal(posts[0].amount,'4');assert.equal(posts[0].material,'Meerdere / combinatie');
  assert.equal(posts[0].package,'Meerdere pakketten / losse werkzaamheden');
- assert.match(posts[0].notes,/Koper: 2x ski/);assert.match(posts[0].notes,/Goud: 1x snowboard; Perf\. \+€5 ski\/\+€7,50 sb/);
+ assert.match(posts[0].notes,/Koper: 2x ski/);assert.match(posts[0].notes,/Goud: 1x snowboard; Purple \+€5 ski\/\+€7,50 sb/);
  assert.match(posts[0].notes,/Brons: 1x ski \| Koper:/);assert.doesNotMatch(posts[0].notes,/Brons: 1x ski;/);assert.match(posts[0].notes,/spoed/);assert.match(posts[0].notes,/Graag vooraf bellen/);
  assert.match(rd.querySelector('#confirmationSummary').textContent,/Koper: 2×/);
  const edited=homepage(t,rd.querySelector('#editMaintenanceSelection').href);
@@ -211,7 +212,7 @@ test('the largest selection and allowed comment reach the existing backend witho
  const {model}=homepage(t);const value=model.empty();
  for(const id of Object.keys(model.packages))value.p[id]={s:2,b:2,d:2,w:id==='slijpen'?'none':'performance',u:true};
  for(const id of ['brons','zilver','goud','platinum'])value.p[id].r=20;
- for(const id of Object.keys(model.extras))value.e[id]={q:20,m:'snowboard'};
+ for(const id of ['edges','repair','complex','bindings'])value.e[id]={q:20,m:'snowboard'};
  value.u=true;
  assert.ok(model.notes(model.normalize(value)).length<800);
  const {w,f,posts}=await setup(t,{url:'https://lattenspecialist.nl/afspraak.html?keuze='+encodeURIComponent(JSON.stringify(value))});
