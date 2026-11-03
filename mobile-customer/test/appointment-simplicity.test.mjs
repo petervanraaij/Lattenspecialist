@@ -26,12 +26,12 @@ test('maintenance books a bringing preference without holiday details or an inve
  for(const name of ['skidate','destination','conditions'])assert.equal(f.elements[name],undefined);
  assert.equal(d.getElementById('planningStepTitle').textContent,'Brengafspraak');
  assert.doesNotMatch(d.querySelector('#maintenancePlanningFields').textContent,/komend weekend|woensdag erop|eerste skidag/i);
- change(w,f.elements.package,'Koper');change(w,f.elements.firstWaxCount,'1');change(w,f.elements.waxstickCount,'1');
+ change(w,f.elements.package,'Koper');change(w,f.elements.firstWaxSkiCount,'1');change(w,f.elements.waxstickCount,'1');
  const date=[...f.elements.pickupDate.options].find(o=>/^\d{4}-\d{2}-\d{2}$/.test(o.value)).value;
  change(w,f.elements.pickupDate,date);
  const summary=d.getElementById('requestSummary').textContent;
  assert.match(summary,/ophalen op afspraak/);assert.doesNotMatch(summary,/Eerste skidag|Bestemming:|Omstandigheden:/);
- assert.match(summary,/42,45/);
+ assert.match(summary,/39,95/);
  f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();await tick();
  assert.equal(posts.length,1,d.getElementById('bookingStatus').textContent);
  for(const name of ['skidate','destination','conditions'])assert.equal(Object.hasOwn(posts[0],name),false);

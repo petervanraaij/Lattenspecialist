@@ -12,26 +12,29 @@
     if(scope.wax)standard.push(...waxing);
     if(scope.structure&&!scope.wax)standard.push('Bestaande structuur vrijborstelen en belag polijsten.');
     if(scope.repair)standard.push('Afgesproken kleine, oppervlakkige belagreparaties beoordelen, vullen en vlak afwerken.');
-    if(scope.premiumIncluded)standard.push('Premium slijpen inbegrepen: na de basisbewerking fijn afwerken met Racing File S en World Cup-diamant medium, op dezelfde afgesproken hoek.');
-    if(scope.premium&&!scope.premiumIncluded)extra.push({title:'Premium slijpen',fee:price(rates().premiumFiling)+' per materiaal',steps:['Na de standaardbewerking fijn afwerken met Racing File S.','Resterende bramen nalopen met World Cup-diamant medium.','Dezelfde afgesproken hoek aanhouden; geen automatische hoekwijziging.']});
-    if(waxes[scope.finishWax])extra.push({title:'Extra eindwax · '+waxes[scope.finishWax][0],fee:scope.finishWax==='performance'?'ski’s '+price(rates().purpleSki)+' · snowboard '+price(rates().purpleSnowboard):price(rates().extraEndWax)+' per materiaal',steps:['Eerst de rode basis aanbrengen, laten afkoelen en overtollige wax afschrapen. Bestaande structuur vrijborstelen en belag polijsten.','Daarna de gekozen eindwax aanbrengen, laten afkoelen en overtollige wax afschrapen. Bestaande structuur vrijborstelen en belag polijsten.',waxes[scope.finishWax][1]+'.']});
-    if(scope.intensive)extra.push({title:'Intensieve extra reiniging',fee:price(rates().intensiveCleaning)+' per materiaal',steps:['Een vrijwillige aanvulling die je vooraf zelf kiest; normale voorbereiding blijft inbegrepen.','Met een warme waxreiniging verwijderen we zoveel mogelijk oude waxresten en vuil vóór de nieuwe waxbeurt.']});
+    if(scope.storageWax)standard.push('Belag controleren en normaal voorbereiden.','Een beschermende waxlaag aanbrengen en laten afkoelen.','De waxlaag laten zitten: niet afschrapen en niet uitborstelen.');
+    if(scope.premiumIncluded)standard.push('Premium slijpen inbegrepen: na de basisbewerking fijn afwerken met World Cup-diamant medium, daarna Racing File S, op dezelfde afgesproken hoek.');
+    if(scope.premium&&!scope.premiumIncluded)extra.push({title:'Premium slijpen',fee:price(rates().premiumFiling)+' per materiaal',steps:['Na de standaardbewerking afwerken met World Cup-diamant medium.','Daarna fijn afwerken met Racing File S.','Dezelfde afgesproken hoek aanhouden; geen automatische hoekwijziging.']});
+    if(waxes[scope.finishWax])extra.push({title:'Extra eindwax · '+waxes[scope.finishWax][0],fee:'ski’s '+price(rates().extraEndWaxSki)+' · snowboard '+price(rates().extraEndWaxSnowboard),steps:['Eerst de rode basis aanbrengen, laten afkoelen en overtollige wax afschrapen. Bestaande structuur vrijborstelen en belag polijsten.','Daarna de gekozen eindwax aanbrengen, laten afkoelen en overtollige wax afschrapen. Bestaande structuur vrijborstelen en belag polijsten.',waxes[scope.finishWax][1]+'.']});
+    if(scope.intensive)extra.push({title:'Extra waxreiniging',fee:'ski’s '+price(rates().intensiveCleaningSki)+' · snowboard '+price(rates().intensiveCleaningSnowboard),steps:['Aanbevolen vóór het waxen; je kiest zelf voor welke materialen. De normale voorbereiding blijft inbegrepen.','Met warme wax verwijderen we zoveel mogelijk oude waxresten en vuil vóór de nieuwe waxbeurt.']});
     return {title:scope.title||'Gekozen behandeling',standard,extra,training:!!scope.training,yellowPractice:!!scope.yellowPractice};
   }
   function selection(value,{intensiveCount=0}={}) {
     if(!value)return[];
     const groups=Object.entries(value.p||{}).filter(([,item])=>item.s+item.b>0).map(([id,item])=>group({title:window.LATTEN_SELECTION.packages[id],filing:id!=='brons',wax:id!=='slijpen',premium:!!item.f,premiumIncluded:['goud','platinum'].includes(id),finishWax:item.w,intensive:item.c>0,repair:id==='platinum'||item.r>0}));
+    for(const [id,item]of Object.entries(value.e||{}))if(['storageSki','storageSnowboard'].includes(id)&&item.q>0)groups.push(group({title:`Opslagwax · ${item.q} ${item.m==='ski'?'paar ski’s':'snowboard'+(item.q===1?'':'s')}`,storageWax:true}));
     if(intensiveCount>0){const extra=group({title:'Intensieve reiniging · '+intensiveCount+' materiaal',intensive:true});groups.push(extra);}
     return groups;
   }
   function workflow(value) {
     const steps=value.steps||[],has=code=>steps.some(step=>step.code===code),material=value.material||{};
+    const storageWax=material.packageCode==='storage_wax'||material.storageWax||has('storage_cool');
     const wax=steps.find(step=>['practice_finish_wax','wax'].includes(step.code));
     const finish=skuKey(wax?.waxDetails?.sku || wax?.requiredItems?.find(i=>skuKey(i.sku))?.sku || '') || (/alpha|yellow/i.test(material.waxType||'')?'alpha':/ultra|blue/i.test(material.waxType||'')?'ultra':/purple|performance/i.test(material.waxType||'')?'performance':'beta');
     const base=has('base_wax')||steps.some(step=>['practice_wax','wax'].includes(step.code)&&(step.waxDetails?.sku==='24057'||step.requiredItems?.some(i=>i.sku==='24057')));
-    const result=group({title:material.package||'Deze opdracht',filing:has('filing')||has('practice_filing'),wax:base,premium:has('premium_file')||has('premium_diamond'),premiumIncluded:!!material.premiumIncluded,finishWax:finish!=='beta'&&wax?finish:'',intensive:has('deep_clean'),structure:has('structure'),repair:has('repair')||has('practice_repair'),training:!!value.isTraining||!!value.summary?.isTraining,yellowPractice:has('practice_clean')});
+    const result=group({title:material.package||'Deze opdracht',filing:has('filing')||has('practice_filing'),wax:base&&!storageWax,storageWax,premium:has('premium_file')||has('premium_diamond'),premiumIncluded:!!material.premiumIncluded,finishWax:!storageWax&&finish!=='beta'&&wax?finish:'',intensive:has('deep_clean'),structure:has('structure'),repair:has('repair')||has('practice_repair'),training:!!value.isTraining||!!value.summary?.isTraining,yellowPractice:has('practice_clean')});
     // Historical workplans describe their actual stored steps, never promise a newly inserted base layer.
-    if(wax&&!base)result.standard.push('Voer de vastgelegde waxbewerking uit volgens de bewaarde instructie bij deze stap.');
+    if(wax&&!base&&!storageWax)result.standard.push('Voer de vastgelegde waxbewerking uit volgens de bewaarde instructie bij deze stap.');
     return result.standard.length||result.extra.length||result.yellowPractice?[result]:[];
   }
   function offer(id){

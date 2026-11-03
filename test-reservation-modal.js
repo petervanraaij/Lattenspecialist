@@ -30,8 +30,8 @@
   const close = () => { dialog.close(); resetView(); };
   const service = window.LATTEN_SERVICE;
   const selectedLogistics = () => 'dropoff';
-  const waxAmount = () => activeSelection ? Object.entries(activeSelection.p).reduce((n,[id,item]) => n+(id==='slijpen'?0:item.s+item.b),0) : 0;
-  const extras = () => service.read(form,waxAmount());
+  const waxMaterials = () => activeSelection ? Object.entries(activeSelection.p).reduce((counts,[id,item]) => {if(id!=='slijpen'){counts.ski+=item.s;counts.snowboard+=item.b;}return counts;},{ski:0,snowboard:0}) : {ski:0,snowboard:0};
+  const extras = () => service.read(form,waxMaterials());
   const chosenMoment = () => weekendSelect.value === 'In overleg' ? 'Op afspraak' : weekendSelect.value ? `${service.label(weekendSelect.value)}; ophalen ${service.label(service.plusWeek(weekendSelect.value))}` : 'Datum nog kiezen';
   const planningNote = () => !weekendSelect.value||weekendSelect.value==='In overleg'?'Brengen/halen: op afspraak':`Brengen ${weekendSelect.value}; ophalen ${service.plusWeek(weekendSelect.value)}`;
   const populateDays = () => {
@@ -90,7 +90,7 @@
     event.preventDefault();
     activeLink = link;
     activeSelection = window.LATTEN_SELECTION.withoutCleaning(selection);
-    form.elements.firstWaxCount.value = String(window.LATTEN_SELECTION.cleaningCount(selection));
+    const cleaning=window.LATTEN_SELECTION.cleaningCounts(selection);form.elements.firstWaxSkiCount.value=String(cleaning.ski);form.elements.firstWaxSnowboardCount.value=String(cleaning.snowboard);form.elements.firstWaxCount.value=String(cleaning.ski+cleaning.snowboard);
     resetView();
     const estimate = window.LATTEN_SELECTION.estimate(selection);
     count.textContent = `${estimate.amount} ${estimate.amount === 1 ? 'materiaal' : 'materialen'} gekozen`;
@@ -127,7 +127,7 @@
     const legacy = window.LATTEN_SELECTION.legacy(activeSelection);
     const pickup = selectedLogistics() === 'pickup';
     const notes = [service.compactNote(window.LATTEN_SELECTION.notes(activeSelection)), extras().note, planningNote(), form.elements.testNotes.value.trim()].filter(Boolean).join(' | ');
-    const payload = {...legacy, service:'Onderhoud', quickReservation:true, maintenanceSelection:JSON.stringify(activeSelection), logistics:'Zelf brengen en zelf ophalen', pickupDate:weekendSelect.value === 'In overleg' ? 'In overleg' : weekendSelect.value, name:form.elements.testName.value.trim(), phone:form.elements.testPhone.value.trim(), email:'', postcode:pickup ? form.elements.testPostcode.value.trim() : '', houseNumber:pickup ? form.elements.testHouseNumber.value.trim() : '', address:pickup ? form.elements.testAddress.value.trim() : '', notes, privacyConsent:true, termsConsent:true, whatsappConsent:true, website:'', turnstileToken:token};
+    const payload = {...legacy, service:'Onderhoud', quickReservation:true, maintenanceSelection:JSON.stringify(activeSelection), firstWaxSkiCount:extras().cleaning.ski, firstWaxSnowboardCount:extras().cleaning.snowboard, firstWaxCount:extras().cleaning.ski+extras().cleaning.snowboard, waxstickCount:Number(form.elements.waxstickCount.value), logistics:'Zelf brengen en zelf ophalen', pickupDate:weekendSelect.value === 'In overleg' ? 'In overleg' : weekendSelect.value, name:form.elements.testName.value.trim(), phone:form.elements.testPhone.value.trim(), email:'', postcode:pickup ? form.elements.testPostcode.value.trim() : '', houseNumber:pickup ? form.elements.testHouseNumber.value.trim() : '', address:pickup ? form.elements.testAddress.value.trim() : '', notes, privacyConsent:true, termsConsent:true, whatsappConsent:true, website:'', turnstileToken:token};
     const endpoint = window.LATTENSPECIALIST_BOOKING?.endpoint;
     if (!endpoint) { status.textContent = 'Reserveren is tijdelijk niet beschikbaar. Probeer het later opnieuw.'; return; }
     submitting = true; submitButton.disabled = true; submitButton.textContent = 'Reservering versturen…'; status.textContent = '';
