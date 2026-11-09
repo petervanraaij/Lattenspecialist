@@ -40,8 +40,15 @@
     : getValue('urgent') !== 'Nee');
   const usesPickup = () => false;
   const serviceOptions=window.LATTEN_SERVICE;
-  const waxAmount=()=>selectedService()!=='Onderhoud'||sharpeningOnly()?0:maintenanceSelection?Object.entries(maintenanceSelection.p).reduce((n,[id,item])=>n+(id==='slijpen'?0:item.s+item.b),0):Number(getValue('amount'))||0;
-  const extraOptions=()=>serviceOptions.read(form,waxAmount());
+  const waxMaterials=()=>{
+    if(selectedService()!=='Onderhoud'||sharpeningOnly())return {ski:0,snowboard:0};
+    if(maintenanceSelection)return Object.entries(maintenanceSelection.p).reduce((counts,[id,item])=>{
+      if(id!=='slijpen'){counts.ski+=item.s;counts.snowboard+=item.b;}return counts;
+    },{ski:0,snowboard:0});
+    const count=Number(getValue('amount'))||0;
+    return {ski:getValue('material')==='Ski'?count:0,snowboard:getValue('material')==='Snowboard'?count:0};
+  };
+  const extraOptions=()=>serviceOptions.read(form,waxMaterials());
   const planningNote=()=>getValue('pickupDate')&&getValue('pickupDate')!=='In overleg'?`Brengen ${getValue('pickupDate')}; ophalen op afspraak`:'Brengen en ophalen op afspraak';
   const totalWithExtras=()=>{
     if(selectedService()!=='Onderhoud')return null;
@@ -103,7 +110,7 @@
         lines.push(`Materiaal: ${getValue('material')}`, `Aantal: ${getValue('amount')}`, `Pakket: ${getValue('package') || 'Nog kiezen'}`);
         if (!sharpeningOnly()) lines.push(`Wax: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`);
       }
-      if(!maintenanceSelection&&form.elements.premiumFiling?.checked)lines.push('Premium slijpen: Racing File S en World Cup-diamant medium · + € 7,50 per materiaal');
+      if(!maintenanceSelection&&form.elements.premiumFiling?.checked)lines.push('Premium slijpen: World Cup-diamant medium, daarna Racing File S · + € 7,50 per materiaal');
       lines.push(...extraOptions().lines, `Brengafspraak: ${planningNote()}`);
       if (totalWithExtras()!==null) lines.push(`Totaal vanaf inclusief extra’s: ${serviceOptions.price(totalWithExtras())}`);
       lines.push(`Brengen en ophalen: ${getValue('logistics')}`);
@@ -129,18 +136,28 @@
   const baseSelectionNotes = () => selectedService() !== 'Onderhoud' ? '' : maintenanceSelection ? selectionModel.notes(maintenanceSelection) : form.elements.premiumFiling?.checked&&singleSelection()?selectionModel.notes(singleSelection()):sharpeningOnly() ? 'Alleen kanten slijpen en tunen; geen wax.' : `Waxkeuze: ${getValue('performanceWax') || 'Holmenkol BetaMix Red (standaard inbegrepen)'}`;
   const selectionNotes = () => selectedService()!=='Onderhoud'?'':[serviceOptions.compactNote(baseSelectionNotes()),extraOptions().note,planningNote()].filter(Boolean).join(' | ');
   function currentEditingSelection(){
-    const value=selectionModel.normalize(maintenanceSelection);
-    let remaining=Math.max(0,Math.min(waxAmount(),Math.trunc(Number(form.elements.firstWaxCount.value)||0)));
-    // Preserve the selected package distribution where possible, then distribute any added cleaning.
-    for(const [id,preferred] of Object.entries(cleaningPreferences)){
+    const value=selectionModel.withoutCleaning(maintenanceSelection||singleSelection());
+    if(!value)return null;
+    const counts=extraOptions().cleaning;
+    const remaining={ski:counts.ski,snowboard:counts.snowboard};
+    // Preserve the customer's package and material choice when returning to the selector.
+    for(const [id,preferred]of Object.entries(cleaningPreferences)){
       const item=value.p[id];if(!item||id==='slijpen')continue;
-      const count=Math.min(remaining,preferred,item.s+item.b);if(count)item.c=count;remaining-=count;
+      for(const [kind,key,max]of [['ski','cs',item.s],['snowboard','cb',item.b]]){
+        const count=Math.min(remaining[kind],preferred[kind]||0,max);
+        if(count)item[key]=count;remaining[kind]-=count;
+      }
     }
-    for(const [id,item] of Object.entries(value.p)){
-      if(id==='slijpen'||!remaining)continue;
-      const count=Math.min(remaining,item.s+item.b-(item.c||0));if(count)item.c=(item.c||0)+count;remaining-=count;
+    for(const [id,item]of Object.entries(value.p)){
+      if(id==='slijpen')continue;
+      for(const [kind,key,max]of [['ski','cs',item.s],['snowboard','cb',item.b]]){
+        const count=Math.min(remaining[kind],max-(item[key]||0));
+        if(count)item[key]=(item[key]||0)+count;remaining[kind]-=count;
+      }
+      const total=(item.cs||0)+(item.cb||0);
+      if(total){item.c=total;item.cs=item.cs||0;item.cb=item.cb||0;}
     }
-    return value;
+    return selectionModel.normalize(value);
   }
   const updateForm = () => {
     const planningTitle=selectedService()==='Onderhoud'?'Brengafspraak':'Huurperiode';
@@ -158,6 +175,7 @@
       const values = selectionModel.legacy(maintenanceSelection);
       for (const name of ['package','material','amount']) form.elements[name].value = values[name];
       form.elements.urgent.value = values.urgent === 'Nee' ? 'Nee' : form.elements.urgent.querySelector('[data-urgent="yes"]').value;
+      document.querySelector('#maintenanceSelectionTotal').textContent = `Onderhoud vanaf ${selectionModel.estimate(maintenanceSelection).formatted}${waxMaterials().ski+waxMaterials().snowboard?", exclusief de reiniging hieronder":""}`;
     }
     const rush = needsRush();
     if (rush) form.elements.logistics.value = 'Zelf brengen en zelf ophalen';
@@ -228,7 +246,7 @@
   };
   const resetRequest = () => {
     addressController?.abort(); addressVersion += 1; window.clearTimeout(addressTimer);
-    maintenanceSelection = null;
+    maintenanceSelection = null;cleaningPreferences={};
     form.reset(); lastAddressQuery = ''; outsidePickupArea = false;
     setAddressStatus('Het adres verschijnt na het invullen van postcode en huisnummer.');
     clearStatus(); updateForm(); loadAvailability(); showStep(1, false);
@@ -240,10 +258,13 @@
   const requestedSelection = selectionModel?.parse(params.get('keuze'));
   if (requestedSelection && selectionModel.hasItems(requestedSelection)) {
     maintenanceSelection = selectionModel.withoutCleaning(requestedSelection);
-    cleaningPreferences=Object.fromEntries(Object.entries(requestedSelection.p).map(([id,item])=>[id,item.c||0]));
-    form.elements.firstWaxCount.value = String(selectionModel.cleaningCount(requestedSelection));
+    cleaningPreferences=Object.fromEntries(Object.entries(requestedSelection.p).map(([id,item])=>[id,{ski:item.cs||0,snowboard:item.cb||0}]));
+    const cleaning=selectionModel.cleaningCounts(requestedSelection);
+    form.elements.firstWaxSkiCount.value=String(cleaning.ski);
+    form.elements.firstWaxSnowboardCount.value=String(cleaning.snowboard);
+    form.elements.firstWaxCount.value = String(cleaning.ski+cleaning.snowboard);
     const list = document.querySelector('#maintenanceSelectionItems');
-    selectionModel.describe(requestedSelection).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
+    selectionModel.describe(maintenanceSelection).forEach(text => { const li = document.createElement('li'); li.textContent = text; list.append(li); });
     document.querySelector('#maintenanceSelectionTotal').textContent = `Totaal vanaf ${selectionModel.estimate(requestedSelection).formatted}`;
     document.querySelector('#editMaintenanceSelection').href = `/onderhoud-kiezen.html?keuze=${encodeURIComponent(JSON.stringify(requestedSelection))}#pakketten`;
   }
@@ -298,8 +319,12 @@
     payload.whatsappConsent = formData.get('whatsappConsent') === 'on';
     if (selectedService() === 'Onderhoud') {
       payload.logistics = getValue('logistics');
-      if (maintenanceSelection) payload.maintenanceSelection = JSON.stringify(maintenanceSelection);
-      else if(form.elements.premiumFiling?.checked&&singleSelection())payload.maintenanceSelection=JSON.stringify(singleSelection());
+      const selected=currentEditingSelection();
+      if(selected)payload.maintenanceSelection=JSON.stringify(selected);
+      const cleaning=extraOptions().cleaning;
+      payload.firstWaxSkiCount=cleaning.ski;
+      payload.firstWaxSnowboardCount=cleaning.snowboard;
+      payload.firstWaxCount=cleaning.ski+cleaning.snowboard;
       delete payload.premiumFiling;
       payload.notes = [selectionNotes(),String(payload.notes || '').trim()].filter(Boolean).join('\n');
     }

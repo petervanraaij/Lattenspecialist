@@ -1,4 +1,5 @@
 import {maintenancePriceQuote} from './maintenance-pricing.js';
+import {requestCleaningCounts} from './maintenance-options.js';
 import {centralHrm,centralHrmEnabled,verifyHrmExport} from './hrm-bridge.js';
 import {legacyHrmMembers} from './operations.js';
 import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
@@ -129,7 +130,8 @@ const readAndValidateLattenspecialist = (raw, trustedAdmin = false) => {
     rentto: clean(raw.rentto, 10), name: clean(raw.name, 80), phone: clean(raw.phone, 30),
     email: clean(raw.email, 120), postcode: clean(raw.postcode, 12), houseNumber: clean(raw.houseNumber, 16), address: clean(raw.address, 180), addressCity: clean(raw.addressCity, 100),
     notes: clean(raw.notes, 800), maintenanceSelection: clean(raw.maintenanceSelection, 5000), performanceWax: clean(raw.performanceWax, 100),
-    firstWaxCount: Number(raw.firstWaxCount ?? 0), waxstickCount: Number(raw.waxstickCount ?? 0),
+    firstWaxCount: Number(raw.firstWaxCount ?? (Number(raw.firstWaxSkiCount ?? 0) + Number(raw.firstWaxSnowboardCount ?? 0))), waxstickCount: Number(raw.waxstickCount ?? 0),
+    ...(raw.firstWaxSkiCount!==undefined||raw.firstWaxSnowboardCount!==undefined ? {firstWaxSkiCount:Number(raw.firstWaxSkiCount ?? 0),firstWaxSnowboardCount:Number(raw.firstWaxSnowboardCount ?? 0)} : {}),
     website: clean(raw.website, 120), turnstileToken: clean(raw.turnstileToken, 2048),
     privacyConsent: raw.privacyConsent === true, termsConsent: raw.termsConsent === true, whatsappConsent: raw.whatsappConsent === true,
     quickReservation: raw.quickReservation === true, sourceChannel: clean(raw.sourceChannel, 30)
@@ -141,6 +143,10 @@ const readAndValidateLattenspecialist = (raw, trustedAdmin = false) => {
   if (data.service === 'Onderhoud' && (!data.material || !/^\d{1,2}$/.test(data.amount) || Number(data.amount) < 1 || Number(data.amount) > 20 || !data.package)) throw new ValidationError('Controleer het materiaal, aantal en pakket.');
   if (data.service === 'Onderhoud' && !validMaintenanceSelection(data.maintenanceSelection)) throw new ValidationError('De gekozen onderhoudspakketten of meerwerken zijn ongeldig.');
   if (![data.firstWaxCount,data.waxstickCount].every(value => Number.isInteger(value) && value >= 0 && value <= 20)) throw new ValidationError('Controleer de aantallen voor extra reiniging en waxsticks.');
+  if (data.service === 'Onderhoud') {
+    try { requestCleaningCounts(data.maintenanceSelection,data); }
+    catch(error) { throw new ValidationError(error.message); }
+  }
   if (data.service === 'Onderhoud' && !data.pickupDate) throw new ValidationError('Kies een brengdatum of kies in overleg.');
   if (data.service === 'Onderhoud' && data.pickupDate !== 'In overleg' && !isIsoDate(data.pickupDate)) throw new ValidationError('Controleer de gekozen brengdatum.');
   if (data.service === 'Onderhoud' && /gratis ophalen|terugbrengen|ophaalservice|bezorg/i.test(data.logistics)) throw new ValidationError('Haal- en brengservice wordt niet meer aangeboden. Kies zelf brengen en ophalen in Wamel.');
