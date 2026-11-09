@@ -31,8 +31,6 @@
   let turnstileWidgetId = null, addressTimer, addressController;
   let addressVersion = 0, lastAddressQuery = '', outsidePickupArea = false, submitting = false;
   const rentalPrices = {
-    'Complete set': '€ 15 per dag · € 35 per weekend · € 69 per week',
-    "Ski's met stokken": '€ 10 per dag · € 25 per weekend · € 49 per week',
     'Dakkoffer met daksteunen': '€ 10 per dag · € 15 per weekend · € 20 per week'
   };
   const rentalLabels = {'Complete set': 'Complete skiset'};
@@ -119,7 +117,7 @@
       if (getValue('skidate')) lines.push(`Eerste skidag: ${formatDate(getValue('skidate'))}`);
       if (getValue('conditions') !== 'Weet ik nog niet') lines.push(`Omstandigheden: ${getValue('conditions')}`);
     } else {
-      lines.push(`Verhuur: ${rentalLabels[getValue('rentaltype')] || getValue('rentaltype')}`, `Huurprijs: ${rentalPrices[getValue('rentaltype')] || '-'}`, `Lengte persoon: ${getValue('height') ? `${getValue('height')} cm` : '-'}`, `Schoenmaat: ${getValue('shoesize') || '-'}`, `Niveau: ${getValue('level')}`, `Periode: ${formatDate(getValue('rentfrom'))} t/m ${formatDate(getValue('rentto'))}`);
+      lines.push(`Dakkoffer: ${getValue('rentaltype')}`, `Huurprijs: ${rentalPrices[getValue('rentaltype')] || '-'}`, `Periode: ${formatDate(getValue('rentfrom'))} t/m ${formatDate(getValue('rentto'))}`);
     }
     lines.push('', `Naam: ${getValue('name') || '-'}`, `Mobiel: ${getValue('phone') || '-'}`, `E-mail: ${getValue('email') || '-'}`, `WhatsApp-updates: ${form.elements.whatsappConsent.checked ? 'Ja' : 'Nee'}`);
     if (getValue('notes')) lines.push(`Opmerking: ${getValue('notes')}`);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v129-grouped-treatments';
+const CACHE_NAME = 'lattenspecialist-v130-dakkoffer-only';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -6,7 +6,6 @@ const APP_SHELL = [
   '/onderhoud-kiezen.html',
   '/treatment-overview.js?v=20261102-brush-1',
   '/treatment-overview.css?v=20261101-gold-3',
-  '/verhuur.html',
   '/webshop.html',
   '/homepage.css?v=20261102-grouped-treatments',
   '/homepage.js?v=3',
