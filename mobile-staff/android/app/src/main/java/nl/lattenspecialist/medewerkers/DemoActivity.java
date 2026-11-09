@@ -33,6 +33,7 @@ import java.util.Collections;
 
 /** Separate :demo process and WebView data directory; no work-app bridge or credentials. */
 public final class DemoActivity extends Activity {
+    private static boolean dataDirectoryReady;
     private WebView web;
     private TextView message;
     private Button retry;
@@ -72,11 +73,16 @@ public final class DemoActivity extends Activity {
             message.setText("Voor de afzonderlijke demo-opslag is Android 9 of hoger nodig. De beveiligde app blijft beschikbaar via de appkeuze.");
             return;
         }
-        WebView.setDataDirectorySuffix("synthetic-review-demo");
+        prepareDemoStorage();
         try { origin = DemoOriginPolicy.validateOrigin(DemoOriginPolicy.ORIGIN); }
         catch (IllegalArgumentException error) { message.setText("Het afzonderlijke demo-adres is ongeldig."); return; }
         configure(layout);
         openDemo();
+    }
+
+    @TargetApi(28)
+    private static synchronized void prepareDemoStorage() {
+        if (!dataDirectoryReady) { WebView.setDataDirectorySuffix("synthetic-review-demo"); dataDirectoryReady = true; }
     }
 
     @TargetApi(28)
