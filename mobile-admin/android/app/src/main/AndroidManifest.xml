@@ -18,11 +18,12 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
+
+        <activity android:name=".EntryActivity" android:exported="true" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity>
+        <activity android:name=".DemoActivity" android:exported="false" android:process=":demo" android:launchMode="singleTop" android:theme="@android:style/Theme.Material.Light.NoActionBar" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -43,6 +44,14 @@
                 android:resource="@xml/admin_widget_info" />
         </receiver>
         <receiver android:name=".QuickRequestWidgetProvider" android:exported="false"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_request_widget_info" /></receiver>
+        <receiver android:name=".DemoAdminWidgetProvider" android:exported="false" android:label="@string/demo_widget_title">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/demo_admin_widget_info" />
+        </receiver>
+        <receiver android:name=".DemoQuickRequestWidgetProvider" android:exported="false" android:label="@string/demo_quick_widget_title">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/demo_quick_request_widget_info" />
+        </receiver>
     </application>
 
     <!-- Permissions -->

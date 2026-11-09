@@ -33,6 +33,16 @@ Open `android` in Android Studio of voer op Windows `npm run build:android` uit.
 
 Versie 1.4.0 bevat een Android-widget met het aantal nieuwe en openstaande aanvragen en het aantal materialen dat nog moet worden opgehaald of door klanten wordt gebracht. Voeg hem toe via **Beginscherm lang indrukken → Widgets → Lattenspecialist Beheer**. Open de beheerapp en log in om de widget te koppelen. De widget ververst bij gebruik van de app, handmatig via de vernieuwknop en periodiek op de achtergrond.
 
+## Afzonderlijke openbare DEMO (kandidaat 1.6.2 / 17)
+
+De startkeuze toont voor iedereen **Open beveiligde app** en **Bekijk fictieve demonstratie**. De demo gebruikt uitsluitend de vaste afzonderlijke demo-origin, een eigen Android-proces en eenmalig ingestelde WebView-opslag. Er is geen reviewerherkenning, operationele beheercode, JavaScript-bridge of terugval naar een productieservice. De operationele `MainActivity`, beide bestaande widgets en hun bronnen zijn identiek aan de vastgelegde 16-bron (`9918b5b5ebedb65d08f88e08fd148cc76c5e81c9`). In `RequestNotificationWorker` is uitsluitend de bestaande kanaalaanmaak omgeven door `if(Build.VERSION.SDK_INT>=26)`: Android 7 heeft geen meldingskanalen. Android 8+, tokens, verzoeken, de bestaande toestemmingsvraag en de vijftienminutenplanning blijven ongewijzigd. De echte worker-proloog wordt met Android-API-stubs voor SDK24/25/26/36 uitgevoerd om die compatibiliteitsgrens te controleren; er is geen lintonderdrukking of baseline.
+
+Naast de operationele widgets zijn er twee afzonderlijk benoemde **DEMO**-widgets. De tellingen zijn een vast fictief voorbeeld, expliciet geen live gegevens. Vernieuwen gebruikt uitsluitend eigen demo-voorkeuren. De ski-/snowboardknoppen openen na de zichtbare demo-login het gewone bewerkbare fictieve aanvraagformulier; ze slaan niets automatisch op. Alleen de vast toegestane opdrachten en materiaalnamen worden doorgestuurd naar de demo, nooit een URL, token of klantgegeven.
+
+De knop **DEMO-testmelding** vraagt op Android 13+ pas na aantikken om toestemming. Hij gebruikt een afzonderlijk DEMO-kanaal en meldingsnummer met vaste fictieve inhoud; aantikken opent alleen de demo. Een weigering toont uitleg en laat de demo beschikbaar. De demo plant geen achtergrondwerk. Camera, echte bestandskiezers, downloads en externe diensten blijven geblokkeerd; fictieve fotoknoppen verwerken uitsluitend de voorbeeldafbeelding.
+
+`node --test scripts/demo-native.test.mjs scripts/verify-web-assets.test.mjs` controleert de operationele bron, intentgrenzen, toestemmingsroute en verpakte bestandsverwijzingen. JVM-unittests controleren toegestane en ongeldige opdrachten en toestemmingstoestanden. Een geslaagde build bewijst geen werking van widgets of meldingen op een echt toestel; er was geen emulator/toestel beschikbaar. Deze kandidaat wordt apart ondertekend en ter beoordeling bewaard, zonder automatische Play-upload of vervanging van openbare downloads.
+
 ## iPhone
 
 Open `ios/App/App.xcodeproj` op een Mac met Xcode. Voor installatie via TestFlight of de App Store is een Apple Developer-account nodig. De GitHub-workflow controleert op macOS of het iOS-project compileert zonder distributie-ondertekening.

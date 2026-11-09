@@ -6,4 +6,8 @@
     <string name="custom_url_scheme">nl.lattenspecialist.beheer</string>
     <string name="widget_description">Nieuwe en openstaande onderhoudsaanvragen in één oogopslag</string>
     <string name="quick_widget_description">Start direct een nieuwe ski- of snowboardaanvraag</string>
+    <string name="demo_widget_title">DEMO · Lattenspecialist aanvragen</string>
+    <string name="demo_widget_description">Uitsluitend fictieve voorbeeldtellingen; opent alleen de afzonderlijke DEMO</string>
+    <string name="demo_quick_widget_title">DEMO · Nieuwe fictieve aanvraag</string>
+    <string name="demo_quick_widget_description">Open een bewerkbare fictieve ski- of snowboardaanvraag in de DEMO</string>
 </resources>

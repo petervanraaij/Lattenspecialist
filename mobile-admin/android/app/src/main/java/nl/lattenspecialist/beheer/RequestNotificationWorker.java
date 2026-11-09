@@ -27,7 +27,7 @@ public class RequestNotificationWorker extends Worker {
     @Override public Result doWork(){
         Context context=getApplicationContext();
         NotificationManager manager=context.getSystemService(NotificationManager.class);
-        manager.createNotificationChannel(new NotificationChannel(CHANNEL,"Nieuwe onderhoudsaanvragen",NotificationManager.IMPORTANCE_HIGH));
+        if(Build.VERSION.SDK_INT>=26) manager.createNotificationChannel(new NotificationChannel(CHANNEL,"Nieuwe onderhoudsaanvragen",NotificationManager.IMPORTANCE_HIGH));
         String token=context.getSharedPreferences(AdminWidgetProvider.PREFS,Context.MODE_PRIVATE).getString(AdminWidgetProvider.TOKEN,"");
         if(token.isEmpty()){manager.cancel(410);return Result.success();}
         HttpURLConnection connection=null;
