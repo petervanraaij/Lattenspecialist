@@ -139,6 +139,7 @@
     const minutes=plannedMinutes(record);
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
       <div class="admin-record-head"><div><span class="admin-request-code">${escapeHtml(record.reference)}</span><h2>${escapeHtml(record.name || 'Naam onbekend')}</h2><p>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</p></div><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div></div>
+      ${Number(record.waxstickCount)>0?`<section class="admin-payment admin-waxstick" data-waxstick-reference="${escapeHtml(record.reference)}"><h3>Meebesteld · ${Number(record.waxstickCount)}× Holmenkol Natural Skiwax Stick 50 g</h3><p>€ 17,50 per stuk · bij deze opdracht meegeven.</p><p class="waxstick-handover-status" role="status" aria-live="polite">Meegeefstatus laden…</p><button class="btn btn-gold waxstick-handover" type="button" disabled>Meegeven bevestigen</button><button class="btn btn-dark waxstick-reload" type="button" hidden>Status opnieuw laden</button></section>`:''}
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-grid">
         <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
         <form class="admin-update-form">
@@ -165,6 +166,24 @@
     </article>`;
   };
 
+  function showWaxstickHandover(panel,state){
+    const status=panel.querySelector('.waxstick-handover-status'),button=panel.querySelector('.waxstick-handover');
+    button.hidden=!state.remaining;button.disabled=!state.remaining;
+    button.textContent=`${state.remaining} waxstick${state.remaining===1?'':'s'} meegegeven · bevestigen`;
+    status.textContent=state.remaining?`${state.ordered} besteld · ${state.delivered} meegegeven · ${state.remaining} nog mee te geven. ${state.legacyBooked?`${state.legacyBooked} al van de voorraad afgeboekt via de werkplaats; dit wordt niet dubbel geboekt. Bevestig hier het daadwerkelijk meegeven.`:'Voorraad wordt pas na bevestiging afgeboekt.'}`:`${state.delivered} waxstick${state.delivered===1?'':'s'} meegegeven${state.handedOverAt?' op '+formatDateTime(state.handedOverAt):''}. Voorraad is afgeboekt.${state.legacyBooked?' Eerdere werkplaatsboeking is meegenomen.':''}`;
+    panel.querySelector('.waxstick-reload').hidden=true;
+  }
+  async function loadWaxstickHandover(panel){
+    const button=panel.querySelector('.waxstick-handover'),retry=panel.querySelector('.waxstick-reload'),status=panel.querySelector('.waxstick-handover-status');
+    if(!panel.dataset.mounted){panel.dataset.mounted='true';retry.addEventListener('click',()=>void loadWaxstickHandover(panel));button.addEventListener('click',async()=>{
+      button.disabled=true;retry.hidden=true;status.textContent='Meegeven en voorraad opslaan…';
+      try{const state=await api('/api/admin/inventory/waxsticks/'+encodeURIComponent(panel.dataset.waxstickReference),{method:'POST',body:JSON.stringify({confirmed:true})});if(panel.isConnected)showWaxstickHandover(panel,state);window.dispatchEvent(new Event('lattenspecialist:inventory-updated'));}
+      catch(error){if(panel.isConnected){status.textContent=error.message;retry.hidden=false;}}
+    });}
+    button.disabled=true;
+    try{const state=await api('/api/admin/inventory/waxsticks/'+encodeURIComponent(panel.dataset.waxstickReference));if(panel.isConnected)showWaxstickHandover(panel,state);}
+    catch(error){if(panel.isConnected){status.textContent=error.message;retry.hidden=false;}}
+  }
   const applySearch = () => { const query = search.value.trim().toLowerCase(); document.querySelectorAll('.admin-record').forEach(card => { card.hidden = Boolean(query && !card.dataset.search.includes(query)); }); };
   const render = () => {
     const open = records.filter(record => !record.closedAt).length;
@@ -173,6 +192,7 @@
     const reservedMinutes=records.filter(record=>!record.closedAt&&Number(record.currentStep||1)<steps.length).reduce((total,record)=>total+plannedMinutes(record),0);
     summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> benodigde tijd</span><span><b>${active}</b> in behandeling</span><span><b>${withoutCode}</b> zonder servicecode</span>`;
     list.innerHTML = records.length ? records.map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
+    list.querySelectorAll('[data-waxstick-reference]').forEach(panel=>void loadWaxstickHandover(panel));
     applySearch();
   };
 
