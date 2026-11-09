@@ -359,4 +359,5 @@
     open(api, panel, selectedView = 'inventory') { client = api; target = panel; view = ['inventory','suppliers','creditors','debtors'].includes(selectedView) ? selectedView : 'inventory'; load(); },
     clear() { client = null; target = null; loading = false; view = 'inventory'; }
   };
+  window.addEventListener('lattenspecialist:inventory-updated',()=>{if(client&&target?.isConnected&&!target.hidden&&view==='inventory')void load();});
 })();
