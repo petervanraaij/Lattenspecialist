@@ -25,7 +25,7 @@
     const valid=clean.checkValidity()&&sticks.checkValidity();
     const total=valid?c*5+k*17.5:0;
     const lines=[];
-    if(c) lines.push(`Extra waxreiniging: ${c}× € 5,00 = ${price(c*5)}`);
+    if(c) lines.push(`Hot Scraping (extra waxreiniging): ${c}× € 5,00 = ${price(c*5)}`);
     if(k) lines.push(`Holmenkol Natural Skiwax Stick 50 g: ${k}× € 17,50 = ${price(k*17.5)} · meenemen bij ophalen`);
     const note=valid ? `${c ? `Extra waxreiniging ${c}x à€5` : waxAmount ? 'Standaard reiniging; nieuwe wax over aanwezige wax' : 'Geen waxreiniging gekozen'}${k ? `; Natural Skiwax Stick 50g ${k}x à€17,50; afhalen` : ''}` : '';
     return {valid,total,lines,note};
