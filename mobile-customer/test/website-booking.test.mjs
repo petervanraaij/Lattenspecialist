@@ -289,7 +289,8 @@ test('pickup requires an explicit date and address, rental excludes maintenance,
  assert.equal(f.elements.pickupDate.value,'');assert.equal(f.elements.address.required,false);assert.equal(f.elements.pickupDate.required,true);
  complete(w,f);const rental=f.querySelector('[name="service"][value="Verhuur"]');rental.checked=true;rental.dispatchEvent(new w.Event('change',{bubbles:true}));
  assert.equal(f.elements.package.disabled,true);assert.equal(f.elements.address.disabled,true);submit(w,f);await turn();await turn();
- assert.equal(posts[0].package,undefined);assert.equal(posts[0].rentaltype,'Complete set');
+ assert.equal(posts[0].package,undefined);assert.equal(posts[0].rentaltype,'Dakkoffer met daksteunen');
+ assert.equal(f.elements.rentaltype.options.length,1);
  assert.equal(f.hidden,false);assert.equal(f.elements.name.value,'Voorbeeld');assert.match(d.querySelector('#bookingStatus').textContent,/Tijdelijk/);
 });
 test('metrics contain only event name, do not run on preview, and respect browser privacy signals',async t=>{

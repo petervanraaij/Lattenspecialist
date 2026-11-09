@@ -133,7 +133,7 @@ async function loadInventory() {
     if (!response.ok) throw new Error('Aanbod niet beschikbaar');
     const data = await response.json();
     if (!Array.isArray(data.items) || data.items.length === 0) {
-      list.innerHTML = '<article class="inventory-empty"><strong>Voordelig huren vóór vertrek</strong><p>Reserveer een complete skiset, ski’s met stokken of een dakkoffer met daksteunen. Bekijk de actuele prijzen en leg je gewenste periode direct vast via de verhuurpagina.</p><a class="text-link" href="verhuur.html">Bekijk verhuur en prijzen →</a></article>';
+      list.innerHTML = '<article class="inventory-empty"><strong>Een dakkoffer voor onderweg</strong><p>Huur een dakkoffer met daksteunen voor € 10 per dag, € 15 per weekend of € 20 per week. Vraag ons naar beschikbaarheid en of hij op jouw auto past.</p><a class="text-link" href="/#dakkoffer">Bekijk de dakkoffer →</a></article>';
       return;
     }
     list.innerHTML = data.items.map(item => `<article class="inventory-card"><span>${escapeHtml(item.type)}</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.details || '')}</p><strong class="availability ${item.available ? 'available' : 'unavailable'}">${item.available ? 'Beschikbaar' : 'Verhuurd'}</strong></article>`).join('');
