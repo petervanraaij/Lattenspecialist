@@ -67,7 +67,7 @@
         else if (Number.isInteger(materials) && Number(cleaning.value) > materials) cleaning.value = String(materials);
         card.querySelector('.package-cleaning-hint').textContent = cleaning.disabled
           ? 'Optioneel. Kies eerst het aantal ski’s of snowboards.'
-          : '€ 5,00 per paar ski’s of snowboard. Standaard reinigen is inbegrepen.';
+          : 'Hot Scraping: € 5,00 per paar ski’s of snowboard. Standaard reinigen is inbegrepen.';
       }
       const repairs = card.querySelector('[name="homepageRepairs"]');
       if (repairs) {
