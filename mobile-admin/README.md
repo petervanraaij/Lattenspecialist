@@ -14,6 +14,10 @@ Installeer voor het genereren van de appafbeeldingen eenmalig Pillow 12.3.0 voor
 
 ## Android
 
+Gebruik voor installatie en updates het bestaande [Google Play-testkanaal voor Beheer](https://play.google.com/apps/internaltest/4701344778796450203). Het Google-account op de telefoon moet in de bestaande testlijst staan. Een geldige lokale APK-handtekening is geen garantie dat een rechtstreeks gedownloade APK door Play Protect wordt geaccepteerd. Schakel Play Protect niet uit om te installeren. De upload voor versie 1.6.1 gebruikt versiecode 16 omdat code 15 al door een eerdere conceptuitgave is gebruikt.
+
+Op 9 november 2026 is **16 (1.6.1) – Onderhoudsmeldingen** in het bestaande interne testkanaal gepubliceerd. Play Console toont ‘Available to internal testers’; dit is geen openbare winkelpublicatie of afgeronde inhoudelijke beoordeling. De bestaande testlijst is behouden. Bundel SHA-256: `76cd893828eb31844cc0a590ee0f3b2cdfefcef7e40dd6763daa84f9d429e655`. De upload is met de bestaande beheersleutel ondertekend. Google Play verzorgt de distributie-ondertekening; een rechtstreeks geïnstalleerde APK kan daarom een andere handtekening hebben. De installatie en vergrendelschermmelding op een echt toestel zijn nog niet bevestigd.
+
 Open `android` in Android Studio of voer op Windows `npm run build:android` uit. Voor Google Play is een eigen Play Console-account en een ondertekende AAB nodig. De GitHub-workflow bouwt daarnaast automatisch een installeerbare test-APK.
 
 ### Beginschermwidget
