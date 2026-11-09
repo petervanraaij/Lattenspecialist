@@ -12,6 +12,8 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         bridge.getWebView().addJavascriptInterface(new WidgetBridge(), "LattenspecialistWidget");
         rememberQuickMaterial(getIntent());
+        if(android.os.Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)
+            requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},410);
     }
 
     @Override
@@ -43,12 +45,14 @@ public class MainActivity extends BridgeActivity {
                 getSharedPreferences(AdminWidgetProvider.PREFS, MODE_PRIVATE)
                         .edit().putString(AdminWidgetProvider.TOKEN, safeToken).apply();
                 AdminWidgetProvider.refreshAll(MainActivity.this);
+                RequestNotificationWorker.schedule(MainActivity.this);
             }
         }
 
         @JavascriptInterface
         public void refresh() {
             AdminWidgetProvider.refreshAll(MainActivity.this);
+            RequestNotificationWorker.schedule(MainActivity.this);
         }
 
         @JavascriptInterface

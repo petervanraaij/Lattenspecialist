@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v134-waxstick-invoice';
+const CACHE_NAME = 'lattenspecialist-v135-request-alerts';
 const APP_SHELL = [
   '/',
   '/index.html',
