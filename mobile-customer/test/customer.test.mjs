@@ -124,8 +124,30 @@ test('packages use current website prices and include starting-price labels unch
   assert.equal(d.querySelectorAll('#packages .card').length,5);
   assert.deepEqual([...d.querySelectorAll('#packages .price-row strong')].map(el=>el.textContent),[...source.querySelectorAll('#pakketten .price-row strong')].map(el=>el.textContent));
   assert.match(d.getElementById('packages').textContent,/Ski vanaf/);
-  assert.match(d.getElementById('inventory').textContent,/geen vast openbaar aanbod/);
+  assert.match(d.getElementById('inventory').textContent,/dakkoffer is momenteel niet beschikbaar/);
+  assert.equal(d.getElementById('requestRental').hidden,true);
 });
+test('customer app excludes legacy ski rentals and offers only a roof box request',async t=>{
+  const {w,d}=app(t,async url=>url.endsWith('aanbod.json')?reply({items:[
+    {type:'Complete skiset',title:'Oude skiset',available:true},
+    {type:'Ski’s met stokken',title:'Oude ski’s',available:true},
+    {type:'Dakkoffer met daksteunen',title:'Extra bagageruimte',details:'€ 20 per week',available:true}
+  ]}):reply(site));
+  w.location.hash='aanbod';await turn();await turn();
+  assert.equal(d.querySelectorAll('#inventory .card').length,1);
+  assert.doesNotMatch(d.getElementById('inventory').textContent,/skiset|Oude ski/);
+  assert.match(d.getElementById('inventory').textContent,/Dakkoffer met daksteunen/);
+  assert.equal(d.getElementById('requestRental').hidden,false);
+  assert.equal(d.getElementById('requestRental').textContent,'Dakkoffer aanvragen');
+  d.getElementById('requestRental').click();await turn();
+  const frame=d.getElementById('bookingFrame'),sent=[];
+  frame.contentWindow.postMessage=(message,origin)=>sent.push(message);
+  w.dispatchEvent(new w.MessageEvent('message',{origin:'https://lattenspecialist.nl',source:frame.contentWindow,data:{type:'lattenspecialist:ready'}}));
+  assert.equal(sent.at(-1).values.service,'Verhuur');
+  const form=new JSDOM(bookingPage).window.document;
+  assert.deepEqual([...form.querySelectorAll('[name="rentaltype"] option')].map(option=>option.value),['Dakkoffer met daksteunen']);
+});
+
 test('trip transfers only after user action and only to verified booking frame',async t=>{
   const {w,d}=app(t,async()=>reply({record}));
   const form=d.getElementById('tripForm');form.elements.destination.value='Sölden';form.elements.skidate.value='2099-02-20';

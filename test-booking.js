@@ -263,7 +263,9 @@
   form.addEventListener('change', () => { updateForm(); if (usesPickup()) lookupAddress(); });
   form.querySelectorAll('.step-next').forEach(button => button.addEventListener('click', () => {
     clearStatus(); updateForm();
-    if (validateCurrentStep()) showStep(currentStep + 1);
+    if (!validateCurrentStep()) return;
+    if(currentStep===1&&selectedService()==='Onderhoud'&&window.LATTEN_WAXSTICK?.offer(form,()=>{updateForm();showStep(2);}))return;
+    showStep(currentStep + 1);
   }));
   form.querySelectorAll('.step-back').forEach(button => button.addEventListener('click', () => showStep(currentStep - 1)));
   form.addEventListener('submit', async event => {

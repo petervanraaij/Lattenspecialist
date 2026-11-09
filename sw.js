@@ -1,8 +1,10 @@
-const CACHE_NAME = 'lattenspecialist-v130-dakkoffer-only';
+const CACHE_NAME = 'lattenspecialist-v132-waxstick-offer';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/afspraak.html',
+  '/waxstick-offer.js?v=20261109-1',
+  '/waxstick-offer.css?v=20261109-1',
   '/onderhoud-kiezen.html',
   '/treatment-overview.js?v=20261102-brush-1',
   '/treatment-overview.css?v=20261101-gold-3',
@@ -26,7 +28,7 @@ const APP_SHELL = [
   '/images/pierfinity-digital.png',
   '/script.js?v=10',
   '/booking-config.js?v=2',
-  '/booking.js?v=20261101-clear-1',
+  '/booking.js?v=20261109-waxstick-1',
   '/service-options.js?v=20261101-clear-1',
   '/test-reservation-modal.js?v=20261101-gold-3',
   '/images/holmenkol-natural-skiwax-stick.png',
@@ -36,7 +38,7 @@ const APP_SHELL = [
   '/customer-booking.js?v=20261101-clear-1',
   '/customer-app.css?v=1',
   '/customer-status.css',
-  '/customer-app.js?v=20261027-wax-1',
+  '/customer-app.js?v=20261109-dakkoffer-1',
   '/pwa-install.js?v=1',
   '/beheer.js?v=20261030-manual-2',
   '/admin-team.js?v=1',
