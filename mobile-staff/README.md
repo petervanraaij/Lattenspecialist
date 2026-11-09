@@ -1,5 +1,14 @@
 # Lattenspecialist Medewerkers
 
+## Zichtbare fictieve demonstratie
+
+De Android-launcher toont iedere gebruiker eerst dezelfde keuze: **Open beveiligde app** of **Bekijk fictieve demonstratie**. De werkkeuze opent de bestaande MainActivity; de demokeuze opent een afzonderlijke DemoActivity met een vaste, eigen HTTPS-demo-origin en een blijvende DEMO-aanduiding. Er wordt geen reviewer, Google-account, verwijzer of toestelkenmerk gebruikt om de keuze of inhoud te veranderen.
+
+De demo draait in een apart Android-proces met een eigen WebView-opslagmap. Zij leest geen werkappaanmelding, gebruikt geen Capacitor-/widgetbrug en opent geen operationele API of externe provider. Camera-, geolocatie-, popup- en downloadacties worden in deze aanvullende demo geweigerd. Op Android ouder dan 9 wordt de demo zonder netwerkverzoek geweigerd omdat afzonderlijke WebView-opslag daar niet beschikbaar is; de bestaande werkapp blijft bereikbaar. De demonavigatie vervangt geen fysieke test van de operationele app. Bestaande widgets en hun expliciete werkappacties blijven zelfstandig en ongewijzigd.
+
+De nieuwe native originpolicy heeft een zelfstandige controle in android/verification/DemoOriginPolicyTest.java. Het aanvullende isolatie-/compileerscript staat in de afzonderlijke oplevermap output/isolated-google-play-demos/android/scripts/test-native-entry.mjs. Deze bronwijziging is nog geen opgebouwde, ondertekende of ingediende Play-update; versiecodes worden apart bevestigd vóór een releasebuild.
+
+
 Android-app `nl.lattenspecialist.medewerkers`, versie 1.7.1 (10). Dezelfde schermen als `medewerkers.html`; bronbestanden staan in de repositoryroot. Bouw met `npm ci`, `npm run sync`, `npm run prepare:assets` en `android/gradlew bundleRelease` (Windows: `gradlew.bat`). Java 21 en Android SDK 36 zijn vereist. GitHub voert dezelfde bouwstappen uit.
 
 Voor de lokale demonstratie en beheer van medewerkers: [TEAM.md](../TEAM.md). Alle rechten worden door de Worker gecontroleerd; de app bevat geen gedeelde beheersleutel. DEV gebruikt pakket-ID `nl.lattenspecialist.medewerkers.dev` en kan naast de release staan.

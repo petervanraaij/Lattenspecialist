@@ -1,6 +1,7 @@
 import {cp,mkdir,copyFile,readFile,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {dirname,resolve,join} from 'node:path';
+import {auditWebAssets} from '../../mobile-common/verify-web-assets.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),site=resolve(root,'..'),out=join(root,'www');
 await mkdir(join(out,'images'),{recursive:true});
 await mkdir(join(out,'vendor'),{recursive:true});
@@ -13,3 +14,4 @@ if(/\/api\/admin\/|lattenspecialist-admin-token|paymentUrl|RESEND_API_KEY/.test(
 console.log('Medewerkersapp gebouwd zonder beheerfuncties of ingebouwde sleutels.');
 
 await cp(join(site,'images/tools'),join(out,'images/tools'),{recursive:true});
+console.log('Packaged web asset preflight:',JSON.stringify(auditWebAssets(out)));
