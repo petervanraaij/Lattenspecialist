@@ -178,7 +178,8 @@ $('requestRental').addEventListener('click', () => requestBooking({service:'Verh
 async function loadOffers() {
   const request=++offersRequest;
   $('packages').innerHTML='<p>Pakketten ophalen…</p>';
-  $('inventory').innerHTML='<p>Verhuuraanbod ophalen…</p>';
+  $('inventory').innerHTML='<p>Dakkoffer ophalen…</p>';
+  $('requestRental').hidden=true;
   await Promise.allSettled([
     (async () => {
       try {
@@ -201,8 +202,10 @@ async function loadOffers() {
         const data=await fetchResource(`${SITE}/data/aanbod.json`);
         if(request!==offersRequest)return;
         if(!Array.isArray(data.items))throw new Error();
-        $('inventory').innerHTML=data.items.length ? data.items.map(item=>`<article class="card"><span class="eyebrow">${escape(item.type)}</span><h3>${escape(item.title)}</h3><p>${escape(item.details)}</p><span class="availability ${item.available?'':'unavailable'}">${item.available?'Beschikbaar':'Verhuurd'}</span></article>`).join('') : '<div class="card"><h3>Wat heb je nodig?</h3><p>Er staat nu geen vast openbaar aanbod online. Geef je maat, niveau en reisperiode door. We bekijken wat beschikbaar is of geregeld kan worden.</p></div>';
-      } catch { if(request===offersRequest)$('inventory').innerHTML=fail('Het actuele verhuuraanbod is tijdelijk niet beschikbaar. Je kunt wel een aanvraag doen.'); }
+        const roofBoxes=data.items.filter(item=>item.type==='Dakkoffer met daksteunen');
+        $('inventory').innerHTML=roofBoxes.length ? roofBoxes.map(item=>`<article class="card"><span class="eyebrow">${escape(item.type)}</span><h3>${escape(item.title)}</h3><p>${escape(item.details)}</p><span class="availability ${item.available?'':'unavailable'}">${item.available?'Op aanvraag beschikbaar':'Momenteel verhuurd'}</span></article>`).join('') : '<div class="card"><h3>Dakkoffer huren</h3><p>De dakkoffer is momenteel niet beschikbaar. App ons om de mogelijkheden voor jouw huurperiode te bespreken.</p></div>';
+        $('requestRental').hidden=!roofBoxes.some(item=>item.available===true);
+      } catch { if(request===offersRequest)$('inventory').innerHTML=fail('De beschikbaarheid van de dakkoffer kon niet worden opgehaald. Vernieuw of neem contact op via WhatsApp.'); }
     })()
   ]);
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v130-dakkoffer-only';
+const CACHE_NAME = 'lattenspecialist-v131-customer-dakkoffer';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -36,7 +36,7 @@ const APP_SHELL = [
   '/customer-booking.js?v=20261101-clear-1',
   '/customer-app.css?v=1',
   '/customer-status.css',
-  '/customer-app.js?v=20261027-wax-1',
+  '/customer-app.js?v=20261109-dakkoffer-1',
   '/pwa-install.js?v=1',
   '/beheer.js?v=20261030-manual-2',
   '/admin-team.js?v=1',
