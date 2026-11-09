@@ -1,0 +1,9 @@
+{
+  "applicationId": "nl.lattenspecialist.beheer",
+  "versionName": "1.6.0",
+  "versionCode": 15,
+  "sha256": "0ebfe1a4dff070e3970ac3088e8aa62aa0cb97008bded5fd0bd8ea1dc76f9089",
+  "signerSha256": "3ee96f811d92061e834e7de5b26a8705fe95842dfe52af98b501a925915307b5",
+  "backgroundCheckMinutes": 15,
+  "instantPush": false
+}

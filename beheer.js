@@ -25,6 +25,34 @@
   let manualAddressTimer, manualAddressController;
   let token = sessionStorage.getItem('lattenspecialist-admin-token') || localStorage.getItem('lattenspecialist-admin-token') || '';
   let records = [];
+  const requestAlert=document.createElement('section');
+  requestAlert.className='admin-request-alert';requestAlert.setAttribute('role','status');requestAlert.hidden=true;
+  dashboard.prepend(requestAlert);
+  const quickRequest=document.createElement('button');quickRequest.type='button';quickRequest.className='btn btn-primary admin-quick-request';quickRequest.textContent='+ Telefonische aanvraag';
+  quickRequest.onclick=()=>requestManualOpen('Ski');dashboard.prepend(quickRequest);
+  function renderRequestAlert(){
+    const fresh=records.filter(r=>!r.closedAt&&r.service==='Onderhoud'&&Number(r.currentStep||1)===1);
+    requestAlert.replaceChildren();requestAlert.hidden=!fresh.length;
+    if(!fresh.length)return;
+    const heading=document.createElement('strong');heading.textContent=`${fresh.length} nieuwe onderhoudsaanvraag${fresh.length===1?'':'en'} · nog op te pakken`;
+    requestAlert.append(heading);
+    fresh.forEach(record=>{const button=document.createElement('button');button.type='button';button.className='btn btn-primary';button.textContent=`Bekijk ${record.reference} · ${record.name||'Aanvraag'}`;button.onclick=()=>{search.value='';render();const card=list.querySelector(`[data-reference="${CSS.escape(record.reference)}"]`);card?.scrollIntoView({behavior:'smooth',block:'start'});};requestAlert.append(button);});
+  }
+  let polling=false;
+  async function pollRequests(){
+    if(!token||dashboard.hidden||document.hidden||polling)return;
+    polling=true;
+    const startedToken=token,startedRecords=JSON.stringify(records);
+    try{const result=await api('/api/admin/reservations');const next=result.records||[];
+      if(token!==startedToken||dashboard.hidden||JSON.stringify(records)!==startedRecords)return;
+      // Keep edits in progress intact. Only redraw when the server data changes.
+      if(!list.contains(document.activeElement)&&JSON.stringify(next)!==JSON.stringify(records)){records=next;render();}
+      else renderRequestAlert();
+    }catch{requestAlert.hidden=false;requestAlert.textContent='Aanvragen konden niet worden bijgewerkt. Controleer je verbinding en druk op Vernieuwen.';}
+    finally{polling=false;}
+  }
+  setInterval(pollRequests,30000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void pollRequests();});
   let availableDates = new Set();
 
   window.addEventListener('lattenspecialist:admin-code-changed',event=>{
@@ -187,6 +215,7 @@
   }
   const applySearch = () => { const query = search.value.trim().toLowerCase(); document.querySelectorAll('.admin-record').forEach(card => { card.hidden = Boolean(query && !card.dataset.search.includes(query)); }); };
   const render = () => {
+    renderRequestAlert();
     const open = records.filter(record => !record.closedAt).length;
     const active = records.filter(record => !record.closedAt && Number(record.currentStep || 1) < steps.length).length;
     const withoutCode = records.filter(record => !record.closedAt && !record.serviceCode).length;
@@ -274,7 +303,7 @@
 
   loginForm.addEventListener('submit', async event => {
     event.preventDefault(); loginStatus.className = 'booking-status'; token = String(new FormData(loginForm).get('token') || '').trim();
-    try { await loadDashboard(); sessionStorage.setItem('lattenspecialist-admin-token',token); if (loginForm.elements.remember.checked) localStorage.setItem('lattenspecialist-admin-token',token); else localStorage.removeItem('lattenspecialist-admin-token'); loginForm.reset(); }
+    try { await loadDashboard(); sessionStorage.setItem('lattenspecialist-admin-token',token); if (loginForm.elements.remember.checked) localStorage.setItem('lattenspecialist-admin-token',token); else localStorage.removeItem('lattenspecialist-admin-token'); loginForm.reset();window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh')); }
     catch (error) { showLoginStatus(error.message); }
   });
 
@@ -345,7 +374,7 @@
   addAvailabilityButton.addEventListener('click',() => { const date = customAvailabilityDate.value; if (!date) return; availableDates.add(date); renderAvailability(); customAvailabilityDate.value = ''; });
   search.addEventListener('input',applySearch);
   refreshButton.addEventListener('click',() => loadDashboard().catch(error => { list.innerHTML = `<div class="admin-empty"><strong>Laden mislukt</strong><p>${escapeHtml(error.message)}</p></div>`; }));
-  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];list.replaceChildren();window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false; });
+  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];list.replaceChildren();window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false;window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh')); });
 
   let installPrompt; const installButton = document.querySelector('#installAdmin');
   window.addEventListener('beforeinstallprompt',event => { event.preventDefault(); installPrompt=event; installButton.hidden=false; });
