@@ -1,5 +1,7 @@
 # Lattenspecialist Medewerkers
 
+Kandidaat **1.7.3 (13)** herstelt opnieuw openen en Activity-recreatie van de fictieve demo: de WebView-opslagsuffix wordt eenmaal per demoproces ingesteld, vóór de eerste WebView. De bestaande werkapp, gebundelde webassets en demo-origin blijven behouden. Native regressietests controleren het werkelijk gecompileerde procesvlag-/guardgedrag; fysieke Android-recreatie blijft afzonderlijk te verifiëren. Dit is geen publicatiebevestiging.
+
 ## Zichtbare fictieve demonstratie
 
 De Android-launcher toont iedere gebruiker eerst dezelfde keuze: **Open beveiligde app** of **Bekijk fictieve demonstratie**. De werkkeuze opent de bestaande MainActivity; de demokeuze opent een afzonderlijke DemoActivity met een vaste, eigen HTTPS-demo-origin en een blijvende DEMO-aanduiding. Er wordt geen reviewer, Google-account, verwijzer of toestelkenmerk gebruikt om de keuze of inhoud te veranderen.
