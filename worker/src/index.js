@@ -1,4 +1,5 @@
 import {maintenancePriceQuote} from './maintenance-pricing.js';
+import {readInvoiceTransfer,invoiceTransferToken} from './invoice-transfer.js';
 import {centralHrm,centralHrmEnabled,verifyHrmExport} from './hrm-bridge.js';
 import {legacyHrmMembers} from './operations.js';
 import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
@@ -452,6 +453,9 @@ export default {
  async scheduled(_event,env,ctx){if(!centralHrmEnabled(env)||!env.LATTENSPECIALIST_TEAM_DB)return;ctx.waitUntil((async()=>{const source=await legacyHrmMembers(env,env.LATTENSPECIALIST_TEAM_DB);await centralHrm(env,{operation:'bootstrap',members:source.members.map(member=>{const {items,seconds,month_items,month_seconds}=member.totals;return{...member,totals:{items,seconds,month_items,month_seconds}};})});})().catch(()=>console.error('Centrale HRM-synchronisatie kon niet worden afgerond; bestaande gegevens zijn behouden.')));},
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
+    if(new URL(request.url).pathname==='/api/internal/invoice-transfer'){
+      try{if(request.method!=='POST'||Number(request.headers.get('Content-Length'))>500)return Response.json({message:'Niet toegestaan.'},{status:400});const token=await invoiceTransferToken(request);const snapshot=await readInvoiceTransfer(env.LATTENSPECIALIST_TEAM_DB,token);return Response.json(snapshot||{message:'De overdracht is verlopen. Open de factuur opnieuw vanuit beheer.'},{status:snapshot?200:410,headers:{'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer'}});}catch{return Response.json({message:'Factuuroverdracht niet beschikbaar.'},{status:503});}
+    }
     if(new URL(request.url).pathname==='/api/internal/hrm-export'){try{if(!env.LATTENSPECIALIST_TEAM_DB||!await verifyHrmExport(request,env,env.LATTENSPECIALIST_TEAM_DB))return new Response(null,{status:401});return Response.json(await legacyHrmMembers(env,env.LATTENSPECIALIST_TEAM_DB),{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}catch{return Response.json({error:'HRM export niet beschikbaar.'},{status:503,headers:{'Cache-Control':'no-store'}});}}
     const site = getSite(origin, env);
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');

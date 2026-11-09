@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v133-waxstick-handover';
+const CACHE_NAME = 'lattenspecialist-v134-waxstick-invoice';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -40,7 +40,7 @@ const APP_SHELL = [
   '/customer-status.css',
   '/customer-app.js?v=20261109-dakkoffer-1',
   '/pwa-install.js?v=1',
-  '/beheer.js?v=20261109-waxstick-1',
+  '/beheer.js?v=20261109-invoice-1',
   '/admin-team.js?v=1',
   '/team.css?v=1',
   '/admin-metrics.css?v=1',

@@ -1,3 +1,4 @@
+import {createInvoiceTransfer} from './invoice-transfer.js';
 const now=()=>new Date().toISOString();
 const clean=(value,max)=>String(value??'').trim().slice(0,max);
 const has=(value,key)=>Object.prototype.hasOwnProperty.call(value,key);
@@ -52,6 +53,7 @@ export async function accountingOverview(db){
 
 export async function handleAccounting(request,env,{owner,json,origin}){
  const path=new URL(request.url).pathname,db=env.LATTENSPECIALIST_TEAM_DB;try{if(!db)throw new AccountingError('Bedrijfsdatabase niet beschikbaar.',503);if(!owner)throw new AccountingError('Geen toegang tot administratie.',401);if(path==='/api/admin/accounting/overview'&&request.method==='GET')return json(await accountingOverview(db),200,origin);
+  const transfer=path.match(/^\/api\/admin\/accounting\/maintenance-transfer\/(LS-\d{4}-[A-Z2-9]{6})$/);if(transfer&&request.method==='POST')return json(await createInvoiceTransfer(db,transfer[1],AccountingError),201,origin);
   for(const[type,segment]of[['purchase','purchase-invoices'],['sales','sales-invoices']]){if(path===`/api/admin/accounting/${segment}`&&request.method==='POST'){const invoiceId=await createInvoice(db,type,await readBody(request));return json({invoiceId,...await accountingOverview(db)},201,origin);}const paid=path.match(new RegExp(`^/api/admin/accounting/${segment}/([a-z0-9-]{1,80})/mark-paid$`));if(paid&&request.method==='POST'){const invoiceId=await markPaid(db,type,paid[1],await readBody(request));return json({invoiceId,...await accountingOverview(db)},200,origin);}const update=path.match(new RegExp(`^/api/admin/accounting/${segment}/([a-z0-9-]{1,80})$`));if(update&&request.method==='PATCH'){const invoiceId=await updateInvoice(db,type,update[1],await readBody(request));return json({invoiceId,...await accountingOverview(db)},200,origin);}}
   throw new AccountingError('Niet gevonden.',404);
  }catch(error){return json({message:error instanceof AccountingError?error.message:'De financiële administratie is tijdelijk niet beschikbaar.'},error instanceof AccountingError?error.status:503,origin);}
