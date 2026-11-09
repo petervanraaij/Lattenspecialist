@@ -14,6 +14,14 @@ Installeer voor het genereren van de appafbeeldingen eenmalig Pillow 12.3.0 voor
 
 ## Android
 
+### Openbare releasekandidaat 1.7.0 (17)
+
+Deze versie behoudt de beveiligde beheeromgeving en de achtergrondmeldingen van 1.6.1. Het startscherm biedt daarnaast een expliciete, afzonderlijke demonstratie voor gebruikers en de appbeoordeling. De demo draait in een eigen Android-proces en WebView-opslag, zonder beheersleutel, native widgetbridge of toegang tot de productieomgeving. Alle demo-verbindingen blijven beperkt tot het vaste HTTPS-reviewadres. SSL-fouten worden geweigerd; downloads, camera, locatie en externe navigatie zijn daar uitgeschakeld. De demonstratie is fictief en voert geen echte berichten of betalingen uit. De normale werkapp en de bestaande widgets blijven afzonderlijk beschikbaar.
+
+Voor Google Play is de doelgroep 18+ ingesteld. Reviewinstructies verwijzen expliciet naar deze demo en beschrijven de beperkingen; er zijn geen echte beheer- of klantgegevens verstrekt. De gegevensveiligheidsverklaring vermeldt de verwerkte gegevens en de privacy-/verwijderverzoekpagina. Nederland is de gekozen productieregio. Een productie-upload is pas openbaar beschikbaar nadat Google de uitgave heeft goedgekeurd en gepubliceerd.
+
+Validatie: 28 controles op de toegestane demo-origin, de bestaande 69 klant-/beheertests, Android bundleRelease inclusief lint en verificatie van de bestaande uploadhandtekening. Een echte toesteltest blijft nodig.
+
 Gebruik voor installatie en updates het bestaande [Google Play-testkanaal voor Beheer](https://play.google.com/apps/internaltest/4701344778796450203). Het Google-account op de telefoon moet in de bestaande testlijst staan. Een geldige lokale APK-handtekening is geen garantie dat een rechtstreeks gedownloade APK door Play Protect wordt geaccepteerd. Schakel Play Protect niet uit om te installeren. De upload voor versie 1.6.1 gebruikt versiecode 16 omdat code 15 al door een eerdere conceptuitgave is gebruikt.
 
 Op 9 november 2026 is **16 (1.6.1) – Onderhoudsmeldingen** in het bestaande interne testkanaal gepubliceerd. Play Console toont ‘Available to internal testers’; dit is geen openbare winkelpublicatie of afgeronde inhoudelijke beoordeling. De bestaande testlijst is behouden. Bundel SHA-256: `76cd893828eb31844cc0a590ee0f3b2cdfefcef7e40dd6763daa84f9d429e655`. De upload is met de bestaande beheersleutel ondertekend. Google Play verzorgt de distributie-ondertekening; een rechtstreeks geïnstalleerde APK kan daarom een andere handtekening hebben. De installatie en vergrendelschermmelding op een echt toestel zijn nog niet bevestigd.
