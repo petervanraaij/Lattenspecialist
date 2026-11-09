@@ -1,0 +1,13 @@
+.waxstick-dialog{width:min(880px,calc(100% - 24px));max-height:calc(100dvh - 24px);box-sizing:border-box;border:1px solid #c8a459;border-radius:22px;padding:32px;background:#fffdf8;color:#1d211e;box-shadow:0 24px 90px #0005;overflow:auto}
+.waxstick-dialog::backdrop{background:#101510b8}
+.waxstick-close{position:absolute;right:12px;top:10px;width:40px;height:40px;border:0;border-radius:50%;background:#eee9de;color:#222;font-size:26px;cursor:pointer}
+.waxstick-offer-grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:28px;align-items:center}
+.waxstick-offer-grid img{width:100%;height:auto;border-radius:14px}
+.waxstick-dialog h2{font-size:clamp(1.5rem,3vw,2rem);line-height:1.15;margin:12px 0}
+.waxstick-dialog p{line-height:1.55;margin:12px 0}
+.waxstick-eyebrow{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:#89681d;font-weight:800;padding-right:18px}
+.waxstick-offer-price{font-size:1.8rem;font-weight:800}
+.waxstick-offer-price small{display:block;font-size:.8rem;font-weight:400}
+.waxstick-offer-actions{display:grid;gap:10px;margin-top:20px}
+.waxstick-offer-actions .btn{white-space:normal;text-align:center;justify-content:center}
+@media(max-width:600px){.waxstick-dialog{padding:24px 18px}.waxstick-offer-grid{grid-template-columns:1fr;gap:12px}.waxstick-offer-grid img{max-width:155px;justify-self:center}.waxstick-dialog p{font-size:.93rem}.waxstick-dialog h2{margin-top:8px}}
