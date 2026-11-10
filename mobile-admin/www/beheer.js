@@ -175,6 +175,7 @@
     : [['Binnengekomen via',record.sourceChannel],['Materiaal',`${record.amount || 1}× ${record.material || ''}`],['Pakket',record.package],['Logistiek',record.logistics],[String(record.logistics || '').toLowerCase().includes('zelf brengen') ? 'Brengweekend' : 'Ophaalweekend',formatDate(record.pickupDate || record.pickupday)],['Spoed',record.urgent],['Bestemming',record.destination],['Omstandigheden',record.conditions]];
 
   const renderRecord = record => {
+    if(record.workspaceOnly)return `<article class="admin-record" data-reference="${escapeHtml(record.reference)}" data-stage="${recordStage(record)}" data-search="${escapeHtml([record.reference,record.workOrderNumber,record.material,record.package].filter(Boolean).join(' ').toLowerCase())}"><div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber||record.reference)}</span><strong>${escapeHtml(record.material||'Onderhoud')} · ${escapeHtml(record.amount||1)}×</strong><span>${escapeHtml(record.package||'')} · ${escapeHtml(record.status||'Aanvraag ontvangen')}</span><small>Open werkplaats →</small></button></div><details class="admin-record-details"><summary>Werkzaamheden en foto’s</summary>${record.workOrderNumber||Number(record.currentStep)>=2?'<button type="button" class="btn btn-gold open-workorder-workspace">Werkzaamheden en foto’s openen</button>':'<p>Deze aanvraag moet nog door beheer worden bevestigd.</p>'}<p>Klantgegevens en administratie zijn vergrendeld.</p><button type="button" class="btn btn-dark" data-open-private-admin>Beheer ontgrendelen</button></details></article>`;
     const currentStep = Math.max(1,Math.min(steps.length,Number(record.currentStep) || 1));
     const details = serviceDetails(record).filter(([,value]) => value).map(([label,value]) => `<span><b>${escapeHtml(label)}</b>${escapeHtml(value)}</span>`).join('');
     const stepOptions = steps.map((label,index) => `<option value="${index+1}"${index+1 === currentStep ? ' selected' : ''}>${index+1}. ${escapeHtml(label)}</option>`).join('');
@@ -255,7 +256,7 @@
     const active = records.filter(record => recordStage(record)==='work').length;
     const withoutCode = records.filter(record => !record.closedAt && !record.serviceCode).length;
     const reservedMinutes=records.filter(record=>!record.closedAt&&Number(record.currentStep||1)<steps.length).reduce((total,record)=>total+plannedMinutes(record),0);
-    summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> benodigde tijd</span><span><b>${active}</b> in behandeling</span><span><b>${withoutCode}</b> zonder servicecode</span>`;
+    summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> benodigde tijd</span><span><b>${active}</b> in behandeling</span><span><b>${window.AdminSecurity?.locked?records.filter(record=>recordStage(record)==='new').length:withoutCode}</b> ${window.AdminSecurity?.locked?'nieuw':'zonder servicecode'}</span>`;
     list.innerHTML = records.length ? [...records].sort((a,b)=>['new','planned','work','ready','closed'].indexOf(recordStage(a))-['new','planned','work','ready','closed'].indexOf(recordStage(b))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
     for(const card of list.querySelectorAll('.admin-record')){const old=preserved.get(card.dataset.reference);if(old)card.replaceWith(old);else{if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
     for(const detail of list.querySelectorAll('.admin-record-details'))detail.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(detail.open));
@@ -268,8 +269,11 @@
   list.addEventListener('click',event=>{const button=event.target.closest('.admin-open-request');if(button){const detail=button.closest('.admin-record').querySelector('.admin-record-details');detail.open=!detail.open;button.setAttribute('aria-expanded',String(detail.open));}});
   list.addEventListener('click',async event=>{const button=event.target.closest('.discard-request');if(!button)return;const card=button.closest('.admin-record'),reference=card.dataset.reference;button.disabled=true;try{const result=await api('/api/admin/reservations');const latest=result.records?.find(record=>record.reference===reference);if(!latest)throw new Error('Deze aanvraag is niet meer beschikbaar.');dirtyRequests.delete(reference);card.removeAttribute('data-unsaved');records=records.map(record=>record.reference===reference?latest:record);render();syncStatus.textContent='Aanvraag herladen; lokale wijzigingen zijn verworpen.';}catch(error){button.disabled=false;syncStatus.textContent=error.message;}});
   window.addEventListener('lattenspecialist:workorder-opened',()=>{activeFilter='open';applySearch();});
+  list.addEventListener('click',event=>{if(event.target.closest('[data-open-private-admin]'))void window.AdminSecurity?.open();});
+  window.addEventListener('lattenspecialist:admin-unlocked',()=>loadDashboard().catch(error=>{syncStatus.textContent=error.message;}));
   let metricsVersion = 0;
   const loadMetrics = async () => {
+    if(window.AdminSecurity?.locked)return;
     const target = document.querySelector('#websiteMetrics');
     const version = ++metricsVersion;
     const auth = token;
@@ -299,6 +303,7 @@
     pendingManualOpen = true;
     pendingManualMaterial = material || '';
     if (dashboard.hidden) return;
+    if(window.AdminSecurity?.locked){void window.AdminSecurity.open();return;}
     const chosenMaterial = pendingManualMaterial;
     pendingManualOpen = false;
     pendingManualMaterial = '';
@@ -332,6 +337,7 @@
   });
   const loadDashboard = async () => {
     if (!endpoint) throw new Error('De beheerservice is nog niet gekoppeld.');
+    await window.AdminSecurity?.refresh(token);
     refreshButton.disabled = true;
     if(!records.length)list.innerHTML = '<div class="admin-empty"><strong>Reserveringen laden…</strong></div>';
     try {
@@ -419,7 +425,7 @@
   addAvailabilityButton.addEventListener('click',() => { const date = customAvailabilityDate.value; if (!date) return; availableDates.add(date); renderAvailability(); customAvailabilityDate.value = ''; });
   search.addEventListener('input',applySearch);
   refreshButton.addEventListener('click',() => loadDashboard().catch(error => { syncStatus.textContent='Bijwerken mislukt: '+error.message+' Je invoer is bewaard.'; }));
-  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];dirtyRequests.clear();list.replaceChildren();orderFilters.replaceChildren();listStatus.textContent='';syncStatus.textContent='';window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false;window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh')); });
+  logoutButton.addEventListener('click',() => { window.AdminSecurity?.logout(); sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];dirtyRequests.clear();list.replaceChildren();orderFilters.replaceChildren();listStatus.textContent='';syncStatus.textContent='';window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false;window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh')); });
 
   let installPrompt; const installButton = document.querySelector('#installAdmin');
   window.addEventListener('beforeinstallprompt',event => { event.preventDefault(); installPrompt=event; installButton.hidden=false; });

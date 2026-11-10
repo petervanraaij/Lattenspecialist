@@ -10,7 +10,8 @@
     "android:bundle": "npm --prefix mobile-customer run android:bundle",
     "test:maintenance": "node worker/maintenance-guides.test.mjs",
     "test:maintenance:browser": "node tests/maintenance-guides-browser.mjs",
-    "test:orders:browser": "node tests/admin-queue-browser.mjs"
+    "test:orders:browser": "node tests/admin-queue-browser.mjs",
+    "test:security:browser": "node tests/admin-security-browser.mjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"
