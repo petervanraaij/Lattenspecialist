@@ -16,9 +16,11 @@
   };
   const money = value => number(value).toLocaleString('nl-NL', {style:'currency', currency:'EUR'});
 
-  async function request(path, options = {}) {
+  async function request(path, options = {}, host) {
     if (!endpoint) throw new Error('De werkplaats is nog niet verbonden.');
-    const token = sessionStorage.getItem('ls-team-session') || '';
+    const admin=host?.dataset.ownerWorkflow==='true';
+    const token = admin?(sessionStorage.getItem('lattenspecialist-admin-token')||localStorage.getItem('lattenspecialist-admin-token')||''):sessionStorage.getItem('ls-team-session') || '';
+    if(admin){path=path.replace('/api/team/operations/','/api/admin/operations/');if(options.method==='POST'){if(!host.dataset.executionMemberId)throw new Error('Kies eerst wie deze werkzaamheden uitvoert.');options={...options,body:JSON.stringify({...JSON.parse(options.body||'{}'),executionMemberId:host.dataset.executionMemberId})};}}
     if (!token) throw new Error('Log opnieuw in om werkstappen te gebruiken.');
     const response = await fetch(endpoint + path, {
       ...options,
@@ -176,19 +178,20 @@
     }
     const summary = workflow.summary || {}, totalCost = number(summary.totalCost ?? summary.total_cost), totalSeconds = number(summary.totalSeconds ?? summary.total_seconds);
     host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3><p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSTreatmentOverview?window.LSTreatmentOverview.render(window.LSTreatmentOverview.workflow(workflow),{open:true}):''}${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
-    if(!workflow.isTraining&&window.LSMaterialPhotos){const details=document.createElement('details');details.className='material-photo-disclosure';details.innerHTML='<summary>Foto’s bij binnenkomst en oplevering</summary><div data-material-photos></div>';const photoActions=document.createElement('div');photoActions.className='workflow-photo-shortcuts';photoActions.innerHTML='<button type="button" data-photo-stage="intake">📷 Binnenkomstfoto maken</button><button type="button" data-photo-stage="delivery">📷 Opleverfoto maken</button>';host.querySelector('.workflow-head').after(photoActions,details);photoActions.addEventListener('click',event=>{const button=event.target.closest('[data-photo-stage]');if(!button)return;details.open=true;const target=details.querySelector('[data-material-photos]');if(!target.children.length)window.LSMaterialPhotos.mount(target,materialId);const select=target.querySelector('[name="stage"]');if(select)select.value=button.dataset.photoStage;target.querySelector('[data-photo-camera]')?.click();});details.addEventListener('toggle',()=>{const target=details.querySelector('[data-material-photos]');if(details.open&&!target.children.length)window.LSMaterialPhotos.mount(target,materialId);});}
+    if(!workflow.isTraining&&window.LSMaterialPhotos){const details=document.createElement('details');details.className='material-photo-disclosure';details.innerHTML='<summary>Foto’s bij binnenkomst en oplevering</summary><div data-material-photos></div>';const photoActions=document.createElement('div');photoActions.className='workflow-photo-shortcuts';photoActions.innerHTML='<button type="button" data-photo-stage="intake">📷 Binnenkomstfoto maken</button><button type="button" data-photo-stage="delivery">📷 Opleverfoto maken</button>';host.querySelector('.workflow-head').after(photoActions,details);photoActions.addEventListener('click',event=>{const button=event.target.closest('[data-photo-stage]');if(!button)return;details.open=true;const target=details.querySelector('[data-material-photos]');if(!target.children.length)window.LSMaterialPhotos.mount(target,materialId,{admin:host.dataset.ownerWorkflow==='true'});const select=target.querySelector('[name="stage"]');if(select)select.value=button.dataset.photoStage;target.querySelector('[data-photo-camera]')?.click();});details.addEventListener('toggle',()=>{const target=details.querySelector('[data-material-photos]');if(details.open&&!target.children.length)window.LSMaterialPhotos.mount(target,materialId,{admin:host.dataset.ownerWorkflow==='true'});});}
     const currentGuide=host.querySelector('.workflow-step.is-next .maintenance-guide details,.workflow-step.is-active .maintenance-guide details');if(currentGuide)currentGuide.open=true;
     updateTimers();
   }
 
   async function loadInto(host, materialId, initialData) {
-    const expectedToken=sessionStorage.getItem('ls-team-session');
+    const auth=()=>host.dataset.ownerWorkflow==='true'?(sessionStorage.getItem('lattenspecialist-admin-token')||localStorage.getItem('lattenspecialist-admin-token')):sessionStorage.getItem('ls-team-session');
+    const expectedToken=auth();
     host.className = 'workflow-shell';
     host.dataset.materialId = materialId;
     host.innerHTML = '<p>Werkstappen laden…</p>';
     try {
-      const data = initialData && (initialData.steps || initialData.workflow?.steps || initialData.job?.steps) ? initialData : await request(`/api/team/operations/materials/${encodeURIComponent(materialId)}/workflow`);
-      if(!host.isConnected||host.dataset.materialId!==materialId||sessionStorage.getItem('ls-team-session')!==expectedToken)return;
+      const data = initialData && (initialData.steps || initialData.workflow?.steps || initialData.job?.steps) ? initialData : await request(`/api/team/operations/materials/${encodeURIComponent(materialId)}/workflow`,{},host);
+      if(!host.isConnected||host.dataset.materialId!==materialId||auth()!==expectedToken)return;
       render(host, data, materialId);
     } catch (error) {
       host.innerHTML = `<p class="workflow-message is-error">${escape(error.message)}</p>`;
@@ -228,7 +231,7 @@
     const unlock=lockStep(form);if(!unlock)return;
     button.disabled = true; message.classList.remove('is-error'); message.textContent = action === 'start' ? 'Timer starten…' : 'Verbruik en tijd opslaan…';
     try {
-      await request(`/api/team/operations/steps/${encodeURIComponent(form.dataset.stepId)}/${action}`, {method:'POST', body:JSON.stringify(body)});
+      await request(`/api/team/operations/steps/${encodeURIComponent(form.dataset.stepId)}/${action}`, {method:'POST', body:JSON.stringify(body)},form.closest('.workflow-shell'));
       const host = form.closest('.workflow-shell');
       await loadInto(host, host.dataset.materialId);
     } catch (error) {
@@ -244,7 +247,7 @@
     const unlock=lockStep(form);if(!unlock)return;
     button.disabled = true; message.classList.remove('is-error'); message.textContent = 'Timer pauzeren…';
     try {
-      await request(`/api/team/operations/steps/${encodeURIComponent(form.dataset.stepId)}/pause`, {method:'POST', body:'{}'});
+      await request(`/api/team/operations/steps/${encodeURIComponent(form.dataset.stepId)}/pause`, {method:'POST', body:'{}'},form.closest('.workflow-shell'));
       const host = form.closest('.workflow-shell');
       await loadInto(host, host.dataset.materialId);
     } catch (error) {
@@ -315,6 +318,7 @@
     const form=input.closest('.workflow-step').querySelector('[data-workflow-action="finish"]');
     if(form&&!form.dataset.submitting)form.requestSubmit();
   });
+  window.LSWorkflows={open(host,materialId,{admin=false,memberId=''}={}){host.dataset.ownerWorkflow=String(admin);host.dataset.executionMemberId=memberId;return loadInto(host,materialId);}};
   watchScans();
   setInterval(updateTimers, 1000);
 })();

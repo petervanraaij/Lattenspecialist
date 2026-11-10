@@ -650,21 +650,11 @@
     }
   }
   var escape2 = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  var today = () => {
-    const date = /* @__PURE__ */ new Date();
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  };
-  var validDate = (value) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-    const date = /* @__PURE__ */ new Date(`${value}T12:00:00Z`);
-    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
-  };
   function readTrip(raw) {
     if (!raw || typeof raw !== "object") return null;
     const destination = String(raw.destination || "").trim().slice(0, 100);
-    const skidate = String(raw.skidate || "");
-    if (!destination || !validDate(skidate)) return null;
-    return { destination, skidate, conditions: CONDITIONS.includes(raw.conditions) ? raw.conditions : CONDITIONS[0] };
+    if (!destination) return null;
+    return { destination, conditions: CONDITIONS.includes(raw.conditions) ? raw.conditions : CONDITIONS[0] };
   }
   function formatDate(value) {
     const date = new Date(value.length === 10 ? `${value}T12:00:00` : value);
@@ -964,12 +954,11 @@
   function showTrip(trip, saved = true) {
     $("tripResult").hidden = false;
     const weather = `https://www.google.com/search?q=${encodeURIComponent(`weer sneeuw ${trip.destination} skigebied`)}`;
-    $("tripResult").innerHTML = `<span class="tag">${saved ? "Bewaard op dit toestel" : "Reis ingevuld"}</span><h2>${escape2(trip.destination)}</h2><p>Eerste skidag: ${escape2(formatDate(trip.skidate))}</p><p>${escape2(trip.conditions)}</p>${trip.skidate < today() ? '<p class="error">Deze reisdatum is voorbij. Pas de datum aan voor een nieuwe aanvraag.</p>' : ""}<a class="text-link" href="${escape2(weather)}">Bekijk weer en sneeuwverwachting \u2197</a>`;
+    $("tripResult").innerHTML = `<span class="tag">${saved ? "Bewaard op dit toestel" : "Reis ingevuld"}</span><h2>${escape2(trip.destination)}</h2><p>${escape2(trip.conditions)}</p><a class="text-link" href="${escape2(weather)}">Bekijk weer en sneeuwverwachting \u2197</a>`;
   }
-  $("skiDate").min = today();
   var savedTrip = getSavedTrip();
   if (savedTrip) {
-    for (const [name, value] of Object.entries(savedTrip)) $("tripForm").elements[name].value = value;
+    for (const [name, value] of Object.entries(savedTrip)) if ($("tripForm").elements[name]) $("tripForm").elements[name].value = value;
     showTrip(savedTrip);
   }
   $("tripForm").addEventListener("submit", (event) => {

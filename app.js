@@ -93,11 +93,7 @@ waxForm.addEventListener('submit', event => {
   event.preventDefault();
   const values = Object.fromEntries(new FormData(waxForm));
   const [category, temperatureNote] = temperatureAdvice[values.temperature] || temperatureAdvice.unknown;
-  const tripDate = new Date(`${values.date}T12:00:00`);
-  const daysUntil = Math.ceil((tripDate.getTime() - Date.now()) / 86400000);
-  let forecastNote = 'De weersverwachting is nog niet betrouwbaar genoeg voor een definitieve waxkeuze.';
-  if (daysUntil >= 0 && daysUntil <= 16) forecastNote = 'Je reis valt binnen ongeveer zestien dagen. Controleer nu de actuele verwachting op hoogte.';
-  if (daysUntil < 0) forecastNote = 'De ingevulde datum ligt in het verleden; controleer de reisdatum.';
+  const forecastNote = 'Controleer de actuele sneeuw- en weersverwachting voor je bestemming.';
   const humidityNote = values.humidity === 'humid'
     ? 'Bij vochtige omstandigheden telt waterafvoer extra mee.'
     : values.humidity === 'dry'
@@ -109,7 +105,6 @@ waxForm.addEventListener('submit', event => {
     '',
     'Ik wil mijn waxkeuze afstemmen op mijn wintersport:',
     `Bestemming: ${values.destination}`,
-    `Eerste skidag: ${formatDate(values.date)}`,
     `Temperatuur: ${waxForm.elements.temperature.options[waxForm.elements.temperature.selectedIndex].text}`,
     `Sneeuw: ${waxForm.elements.snow.options[waxForm.elements.snow.selectedIndex].text}`,
     `Klimaat: ${waxForm.elements.humidity.options[waxForm.elements.humidity.selectedIndex].text}`,
@@ -120,7 +115,6 @@ waxForm.addEventListener('submit', event => {
   waxResult.innerHTML = `
     <span class="result-label">Voorbereiding voor ${escapeHtml(values.destination)}</span>
     <h3>${escapeHtml(category)}</h3>
-    <p><strong>Eerste skidag:</strong> ${escapeHtml(formatDate(values.date))}</p>
     <ul class="result-list"><li>${escapeHtml(temperatureNote)}</li><li>${escapeHtml(snowAdvice[values.snow] || snowAdvice.unknown)}</li><li>${escapeHtml(humidityNote)}</li><li>${escapeHtml(forecastNote)}</li></ul>
     <p class="result-caution">Dit is een voorbereiding, geen definitief productadvies. De uiteindelijke wax kiezen we op basis van de actuele verwachting en de staat van het materiaal.</p>
     <div class="result-actions"><a class="btn btn-gold" href="https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}" target="_blank" rel="noopener">Bespreek via WhatsApp</a><a class="text-link" href="${weatherUrl}" target="_blank" rel="noopener">Bekijk weersverwachting →</a></div>`;

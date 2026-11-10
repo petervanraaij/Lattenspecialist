@@ -126,7 +126,7 @@ const readAndValidateLattenspecialist = (raw, trustedAdmin = false) => {
   const data = {
     service: clean(raw.service, 24), material: clean(raw.material, 40), amount: clean(raw.amount, 3),
     package: clean(raw.package, 60), logistics: clean(raw.logistics, 100), pickupDate: clean(raw.pickupDate || raw.pickupday, 30),
-    urgent: clean(raw.urgent, 80), destination: clean(raw.destination, 100), skidate: clean(raw.skidate, 10),
+    urgent: clean(raw.urgent, 80), destination: clean(raw.destination, 100), skidate: '',
     conditions: clean(raw.conditions, 80), rentaltype: clean(raw.rentaltype, 60), height: clean(raw.height, 3),
     shoesize: clean(raw.shoesize, 20), level: clean(raw.level, 30), rentfrom: clean(raw.rentfrom, 10),
     rentto: clean(raw.rentto, 10), name: clean(raw.name, 80), phone: clean(raw.phone, 30),
@@ -427,7 +427,7 @@ const sendWhatsAppTemplate = async (record, type, env) => {
 const lattenspecialistFields = data => {
   const common = [['Dienst', data.service], ['Naam', data.name], ['Telefoon', data.phone], ['WhatsApp-statusupdates', data.whatsappConsent ? 'Ja, toestemming gegeven' : 'Nee'], ['E-mail', data.email], ['Contactadres', data.address || 'Niet ingevuld']];
   const specific = data.service === 'Onderhoud' ? [
-    ['Materiaal', data.material], ['Aantal', data.amount], ['Pakket', data.package], ['Logistiek', data.logistics], [data.logistics.toLowerCase().includes('zelf brengen') ? 'Gewenste brengdatum' : 'Ophaalweekend', data.pickupDate], ['Spoed', data.urgent], ['Bestemming', data.destination || 'Niet ingevuld'], ['Eerste skidag', data.skidate || 'Niet ingevuld'], ['Omstandigheden', data.conditions || 'Niet ingevuld']
+    ['Materiaal', data.material], ['Aantal', data.amount], ['Pakket', data.package], ['Logistiek', data.logistics], [data.logistics.toLowerCase().includes('zelf brengen') ? 'Gewenste brengdatum' : 'Ophaalweekend', data.pickupDate], ['Spoed', data.urgent], ['Bestemming', data.destination || 'Niet ingevuld'], ['Omstandigheden', data.conditions || 'Niet ingevuld']
   ] : [
     ['Verhuur', data.rentaltype], ['Lengte persoon', data.height ? `${data.height} cm` : 'Niet ingevuld'], ['Schoenmaat', data.shoesize || 'Niet ingevuld'], ['Niveau', data.level || 'Niet ingevuld'], ['Van', data.rentfrom || 'Niet ingevuld'], ['Tot en met', data.rentto || 'Niet ingevuld']
   ];
@@ -503,7 +503,7 @@ export default {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleAccounting(request, env, {owner:await isAdminAuthorized(request,env), json, origin});
     }
-    if (/^\/api\/(team|admin)\/operations\/materials\/[a-f0-9-]{36}\/photos(?:\/[a-f0-9-]{36})?$/.test(url.pathname) || /^\/api\/admin\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || url.pathname.startsWith('/api/admin/inventory') || url.pathname.startsWith('/api/team/warehouse') || url.pathname === '/api/team/guides' || url.pathname === '/api/team/practice' || /^\/api\/team\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || /^\/api\/team\/operations\/steps\/[a-f0-9-]{36}\/(start|pause|finish)$/.test(url.pathname)) {
+    if (/^\/api\/admin\/operations\/steps\/[a-f0-9-]{36}\/(start|pause|finish)$/.test(url.pathname) || /^\/api\/(team|admin)\/operations\/materials\/[a-f0-9-]{36}\/photos(?:\/[a-f0-9-]{36})?$/.test(url.pathname) || /^\/api\/admin\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || url.pathname.startsWith('/api/admin/inventory') || url.pathname.startsWith('/api/team/warehouse') || url.pathname === '/api/team/guides' || url.pathname === '/api/team/practice' || /^\/api\/team\/operations\/materials\/[a-f0-9-]{36}\/workflow$/.test(url.pathname) || /^\/api\/team\/operations\/steps\/[a-f0-9-]{36}\/(start|pause|finish)$/.test(url.pathname)) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleInventory(request, env, {owner:await isAdminAuthorized(request,env), json, origin});
     }

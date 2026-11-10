@@ -114,7 +114,6 @@
       if (usesPickup()) lines.push(`Ophaaldatum: ${formatDate(getValue('pickupDate'))}`, `Ophaal- en terugbrenglocatie: ${getValue('address') || 'Nog invullen'}`);
       if (!maintenanceSelection) lines.push(`Spoed: ${getValue('urgent')}`);
       if (getValue('destination')) lines.push(`Bestemming: ${getValue('destination')}`);
-      if (getValue('skidate')) lines.push(`Eerste skidag: ${formatDate(getValue('skidate'))}`);
       if (getValue('conditions') !== 'Weet ik nog niet') lines.push(`Omstandigheden: ${getValue('conditions')}`);
     } else {
       lines.push(`Dakkoffer: ${getValue('rentaltype')}`, `Huurprijs: ${rentalPrices[getValue('rentaltype')] || '-'}`, `Periode: ${formatDate(getValue('rentfrom'))} t/m ${formatDate(getValue('rentto'))}`);
@@ -227,7 +226,7 @@
   };
   const today = new Date();
   const minimum = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
-  ['skidate','rentfrom','rentto'].forEach(name => { form.elements[name].min = minimum; });
+  ['rentfrom','rentto'].forEach(name => { form.elements[name].min = minimum; });
   const requestedSelection = selectionModel?.parse(params.get('keuze'));
   if (requestedSelection && selectionModel.hasItems(requestedSelection)) {
     maintenanceSelection = requestedSelection;

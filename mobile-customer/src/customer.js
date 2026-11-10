@@ -219,11 +219,11 @@ function getSavedTrip() { try { return readTrip(JSON.parse(storage.get(TRIP_KEY)
 function showTrip(trip, saved = true) {
   $('tripResult').hidden=false;
   const weather=`https://www.google.com/search?q=${encodeURIComponent(`weer sneeuw ${trip.destination} skigebied`)}`;
-  $('tripResult').innerHTML=`<span class="tag">${saved?'Bewaard op dit toestel':'Reis ingevuld'}</span><h2>${escape(trip.destination)}</h2><p>Eerste skidag: ${escape(formatDate(trip.skidate))}</p><p>${escape(trip.conditions)}</p>${trip.skidate<today()?'<p class="error">Deze reisdatum is voorbij. Pas de datum aan voor een nieuwe aanvraag.</p>':''}<a class="text-link" href="${escape(weather)}">Bekijk weer en sneeuwverwachting ↗</a>`;
+  $('tripResult').innerHTML=`<span class="tag">${saved?'Bewaard op dit toestel':'Reis ingevuld'}</span><h2>${escape(trip.destination)}</h2><p>${escape(trip.conditions)}</p><a class="text-link" href="${escape(weather)}">Bekijk weer en sneeuwverwachting ↗</a>`;
 }
-$('skiDate').min=today();
+
 const savedTrip=getSavedTrip();
-if(savedTrip){ for(const [name,value] of Object.entries(savedTrip)) $('tripForm').elements[name].value=value; showTrip(savedTrip); }
+if(savedTrip){ for(const [name,value] of Object.entries(savedTrip)) if($('tripForm').elements[name])$('tripForm').elements[name].value=value; showTrip(savedTrip); }
 $('tripForm').addEventListener('submit', event => {
   event.preventDefault();
   const trip=readTrip(Object.fromEntries(new FormData($('tripForm'))));
