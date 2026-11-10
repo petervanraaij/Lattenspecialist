@@ -27,3 +27,6 @@ De openbare configuratie staat in `wrangler.toml`. Secrets horen nooit in Git. D
 
 ## Beheercode vergeten
 De beheerpagina biedt e-mailherstel via de vaste LATTENSPECIALIST_ADMIN_RECOVERY_EMAIL. Eerst migratie 0006_admin_recovery.sql toepassen, daarna de Worker publiceren. Alleen de eigenaar ontvangt een 256-bit herstellink (20 minuten, eenmalig); D1 bewaart alleen de tokenhash. Twee minuten cooldown en maximaal acht e-mails per UTC-dag. Codeherstel trekt andere links en de oude code in; handmatige serversecret-rotatie maakt openstaande links ongeldig. HRM-pincodes en medewerkers blijven ongewijzigd. Geen code of token in logs. Native apps krijgen de knop bij de volgende reguliere appbuild; de e-maillink werkt direct in de browser.
+
+## Native achtergrondverzoeken
+Widgets en WorkManager gebruiken HttpURLConnection zonder Origin. Alleen GET /api/admin/reservations ondersteunt dit, met verplichte geldige eigenaarcode, no-store en zonder CORS-header. Andere routes, mutaties en vreemde browser-origins blijven geweigerd. Na een beheercodewijziging moet de eigenaar opnieuw aanmelden in de gewone Android Beheer-app zodat de native widgetcode wordt bijgewerkt. De fictieve demo gebruikt die koppeling niet.
