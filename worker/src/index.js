@@ -460,7 +460,15 @@ export default {
     if(!origin && request.method==='GET' && new URL(request.url).pathname==='/api/admin/reservations') {
       try {
         if(!await isAdminAuthorized(request,env))return json({message:'Open de Beheer-app en log opnieuw in.'},401,'');
-        return json({ok:true,records:await listReservations(env)},200,'');
+        const records=(await listReservations(env)).map(record=>({
+          reference:String(record.reference||''),service:String(record.service||''),
+          currentStep:Math.max(1,Number(record.currentStep)||1),
+          // Android's JSONObject.optString(null) yields the literal "null".
+          // Existing notification binaries expect an empty string for open work.
+          closedAt:record.closedAt?String(record.closedAt):'',
+          amount:Math.max(1,Number(record.amount)||1),logistics:String(record.logistics||'')
+        }));
+        return json({ok:true,records},200,'');
       }catch{return json({message:'Aanvragen konden niet worden opgehaald.'},503,'');}
     }
     if(new URL(request.url).pathname==='/api/internal/invoice-transfer'){
