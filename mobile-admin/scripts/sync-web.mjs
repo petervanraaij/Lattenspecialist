@@ -25,6 +25,7 @@ for (const file of ['tool-images.js','admin-dossiers.js','admin-dossiers.css','m
   await cp(join(siteRoot, file), join(webRoot, file));
 }
 for (const file of ['treatment-overview.js','treatment-overview.css']) await cp(join(siteRoot,file),join(webRoot,file));
+await cp(join(siteRoot,'admin-recovery.js'),join(webRoot,'admin-recovery.js'));
 for (const file of ['qrcode.js','html5-qrcode.min.js']) await cp(join(siteRoot,'vendor',file),join(webRoot,'vendor',file));
 for (const file of ['badge.webp', 'logo-main.webp', 'app-icon-192.png', 'app-icon-512.png']) {
   await cp(join(siteRoot, 'images', file), join(webRoot, 'images', file));

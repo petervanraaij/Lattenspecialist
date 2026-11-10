@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://stuiterbaas-reserveren.stuiterbaas-456655a6.workers.dev; img-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <title>Beheercode herstellen | De Lattenspecialist</title>
+  <link rel="icon" href="images/badge.webp" type="image/webp">
+  <link rel="stylesheet" href="styles.css?v=21">
+</head>
+<body class="admin-body">
+  <main class="admin-main">
+    <section class="container admin-login">
+      <div class="admin-login-card">
+        <img src="images/badge.webp" alt="De Lattenspecialist" class="admin-badge">
+        <h1>Nieuwe beheercode</h1>
+        <p>Kies een unieke code van minimaal 12 tekens. De herstellink is 20 minuten geldig en werkt één keer.</p>
+        <form id="newAdminCodeForm" class="compact-form">
+          <label><span>Nieuwe beheercode</span><input name="code" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label>
+          <label><span>Herhaal beheercode</span><input name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label>
+          <button type="submit" class="btn btn-gold">Nieuwe code opslaan</button>
+        </form>
+        <p id="resetAdminStatus" role="status" aria-live="polite"></p>
+        <a class="btn btn-ghost" href="beheer.html">Naar Beheer</a>
+      </div>
+    </section>
+  </main>
+  <script src="booking-config.js?v=2"></script>
+  <script src="admin-recovery.js?v=20261109-1"></script>
+</body>
+</html>

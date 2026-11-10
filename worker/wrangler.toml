@@ -10,6 +10,7 @@ STUITERBAAS_FROM_EMAIL = "Stuiterbaas Reserveringen <reserveringen@stuiterbaas.n
 LATTENSPECIALIST_ORIGINS = "https://lattenspecialist.nl,https://www.lattenspecialist.nl"
 LATTENSPECIALIST_APP_ORIGINS = "capacitor://localhost,https://localhost,http://localhost"
 LATTENSPECIALIST_TO_EMAIL = "info@lattenspecialist.nl"
+LATTENSPECIALIST_ADMIN_RECOVERY_EMAIL = "beheer@vanraaijservice.nl"
 LATTENSPECIALIST_FROM_EMAIL = "De Lattenspecialist via Stuiterbaas <reserveringen@stuiterbaas.nl>"
 
 [[kv_namespaces]]

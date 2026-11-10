@@ -8,6 +8,7 @@ import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, e
 import {handleOperations, verifyAdminAccessCode} from './operations.js';
 import {handleInventory, validMaintenanceSelection} from './inventory.js';
 import {handleAccounting} from './accounting.js';
+import {handleAdminRecovery} from './admin-recovery.js';
 
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
@@ -461,6 +462,10 @@ export default {
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
     if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-HRM-PIN', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
+    if(url.pathname.startsWith('/api/admin/recovery/')) {
+      if(site!=='lattenspecialist')return json({message:'Niet toegestaan.'},403,origin);
+      return handleAdminRecovery(request,env,origin);
+    }
     if (url.pathname.startsWith('/api/admin/accounting')) {
       if (site !== 'lattenspecialist') return json({message: 'Niet toegestaan.'}, 403, origin);
       return handleAccounting(request, env, {owner:await isAdminAuthorized(request,env), json, origin});

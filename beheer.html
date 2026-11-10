@@ -43,6 +43,17 @@
           <button class="btn btn-gold" type="submit">Open beheer</button>
           <div class="booking-status" id="adminLoginStatus" role="status" aria-live="polite"></div>
         </form>
+        <button type="button" class="btn btn-ghost" id="forgotAdminCode">Beheercode vergeten?</button>
+        <dialog id="adminRecoveryDialog" aria-labelledby="adminRecoveryTitle" style="max-width:480px;width:calc(100% - 32px);border:1px solid #c9b380;border-radius:18px;padding:28px">
+          <h2 id="adminRecoveryTitle">Beheercode herstellen</h2>
+          <p>Vul het ingestelde hersteladres van de eigenaar in. Je ontvangt daar een eenmalige link om zelf een nieuwe code te kiezen.</p>
+          <form id="adminRecoveryForm" class="compact-form">
+            <label><span>E-mailadres eigenaar</span><input name="email" type="email" autocomplete="email" maxlength="254" required></label>
+            <button class="btn btn-gold" type="submit">Herstellink mailen</button>
+            <p id="adminRecoveryStatus" role="status" aria-live="polite"></p>
+          </form>
+          <button type="button" class="btn btn-ghost" id="closeAdminRecovery">Sluiten</button>
+        </dialog>
       </div>
     </section>
 
@@ -102,6 +113,7 @@
   </dialog>
 
   <script src="booking-config.js?v=2"></script>
+  <script src="admin-recovery.js?v=20261109-1"></script>
   <script src="vendor/qrcode.js"></script>
   <script src="vendor/html5-qrcode.min.js"></script>
   <script src="admin-team.js?v=2"></script>
