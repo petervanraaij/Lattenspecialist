@@ -36,7 +36,7 @@ test('five visible homepage offers lead directly to choice without a popup and e
   assert.ok([...card.querySelectorAll('li')].every(li=>!li.closest('[hidden]')));
  }
  const explanation=d.getElementById('standaard-en-extra').textContent;
- assert.match(explanation,/Extra’s kies je zelf/);assert.match(explanation,/vooraf zelf/);assert.match(explanation,/Racing File S/);
+ assert.match(explanation,/Extra’s kies je zelf/);assert.match(explanation,/Hot Scraping is optioneel/);assert.match(explanation,/Racing File S/);
  assert.match(explanation,/0 tot −12 °C/);assert.match(explanation,/Zwart of transparant herstelmateriaal/);assert.doesNotMatch(explanation,/gele verbruik apart/);
  assert.doesNotMatch(d.getElementById('haalbreng').textContent,/woensdag erop|week later/);
 });
