@@ -44,6 +44,17 @@
           <button class="btn btn-gold" type="submit">Open beheer</button>
           <div class="booking-status" id="adminLoginStatus" role="status" aria-live="polite"></div>
         </form>
+        <button type="button" class="btn btn-ghost" id="forgotAdminCode">Beheercode vergeten?</button>
+        <dialog id="adminRecoveryDialog" aria-labelledby="adminRecoveryTitle" style="max-width:480px;width:calc(100% - 32px);border:1px solid #c9b380;border-radius:18px;padding:28px">
+          <h2 id="adminRecoveryTitle">Beheercode herstellen</h2>
+          <p>Vul het ingestelde hersteladres van de eigenaar in. Je ontvangt daar een eenmalige link om zelf een nieuwe code te kiezen.</p>
+          <form id="adminRecoveryForm" class="compact-form">
+            <label><span>E-mailadres eigenaar</span><input name="email" type="email" autocomplete="email" maxlength="254" required></label>
+            <button class="btn btn-gold" type="submit">Herstellink mailen</button>
+            <p id="adminRecoveryStatus" role="status" aria-live="polite"></p>
+          </form>
+          <button type="button" class="btn btn-ghost" id="closeAdminRecovery">Sluiten</button>
+        </dialog>
       </div>
     </section>
 
@@ -103,12 +114,13 @@
   </dialog>
 
   <script src="booking-config.js?v=2"></script>
+  <script src="admin-recovery.js?v=20261109-1"></script>
   <script src="vendor/qrcode.js"></script>
   <script src="vendor/html5-qrcode.min.js"></script>
   <script src="admin-team.js?v=2"></script>
   <script src="admin-inventory.js?v=20261109-waxstick-1"></script>
   <script src="maintenance-guide-ui.js?v=20261101-gold-3"></script><script src="tool-images.js?v=20261101-1"></script><script src="work-instructions.js?v=20261101-gallery-1"></script><script src="material-photos.js?v=20261101-dossiers-1"></script><script src="admin-dossiers.js?v=20261101-dossiers-1"></script><script src="admin-operations.js?v=20261101-dossiers-1"></script>
-  <script src="maintenance-selection.js?v=20261101-clear-1"></script><script src="treatment-overview.js?v=20261102-brush-1"></script><script src="manual-maintenance.js?v=20261101-gold-3"></script>
+  <script src="maintenance-selection.js?v=20261109-techniques-1"></script><script src="treatment-overview.js?v=20261109-techniques-1"></script><script src="manual-maintenance.js?v=20261101-gold-3"></script>
   <script src="beheer.js?v=20261109-alerts"></script>
   <script src="native.js"></script>
 </body>

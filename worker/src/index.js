@@ -9,6 +9,7 @@ import {handleOperations, verifyAdminAccessCode} from './operations.js';
 import {handleInventory, validMaintenanceSelection} from './inventory.js';
 import {handleAccounting} from './accounting.js';
 import {handleAdminRecovery} from './admin-recovery.js';
+import {handleAdminPush,queueReservationPush,deliverPushOutbox} from './admin-push.js';
 
 const JSON_HEADERS = {'Content-Type': 'application/json; charset=utf-8'};
 class ValidationError extends Error {}
@@ -437,7 +438,7 @@ const sendLattenspecialistEmail = async (data, reference, env) => {
   await sendResendEmail(message, env);
 };
 
-const saveLattenspecialistReservation = async (data, reference, env) => {
+const saveLattenspecialistReservation = async (data, reference, env, ctx) => {
   if (!env.LATTENSPECIALIST_TEAM_DB && !env.LATTENSPECIALIST_RESERVATIONS_KV) return;
   const now = new Date().toISOString();
   const plannedMinutes = data.service === 'Onderhoud' ? Math.max(1, Math.min(20, Number(data.amount) || 1)) * 60 : 0;
@@ -448,11 +449,12 @@ const saveLattenspecialistReservation = async (data, reference, env) => {
   // retained only as a compatibility fallback when no D1 binding is configured.
   if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(stored, env);
   else await env.LATTENSPECIALIST_RESERVATIONS_KV.put(`reservation:${reference}`, JSON.stringify(stored));
+  await queueReservationPush(data,reference,env,ctx);
 };
 
 export default {
- async scheduled(_event,env,ctx){if(!centralHrmEnabled(env)||!env.LATTENSPECIALIST_TEAM_DB)return;ctx.waitUntil((async()=>{const source=await legacyHrmMembers(env,env.LATTENSPECIALIST_TEAM_DB);await centralHrm(env,{operation:'bootstrap',members:source.members.map(member=>{const {items,seconds,month_items,month_seconds}=member.totals;return{...member,totals:{items,seconds,month_items,month_seconds}};})});})().catch(()=>console.error('Centrale HRM-synchronisatie kon niet worden afgerond; bestaande gegevens zijn behouden.')));},
-  async fetch(request, env) {
+ async scheduled(_event,env,ctx){ctx.waitUntil(deliverPushOutbox(env).catch(()=>console.error('Push retry deferred.')));if(!centralHrmEnabled(env)||!env.LATTENSPECIALIST_TEAM_DB)return;ctx.waitUntil((async()=>{const source=await legacyHrmMembers(env,env.LATTENSPECIALIST_TEAM_DB);await centralHrm(env,{operation:'bootstrap',members:source.members.map(member=>{const {items,seconds,month_items,month_seconds}=member.totals;return{...member,totals:{items,seconds,month_items,month_seconds}};})});})().catch(()=>console.error('Centrale HRM-synchronisatie kon niet worden afgerond; bestaande gegevens zijn behouden.')));},
+  async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '';
     // Android HttpURLConnection is not a browser and sends no Origin. Keep this
     // exception to the existing read-only widget/notification endpoint, require
@@ -479,6 +481,10 @@ export default {
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
     if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-HRM-PIN', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
+    if(url.pathname.startsWith('/api/admin/push/')){
+      if(site!=='lattenspecialist')return json({message:'Niet toegestaan.'},403,origin);
+      return handleAdminPush(request,env,{owner:await isAdminAuthorized(request,env),json,origin});
+    }
     if(url.pathname.startsWith('/api/admin/recovery/')) {
       if(site!=='lattenspecialist')return json({message:'Niet toegestaan.'},403,origin);
       return handleAdminRecovery(request,env,origin);
@@ -558,7 +564,7 @@ export default {
       try {
         const {data} = readAndValidateLattenspecialist(await request.json(), true);
         const reference = createReference();
-        await saveLattenspecialistReservation(data, reference, env);
+        await saveLattenspecialistReservation(data, reference, env, ctx);
         const record = (await listReservations(env)).find(item => item.reference === reference);
         if (!record) throw new Error('Saved reservation missing.');
         return json({ok: true, record}, 201, origin);
@@ -615,11 +621,11 @@ export default {
       const reference = createReference();
       if (result.data.service === 'Onderhoud' && result.data.quickReservation) {
         await sendLattenspecialistEmail(result.data, reference, env);
-        await saveLattenspecialistReservation(result.data, reference, env);
+        await saveLattenspecialistReservation(result.data, reference, env, ctx);
         return json({ok: true, reference}, 202, origin);
       }
       await sendLattenspecialistEmail(result.data, reference, env);
-      await saveLattenspecialistReservation(result.data, reference, env);
+      await saveLattenspecialistReservation(result.data, reference, env, ctx);
       let confirmationSent = true;
       try { await sendCustomerConfirmationEmail(result.data, reference, env); } catch { confirmationSent = false; }
       return json({ok: true, reference, confirmationSent}, 202, origin);

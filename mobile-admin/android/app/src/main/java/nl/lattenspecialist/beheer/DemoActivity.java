@@ -25,6 +25,8 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.content.pm.PackageManager;
+import android.webkit.ValueCallback;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 import java.io.ByteArrayInputStream;
@@ -37,6 +39,9 @@ public final class DemoActivity extends Activity {
     private TextView message;
     private Button retry;
     private String origin;
+    private String entryUrl;
+    private boolean demoNotificationPending;
+    private static boolean demoStoragePrepared;
     private OnBackInvokedCallback predictiveBack;
 
     @Override public void onCreate(Bundle state) {
@@ -59,6 +64,11 @@ public final class DemoActivity extends Activity {
         choice.setText("Terug naar appkeuze");
         choice.setOnClickListener(view -> returnToChoice());
         layout.addView(choice);
+        Button notification = new Button(this);
+        notification.setText("DEMO-testmelding");
+        notification.setEnabled(Build.VERSION.SDK_INT >= 28);
+        notification.setOnClickListener(view -> requestDemoNotification());
+        layout.addView(notification);
         message = new TextView(this);
         message.setPadding(dp(14), dp(12), dp(14), dp(12));
         layout.addView(message);
@@ -72,11 +82,20 @@ public final class DemoActivity extends Activity {
             message.setText("Voor de afzonderlijke demo-opslag is Android 9 of hoger nodig. De beveiligde app blijft beschikbaar via de appkeuze.");
             return;
         }
-        WebView.setDataDirectorySuffix("synthetic-review-demo");
-        try { origin = DemoOriginPolicy.validateOrigin(DemoOriginPolicy.ORIGIN); }
-        catch (IllegalArgumentException error) { message.setText("Het afzonderlijke demo-adres is ongeldig."); return; }
+        prepareDemoStorage();
+        try {
+            origin = DemoOriginPolicy.validateOrigin(DemoOriginPolicy.ORIGIN);
+            entryUrl = intentDestination(getIntent());
+        } catch (RuntimeException error) { message.setText("De fictieve demo-opdracht is ongeldig; er is niets geopend."); return; }
         configure(layout);
         openDemo();
+    }
+
+    @TargetApi(28)
+    private static synchronized void prepareDemoStorage() {
+        if (demoStoragePrepared) return;
+        WebView.setDataDirectorySuffix("synthetic-review-demo");
+        demoStoragePrepared = true;
     }
 
     @TargetApi(28)
@@ -104,6 +123,11 @@ public final class DemoActivity extends Activity {
             }
         });
         web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onShowFileChooser(WebView view, ValueCallback<android.net.Uri[]> callback, FileChooserParams params) {
+                callback.onReceiveValue(null);
+                message.setText("Echte bestanden en camera zijn geblokkeerd. Gebruik de fictieve voorbeeldknoppen in de demo.");
+                return true;
+            }
             @Override public void onPermissionRequest(PermissionRequest request) { request.deny(); }
             @Override public void onGeolocationPermissionsShowPrompt(String requestedOrigin, GeolocationPermissions.Callback callback) {
                 callback.invoke(requestedOrigin, false, false);
@@ -149,7 +173,42 @@ public final class DemoActivity extends Activity {
         retry.setVisibility(View.GONE);
         message.setText("Afzonderlijke fictieve demo laden…");
         web.setVisibility(View.VISIBLE);
-        web.loadUrl(origin);
+        web.loadUrl(entryUrl);
+    }
+    private String intentDestination(Intent intent) {
+        if (intent == null) return DemoIntentPolicy.destination(null, null, null, null, null);
+        if (intent.getClipData() != null) throw new IllegalArgumentException("No clip data in the demo.");
+        Bundle extras = intent.getExtras();
+        return DemoIntentPolicy.destination(intent.getAction(), intent.getDataString(),
+            extras == null ? java.util.Collections.emptySet() : extras.keySet(),
+            intent.getStringExtra(DemoIntentPolicy.EXTRA_QUICK_ACTION), intent.getStringExtra(DemoIntentPolicy.EXTRA_MATERIAL));
+    }
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        try { entryUrl = intentDestination(intent); setIntent(intent); openDemo(); }
+        catch (RuntimeException error) { fail("De fictieve demo-opdracht is ongeldig; er is niets geopend."); }
+    }
+    private void requestDemoNotification() {
+        boolean permitted = Build.VERSION.SDK_INT < 33 || checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+        DemoNotificationPolicy.Decision decision = DemoNotificationPolicy.decide(Build.VERSION.SDK_INT, permitted, true);
+        if (decision == DemoNotificationPolicy.Decision.REQUEST_PERMISSION) {
+            demoNotificationPending = true;
+            requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, DemoNotificationPolicy.PERMISSION_REQUEST_ID);
+        } else if (decision == DemoNotificationPolicy.Decision.POST_NOTIFICATION) postDemoNotification();
+    }
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode != DemoNotificationPolicy.PERMISSION_REQUEST_ID || !demoNotificationPending) return;
+        demoNotificationPending = false;
+        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) postDemoNotification();
+        else message.setText(DemoNotificationPolicy.DENIED);
+    }
+    private void postDemoNotification() {
+        try {
+            message.setText(DemoRequestNotification.post(this)
+                ? "Fictieve DEMO-melding verstuurd. Tik op de melding om alleen deze demo te openen."
+                : "Geen DEMO-melding verstuurd: meldingen staan uit. De fictieve demo blijft beschikbaar.");
+        } catch (SecurityException error) { message.setText(DemoNotificationPolicy.DENIED); }
     }
     private void fail(String reason) {
         runOnUiThread(() -> {
