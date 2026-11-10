@@ -1,4 +1,11 @@
 (()=>{
+ // Shared Beheer access: the existing code is the complete sign-in.
+ // Optional secondary protection is enabled only by an explicit installation setting.
+ if(window.LATTENSPECIALIST_BOOKING?.extraAdminPassword!==true){
+  window.AdminSecurity={refresh:async()=>({enabled:false,unlocked:true}),open:async()=>{},lock(){},logout(){},get locked(){return false;}};
+  return;
+ }
+
  const endpoint=String(window.LATTENSPECIALIST_BOOKING?.endpoint||'').replace(/\/$/,'');
  const originalFetch=window.fetch.bind(window);let unlockToken='',ownerCode='',generation=0,lastActivity=0,timer,enabled=true,configured=false,locked=true;
  const code=()=>ownerCode||sessionStorage.getItem('lattenspecialist-admin-token')||localStorage.getItem('lattenspecialist-admin-token')||'';
