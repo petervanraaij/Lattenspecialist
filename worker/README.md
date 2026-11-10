@@ -24,3 +24,6 @@ De klant moet in het aanvraagformulier toestemming geven. Business-geïnitieerde
 De openbare configuratie staat in `wrangler.toml`. Secrets horen nooit in Git. De beheerapp staat op `/beheer.html`; een ingelogde beheerder kan ophaaldata beheren, reserveringen bekijken, een persoonlijke servicecode aanmaken, wax registreren, de klantstatus bijwerken, een betaalverzoek e-mailen en een aanvraag omkeerbaar afmelden. De openbare statusroute geeft uitsluitend service-informatie terug en nooit naam, telefoonnummer, e-mailadres of adres.
 
 `LATTENSPECIALIST_APP_ORIGINS` bevat de lokale HTTPS-herkomsten van de native Android- en iPhone-app. Ook deze app gebruikt voor alle beheeracties de persoonlijke beheercode.
+
+## Beheercode vergeten
+De beheerpagina biedt e-mailherstel via de vaste LATTENSPECIALIST_ADMIN_RECOVERY_EMAIL. Eerst migratie 0006_admin_recovery.sql toepassen, daarna de Worker publiceren. Alleen de eigenaar ontvangt een 256-bit herstellink (20 minuten, eenmalig); D1 bewaart alleen de tokenhash. Twee minuten cooldown en maximaal acht e-mails per UTC-dag. Codeherstel trekt andere links en de oude code in; handmatige serversecret-rotatie maakt openstaande links ongeldig. HRM-pincodes en medewerkers blijven ongewijzigd. Geen code of token in logs. Native apps krijgen de knop bij de volgende reguliere appbuild; de e-maillink werkt direct in de browser.

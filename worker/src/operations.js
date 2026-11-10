@@ -67,7 +67,7 @@ async function verifyPin(pin, stored, env) {
   return difference === 0;
 }
 
-async function createAdminAccessHash(code, env) {
+export async function createAdminAccessHash(code, env) {
   const value=clean(code,128);
   if(value.length<8)throw new OperationsError('Gebruik een beheercode van minimaal 8 tekens.');
   const message=new TextEncoder().encode(`lattenspecialist-admin-access:${value}`);
