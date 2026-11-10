@@ -47,7 +47,12 @@ await call('register',{deviceId:id,token:'newer-synthetic-device-token',generati
 const newer=db.sql.prepare('SELECT generation,token_ciphertext FROM admin_push_devices WHERE id=?').get(id);assert.equal(newer.generation,2);
 await call('received',{deviceId:id});assert.ok(db.sql.prepare('SELECT last_received_at FROM admin_push_devices WHERE id=?').get(id).last_received_at);
 await call('unregister',{deviceId:other});mode='invalid';await queueReservationPush({service:'Onderhoud'},'LS-2611-ABC236',env);assert.equal(db.sql.prepare('SELECT enabled FROM admin_push_devices WHERE id=?').get(id).enabled,0);
-mode='success';await call('register',{deviceId:id,token:deviceToken,generation:3});const before=messages.length;
+mode='success';await call('register',{deviceId:id,token:deviceToken,generation:3});
+const testKey='root-deviceids-testpush-'+new Date().toISOString().slice(0,10).replace(/-/g,'');
+assert.equal((await call('test',{testKey:'arbitrary-test'})).status,400);
+const testBefore=messages.length;assert.equal((await call('test',{testKey})).data.state,'accepted');
+assert.equal(messages.length,testBefore+1);await call('test',{testKey});assert.equal(messages.length,testBefore+1,'daily test is idempotent');
+const before=messages.length;
 env.LATTENSPECIALIST_ADMIN_TOKEN='rotated-owner-code';await queueReservationPush({service:'Onderhoud'},'LS-2611-ABC237',env);assert.equal(messages.length,before,'credential rotation invalidates subscriptions');
 assert.equal((await call('status',undefined,env.LATTENSPECIALIST_ADMIN_TOKEN,'https://localhost','GET')).data.devices.length,0);
 console.log('Push checks passed: owner-only registration, encryption, scoped signed JWT, no customer payload, durable retries, event dedup, token refresh, receipt, logout, invalid-token removal and credential rotation.');
