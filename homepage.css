@@ -733,3 +733,6 @@
   .maintenance-choices .maintenance-subtopics--single { grid-template-columns:1fr; }
   .maintenance-choices .maintenance-topic { padding:24px 0 28px; }
 }
+
+/* Rental photos stay within the existing offer card on desktop and mobile. */
+.dakkoffer-photo{width:100%;margin:4px 0 22px}.dakkoffer-photo a{display:block}.dakkoffer-photo img{display:block;width:100%;height:auto;border-radius:12px;aspect-ratio:3/2}.dakkoffer-photo figcaption{font-size:.8rem;line-height:1.6;color:#625b50;margin-top:8px}
