@@ -1,0 +1,20 @@
+(() => {
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ let ready=false;
+ async function open(api,host){
+  if(ready)return;ready=true;
+  host.innerHTML=`<section class="admin-workplace"><h2>Werkplaats</h2><nav class="workplace-tabs" aria-label="Werkplaatsonderdelen"><button type="button" data-workplace-tab="practice">Oefenen</button><button type="button" data-workplace-tab="tools">Gereedschap</button><button type="button" data-workplace-tab="warehouse">Magazijn</button></nav><div data-workplace-content="practice"></div><section data-workplace-content="tools" hidden></section><section data-workplace-content="warehouse" hidden><label>Wie pakt het materiaal?<select data-warehouse-member><option value="">Kies medewerker</option></select></label><div data-warehouse-host></div></section><p data-workplace-status role="status"></p></section>`;
+  const practice=document.getElementById('adminPracticePanel');practice.hidden=false;host.querySelector('[data-workplace-content=practice]').append(practice);
+  async function people(){try{const data=await api('/api/admin/team/members'),options='<option value="">Kies medewerker</option>'+(data.members||[]).filter(m=>m.active).map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');for(const select of [practice.querySelector('[name=executionMemberId]'),host.querySelector('[data-warehouse-member]')])select.innerHTML=options;host.querySelector('[data-workplace-status]').textContent='';}catch(e){host.querySelector('[data-workplace-status]').textContent=e.message;}}
+  await people();
+  const sessions=document.createElement('section');sessions.innerHTML='<h3>Eerdere oefeningen</h3><button type="button" data-refresh-practice>Oefeningen vernieuwen</button><div data-practice-sessions></div>';practice.prepend(sessions);
+  async function list(){const target=sessions.querySelector('[data-practice-sessions]');try{const data=await api('/api/admin/workplace/practice');target.innerHTML=(data.sessions||[]).map(item=>`<p><button type="button" data-resume-practice="${esc(item.id)}" data-member="${esc(item.memberId)}">${esc(item.displayCode)} · ${esc(item.kind)} · ${esc(item.title)} · ${esc(item.memberName)} · ${esc(item.status==='ready'?'Afgerond':item.status==='active'?'Bezig':'Openen')}</button></p>`).join('')||'<p>Nog geen oefeningen.</p>';}catch(e){target.textContent=e.message;}}
+  sessions.querySelector('[data-refresh-practice]').onclick=list;sessions.onclick=event=>{const button=event.target.closest('[data-resume-practice]');if(!button)return;const target=practice.querySelector('#practiceResult');target.replaceChildren();const bench=document.createElement('section');target.append(bench);void window.LSWorkflows.open(bench,button.dataset.resumePractice,{admin:true,memberId:button.dataset.member});};void list();
+
+  const warehouse=()=>window.LSWarehouse.open(api,host.querySelector('[data-warehouse-host]'),{owner:true,memberId:host.querySelector('[data-warehouse-member]').value});
+  host.querySelector('[data-warehouse-member]').onchange=warehouse;
+  host.querySelector('.workplace-tabs').onclick=event=>{const button=event.target.closest('[data-workplace-tab]');if(!button)return;const tab=button.dataset.workplaceTab;for(const item of host.querySelectorAll('[data-workplace-content]'))item.hidden=item.dataset.workplaceContent!==tab;for(const item of host.querySelectorAll('[data-workplace-tab]'))item.setAttribute('aria-pressed',String(item===button));if(tab==='tools')window.LattenspecialistGuides.open(api,host.querySelector('[data-workplace-content=tools]'),!window.AdminSecurity?.locked,true,true);if(tab==='warehouse')void warehouse();};
+  host.querySelector('[data-workplace-tab=practice]').setAttribute('aria-pressed','true');
+ }
+ window.LSAdminWorkplace={open};
+})();

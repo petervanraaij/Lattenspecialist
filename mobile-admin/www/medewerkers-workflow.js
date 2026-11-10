@@ -20,7 +20,7 @@
     if (!endpoint) throw new Error('De werkplaats is nog niet verbonden.');
     const admin=host?.dataset.ownerWorkflow==='true';
     const token = admin?(sessionStorage.getItem('lattenspecialist-admin-token')||localStorage.getItem('lattenspecialist-admin-token')||''):sessionStorage.getItem('ls-team-session') || '';
-    if(admin){path=path.replace('/api/team/operations/','/api/admin/operations/');if(options.method==='POST'){if(!host.dataset.executionMemberId)throw new Error('Kies eerst wie deze werkzaamheden uitvoert.');options={...options,body:JSON.stringify({...JSON.parse(options.body||'{}'),executionMemberId:host.dataset.executionMemberId})};}}
+    if(admin){path=path.replace('/api/team/operations/','/api/admin/operations/').replace('/api/team/practice','/api/admin/workplace/practice');if(options.method==='POST'){if(!host.dataset.executionMemberId)throw new Error('Kies eerst wie deze werkzaamheden uitvoert.');options={...options,body:JSON.stringify({...JSON.parse(options.body||'{}'),executionMemberId:host.dataset.executionMemberId})};}}
     if (!token) throw new Error('Log opnieuw in om werkstappen te gebruiken.');
     const response = await fetch(endpoint + path, {
       ...options,
@@ -266,11 +266,13 @@
     if (values.activity !== 'wax') delete values.waxSku;
     button.disabled = true; status.classList.remove('is-error'); status.textContent = 'Oefenopdracht aanmaken…'; result.replaceChildren();
     try {
-      const data = await request('/api/team/practice', {method:'POST', body:JSON.stringify(values)});
+      const owner=form.dataset.ownerPractice==='true', context=owner?form:undefined;
+      if(owner){form.dataset.ownerWorkflow='true';form.dataset.executionMemberId=values.executionMemberId;}
+      const data = await request('/api/team/practice', {method:'POST', body:JSON.stringify(values)},context);
       const material = data.material || data.workflow?.material || {};
       if (!material.id) throw new Error('De oefening is aangemaakt, maar kon niet worden geopend. Vernieuw en probeer opnieuw.');
       status.textContent = 'Oefening klaar. Start hieronder de eerste stap.';
-      const host = document.createElement('section'); result.append(host);
+      const host = document.createElement('section'); if(owner){host.dataset.ownerWorkflow='true';host.dataset.executionMemberId=values.executionMemberId;} result.append(host);
       await loadInto(host, material.id, data);
     } catch (error) {
       status.textContent = error.message; status.classList.add('is-error');

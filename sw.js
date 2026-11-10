@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v141-admin-security';
+const CACHE_NAME = 'lattenspecialist-v142-workplace';
 const APP_SHELL = [
   '/',
   '/index.html',

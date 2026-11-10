@@ -22,7 +22,7 @@ html = html
   .replace('</body>', '  <script src="native.js"></script>\n</body>');
 
 await writeFile(join(webRoot, 'index.html'), html);
-for (const file of ['admin-security.js','tool-images.js','admin-dossiers.js','admin-dossiers.css','material-photos.js','medewerkers-workflow.js','medewerkers-workflow.css','beheer.js','maintenance-selection.js','manual-maintenance.js', 'admin-team.js', 'admin-operations.js', 'maintenance-guide-ui.js','work-instructions.js', 'maintenance-guide.css', 'admin-inventory.js', 'team.css', 'admin-metrics.css', 'admin-operations.css', 'admin-operations-extra.css', 'admin-wallboard.css', 'admin-inventory.css', 'booking-config.js', 'styles.css']) {
+for (const file of ['admin-workplace.js','admin-workplace.css','medewerkers-warehouse.js','admin-security.js','tool-images.js','admin-dossiers.js','admin-dossiers.css','material-photos.js','medewerkers-workflow.js','medewerkers-workflow.css','beheer.js','maintenance-selection.js','manual-maintenance.js', 'admin-team.js', 'admin-operations.js', 'maintenance-guide-ui.js','work-instructions.js', 'maintenance-guide.css', 'admin-inventory.js', 'team.css', 'admin-metrics.css', 'admin-operations.css', 'admin-operations-extra.css', 'admin-wallboard.css', 'admin-inventory.css', 'booking-config.js', 'styles.css']) {
   await cp(join(siteRoot, file), join(webRoot, file));
 }
 for (const file of ['treatment-overview.js','treatment-overview.css']) await cp(join(siteRoot,file),join(webRoot,file));

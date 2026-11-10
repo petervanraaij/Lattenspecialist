@@ -83,6 +83,8 @@ const pick=(object,keys)=>Object.fromEntries(keys.filter(key=>Object.hasOwn(obje
 export const workspaceRecord=record=>({...pick(record,['reference','revision','service','material','amount','package','waxstickCount','currentStep','status','expectedReady','plannedMinutes','assignedTo','createdAt','updatedAt','closedAt','workOrderNumber','workOrderCreatedAt','waxType','workNote']),name:'Werkorder '+(record.workOrderNumber||record.reference||''),workspaceOnly:true});
 function stripCosts(value){if(Array.isArray(value))return value.map(stripCosts);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([key])=>!/cost|price|profit|revenue|margin|payment|salary|wage|iban|email|phone|address|postcode|customerName|login/i.test(key)).map(([key,v])=>[key,stripCosts(v)]));return value;}
 export function workspaceAllowed(path,method){
+ if(['/api/admin/workplace/warehouse','/api/admin/workplace/practice'].includes(path)&&method==='GET')return true;
+ if(['/api/admin/workplace/practice','/api/admin/workplace/warehouse/pick'].includes(path)&&method==='POST')return true;
  if(method==='POST'&&['/api/admin/push/register','/api/admin/push/unregister','/api/admin/push/received'].includes(path))return true;
  if(method==='GET'&&['/api/admin/reservations','/api/admin/team/members','/api/admin/availability','/api/admin/inventory/guides'].includes(path))return true;
  if(path==='/api/admin/operations/materials'&&['GET','POST'].includes(method))return true;
