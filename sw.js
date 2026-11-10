@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v139-workorder-execution';
+const CACHE_NAME = 'lattenspecialist-v140-executor-popup';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -40,7 +40,7 @@ const APP_SHELL = [
   '/customer-status.css',
   '/customer-app.js?v=20261109-dakkoffer-1',
   '/pwa-install.js?v=1',
-  '/beheer.js?v=20261110-workorder-execution-1',
+  '/beheer.js?v=20261110-executor-popup-1',
   '/admin-team.js?v=1',
   '/team.css?v=1',
   '/admin-metrics.css?v=1',
