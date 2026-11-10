@@ -30,9 +30,8 @@ export const validDate = value => {
 export function readTrip(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const destination = String(raw.destination || '').trim().slice(0,100);
-  const skidate = String(raw.skidate || '');
-  if (!destination || !validDate(skidate)) return null;
-  return {destination, skidate, conditions: CONDITIONS.includes(raw.conditions) ? raw.conditions : CONDITIONS[0]};
+  if (!destination) return null;
+  return {destination, conditions: CONDITIONS.includes(raw.conditions) ? raw.conditions : CONDITIONS[0]};
 }
 export function formatDate(value) {
   const date = new Date(value.length === 10 ? `${value}T12:00:00` : value);

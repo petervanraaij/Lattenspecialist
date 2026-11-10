@@ -150,7 +150,7 @@ test('customer app excludes legacy ski rentals and offers only a roof box reques
 
 test('trip transfers only after user action and only to verified booking frame',async t=>{
   const {w,d}=app(t,async()=>reply({record}));
-  const form=d.getElementById('tripForm');form.elements.destination.value='Sölden';form.elements.skidate.value='2099-02-20';
+  const form=d.getElementById('tripForm');form.elements.destination.value='Sölden';assert.equal(form.elements.skidate,undefined);
   d.getElementById('tripBooking').click();await turn();
   const frame=d.getElementById('bookingFrame');const sent=[];
   frame.contentWindow.postMessage=(message,origin)=>sent.push({message,origin});
@@ -159,7 +159,7 @@ test('trip transfers only after user action and only to verified booking frame',
   w.dispatchEvent(new w.MessageEvent('message',{origin:'https://lattenspecialist.nl',source:frame.contentWindow,data:{type:'lattenspecialist:ready'}}));
   assert.equal(sent.length,1);
   assert.equal(sent[0].origin,'https://lattenspecialist.nl');
-  assert.equal(sent[0].message.values.destination,'Sölden');
+  assert.equal(sent[0].message.values.destination,'Sölden');assert.equal(Object.hasOwn(sent[0].message.values,'skidate'),false);
   assert.equal(w.localStorage.getItem('lattenspecialist-customer-trip'),null);
 });
 test('website form stays unchanged without app flag and embed rejects untrusted prefill',async t=>{

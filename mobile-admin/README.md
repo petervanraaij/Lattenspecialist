@@ -68,3 +68,9 @@ Tik op een aanvraagkaart om de details te openen. Klantgegevens en aanvullende a
 Het opdrachtenoverzicht heeft filters voor open, nieuw, gepland, werkplaats, gereed en afgerond. Automatische en handmatige verversing behouden niet-opgeslagen invoer. Een versiestrijd blokkeert opslaan; via **Wijzigingen verwerpen en herladen** haal je bewust de laatste versie op. Nieuwe aanvragen blijven tijdens bewerken zichtbaar.
 
 Controle: `npm run test:orders:browser` (synthetische gegevens, geïsoleerde lokale database) en de bestaande worker-regressietests.
+
+## Werk uitvoeren vanuit Beheer (1.8.3)
+
+Open een werkorder en kies **Werkzaamheden en foto’s openen**. Elk paar ski’s of snowboard heeft een eigen werkplek met dezelfde instructies, controles, waxgewichten en verbruiksregistratie als de medewerkersapp. Kies expliciet de actieve medewerker die het werk uitvoert. Start/pauze/afronden gebruikt uitsluitend eigenaar-authenticatie, valideert de medewerker en bestaande toewijzing, en voegt een eigenaaractie met uitvoerder aan het materiaallogboek toe. Bestaande medewerkerrechten worden niet uitgebreid.
+
+Binnenkomst- en opleverfoto’s zijn rechtstreeks vanuit deze werkplek vast te leggen of later toe te voegen. Ze blijven bij de materiaal-ID; niet bij een tijdelijk scherm. Automatisch verversen behoudt de geopende werkplek en invoer. ‘Eerste skidag’ is verwijderd uit de actuele klanten- en beheerschermen en aanvraagmails; historische bestanden blijven intact.

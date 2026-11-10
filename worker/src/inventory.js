@@ -241,6 +241,16 @@ export async function handleInventory(request,env,{owner,json,origin}){
   const photos=path.match(/^\/api\/(team|admin)\/operations\/materials\/([a-f0-9-]{36})\/photos(?:\/([a-f0-9-]{36}))?$/);if(photos){if(photos[1]==='admin'&&!owner)throw new InventoryError('Geen toegang tot beheer.',401);const photoMember=photos[1]==='team'?await memberIdentity(request,db):null;return await materialPhotos(request,env,{db,materialId:photos[2],photoId:photos[3],member:photoMember,owner:photos[1]==='admin',json,origin,ErrorType:InventoryError});}
   const ownerWorkflow=path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/workflow$/);
   if(ownerWorkflow&&request.method==='GET'){if(!owner)throw new InventoryError('Geen toegang tot beheer.',401);await ensureToolStock(db);const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(ownerWorkflow[1]).first();if(!material)throw new InventoryError('Materiaal niet gevonden.',404);return json({material:materialView(material),workflow:await getWorkflow(db,material)},200,origin);}
+  const ownerAction=path.match(/^\/api\/admin\/operations\/steps\/([a-f0-9-]{36})\/(start|pause|finish)$/);
+  if(ownerAction&&request.method==='POST'){
+   if(!owner)throw new InventoryError('Geen toegang tot beheer.',401);
+   const raw=await readBody(request),member=await db.prepare('SELECT id,name,login FROM members WHERE id=? AND active=1').bind(String(raw.executionMemberId||'')).first();
+   if(!member)throw new InventoryError('Kies de actieve medewerker die deze werkzaamheden uitvoert.');
+   const result=ownerAction[2]==='start'?await startStep(db,ownerAction[1],member,raw):ownerAction[2]==='pause'?await pauseStep(db,ownerAction[1],member):await finishStep(db,ownerAction[1],member,raw);
+   const row=await stepAndMaterial(db,ownerAction[1]),material=materialView(materialFromStep(row));
+   await db.prepare('INSERT INTO material_events(material_id,actor,event_type,detail,created_at) VALUES(?,?,?,?,?)').bind(row.material_id,'owner','owner_step_'+ownerAction[2],JSON.stringify({stepId:ownerAction[1],executionMemberId:member.id}),now()).run();
+   return json({material,workflow:result},200,origin);
+  }
   const member=await memberIdentity(request,db);if(path==='/api/team/warehouse'&&request.method==='GET'){await ensureToolStock(db);return json(await warehouseOverview(db),200,origin);}if(path==='/api/team/warehouse/pick'&&request.method==='POST'){await ensureToolStock(db);return json(await warehousePick(db,await readBody(request),member,InventoryError),200,origin);}if(path==='/api/team/guides'&&request.method==='GET')return json(await guideCatalog(db),200,origin);
   if(path==='/api/team/practice'&&request.method==='POST')return json(await createPractice(db,member,await readBody(request)),201,origin);
   const workflow=path.match(/^\/api\/team\/operations\/materials\/([a-f0-9-]{36})\/workflow$/);if(workflow&&request.method==='GET'){const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(workflow[1]).first();if(!material)throw new InventoryError('Materiaal niet gevonden.',404);if(material.assigned_to&&material.assigned_to!==member.id)throw new InventoryError('Deze opdracht is aan een andere medewerker toegewezen.',403);return json({material:materialView(material),workflow:await getWorkflow(db,material)},200,origin);}

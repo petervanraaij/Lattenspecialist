@@ -32,7 +32,7 @@ De bestaande manifestidentiteit `/app.html` blijft behouden. Bestaande links naa
 - Voortgang ophalen met de persoonlijke onderhoudscode; gekozen wax en afgemelde aanvragen worden getoond. Een aanvraagreferentie is geen onderhoudscode.
 - Onderhoudscode optioneel onthouden en weer wissen. Status wordt opnieuw opgehaald bij openen; er wordt geen verouderde status als actueel opgeslagen.
 - Pakketten, prijzen en verhuuraanbod live ophalen van de website. Prijzen en pakketinhoud zijn niet gedupliceerd in de app.
-- Bestemming, eerste skidag en verwachte omstandigheden lokaal bewaren en op verzoek overnemen in een aanvraag. Externe weerinformatie opent alleen na een klik.
+- Bestemming en verwachte omstandigheden lokaal bewaren en op verzoek overnemen in een aanvraag. Externe weerinformatie opent alleen na een klik.
 - Duidelijke foutmelding bij offline gebruik. De app bevat nog geen pushmeldingen, klantaccounts of ingebouwde weersvoorspelling.
 
 ## Formulier en beveiliging

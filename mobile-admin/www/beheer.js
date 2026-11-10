@@ -172,7 +172,7 @@
 
   const serviceDetails = record => record.service === 'Verhuur'
     ? [['Materiaal',record.rentaltype],['Lengte',record.height ? `${record.height} cm` : ''],['Schoenmaat',record.shoesize],['Niveau',record.level],['Periode',record.rentfrom || record.rentto ? `${record.rentfrom || '?'} t/m ${record.rentto || '?'}` : '']]
-    : [['Binnengekomen via',record.sourceChannel],['Materiaal',`${record.amount || 1}× ${record.material || ''}`],['Pakket',record.package],['Logistiek',record.logistics],[String(record.logistics || '').toLowerCase().includes('zelf brengen') ? 'Brengweekend' : 'Ophaalweekend',formatDate(record.pickupDate || record.pickupday)],['Spoed',record.urgent],['Bestemming',record.destination],['Eerste skidag',formatDate(record.skidate)],['Omstandigheden',record.conditions]];
+    : [['Binnengekomen via',record.sourceChannel],['Materiaal',`${record.amount || 1}× ${record.material || ''}`],['Pakket',record.package],['Logistiek',record.logistics],[String(record.logistics || '').toLowerCase().includes('zelf brengen') ? 'Brengweekend' : 'Ophaalweekend',formatDate(record.pickupDate || record.pickupday)],['Spoed',record.urgent],['Bestemming',record.destination],['Omstandigheden',record.conditions]];
 
   const renderRecord = record => {
     const currentStep = Math.max(1,Math.min(steps.length,Number(record.currentStep) || 1));
@@ -198,6 +198,7 @@
           ${!record.workOrderNumber&&record.service==='Onderhoud'&&!closed?'<p>Controleer de aanvraag en wijs het werk eventueel toe. Omzetten maakt één gekoppelde werkorder en een klantcode aan. Er wordt geen klantbericht verstuurd.</p><button class="btn btn-gold" type="submit" data-action="workorder">Omzetten naar werkorder</button>':''}
           <label><span>Toegewezen medewerker</span><select name="assignedTo">${window.LattenspecialistTeam?.options(record.assignedTo) || '<option value="">Nog niet toegewezen</option>'}</select></label>
           ${record.workNote ? `<div class="team-work-note"><b>Werknotitie medewerker</b><p>${escapeHtml(record.workNote)}</p></div>` : ''}
+          ${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}
           <button class="btn btn-dark team-history" type="button">Bekijk werklogboek</button><div class="team-audit" hidden></div>
           <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Nog niet toegekend" readonly><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
           <div><button class="btn btn-dark create-material-labels" type="button">Maak / bekijk QR-stickers</button><div class="material-labels" role="status"></div></div>
@@ -246,6 +247,7 @@
   const render = () => {
     const focused=list.contains(document.activeElement)?document.activeElement:null;
     const selection=focused&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd]:null;
+    const workspaces=new Map([...list.querySelectorAll('.workorder-workspace')].map(host=>[host.closest('.admin-record').dataset.reference,host]));
     const preserved=new Map([...list.querySelectorAll('.admin-record')].filter(card=>dirtyRequests.has(card.dataset.reference)).map(card=>[card.dataset.reference,card]));
     const expanded=new Set([...list.querySelectorAll('.admin-record-details[open]')].map(detail=>detail.closest('.admin-record').dataset.reference));
     renderRequestAlert();
@@ -255,7 +257,7 @@
     const reservedMinutes=records.filter(record=>!record.closedAt&&Number(record.currentStep||1)<steps.length).reduce((total,record)=>total+plannedMinutes(record),0);
     summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> benodigde tijd</span><span><b>${active}</b> in behandeling</span><span><b>${withoutCode}</b> zonder servicecode</span>`;
     list.innerHTML = records.length ? [...records].sort((a,b)=>['new','planned','work','ready','closed'].indexOf(recordStage(a))-['new','planned','work','ready','closed'].indexOf(recordStage(b))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
-    for(const card of list.querySelectorAll('.admin-record')){const old=preserved.get(card.dataset.reference);if(old)card.replaceWith(old);else if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;}
+    for(const card of list.querySelectorAll('.admin-record')){const old=preserved.get(card.dataset.reference);if(old)card.replaceWith(old);else{if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
     for(const detail of list.querySelectorAll('.admin-record-details'))detail.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(detail.open));
     list.querySelectorAll('[data-waxstick-reference]').forEach(panel=>void loadWaxstickHandover(panel));
     applySearch();
@@ -265,6 +267,7 @@
   list.addEventListener('toggle',event=>{if(event.target.matches('.admin-record-details'))event.target.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(event.target.open));},true);
   list.addEventListener('click',event=>{const button=event.target.closest('.admin-open-request');if(button){const detail=button.closest('.admin-record').querySelector('.admin-record-details');detail.open=!detail.open;button.setAttribute('aria-expanded',String(detail.open));}});
   list.addEventListener('click',async event=>{const button=event.target.closest('.discard-request');if(!button)return;const card=button.closest('.admin-record'),reference=card.dataset.reference;button.disabled=true;try{const result=await api('/api/admin/reservations');const latest=result.records?.find(record=>record.reference===reference);if(!latest)throw new Error('Deze aanvraag is niet meer beschikbaar.');dirtyRequests.delete(reference);card.removeAttribute('data-unsaved');records=records.map(record=>record.reference===reference?latest:record);render();syncStatus.textContent='Aanvraag herladen; lokale wijzigingen zijn verworpen.';}catch(error){button.disabled=false;syncStatus.textContent=error.message;}});
+  window.addEventListener('lattenspecialist:workorder-opened',()=>{activeFilter='open';applySearch();});
   let metricsVersion = 0;
   const loadMetrics = async () => {
     const target = document.querySelector('#websiteMetrics');
