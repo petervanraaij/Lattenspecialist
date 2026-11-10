@@ -283,8 +283,10 @@ async function adminHrm(request,env,db,path) {
     await db.prepare("INSERT INTO hrm_settings(setting_key,setting_value,updated_at) VALUES('admin_pin',?,?)").bind(pinHash,now()).run();
     return {ok:true};
   }
+  if(env.LATTENSPECIALIST_ADMIN_SECURITY_ENABLED!=='false'){
   if(!setting)throw new OperationsError('Stel eerst een aparte HRM-pincode in.',428);
   if(!await verifyPin(pin,setting.setting_value,env))throw new OperationsError('HRM-pincode onjuist.',403);
+  }
   if(path==='/api/admin/hrm/change-pin'&&request.method==='POST'){
     const pinHash=await createPinHash(raw.newPin,env);
     await db.prepare("UPDATE hrm_settings SET setting_value=?,updated_at=? WHERE setting_key='admin_pin'").bind(pinHash,now()).run();

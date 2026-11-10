@@ -15,7 +15,7 @@ const server=createServer(async(req,res)=>{
   const url=new URL(req.url,origin);
   if(url.pathname==='/api/admin/reservations'&&failReservations){res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({message:'Testverbinding tijdelijk onderbroken'}));return;}
   if(url.pathname.startsWith('/api/')){let body='';for await(const chunk of req){body+=chunk;if(body.length>1100000)throw Error('Too large');}const response=await worker.fetch(new Request(url,{method:req.method,headers:{...req.headers,origin},...(['GET','HEAD'].includes(req.method)?{}:{body})}),fixture.env);res.writeHead(response.status,Object.fromEntries(response.headers));res.end(response.headers.get('Content-Type')?.startsWith('image/')?Buffer.from(await response.arrayBuffer()):await response.text());return;}
-  if(url.pathname==='/booking-config.js'){res.setHeader('Content-Type','text/javascript');res.end('window.LATTENSPECIALIST_BOOKING={endpoint:'+JSON.stringify(origin)+'};');return;}
+  if(url.pathname==='/booking-config.js'){res.setHeader('Content-Type','text/javascript');res.end('window.LATTENSPECIALIST_BOOKING={endpoint:'+JSON.stringify(origin)+',extraAdminPassword:true};');return;}
   const name=url.pathname==='/'?'medewerkers.html':decodeURIComponent(url.pathname.slice(1)),file=resolve(root,name);
   if(!file.startsWith(resolve(root)+'/')&&!file.startsWith(resolve(root)+'\\'))throw Error('Outside fixture');
   if(!/^(?:[a-z0-9-]+\.(?:html|css|js|webmanifest)|(?:images(?:\/tools)?|vendor|downloads)\/[a-z0-9._-]+\.(?:webp|png|jpg|js|pdf))$/i.test(name)){res.writeHead(404);res.end();return;}
