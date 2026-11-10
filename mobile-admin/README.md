@@ -14,6 +14,10 @@ Installeer voor het genereren van de appafbeeldingen eenmalig Pillow 12.3.0 voor
 
 ## Android
 
+### Updatecontrole 1.8.1 (20)
+
+De aangemelde werkapp controleert bij openen en hervatten via de officiële Play In-App Updates-bibliotheek 2.1.0 of Google Play een update voor dit account beschikbaar stelt. Een flexibele update downloadt na de Play-toestemming op de achtergrond. De app biedt daarna **Bijwerken** aan met een herinnering om werk eerst op te slaan. Een geweigerde aanbieding wordt maximaal eenmaal per dag opnieuw getoond. Zonder Play-toegang of netwerk blijft de app bruikbaar. De demo start geen updatecontrole. Dit vervangt niet de Android-instelling Automatisch updaten en omzeilt geen toestemming, accountrechten of Play-beoordeling. Versie 20 moet eerst via de bestaande Play-vermelding worden geïnstalleerd voordat deze controle beschikbaar is.
+
 ### Pushupdate 1.8.0 (19)
 
 Deze update voegt Firebase Cloud Messaging 25.0.1 toe aan de bestaande beheerapp. Registratie start uitsluitend in de aangemelde werkapp wanneer Android meldingen toestaat. De demo houdt zijn eigen proces, opslag en widgets en roept geen Firebase-registratie aan. Analytics is uitgeschakeld. De server bewaart toesteltokens versleuteld en verstuurt alleen een meldingstype en opdrachtreferentie, zonder klantgegevens. Uitloggen meldt het toestel af; een gewijzigde beheercode maakt oude registraties ongeldig. Een duurzame verzendwachtrij bewaart mislukte pogingen; de bestaande periodieke controle blijft als terugval beschikbaar.

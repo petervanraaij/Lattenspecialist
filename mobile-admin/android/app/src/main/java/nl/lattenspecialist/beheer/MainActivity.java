@@ -7,9 +7,11 @@ import android.webkit.JavascriptInterface;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private PlayUpdates playUpdates;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        playUpdates=new PlayUpdates(this);
         bridge.getWebView().addJavascriptInterface(new WidgetBridge(), "LattenspecialistWidget");
         rememberQuickMaterial(getIntent());
         if(android.os.Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)
@@ -34,7 +36,9 @@ public class MainActivity extends BridgeActivity {
         return material;
     }
 
-    @Override public void onResume(){super.onResume();AdminPush.sync(getApplicationContext());}
+    @Override public void onResume(){super.onResume();AdminPush.sync(getApplicationContext());if(playUpdates!=null)playUpdates.resume();}
+    @Override public void onPause(){if(playUpdates!=null)playUpdates.pause();super.onPause();}
+    @Override public void onDestroy(){if(playUpdates!=null)playUpdates.destroy();super.onDestroy();}
     @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
         super.onRequestPermissionsResult(requestCode,permissions,grantResults);
         if(requestCode==410)AdminPush.sync(getApplicationContext());
