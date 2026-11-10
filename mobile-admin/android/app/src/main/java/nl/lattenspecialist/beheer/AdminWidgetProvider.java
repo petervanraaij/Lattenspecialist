@@ -62,7 +62,7 @@ public class AdminWidgetProvider extends AppWidgetProvider {
                 RemoteViews view = token.isEmpty() ? loginView(context) : dataView(context, loadCounts(token));
                 for (int id : ids) manager.updateAppWidget(id, view);
             } catch (Exception error) {
-                RemoteViews view = errorView(context);
+                RemoteViews view = errorView(context,error);
                 for (int id : ids) manager.updateAppWidget(id, view);
             } finally {
                 if (pending != null) pending.finish();
@@ -71,15 +71,7 @@ public class AdminWidgetProvider extends AppWidgetProvider {
     }
 
     private static Counts loadCounts(String token) throws Exception {
-        HttpURLConnection connection = (HttpURLConnection) new URL(ENDPOINT).openConnection();
-        connection.setRequestMethod("GET");
-        connection.setRequestProperty("Authorization", "Bearer " + token);
-        connection.setRequestProperty("Accept", "application/json");
-        connection.setConnectTimeout(10000);
-        connection.setReadTimeout(10000);
-        int status = connection.getResponseCode();
-        if (status != 200) throw new IllegalStateException("HTTP " + status);
-        String body = readAll(connection.getInputStream());
+        String body = AdminNativeClient.call("/api/admin/reservations",token,null);
         JSONArray records = new JSONObject(body).optJSONArray("records");
         Counts counts = new Counts();
         if (records == null) return counts;
@@ -131,9 +123,12 @@ public class AdminWidgetProvider extends AppWidgetProvider {
         return view;
     }
 
-    private static RemoteViews errorView(Context context) {
+    private static RemoteViews errorView(Context context,Exception error) {
         RemoteViews view = baseView(context);
-        view.setTextViewText(R.id.widget_status, "Bijwerken mislukt · tik op ↻");
+        String status=error instanceof AdminNativeClient.HttpError?"Serverantwoord "+((AdminNativeClient.HttpError)error).status+" · open Beheer":
+            error instanceof org.json.JSONException?"Gegevensfout · open Beheer":"Geen verbinding · tik op ↻";
+        if(error instanceof AdminNativeClient.HttpError&&(((AdminNativeClient.HttpError)error).status==401||((AdminNativeClient.HttpError)error).status==403))status="Log opnieuw in op Beheer";
+        view.setTextViewText(R.id.widget_status,status);
         return view;
     }
 

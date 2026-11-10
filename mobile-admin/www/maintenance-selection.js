@@ -85,7 +85,7 @@
       lines.push(`${name}: ${materials}${item.w === 'none' ? '' : ` · ${waxes[item.w]}`}${item.u ? ' · Spoed + € 10,00 · zelf brengen en ophalen · minimaal 2 werkdagen vooraf' : ''}${item.d ? ` · ${item.d}× bindingen demonteren + monteren (+ ${bindingPrice(item.d)})` : ''}${item.r ? ` · ${item.r}× kleine belagreparaties in totaal (vanaf € 7,50 per reparatie; definitieve prijs na beoordeling)` : ''}`);
       if (['goud','platinum'].includes(id)) lines.push(`${name}: premium slijpen inbegrepen (Racing File S + diamant medium)`);
       else if (item.f) lines.push(`${name}: premium slijpen (fijne vijl + diamant medium), ${item.s + item.b}x EUR 7,50 = ${formatPrice((item.s + item.b)*7.5)}`);
-      if (item.c) lines.push(`${name}: extra waxreiniging ${item.c}× € 5,00 = ${formatPrice(item.c * 5)}`);
+      if (item.c) lines.push(`${name}: Hot Scraping (extra waxreiniging) ${item.c}× € 5,00 = ${formatPrice(item.c * 5)}`);
     }
     for (const [id,name] of Object.entries(extras)) {
       const item = value.e[id];

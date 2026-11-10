@@ -14,6 +14,12 @@ Installeer voor het genereren van de appafbeeldingen eenmalig Pillow 12.3.0 voor
 
 ## Android
 
+### Pushupdate 1.8.0 (19)
+
+Deze update voegt Firebase Cloud Messaging 25.0.1 toe aan de bestaande beheerapp. Registratie start uitsluitend in de aangemelde werkapp wanneer Android meldingen toestaat. De demo houdt zijn eigen proces, opslag en widgets en roept geen Firebase-registratie aan. Analytics is uitgeschakeld. De server bewaart toesteltokens versleuteld en verstuurt alleen een meldingstype en opdrachtreferentie, zonder klantgegevens. Uitloggen meldt het toestel af; een gewijzigde beheercode maakt oude registraties ongeldig. Een duurzame verzendwachtrij bewaart mislukte pogingen; de bestaande periodieke controle blijft als terugval beschikbaar.
+
+Firebase staat op het kosteloze Spark-plan. De beperkte serviceaccount heeft uitsluitend Firebase Cloud Messaging API Admin; de privésleutel staat als Cloudflare-servergeheim en wordt niet in de Android-app of deze repository opgeslagen. De openbare Android-appconfiguratie bevat geen serversleutel. Voor uitgave 19 moet de Play-gegevensveiligheidsverklaring ook installatie-/toestelidentificatoren voor appfunctionaliteit noemen. Een geslaagde server- of bouwtest bewijst nog geen ontvangst op een echt toestel; daarvoor moet de Play-update worden geïnstalleerd en een echte testaanvraag worden gedaan.
+
 ### Openbare releasekandidaat 1.7.0 (17)
 
 Deze versie behoudt de beveiligde beheeromgeving en de achtergrondmeldingen van 1.6.1. Het startscherm biedt daarnaast een expliciete, afzonderlijke demonstratie voor gebruikers en de appbeoordeling. De demo draait in een eigen Android-proces en WebView-opslag, zonder beheersleutel, native widgetbridge of toegang tot de productieomgeving. Alle demo-verbindingen blijven beperkt tot het vaste HTTPS-reviewadres. SSL-fouten worden geweigerd; downloads, camera, locatie en externe navigatie zijn daar uitgeschakeld. De demonstratie is fictief en voert geen echte berichten of betalingen uit. De normale werkapp en de bestaande widgets blijven afzonderlijk beschikbaar.

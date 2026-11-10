@@ -4,24 +4,24 @@
   const rates = () => window.LATTEN_SELECTION.treatmentPrices;
   const waxes = {alpha:['AlphaMix Yellow','Voor zachte, nieuwe sneeuw'],ultra:['UltraMix Blue','Voor koude, oudere sneeuw'],performance:['Performance Purple','Voor de fijnproever: onze meest luxe waxafwerking, als extra op de rode basis. Slijtvaste wax voor sneeuw van 0 tot -12 °C, met weinig vuilopname']};
   const skuKey = value => ({'24101':'alpha','24121':'ultra','27933':'performance','24057':'beta'})[String(value)] || '';
-  const filing = ['Staalkanten controleren.','Handmatig slijpen op de afgesproken hoek.','Bramen verwijderen, kanten tunen en het resultaat nalopen.'];
-  const waxing = ['Normale voorbereiding: belag beoordelen, afnemen en borstelen.','BetaMix Red als rode basiswax aanbrengen.','Afkoelen en overtollige wax afschrapen.','Bestaande structuur vrijborstelen en belag polijsten.'];
+  const filing = ['Edge Tuning: staalkanten controleren.','Handmatig slijpen op de afgesproken hoek.','Bramen verwijderen, kanten tunen en het resultaat nalopen.'];
+  const waxing = ['Normale voorbereiding: belag beoordelen, afnemen en borstelen.','Hot Waxing: BetaMix Red als warme basiswax aanbrengen.','Afkoelen en overtollige wax afschrapen.','Base Brushing & Finishing: bestaande structuur vrijborstelen en belag polijsten.'];
   function group(scope) {
     const standard=[],extra=[];
     if(scope.filing)standard.push(...filing);
     if(scope.wax)standard.push(...waxing);
-    if(scope.structure&&!scope.wax)standard.push('Bestaande structuur vrijborstelen en belag polijsten.');
+    if(scope.structure&&!scope.wax)standard.push('Base Brushing & Finishing: bestaande structuur vrijborstelen en belag polijsten.');
     if(scope.repair)standard.push('Afgesproken kleine, oppervlakkige belagreparaties beoordelen, vullen en vlak afwerken.');
     if(scope.premiumIncluded)standard.push('Premium slijpen inbegrepen: na de basisbewerking fijn afwerken met Racing File S en World Cup-diamant medium, op dezelfde afgesproken hoek.');
     if(scope.premium&&!scope.premiumIncluded)extra.push({title:'Premium slijpen',fee:price(rates().premiumFiling)+' per materiaal',steps:['Na de standaardbewerking fijn afwerken met Racing File S.','Resterende bramen nalopen met World Cup-diamant medium.','Dezelfde afgesproken hoek aanhouden; geen automatische hoekwijziging.']});
-    if(waxes[scope.finishWax])extra.push({title:'Extra eindwax · '+waxes[scope.finishWax][0],fee:scope.finishWax==='performance'?'ski’s '+price(rates().purpleSki)+' · snowboard '+price(rates().purpleSnowboard):price(rates().extraEndWax)+' per materiaal',steps:['Eerst de rode basis aanbrengen, laten afkoelen en overtollige wax afschrapen. Bestaande structuur vrijborstelen en belag polijsten.','Daarna de gekozen eindwax aanbrengen, laten afkoelen en overtollige wax afschrapen. Bestaande structuur vrijborstelen en belag polijsten.',waxes[scope.finishWax][1]+'.']});
-    if(scope.intensive)extra.push({title:'Intensieve extra reiniging',fee:price(rates().intensiveCleaning)+' per materiaal',steps:['Een vrijwillige aanvulling die je vooraf zelf kiest; normale voorbereiding blijft inbegrepen.','Met een warme waxreiniging verwijderen we zoveel mogelijk oude waxresten en vuil vóór de nieuwe waxbeurt.']});
+    if(waxes[scope.finishWax])extra.push({title:'Extra eindwax · '+waxes[scope.finishWax][0],fee:scope.finishWax==='performance'?'ski’s '+price(rates().purpleSki)+' · snowboard '+price(rates().purpleSnowboard):price(rates().extraEndWax)+' per materiaal',steps:['Eerst de rode basis aanbrengen, laten afkoelen en overtollige wax afschrapen. Base Brushing & Finishing: bestaande structuur vrijborstelen en belag polijsten.','Daarna de gekozen eindwax aanbrengen, laten afkoelen en overtollige wax afschrapen. Base Brushing & Finishing: bestaande structuur vrijborstelen en belag polijsten.',waxes[scope.finishWax][1]+'.']});
+    if(scope.intensive)extra.push({title:'Hot Scraping – intensieve warmwaxreiniging',fee:price(rates().intensiveCleaning)+' per materiaal',steps:['Een vrijwillige aanvulling die je vooraf zelf kiest; normale voorbereiding blijft inbegrepen.','Bij Hot Scraping brengen we warme reinigingswax aan en schrapen we die af terwijl de wax nog warm is. Zo nemen we extra vuil en oude waxresten mee vóór de nieuwe waxbeurt.']});
     return {title:scope.title||'Gekozen behandeling',standard,extra,training:!!scope.training,yellowPractice:!!scope.yellowPractice};
   }
   function selection(value,{intensiveCount=0}={}) {
     if(!value)return[];
     const groups=Object.entries(value.p||{}).filter(([,item])=>item.s+item.b>0).map(([id,item])=>group({title:window.LATTEN_SELECTION.packages[id],filing:id!=='brons',wax:id!=='slijpen',premium:!!item.f,premiumIncluded:['goud','platinum'].includes(id),finishWax:item.w,intensive:item.c>0,repair:id==='platinum'||item.r>0}));
-    if(intensiveCount>0){const extra=group({title:'Intensieve reiniging · '+intensiveCount+' materiaal',intensive:true});groups.push(extra);}
+    if(intensiveCount>0){const extra=group({title:'Hot Scraping · '+intensiveCount+' materiaal',intensive:true});groups.push(extra);}
     return groups;
   }
   function workflow(value) {

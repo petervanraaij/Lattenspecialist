@@ -34,6 +34,12 @@ public class MainActivity extends BridgeActivity {
         return material;
     }
 
+    @Override public void onResume(){super.onResume();AdminPush.sync(getApplicationContext());}
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+        super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+        if(requestCode==410)AdminPush.sync(getApplicationContext());
+    }
+
     private final class WidgetBridge {
         @JavascriptInterface
         public void setAdminToken(String token) {
@@ -46,6 +52,8 @@ public class MainActivity extends BridgeActivity {
                         .edit().putString(AdminWidgetProvider.TOKEN, safeToken).apply();
                 AdminWidgetProvider.refreshAll(MainActivity.this);
                 RequestNotificationWorker.schedule(MainActivity.this);
+                if(safeToken.isEmpty())AdminPush.logout(getApplicationContext(),current);
+                else AdminPush.sync(getApplicationContext());
             }
         }
 
@@ -53,6 +61,15 @@ public class MainActivity extends BridgeActivity {
         public void refresh() {
             AdminWidgetProvider.refreshAll(MainActivity.this);
             RequestNotificationWorker.schedule(MainActivity.this);
+            AdminPush.sync(getApplicationContext());
+        }
+
+        @JavascriptInterface
+        public String getPushStatus(){
+            android.content.SharedPreferences prefs=getSharedPreferences(AdminWidgetProvider.PREFS,MODE_PRIVATE);
+            try{return new org.json.JSONObject().put("status",prefs.getString(AdminWidgetProvider.TOKEN,"").isEmpty()?"niet aangemeld":prefs.getString("push_status","koppelen…"))
+                .put("permitted",AdminPush.permitted(getApplicationContext())).put("lastReceived",prefs.getLong("push_received_at",0)).toString();}
+            catch(org.json.JSONException error){return "{}";}
         }
 
         @JavascriptInterface

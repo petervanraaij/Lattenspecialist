@@ -1,0 +1,28 @@
+{
+  "project_info": {
+    "project_number": "269948588421",
+    "project_id": "pierfinity-mail"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:269948588421:android:5c71c72ae6e60f6b7c74ec",
+        "android_client_info": {
+          "package_name": "nl.lattenspecialist.beheer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXDdW0fFX7WbZzoMe60gTYzJnQWbEmp1g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
