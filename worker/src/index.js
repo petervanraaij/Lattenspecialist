@@ -282,13 +282,21 @@ const updateReservation = async (reference, raw, env) => {
   const record = await teamRecord(reference, env) || await store.get(key, 'json');
   if (!record) return null;
   if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(record, env);
-  const currentStep = Math.max(1, Math.min(STATUS_STEPS.length, Number(raw.currentStep) || Number(record.currentStep) || 1));
+  const converting = raw.convertToWorkOrder === true;
+  if (converting && (record.service !== 'Onderhoud' || record.closedAt)) throw new ValidationError('Alleen een open onderhoudsaanvraag kan een werkorder worden.');
+  const currentStep = Math.max(converting ? 2 : 1, Math.min(STATUS_STEPS.length, Number(raw.currentStep) || Number(record.currentStep) || 1));
   const status = clean(Object.prototype.hasOwnProperty.call(raw, 'status') ? raw.status : record.status, 100) || STATUS_STEPS[currentStep - 1];
-  const customerStatus = currentStep !== Number(record.currentStep || 1)
+  const customerStatus = converting && Number(record.currentStep || 1) === 1 ? 'Onderhoud in voorbereiding' : currentStep !== Number(record.currentStep || 1)
     ? (currentStep <= 1 ? 'Aanvraag ontvangen' : currentStep === 2 ? 'Afspraak bevestigd' : currentStep >= 8 ? 'Klaar om opgehaald te worden' : 'Materiaal ontvangen')
     : (record.customerStatus || customerVisibleStatus(record));
   const expectedReady = clean(Object.prototype.hasOwnProperty.call(raw, 'expectedReady') ? raw.expectedReady : record.expectedReady, 40);
   const note = clean(Object.prototype.hasOwnProperty.call(raw, 'note') ? raw.note : record.note, 320);
+  const name = clean(Object.hasOwn(raw,'name') ? raw.name : record.name, 120);
+  const phone = clean(Object.hasOwn(raw,'phone') ? raw.phone : record.phone, 40);
+  const email = clean(Object.hasOwn(raw,'email') ? raw.email : record.email, 160);
+  const notes = clean(Object.hasOwn(raw,'notes') ? raw.notes : record.notes, 4000);
+  if (Object.hasOwn(raw,'name') && !name) throw new ValidationError('Vul de naam van de klant in.');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ValidationError('Controleer het e-mailadres.');
   const whatsappConsent = Object.prototype.hasOwnProperty.call(raw, 'whatsappConsent') ? raw.whatsappConsent === true : record.whatsappConsent === true;
   const closed = Object.prototype.hasOwnProperty.call(raw, 'closed') ? raw.closed === true : Boolean(record.closedAt);
   const waxType = clean(raw.waxType || record.waxType || 'Nog te bepalen', 100);
@@ -303,14 +311,16 @@ const updateReservation = async (reference, raw, env) => {
   const sendsPaymentRequest = raw.sendPaymentEmail === true || (raw.sendWhatsApp === true && raw.notificationType === 'payment');
   if (sendsPaymentRequest && (!paymentAmount || !paymentUrl)) throw new ValidationError('Vul eerst een bedrag en geldige betaallink in.');
   let serviceCode = normalizeServiceCode(raw.serviceCode || record.serviceCode);
-  if ((raw.generateServiceCode === true || raw.sendStatusEmail === true || raw.sendWhatsApp === true) && !serviceCode) serviceCode = await assignUniqueServiceCode(store);
+  if ((converting || raw.generateServiceCode === true || raw.sendStatusEmail === true || raw.sendWhatsApp === true) && !serviceCode) serviceCode = await assignUniqueServiceCode(store);
   if (serviceCode && !/^LS-[A-Z2-9]{6}$/.test(serviceCode)) throw new ValidationError('De servicecode heeft geen geldig formaat.');
   if (serviceCode) {
     const owner = await store.get(`service:${serviceCode}`);
     if (owner && owner !== reference) throw new ValidationError('Deze servicecode is al in gebruik.');
   }
   const updated = {
-    ...record, serviceCode: serviceCode || null, currentStep, status, customerStatus, expectedReady, note, whatsappConsent,
+    ...record, name, phone, email, notes, serviceCode: serviceCode || null, currentStep, status: converting && Number(record.currentStep || 1) === 1 ? 'Werkorder aangemaakt' : status, customerStatus, expectedReady, note, whatsappConsent,
+    workOrderNumber: record.workOrderNumber || (converting ? `WO-${reference.slice(3)}` : null),
+    workOrderCreatedAt: record.workOrderCreatedAt || (converting ? new Date().toISOString() : null),
     waxType, plannedMinutes, paymentAmount, paymentUrl, closedAt: closed ? (record.closedAt || new Date().toISOString()) : null,
     updatedAt: new Date().toISOString()
   };

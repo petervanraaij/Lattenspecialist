@@ -108,3 +108,9 @@
 .footer-credit .digital-logo-link{flex-basis:220px;width:220px;background:#071722}
 .digital-logo-link img{width:100%;height:auto;aspect-ratio:520/283;object-fit:contain}
 @media(max-width:560px){.footer-credit .digital-logo-link{flex-basis:auto}}
+
+/* Compact work queue, shared by website and packaged Beheer app. */
+.admin-order-filters{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 10px}.admin-order-filters button{border:1px solid #d5cbb9;background:#fff;color:#292922;padding:11px 15px;border-radius:999px;font:inherit;font-size:.85rem;font-weight:700;cursor:pointer;min-height:44px}.admin-order-filters button[aria-pressed=true]{background:#172c24;color:#fff;border-color:#172c24}.admin-order-filters button:focus-visible{outline:3px solid #ba8e36;outline-offset:3px}.admin-list-status,.admin-sync-status{font-size:.82rem;color:#595950;margin:8px 0 14px}.admin-record[data-unsaved=true]{border-left:4px solid #b1812c}.admin-record[data-unsaved=true] .admin-record-details>summary::after{content:' · Niet opgeslagen';color:#805b16}.admin-record[data-stage=new] .admin-status-pill{background:#fff1d1;color:#6c4911}.admin-record[data-stage=ready] .admin-status-pill{background:#dcefe1;color:#204e2b}
+@media(max-width:560px){.admin-order-filters{gap:6px}.admin-order-filters button{padding:10px 12px;font-size:.8rem}.admin-tools .admin-sync-status{width:100%;margin:0}}
+
+.admin-open-request{display:grid;gap:5px;text-align:left;background:transparent;border:0;padding:4px 0;color:inherit;font:inherit;cursor:pointer;flex:1;min-width:0}.admin-open-request strong{font-size:1.25rem}.admin-open-request>span:not(.admin-request-code){font-size:.88rem}.admin-open-request small{color:#765918;font-weight:700}.admin-open-request:focus-visible{outline:3px solid #ba8e36;outline-offset:4px;border-radius:6px}.admin-open-request[aria-expanded=true] small{color:#204e2b}

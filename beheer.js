@@ -25,18 +25,28 @@
   let manualAddressTimer, manualAddressController;
   let token = sessionStorage.getItem('lattenspecialist-admin-token') || localStorage.getItem('lattenspecialist-admin-token') || '';
   let records = [];
+  let activeFilter='open';
+  const dirtyRequests=new Set();
+  const recordStage=record=>record.closedAt?'closed':Number(record.currentStep||1)>=8?'ready':Number(record.currentStep||1)>=3?'work':Number(record.currentStep||1)===2?'planned':'new';
+  const filterLabels={open:'Alle open',new:'Nieuw',planned:'Gepland',work:'In de werkplaats',ready:'Gereed',closed:'Afgerond'};
+  const orderFilters=document.createElement('section');orderFilters.className='admin-order-filters';orderFilters.setAttribute('aria-label','Opdrachten filteren');
+  summary.before(orderFilters);
+  const listStatus=document.createElement('p');listStatus.className='admin-list-status';listStatus.setAttribute('role','status');list.before(listStatus);
+  const syncStatus=document.createElement('p');syncStatus.className='admin-sync-status';syncStatus.setAttribute('role','status');refreshButton.parentElement.append(syncStatus);
+  for(const type of ['input','change'])list.addEventListener(type,event=>{const card=event.target.closest('.admin-record');if(card&&event.target.closest('.admin-update-form')){dirtyRequests.add(card.dataset.reference);card.dataset.unsaved='true';card.querySelector('.discard-request').hidden=false;syncStatus.textContent='Niet-opgeslagen wijzigingen blijven bewaard tijdens verversen.';}});
+  orderFilters.addEventListener('click',event=>{const button=event.target.closest('[data-order-filter]');if(!button)return;activeFilter=button.dataset.orderFilter;applySearch();});
   const requestAlert=document.createElement('section');
   requestAlert.className='admin-request-alert';requestAlert.setAttribute('role','status');requestAlert.hidden=true;
   dashboard.prepend(requestAlert);
   const quickRequest=document.createElement('button');quickRequest.type='button';quickRequest.className='btn btn-primary admin-quick-request';quickRequest.textContent='+ Telefonische aanvraag';
   quickRequest.onclick=()=>requestManualOpen('Ski');dashboard.prepend(quickRequest);
-  function renderRequestAlert(){
-    const fresh=records.filter(r=>!r.closedAt&&r.service==='Onderhoud'&&Number(r.currentStep||1)===1);
+  function renderRequestAlert(source=records){
+    const fresh=source.filter(r=>!r.closedAt&&r.service==='Onderhoud'&&Number(r.currentStep||1)===1);
     requestAlert.replaceChildren();requestAlert.hidden=!fresh.length;
     if(!fresh.length)return;
     const heading=document.createElement('strong');heading.textContent=`${fresh.length} nieuwe onderhoudsaanvraag${fresh.length===1?'':'en'} · nog op te pakken`;
     requestAlert.append(heading);
-    fresh.forEach(record=>{const button=document.createElement('button');button.type='button';button.className='btn btn-primary';button.textContent=`Bekijk ${record.reference} · ${record.name||'Aanvraag'}`;button.onclick=()=>{search.value='';render();const card=list.querySelector(`[data-reference="${CSS.escape(record.reference)}"]`);card?.scrollIntoView({behavior:'smooth',block:'start'});};requestAlert.append(button);});
+    fresh.forEach(record=>{const button=document.createElement('button');button.type='button';button.className='btn btn-primary';button.textContent=`Bekijk ${record.reference} · ${record.name||'Aanvraag'}`;button.onclick=()=>{search.value='';activeFilter='new';render();document.querySelector('#adminTabs [data-tab="orders"]')?.click();const card=list.querySelector(`[data-reference="${CSS.escape(record.reference)}"]`);if(card){card.querySelector('.admin-record-details').open=true;card.scrollIntoView({behavior:'smooth',block:'start'});}};requestAlert.append(button);});
   }
   let polling=false;
   async function pollRequests(){
@@ -46,8 +56,9 @@
     try{const result=await api('/api/admin/reservations');const next=result.records||[];
       if(token!==startedToken||dashboard.hidden||JSON.stringify(records)!==startedRecords)return;
       // Keep edits in progress intact. Only redraw when the server data changes.
-      if(!list.contains(document.activeElement)&&JSON.stringify(next)!==JSON.stringify(records)){records=next;render();}
+      if(JSON.stringify(next)!==JSON.stringify(records)){records=next.map(record=>dirtyRequests.has(record.reference)?records.find(old=>old.reference===record.reference)||record:record);render();}
       else renderRequestAlert();
+      syncStatus.textContent=dirtyRequests.size?'Bijgewerkt · je niet-opgeslagen wijzigingen zijn bewaard.':'Bijgewerkt om '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
     }catch{requestAlert.hidden=false;requestAlert.textContent='Aanvragen konden niet worden bijgewerkt. Controleer je verbinding en druk op Vernieuwen.';}
     finally{polling=false;}
   }
@@ -172,13 +183,19 @@
     const searchText = [record.reference,record.serviceCode,record.name,record.phone,record.email,record.postcode,record.address,record.material,record.package,record.rentaltype,record.status].filter(Boolean).join(' ').toLowerCase();
     const closed = Boolean(record.closedAt);
     const minutes=plannedMinutes(record);
-    return `<article class="admin-record${closed ? ' is-closed' : ''}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
-      <div class="admin-record-head"><div><span class="admin-request-code">${escapeHtml(record.reference)}</span><h2>${escapeHtml(record.name || 'Naam onbekend')}</h2><p>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</p></div><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div></div>
+    return `<article class="admin-record${closed ? ' is-closed' : ''}" data-stage="${recordStage(record)}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
+      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</span><small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div></div>
       ${Number(record.waxstickCount)>0?`<section class="admin-payment admin-waxstick" data-waxstick-reference="${escapeHtml(record.reference)}"><h3>Meebesteld · ${Number(record.waxstickCount)}× Holmenkol Natural Skiwax Stick 50 g</h3><p>€ 17,50 per stuk · bij deze opdracht meegeven.</p><p class="waxstick-handover-status" role="status" aria-live="polite">Meegeefstatus laden…</p><button class="btn btn-gold waxstick-handover" type="button" disabled>Meegeven bevestigen</button><button class="btn btn-dark waxstick-invoice" type="button">Factuur maken in Pierfinity →</button><button class="btn btn-dark waxstick-reload" type="button" hidden>Status opnieuw laden</button></section>`:''}
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-grid">
         <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
         <form class="admin-update-form">
-          <h3>Onderhoud registreren</h3>
+          <h3>${record.workOrderNumber?'Werkorder '+escapeHtml(record.workOrderNumber):'Aanvraag aanvullen'}</h3>
+          ${record.workOrderNumber?`<p>Aangemaakt op ${escapeHtml(formatDateTime(record.workOrderCreatedAt))} · aanvraag ${escapeHtml(record.reference)}</p>`:''}
+          <label><span>Naam klant</span><input name="name" required maxlength="120" value="${escapeHtml(record.name||'')}"></label>
+          <label><span>Telefoon klant</span><input name="phone" type="tel" maxlength="40" value="${escapeHtml(record.phone||'')}"></label>
+          <label><span>E-mailadres klant</span><input name="email" type="email" maxlength="160" value="${escapeHtml(record.email||'')}"></label>
+          <label><span>Aanvraag en aanvullende afspraken</span><textarea name="notes" maxlength="4000" rows="4">${escapeHtml(record.notes||'')}</textarea></label>
+          ${!record.workOrderNumber&&record.service==='Onderhoud'&&!closed?'<p>Controleer de aanvraag en wijs het werk eventueel toe. Omzetten maakt één gekoppelde werkorder en een klantcode aan. Er wordt geen klantbericht verstuurd.</p><button class="btn btn-gold" type="submit" data-action="workorder">Omzetten naar werkorder</button>':''}
           <label><span>Toegewezen medewerker</span><select name="assignedTo">${window.LattenspecialistTeam?.options(record.assignedTo) || '<option value="">Nog niet toegewezen</option>'}</select></label>
           ${record.workNote ? `<div class="team-work-note"><b>Werknotitie medewerker</b><p>${escapeHtml(record.workNote)}</p></div>` : ''}
           <button class="btn btn-dark team-history" type="button">Bekijk werklogboek</button><div class="team-audit" hidden></div>
@@ -192,7 +209,7 @@
           <label><span>Bericht voor klant</span><textarea name="note" rows="3" maxlength="320" placeholder="Bijvoorbeeld: de kanten zijn gecontroleerd.">${escapeHtml(record.note || '')}</textarea></label>
           <label class="admin-consent-confirm"><input type="checkbox" name="whatsappConsent"${record.whatsappConsent ? ' checked' : ''}><span>Klant heeft toestemming gegeven voor WhatsApp-statusupdates</span><small>Alleen aanvinken na mondelinge of schriftelijke toestemming.</small></label>
           <details class="customer-message-actions"><summary>Klant berichten</summary><p>Kies hoe je deze klant wilt informeren. WhatsApp en sms openen met een ingevuld bericht; jij controleert en verstuurt het.</p><div><button class="btn message-whatsapp" type="submit" data-action="whatsapp"${record.whatsappConsent ? '' : ' disabled'}>WhatsApp openen</button><button class="btn message-sms" type="submit" data-action="sms">Sms openen</button><button class="btn btn-dark" type="submit" data-action="email"${record.email ? '' : ' disabled'}>E-mail automatisch versturen</button></div>${record.whatsappConsent ? '' : '<small>WhatsApp is niet beschikbaar omdat toestemming ontbreekt.</small>'}${record.email ? '' : '<small>E-mail is niet beschikbaar omdat bij deze aanvraag geen e-mailadres is ingevuld.</small>'}</details>
-          <div class="admin-save-actions"><button class="btn btn-gold save-record" type="submit" data-action="save">Wijzigingen opslaan</button></div>
+          <div class="admin-save-actions"><button class="btn btn-gold save-record" type="submit" data-action="save">Wijzigingen opslaan</button><button class="btn btn-dark discard-request" type="button" hidden>Wijzigingen verwerpen en herladen</button></div>
           <section class="admin-payment"><h3>Betaalverzoek</h3><div class="payment-fields"><label><span>Bedrag (€)</span><input name="paymentAmount" inputmode="decimal" placeholder="44,95" value="${escapeHtml(String(record.paymentAmount || '').replace('.',','))}"></label><label><span>Betaallink</span><input name="paymentUrl" type="url" placeholder="https://…" value="${escapeHtml(record.paymentUrl || '')}"></label></div><button class="btn btn-dark save-record" type="submit" data-action="payment">Betaalverzoek e-mailen</button></section>
           <button class="admin-close-button" type="submit" data-action="close">${closed ? 'Aanvraag opnieuw openen' : 'Aanvraag afmelden'}</button>
           <div class="admin-record-message" role="status" aria-live="polite"></div>
@@ -220,19 +237,34 @@
     try{const state=await api('/api/admin/inventory/waxsticks/'+encodeURIComponent(panel.dataset.waxstickReference));if(panel.isConnected)showWaxstickHandover(panel,state);}
     catch(error){if(panel.isConnected){status.textContent=error.message;retry.hidden=false;}}
   }
-  const applySearch = () => { const query = search.value.trim().toLowerCase(); document.querySelectorAll('.admin-record').forEach(card => { card.hidden = Boolean(query && !card.dataset.search.includes(query)); }); };
+  const applySearch = () => {
+    const query=search.value.trim().toLowerCase();let visible=0;
+    list.querySelectorAll('.admin-record').forEach(card=>{const matches=activeFilter==='open'?card.dataset.stage!=='closed':card.dataset.stage===activeFilter;card.hidden=!matches||Boolean(query&&!card.dataset.search.includes(query));if(!card.hidden)visible++;});
+    orderFilters.replaceChildren(...Object.entries(filterLabels).map(([key,label])=>{const button=document.createElement('button');button.type='button';button.dataset.orderFilter=key;button.setAttribute('aria-pressed',String(activeFilter===key));const count=records.filter(record=>key==='open'?recordStage(record)!=='closed':recordStage(record)===key).length;button.textContent=label+' · '+count;return button;}));
+    listStatus.textContent=visible?`${visible} ${visible===1?'opdracht':'opdrachten'} getoond`:'Geen opdrachten gevonden. Kies een ander filter of pas je zoekopdracht aan.';
+  };
   const render = () => {
+    const focused=list.contains(document.activeElement)?document.activeElement:null;
+    const selection=focused&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd]:null;
+    const preserved=new Map([...list.querySelectorAll('.admin-record')].filter(card=>dirtyRequests.has(card.dataset.reference)).map(card=>[card.dataset.reference,card]));
+    const expanded=new Set([...list.querySelectorAll('.admin-record-details[open]')].map(detail=>detail.closest('.admin-record').dataset.reference));
     renderRequestAlert();
     const open = records.filter(record => !record.closedAt).length;
-    const active = records.filter(record => !record.closedAt && Number(record.currentStep || 1) < steps.length).length;
+    const active = records.filter(record => recordStage(record)==='work').length;
     const withoutCode = records.filter(record => !record.closedAt && !record.serviceCode).length;
     const reservedMinutes=records.filter(record=>!record.closedAt&&Number(record.currentStep||1)<steps.length).reduce((total,record)=>total+plannedMinutes(record),0);
     summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> benodigde tijd</span><span><b>${active}</b> in behandeling</span><span><b>${withoutCode}</b> zonder servicecode</span>`;
-    list.innerHTML = records.length ? records.map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
+    list.innerHTML = records.length ? [...records].sort((a,b)=>['new','planned','work','ready','closed'].indexOf(recordStage(a))-['new','planned','work','ready','closed'].indexOf(recordStage(b))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
+    for(const card of list.querySelectorAll('.admin-record')){const old=preserved.get(card.dataset.reference);if(old)card.replaceWith(old);else if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;}
+    for(const detail of list.querySelectorAll('.admin-record-details'))detail.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(detail.open));
     list.querySelectorAll('[data-waxstick-reference]').forEach(panel=>void loadWaxstickHandover(panel));
     applySearch();
+    if(focused?.isConnected){focused.focus({preventScroll:true});if(selection)focused.setSelectionRange(...selection);}
   };
 
+  list.addEventListener('toggle',event=>{if(event.target.matches('.admin-record-details'))event.target.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(event.target.open));},true);
+  list.addEventListener('click',event=>{const button=event.target.closest('.admin-open-request');if(button){const detail=button.closest('.admin-record').querySelector('.admin-record-details');detail.open=!detail.open;button.setAttribute('aria-expanded',String(detail.open));}});
+  list.addEventListener('click',async event=>{const button=event.target.closest('.discard-request');if(!button)return;const card=button.closest('.admin-record'),reference=card.dataset.reference;button.disabled=true;try{const result=await api('/api/admin/reservations');const latest=result.records?.find(record=>record.reference===reference);if(!latest)throw new Error('Deze aanvraag is niet meer beschikbaar.');dirtyRequests.delete(reference);card.removeAttribute('data-unsaved');records=records.map(record=>record.reference===reference?latest:record);render();syncStatus.textContent='Aanvraag herladen; lokale wijzigingen zijn verworpen.';}catch(error){button.disabled=false;syncStatus.textContent=error.message;}});
   let metricsVersion = 0;
   const loadMetrics = async () => {
     const target = document.querySelector('#websiteMetrics');
@@ -298,10 +330,10 @@
   const loadDashboard = async () => {
     if (!endpoint) throw new Error('De beheerservice is nog niet gekoppeld.');
     refreshButton.disabled = true;
-    list.innerHTML = '<div class="admin-empty"><strong>Reserveringen laden…</strong></div>';
+    if(!records.length)list.innerHTML = '<div class="admin-empty"><strong>Reserveringen laden…</strong></div>';
     try {
       const [reservationResult] = await Promise.all([api('/api/admin/reservations'),loadAvailability(),window.LattenspecialistTeam?.init(api,render)]);
-      records = reservationResult.records || [];
+      records = (reservationResult.records || []).map(record=>dirtyRequests.has(record.reference)?records.find(old=>old.reference===record.reference)||record:record);
       loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render(); await window.LattenspecialistOperations?.init(api,()=>records); void loadMetrics();
       if (pendingManualOpen) requestManualOpen(pendingManualMaterial);
       window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh'));
@@ -344,18 +376,21 @@
     const action = event.submitter?.dataset.action || 'save'; const existing = records.find(record => record.reference === card.dataset.reference); const values = Object.fromEntries(new FormData(form)); const currentStep = Number(values.currentStep);
     if (action === 'whatsapp' && !form.elements.whatsappConsent.checked) { message.textContent = 'WhatsApp kan alleen na toestemming van de klant.'; message.className = 'admin-record-message is-error'; return; }
     if (action === 'email' && !existing?.email) { message.textContent = 'Bij deze aanvraag is geen e-mailadres ingevuld.'; message.className = 'admin-record-message is-error'; return; }
-    const payload = {serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,plannedMinutes:Number(values.plannedMinutes),note:values.note,waxType:values.waxType,whatsappConsent:form.elements.whatsappConsent.checked,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl};
+    const payload = {name:values.name,phone:values.phone,email:values.email,notes:values.notes,serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,plannedMinutes:Number(values.plannedMinutes),note:values.note,waxType:values.waxType,whatsappConsent:form.elements.whatsappConsent.checked,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl};
     payload.revision=existing?.revision ?? 0;payload.assignedTo=values.assignedTo || '';
     if (action === 'email') payload.sendStatusEmail = true;
     if (action === 'payment') { payload.sendPaymentEmail = true; payload.sendWhatsApp = true; payload.notificationType = 'payment'; }
     if (action === 'close') payload.closed = !existing?.closedAt;
+    if (action === 'workorder') payload.convertToWorkOrder = true;
     buttons.forEach(button => { button.disabled = true; }); message.textContent = action === 'payment' ? 'Betaalverzoek versturen…' : 'Opslaan…'; message.className = 'admin-record-message';
     try {
       const result = await api(`/api/admin/reservations/${encodeURIComponent(card.dataset.reference)}`,{method:'PATCH',body:JSON.stringify(payload)});
+      dirtyRequests.delete(result.record.reference);card.removeAttribute('data-unsaved');
       records = records.map(record => record.reference === result.record.reference ? result.record : record); render();
       const updated = document.querySelector(`[data-reference="${CSS.escape(result.record.reference)}"]`); const updatedMessage = updated?.querySelector('.admin-record-message');
       if (!updatedMessage) return;
-      let messageText = 'Opgeslagen.';
+      if(action==='workorder'){activeFilter='planned';applySearch();}
+      let messageText = action==='workorder'?'Werkorder aangemaakt. De aanvraag, materialen en historie blijven gekoppeld.':'Opgeslagen.';
       if (action === 'email') messageText = result.notifications?.email?.sent ? 'Opgeslagen en status per e-mail verstuurd.' : 'Opgeslagen; de status-e-mail kon niet worden verstuurd.';
       if (action === 'payment') messageText = result.notifications?.paymentEmail?.sent ? 'Betaalverzoek per e-mail verstuurd.' : `Opgeslagen; betaalmail niet verstuurd (${result.notifications?.paymentEmail?.reason || 'controleer de gegevens'}).`;
       if (action === 'close') messageText = result.record.closedAt ? 'Aanvraag afgemeld.' : 'Aanvraag opnieuw geopend.';
@@ -380,8 +415,8 @@
   saveAvailabilityButton.addEventListener('click',saveAvailability);
   addAvailabilityButton.addEventListener('click',() => { const date = customAvailabilityDate.value; if (!date) return; availableDates.add(date); renderAvailability(); customAvailabilityDate.value = ''; });
   search.addEventListener('input',applySearch);
-  refreshButton.addEventListener('click',() => loadDashboard().catch(error => { list.innerHTML = `<div class="admin-empty"><strong>Laden mislukt</strong><p>${escapeHtml(error.message)}</p></div>`; }));
-  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];list.replaceChildren();window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false;window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh')); });
+  refreshButton.addEventListener('click',() => loadDashboard().catch(error => { syncStatus.textContent='Bijwerken mislukt: '+error.message+' Je invoer is bewaard.'; }));
+  logoutButton.addEventListener('click',() => { sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];dirtyRequests.clear();list.replaceChildren();orderFilters.replaceChildren();listStatus.textContent='';syncStatus.textContent='';window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false;window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh')); });
 
   let installPrompt; const installButton = document.querySelector('#installAdmin');
   window.addEventListener('beforeinstallprompt',event => { event.preventDefault(); installPrompt=event; installButton.hidden=false; });
