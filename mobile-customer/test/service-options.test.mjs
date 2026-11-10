@@ -72,7 +72,7 @@ test('direct booking preserves extra services and a requested Wednesday without 
  const page=appointment(t),{w,d,f,posts}=page;
  change(w,f.elements.firstWaxCount,'1');change(w,f.elements.waxstickCount,'2');
  const date=[...f.elements.pickupDate.options].find(o=>/^\d{4}-/.test(o.value)).value;change(w,f.elements.pickupDate,date);
- assert.match(d.getElementById('requestSummary').textContent,/Extra waxreiniging: 1×/);
+ assert.match(d.getElementById('requestSummary').textContent,/Hot Scraping \(extra waxreiniging\): 1×/);
  await submit(page);assert.equal(posts.length,1);assert.equal(posts[0].pickupDate,'In overleg');
  assert.match(posts[0].notes,new RegExp(`Brengen ${date}; ophalen op afspraak`));assert.match(posts[0].notes,/Extra waxreiniging 1x/);assert.match(posts[0].notes,/Stick 50g 2x/);
  assert.equal(posts[0].address,undefined);assert.equal(readAndValidateLattenspecialist(posts[0]).data.notes,posts[0].notes.replace(/\s+/g,' ').trim());
