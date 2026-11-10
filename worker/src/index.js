@@ -1,3 +1,4 @@
+import {securityEnabled,adminSession,handleAdminSecurity,workspaceAllowed,workspaceResponse} from './admin-security.js';
 import {maintenancePriceQuote} from './maintenance-pricing.js';
 import {readInvoiceTransfer,invoiceTransferToken} from './invoice-transfer.js';
 import {centralHrm,centralHrmEnabled,verifyHrmExport} from './hrm-bridge.js';
@@ -462,7 +463,7 @@ const saveLattenspecialistReservation = async (data, reference, env, ctx) => {
   await queueReservationPush(data,reference,env,ctx);
 };
 
-export default {
+const application = {
  async scheduled(_event,env,ctx){ctx.waitUntil(deliverPushOutbox(env).catch(()=>console.error('Push retry deferred.')));if(!centralHrmEnabled(env)||!env.LATTENSPECIALIST_TEAM_DB)return;ctx.waitUntil((async()=>{const source=await legacyHrmMembers(env,env.LATTENSPECIALIST_TEAM_DB);await centralHrm(env,{operation:'bootstrap',members:source.members.map(member=>{const {items,seconds,month_items,month_seconds}=member.totals;return{...member,totals:{items,seconds,month_items,month_seconds}};})});})().catch(()=>console.error('Centrale HRM-synchronisatie kon niet worden afgerond; bestaande gegevens zijn behouden.')));},
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '';
@@ -489,7 +490,7 @@ export default {
     if(new URL(request.url).pathname==='/api/internal/hrm-export'){try{if(!env.LATTENSPECIALIST_TEAM_DB||!await verifyHrmExport(request,env,env.LATTENSPECIALIST_TEAM_DB))return new Response(null,{status:401});return Response.json(await legacyHrmMembers(env,env.LATTENSPECIALIST_TEAM_DB),{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}catch{return Response.json({error:'HRM export niet beschikbaar.'},{status:503,headers:{'Cache-Control':'no-store'}});}}
     const site = getSite(origin, env);
     if (!site) return json({message: 'Niet toegestaan.'}, 403, '');
-    if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-HRM-PIN', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
+    if (request.method === 'OPTIONS') return new Response(null, {status: 204, headers: {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-HRM-PIN, X-Admin-Unlock', 'Vary': 'Origin', 'Cache-Control': 'no-store'}});
     const url = new URL(request.url);
     if(url.pathname.startsWith('/api/admin/push/')){
       if(site!=='lattenspecialist')return json({message:'Niet toegestaan.'},403,origin);
@@ -647,3 +648,22 @@ export default {
 };
 
 export {STATUS_STEPS, clean, createReference, createServiceCode, escapeHtml, getSite, isAdminAuthorized, normalizeServiceCode, publicStatus, readAndValidateLattenspecialist, readAndValidateStuiterbaas, saveLattenspecialistReservation};
+
+export default {scheduled:application.scheduled,async fetch(request,env,ctx){
+ const url=new URL(request.url),origin=request.headers.get('Origin')||'';
+ if(url.pathname.startsWith('/api/admin/')&&getSite(origin,env)==='lattenspecialist'&&request.method!=='OPTIONS'&&!url.pathname.startsWith('/api/admin/recovery/')){
+  try{const owner=await isAdminAuthorized(request,env);
+   if(url.pathname.startsWith('/api/admin/security/'))return handleAdminSecurity(request,env,owner,origin);
+   if(securityEnabled(env)){
+    if(!owner)return json({message:'Log opnieuw in met de beheercode.'},401,origin);
+    const access=await adminSession(request,env);
+    if(!access.unlocked){if(!workspaceAllowed(url.pathname,request.method))return json({message:'Ontgrendel beheer voor klantgegevens, financiën of instellingen.',code:'ADMIN_LOCKED'},403,origin);return workspaceResponse(await application.fetch(request,env,ctx),url.pathname);}
+   }
+  }catch{return json({message:'Beheerbeveiliging is tijdelijk niet beschikbaar.'},503,origin);}
+ }
+ if(securityEnabled(env)&&(/^\/api\/team\/(?:operations|tasks|practice|guides|warehouse)(?:\/|$)/.test(url.pathname))){
+  if(url.pathname.startsWith('/api/team/operations/routes'))return json({message:'Deze klantgegevens zijn alleen via ontgrendeld beheer beschikbaar.'},403,origin);
+  return workspaceResponse(await application.fetch(request,env,ctx),url.pathname);
+ }
+ return application.fetch(request,env,ctx);
+}};

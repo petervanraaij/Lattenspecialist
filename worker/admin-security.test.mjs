@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import worker from './src/index.js';
+import {maintenanceFixture} from './maintenance-fixture.mjs';
+const fixture=await maintenanceFixture(),{env,sql,owner}=fixture;
+Object.assign(env,{LATTENSPECIALIST_ADMIN_SECURITY_ENABLED:'true',LATTENSPECIALIST_ADMIN_RECOVERY_EMAIL:'owner@example.test',RESEND_API_KEY:'synthetic-mail-only',LATTENSPECIALIST_FROM_EMAIL:'test@example.test'});
+const originalFetch=globalThis.fetch;let mailCount=0,linkToken='',lastMail;
+globalThis.fetch=async(input,options)=>{assert.equal(String(input),'https://api.resend.com/emails');mailCount++;lastMail=JSON.parse(options.body);linkToken=lastMail.text.match(/#token=([a-f0-9]{64})/)[1];return Response.json({id:'test-mail'});};
+const call=async(path,method='GET',body,unlock='',base=owner)=>fixture.call(path,method,body,base,unlock?{'X-Admin-Unlock':unlock}:{});
+const password='Synthetic extra password 2026!';
+try{
+ let result=await call('/api/admin/security/status');assert.deepEqual(result.data,{enabled:true,unlocked:false,configured:false});
+ result=await call('/api/admin/reservations');assert.equal(result.status,200);assert.equal(result.data.records.length,1);const native=await worker.fetch(new Request('https://worker.test/api/admin/reservations',{headers:{Authorization:'Bearer '+owner}}),env);assert.equal(native.status,200);const nativeData=await native.json();assert.equal('name' in nativeData.records[0],false);const record=result.data.records[0];assert.equal(record.workspaceOnly,true);assert.equal('email' in record,false);assert.equal('phone' in record,false);assert.equal('notes' in record,false);assert.equal('serviceCode' in record,false);assert.equal(JSON.stringify(result.data).includes('Fictieve ski-eigenaar'),false);
+ for(const path of ['/api/admin/operations/customers','/api/admin/inventory/overview','/api/admin/accounting','/api/admin/settings/admin-access','/api/admin/hrm/members'])assert.equal((await call(path)).status,403,path);
+ assert.equal((await call('/api/admin/reservations/LS-2610-GUIDEX','PATCH',{revision:0,note:'blocked'})).status,403);
+ const members=await call('/api/admin/team/members');assert.equal(members.status,200);assert.equal('login' in members.data.members[0],false);
+ const material=fixture.materials[0],workflowPath='/api/admin/operations/materials/'+material.id+'/workflow';result=await call(workflowPath);assert.equal(result.status,200);assert.equal('totalCost' in result.data.workflow.summary,false);
+ const step=result.data.workflow.steps[0];const action='/api/admin/operations/steps/'+step.id;
+ result=await call(action+'/start','POST',{executionMemberId:fixture.member.id,startWeight:500,waxSku:'24101',guideVersion:step.guide.version});assert.equal(result.status,200,JSON.stringify(result.data));assert.equal((await call(action+'/pause','POST',{executionMemberId:fixture.member.id})).status,200);
+ assert.equal((await call('/api/admin/operations/materials/'+material.id+'/photos')).status,200);
+ const staffView=await fixture.call('/api/team/operations/scan/'+material.token,'GET',undefined,fixture.staff);assert.equal(staffView.status,200);assert.equal('address' in staffView.data.work,false);assert.equal('notes' in staffView.data.work,false);assert.equal('totalCost' in staffView.data.workflow.summary,false);assert.equal(staffView.data.work.customerName.startsWith('Materiaal '),true);
+ assert.equal((await call('/api/admin/push/status')).status,403);
+ assert.equal((await call('/api/admin/security/request','POST',{email:'attacker@example.test',redirect:'https://attacker.test'})).status,200);assert.deepEqual(lastMail.to,['owner@example.test']);assert.equal(mailCount,1);assert.equal((await call('/api/admin/security/request','POST',{})).status,200);assert.equal(mailCount,1,'mail cooldown persists');
+ const token=linkToken;assert.equal((await call('/api/admin/security/complete','POST',{token,password:'short'},'','')).status,400);
+ const finished=await Promise.all([call('/api/admin/security/complete','POST',{token,password},'',''),call('/api/admin/security/complete','POST',{token,password},'','')]);assert.deepEqual(finished.map(x=>x.status).sort(),[200,400]);assert.equal((await call('/api/admin/security/complete','POST',{token,password},'','')).status,400);
+ const stored=sql.prepare('SELECT * FROM admin_security_config').get();assert.equal(stored.password_hash.includes(password),false);assert.equal(stored.password_hash.length,129);
+ for(let i=0;i<5;i++)assert.equal((await call('/api/admin/security/unlock','POST',{password:'incorrect'})).status,401);assert.equal((await call('/api/admin/security/unlock','POST',{password})).status,429);
+ sql.prepare("UPDATE admin_security_rate SET failures=0,blocked_until=0 WHERE id='unlock'").run();
+ result=await call('/api/admin/security/unlock','POST',{password});assert.equal(result.status,200);const unlocked=result.data.token;assert.match(unlocked,/^[a-f0-9]{64}$/);assert.equal(sql.prepare('SELECT token_hash FROM admin_security_sessions').get().token_hash===unlocked,false);
+ result=await call('/api/admin/reservations','GET',undefined,unlocked);assert.equal(result.status,200);assert.equal(result.data.records[0].name,'Fictieve ski-eigenaar');assert.equal(result.data.records[0].email,'fixture@example.test');assert.equal((await call('/api/admin/inventory/overview','GET',undefined,unlocked)).status,200);
+ assert.equal((await call('/api/admin/security/lock','POST',{},unlocked)).status,200);assert.equal((await call('/api/admin/inventory/overview','GET',undefined,unlocked)).status,403);assert.equal((await call(workflowPath)).status,200);
+ result=await call('/api/admin/security/unlock','POST',{password});const idleToken=result.data.token;sql.prepare('UPDATE admin_security_sessions SET last_seen=?').run(Date.now()-600001);assert.equal((await call('/api/admin/inventory/overview','GET',undefined,idleToken)).status,403);
+ result=await call('/api/admin/security/unlock','POST',{password});const oldToken=result.data.token;sql.prepare("UPDATE admin_security_rate SET blocked_until=0 WHERE id='mail'").run();await call('/api/admin/security/request','POST',{});assert.equal((await call('/api/admin/security/complete','POST',{token:linkToken,password:password+' changed'},'','')).status,200);assert.equal((await call('/api/admin/inventory/overview','GET',undefined,oldToken)).status,403);
+ result=await call('/api/admin/security/unlock','POST',{password:password+' changed'});const bound=result.data.token;env.LATTENSPECIALIST_ADMIN_TOKEN='rotated-synthetic-code';assert.equal((await call('/api/admin/inventory/overview','GET',undefined,bound,env.LATTENSPECIALIST_ADMIN_TOKEN)).status,403);
+ console.log('Security checks passed: protected routes fail closed, workspace execution survives, no contact/cost leak, fixed-recipient setup, cooldown, single use/concurrency, password hashing, brute-force limits, hashed sessions, idle expiry, lock/reset/code-rotation revocation.');
+}finally{globalThis.fetch=originalFetch;fixture.close();}

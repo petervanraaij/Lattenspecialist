@@ -1,0 +1,6 @@
+(()=>{
+ let token=new URLSearchParams(location.hash.slice(1)).get('token')||'';history.replaceState(null,'',location.pathname);
+ const form=document.querySelector('#secureAdminForm'),status=document.querySelector('#secureAdminStatus');
+ if(!/^[a-f0-9]{64}$/.test(token)){form.hidden=true;status.textContent='Open de tijdelijke instellink uit je e-mail. Vraag zo nodig in Beheer een nieuwe link aan.';return;}
+ form.onsubmit=async event=>{event.preventDefault();const password=form.elements.password.value;if(password!==form.elements.confirm.value){status.textContent='De wachtwoorden zijn niet gelijk.';return;}if(password!==password.trim()){status.textContent='Gebruik geen spaties aan het begin of einde.';return;}const button=form.querySelector('button');button.disabled=true;try{const endpoint=String(window.LATTENSPECIALIST_BOOKING?.endpoint||'').replace(/\/$/,'');const response=await fetch(endpoint+'/api/admin/security/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,password}),cache:'no-store',referrerPolicy:'no-referrer'});const result=await response.json();if(!response.ok)throw Error(result.message);token='';form.reset();form.hidden=true;status.textContent=result.message;}catch(error){status.textContent=error.message||'Instellen is niet gelukt. Probeer opnieuw.';}finally{button.disabled=false;}};
+})();
