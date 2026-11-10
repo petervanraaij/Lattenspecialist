@@ -33,6 +33,34 @@ try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));origin='http://127.0.0.1:'+server.address().port;fixture=await maintenanceFixture(origin);Object.assign(fixture.env,{LATTENSPECIALIST_ADMIN_SECURITY_ENABLED:'true',LATTENSPECIALIST_ADMIN_RECOVERY_EMAIL:'owner@example.test',RESEND_API_KEY:'synthetic-mail-only',LATTENSPECIALIST_FROM_EMAIL:'test@example.test'});
  const chrome='C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';browser=await chromium.launch({headless:true,...(existsSync(chrome)?{executablePath:chrome}:{channel:'chrome'})});page=await browser.newPage({viewport:{width:390,height:844},locale:'nl-NL'});page.setDefaultTimeout(15000);page.on('pageerror',error=>errors.push(error.message));await page.clock.install();await page.goto(origin+'/beheer.html');await page.locator('#adminLoginForm [name=token]').fill(fixture.owner);await page.locator('#adminLoginForm [type=submit]').click();
  await scenario('Shared code opens only workshop; full contact data never enters its DOM',async()=>{await page.locator('.admin-record').waitFor();assert.equal(await page.locator('.admin-security-dialog').isVisible(),false);assert.equal(await page.locator('#adminTabs [data-tab=orders]').getAttribute('class'),'active');assert.equal(await page.locator('body').textContent().then(text=>text.includes('Fictieve ski-eigenaar')),false);assert.equal(await page.locator('input[value="fixture@example.test"]').count(),0);await fits();await page.locator('#adminTabs [data-tab=customers]').click();await page.getByRole('heading',{name:'Beheer ontgrendelen',exact:true}).waitFor();assert.equal(await page.locator('[data-unlock-form]').isVisible(),false);});
+ await scenario('Shared-code workplace includes real practice, photo tool manual and warehouse picks',async()=>{
+  await page.locator('.admin-security-dialog button').filter({hasText:'Sluiten'}).click();
+  await page.locator('#adminTabs [data-tab=workplace]').click();
+  await page.locator('#practiceForm [name=executionMemberId]').selectOption(fixture.member.id);
+  await page.locator('#practiceForm [name=activity]').selectOption('repair');
+  await page.locator('#practiceForm [type=submit]').click();
+  await page.locator('#practiceResult .workflow-step').first().waitFor();
+  assert.equal(fixture.sql.prepare('SELECT COUNT(*) n FROM materials WHERE is_training=1').get().n,1);
+  await page.locator('#practiceResult [data-workflow-action=start] button[type=submit]').click();
+  await page.locator('#practiceResult [data-workflow-action=finish]').waitFor();
+  await page.locator('#practiceResult [name=repairStrips]').fill('1');
+  for(const checkbox of await page.locator('#practiceResult [data-workflow-action=finish] input[type=checkbox]').all())await checkbox.check();
+  await page.locator('#practiceResult [data-workflow-action=finish] button[type=submit]').click();
+  await page.locator('#practiceResult .workflow-step.is-completed').waitFor();
+  await page.locator('[data-refresh-practice]').click();await page.locator('[data-resume-practice]').first().click();await page.locator('#practiceResult .workflow-step').waitFor();
+
+  await page.locator('[data-workplace-tab=tools]').click();await page.locator('.tool-photo-card').first().waitFor();
+  assert.ok(await page.locator('.tool-photo-card img').count()>0);
+  await page.locator('[data-workplace-tab=warehouse]').click();await page.locator('[data-warehouse-item]').first().waitFor();
+  await page.locator('[data-warehouse-member]').selectOption(fixture.member.id);
+  const item=page.locator('[data-warehouse-item="24101"]');await item.locator('[name=quantity]').fill('10');await item.locator('[type=submit]').click();
+  await page.getByText('Laatst uit reserve gepakt',{exact:true}).waitFor();
+  await page.locator('[data-warehouse-item="24101"]').getByText(/Werkbank: 10/).waitFor();
+  assert.equal(fixture.sql.prepare("SELECT SUM(quantity) n FROM warehouse_issues WHERE sku='24101'").get().n,10);
+  assert.equal(await page.locator('[data-warehouse-host]').textContent().then(t=>t.includes('unitCost')),false);await fits();
+  await mkdir(resolve(root,'output/workplace-review'),{recursive:true});await page.locator('.workplace-tabs').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(root,'output/workplace-review/phone.png')});
+  await page.locator('#adminTabs [data-tab=customers]').click();
+ });
  await scenario('Owner receives fixed-recipient setup link and sets password personally',async()=>{await page.getByRole('button',{name:'Wachtwoord instellen of vergeten',exact:true}).click();await page.getByText(/De instellink wordt naar het vaste/).waitFor();assert.equal(mailCount,1);assert.match(mailToken,/^[a-f0-9]{64}$/);await page.goto(origin+'/beheer-beveiligen.html#token='+mailToken);assert.equal(await page.evaluate(()=>location.hash),'');await page.locator('#secureAdminForm [name=password]').fill('Synthetic admin password 2026!');await page.locator('#secureAdminForm [name=confirm]').fill('Synthetic admin password 2026!');await page.getByRole('button',{name:'Beheerwachtwoord instellen',exact:true}).click();await page.getByText(/Het extra beheerwachtwoord is ingesteld/).waitFor();await page.goto(origin+'/beheer.html');await page.locator('.admin-record').waitFor();});
  await scenario('Unlock reveals contact data, and explicit lock removes it from memory-backed screens',async()=>{await page.getByRole('button',{name:'Beheer ontgrendelen',exact:true}).first().click();const form=page.locator('[data-unlock-form]');await form.locator('[name=password]').fill('Synthetic admin password 2026!');await form.getByRole('button',{name:'Ontgrendelen',exact:true}).click();await page.locator('.admin-open-request strong').filter({hasText:'Fictieve ski-eigenaar'}).waitFor();assert.equal(await page.locator('input[value="fixture@example.test"]').count(),1);const values=await page.evaluate(()=>[...Object.values(localStorage),...Object.values(sessionStorage)]);assert.equal(values.some(value=>value==='Synthetic admin password 2026!'||/^[a-f0-9]{64}$/.test(value)),false);await page.getByRole('button',{name:'Beheer vergrendelen',exact:true}).click();await page.locator('.admin-record').waitFor();assert.equal(await page.locator('input[value="fixture@example.test"]').count(),0);assert.equal(await page.locator('body').textContent().then(text=>text.includes('Fictieve ski-eigenaar')),false);});
 

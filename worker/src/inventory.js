@@ -224,6 +224,18 @@ async function finishStep(db,id,member,raw){
 export async function handleInventory(request,env,{owner,json,origin}){
  const path=new URL(request.url).pathname,db=env.LATTENSPECIALIST_TEAM_DB;try{
   if(!db)throw new InventoryError('Bedrijfsdatabase niet beschikbaar.',503);
+  if(['/api/admin/workplace/practice','/api/admin/workplace/warehouse','/api/admin/workplace/warehouse/pick'].includes(path)){
+   if(!owner)throw new InventoryError('Geen toegang tot de werkplaats.',401);
+   await ensureToolStock(db);
+   if(path==='/api/admin/workplace/practice'&&request.method==='GET')return json({sessions:(await db.prepare("SELECT m.id,m.display_code AS displayCode,m.kind,m.package_name AS title,m.internal_status AS status,m.assigned_to AS memberId,p.name AS memberName FROM materials m LEFT JOIN members p ON p.id=m.assigned_to WHERE m.is_training=1 ORDER BY m.updated_at DESC LIMIT 50").all()).results},200,origin);
+   if(path==='/api/admin/workplace/warehouse'&&request.method==='GET')return json(await warehouseOverview(db),200,origin);
+   if(request.method!=='POST')throw new InventoryError('Niet toegestaan.',405);
+   const raw=await readBody(request),member=await db.prepare('SELECT id,name,login FROM members WHERE id=? AND active=1').bind(String(raw.executionMemberId||'')).first();
+   if(!member)throw new InventoryError('Kies de actieve medewerker die dit uitvoert.');
+   if(path==='/api/admin/workplace/practice')return json(await createPractice(db,member,raw),201,origin);
+   if(path==='/api/admin/workplace/warehouse/pick')return json(await warehousePick(db,raw,member,InventoryError),200,origin);
+   throw new InventoryError('Niet gevonden.',404);
+  }
   if(path.startsWith('/api/admin/inventory')){
    if(!owner)throw new InventoryError('Geen toegang tot beheer.',401);await ensureToolStock(db);if(path==='/api/admin/inventory/overview'&&request.method==='GET')return json(await inventoryOverview(db),200,origin);
    const waxstickOrder=path.match(/^\/api\/admin\/inventory\/waxsticks\/(LS-\d{4}-[A-Z2-9]{6})$/);
