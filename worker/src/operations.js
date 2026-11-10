@@ -328,10 +328,46 @@ async function staffHrm(request,env,db,path,member) {
   throw new OperationsError('Niet gevonden.',404);
 }
 
+async function saveAvailability(db,member,raw,env){
+  if(!Array.isArray(raw.dates)||raw.dates.length>180)throw new OperationsError('Geef maximaal 180 dagen door.');
+  const valid=[],seen=new Set(),today=new Date().toISOString().slice(0,10),stamp=now();
+  for(const item of raw.dates){
+    if(!item||!/^\d{4}-\d{2}-\d{2}$/.test(item.date)||!Number.isFinite(Date.parse(item.date+'T12:00:00Z'))||new Date(item.date+'T12:00:00Z').toISOString().slice(0,10)!==item.date||!['available','preferred','unavailable'].includes(item.preference)||seen.has(item.date))throw new OperationsError('Controleer de dagen en beschikbaarheid.');
+    seen.add(item.date);if(item.date<today)continue;
+    let start=clean(item.startTime,5),end=clean(item.endTime,5);
+    if(item.preference!=='unavailable'&&!start&&!end){start='09:00';end='17:00';}
+    if(item.preference!=='unavailable'&&(!/^([01]\d|2[0-3]):[0-5]\d$/.test(start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(end)||end<=start))throw new OperationsError(`Controleer de beschikbaarheidstijden voor ${item.date}.`);
+    valid.push({...item,start:item.preference==='unavailable'?'':start,end:item.preference==='unavailable'?'':end});
+  }
+  await db.batch([db.prepare("DELETE FROM member_availability WHERE member_id=? AND work_date>=date('now')").bind(member.id),...valid.map(item=>db.prepare('INSERT INTO member_availability(member_id,work_date,preference,start_time,end_time,note,updated_at) VALUES(?,?,?,?,?,?,?)').bind(member.id,item.date,item.preference,item.start||null,item.end||null,clean(item.note,200),stamp))]);
+  let centralSynced=true;
+  if(centralHrmEnabled(env)){try{const source=(await legacyHrmMembers(env,db)).members.find(m=>m.id===member.id);if(source)await centralHrm(env,{operation:'bootstrap',members:[sourceMember(source)]});}catch{centralSynced=false;}}
+  return {ok:true,centralSynced,...(!centralSynced?{message:'Beschikbaarheid opgeslagen. Synchronisatie met Pierfinity wordt bij de volgende synchronisatie opnieuw geprobeerd.'}:{})};
+}
+
 export async function handleOperations(request,env,{owner,json,origin}) {
   const path=new URL(request.url).pathname,db=env.LATTENSPECIALIST_TEAM_DB;
   try {
     if(!db)throw new OperationsError('Bedrijfsdatabase niet beschikbaar.',503);
+    if(['/api/admin/operations/workplace/availability','/api/admin/operations/workplace/planning'].includes(path)){
+      if(!owner)throw new OperationsError('Log in met de beheercode.',401);
+      if(!['GET','PATCH'].includes(request.method))throw new OperationsError('Niet toegestaan.',405);
+      const raw=request.method==='PATCH'?await body(request):{},memberId=request.method==='GET'?new URL(request.url).searchParams.get('memberId'):raw.executionMemberId;
+      if(path.endsWith('/availability')&&request.method==='GET'&&!memberId){const rows=await db.prepare("SELECT a.member_id,m.name,a.work_date,a.preference,a.start_time,a.end_time FROM member_availability a JOIN members m ON m.id=a.member_id WHERE a.work_date>=date('now') AND m.active=1 ORDER BY a.work_date,m.name LIMIT 2000").all();return json({availability:rows.results},200,origin);}
+      const member=await db.prepare('SELECT id,name,login FROM members WHERE id=? AND active=1').bind(String(memberId||'')).first();
+      if(!member)throw new OperationsError('Kies een actieve medewerker.');
+      if(path.endsWith('/planning')){
+        if(!centralHrmEnabled(env))throw new OperationsError('De centrale planning is nog niet gekoppeld.',503);
+        const result=await centralHrm(env,{operation:request.method==='PATCH'?'planningStatus':'planning',memberId:member.id,...(request.method==='PATCH'?{id:raw.id,status:raw.status,version:raw.version}:{})});
+        return json(request.method==='GET'?{items:(result.items||[]).map(item=>Object.fromEntries(['id','title','startDate','endDate','status','version','canChangeStatus'].filter(key=>Object.hasOwn(item,key)).map(key=>[key,item[key]])))}:{ok:true},200,origin);
+      }
+      if(request.method==='GET'){const rows=await db.prepare("SELECT work_date,preference,start_time,end_time FROM member_availability WHERE member_id=? AND work_date>=date('now') ORDER BY work_date LIMIT 180").bind(member.id).all();return json({dates:rows.results},200,origin);}
+      // Private notes are preserved; the shared workshop does not receive or edit them.
+      const notes=(await db.prepare('SELECT work_date,note FROM member_availability WHERE member_id=?').bind(member.id).all()).results;
+      if(Array.isArray(raw.dates))raw.dates=raw.dates.map(item=>({...item,note:notes.find(row=>row.work_date===item?.date)?.note||''}));
+      const saved=await saveAvailability(db,member,raw,env);
+      await db.prepare('INSERT INTO hrm_audit(member_id,actor,action,created_at) VALUES(?,?,?,?)').bind(member.id,'owner-workplace','availability_updated',now()).run();return json(saved,200,origin);
+    }
     if(path.startsWith('/api/admin/operations')||path.startsWith('/api/admin/hrm')||path.startsWith('/api/admin/settings')){
       if(!owner)throw new OperationsError('Geen toegang tot beheer.',401);
       if(path.startsWith('/api/admin/operations/customers')||/^\/api\/admin\/operations\/materials\/[a-f0-9-]{36}\/dossier$/.test(path))return await customerDossiers(request,db,{json,origin,ErrorType:OperationsError});
@@ -366,21 +402,7 @@ export async function handleOperations(request,env,{owner,json,origin}) {
       if(path.startsWith('/api/team/hrm'))return json(await staffHrm(request,env,db,path,member),200,origin);
       if(path==='/api/team/operations/central-planning'&&['GET','PATCH'].includes(request.method)){if(!centralHrmEnabled(env))throw new OperationsError('De centrale planning is nog niet gekoppeld.',503);const raw=request.method==='PATCH'?await body(request):{};return json(await centralHrm(env,{operation:request.method==='PATCH'?'planningStatus':'planning',memberId:member.id,...(request.method==='PATCH'?{id:raw.id,status:raw.status,version:raw.version}:{})}),200,origin);}
       if(path==='/api/team/operations/availability'&&request.method==='GET'){const rows=await db.prepare('SELECT work_date,preference,start_time,end_time,note FROM member_availability WHERE member_id=? AND work_date>=date(\'now\') ORDER BY work_date LIMIT 180').bind(member.id).all();return json({dates:rows.results},200,origin);}
-      if(path==='/api/team/operations/availability'&&request.method==='PATCH'){
-        const raw=await body(request),dates=Array.isArray(raw.dates)?raw.dates.slice(0,180):[],valid=[];
-        for(const item of dates){
-          if(!/^\d{4}-\d{2}-\d{2}$/.test(item.date)||!['available','preferred','unavailable'].includes(item.preference))continue;
-          let start=clean(item.startTime,5),end=clean(item.endTime,5),hasTimes=start||end;
-          if(item.preference!=='unavailable'&&!hasTimes){start='09:00';end='17:00';hasTimes=true;}
-          if(item.preference!=='unavailable'&&(!/^([01]\d|2[0-3]):[0-5]\d$/.test(start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(end)||end<=start))throw new OperationsError(`Controleer de beschikbaarheidstijden voor ${item.date}.`);
-          if(item.preference==='unavailable'&&hasTimes&&!(/^([01]\d|2[0-3]):[0-5]\d$/.test(start)&&/^([01]\d|2[0-3]):[0-5]\d$/.test(end)&&end>start))throw new OperationsError(`Controleer de tijden voor ${item.date}.`);
-          valid.push({...item,start:item.preference==='unavailable'?'':start,end:item.preference==='unavailable'?'':end});
-        }
-        await db.prepare('DELETE FROM member_availability WHERE member_id=? AND work_date>=date(\'now\')').bind(member.id).run();
-        for(const item of valid)await db.prepare('INSERT INTO member_availability(member_id,work_date,preference,start_time,end_time,note,updated_at) VALUES(?,?,?,?,?,?,?)').bind(member.id,item.date,item.preference,item.start||null,item.end||null,clean(item.note,200),now()).run();
-        if(centralHrmEnabled(env)){const source=(await legacyHrmMembers(env,db)).members.find(m=>m.id===member.id);if(source)await centralHrm(env,{operation:'bootstrap',members:[sourceMember(source)]});}
-        return json({ok:true},200,origin);
-      }
+      if(path==='/api/team/operations/availability'&&request.method==='PATCH')return json(await saveAvailability(db,member,await body(request),env),200,origin);
       if(path==='/api/team/operations/routes'&&request.method==='GET'){const rows=(await db.prepare('SELECT id FROM routes WHERE assigned_to=? ORDER BY route_date DESC LIMIT 20').bind(member.id).all()).results,routes=[];for(const row of rows)routes.push(await routeDetails(db,row.id));return json({routes},200,origin);}
       const routeAction=path.match(/^\/api\/team\/operations\/routes\/([a-f0-9-]{36})\/action$/);
       if(routeAction&&request.method==='POST'){
