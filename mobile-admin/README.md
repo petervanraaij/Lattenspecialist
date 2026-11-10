@@ -14,6 +14,16 @@ Installeer voor het genereren van de appafbeeldingen eenmalig Pillow 12.3.0 voor
 
 ## Android
 
+### Kandidaat 1.7.1 (18): alle native functies afzonderlijk demonstreren
+
+Deze kandidaat bouwt voort op de volledige 1.7.0-bron en de nieuwste website-assets op `f1cc6816bb8c6a4e27e2d10f60a5e43b4f4771d9`. De openbare 17-bron `892a007` is als `ab2f7f5` samengevoegd; de volledige `mobile-admin`-inhoud van 17 en deze basis is identiek. De bestaande startkeuze, privacyverwijzing, beveiligde app en operationele widgets blijven behouden.
+
+Twee extra, voor iedereen zichtbare **DEMO**-widgets tonen vaste fictieve voorbeeldtellingen en openen bewerkbare fictieve ski-/snowboardaanvragen. Zij gebruiken uitsluitend eigen voorkeuren en onveranderlijke expliciete intents naar de afzonderlijke demo. Tellingen zijn geen live gegevens. De knop **DEMO-testmelding** vraagt uitsluitend na aantikken toestemming en stuurt een vaste fictieve melding via een eigen DEMO-kanaal/nummer; aantikken opent uitsluitend de demo. Toestemming weigeren laat de demo beschikbaar. De demo heeft geen operationele sleutel, bridge, achtergrondwerk of terugval naar productie. Camera, echte bestanden, downloads en externe diensten blijven geblokkeerd; de webdemo biedt synthetische fixtures.
+
+Herhaald openen gebruikt een eenmalige procesgebonden WebView-opslaginstelling. Native widgetopdrachten staan alleen de vastgelegde actie/materiaalwaarden toe. In de operationele `RequestNotificationWorker` is uitsluitend de kanaalaanmaak beschermd met `if(Build.VERSION.SDK_INT>=26)`; Android 7 kent geen kanalen. Alle andere workerregels, `MainActivity`, bestaande widgets, tokens, verzoeken en vijftienminutenplanning blijven identiek aan 17. De echte worker-proloog wordt met veilige API-stubs op SDK24/25/26/36 getest, zonder netwerkverzoeken. Er is geen lintbaseline of foutonderdrukking.
+
+Validatie omvat JVM-tests, oorsprong-/intentcontroles, release-lint, de werkelijke ondertekende AAB-manifest/widgets/DEX en alle lokale webverwijzingen. `scripts/sync-web.mjs` kopieert ook de door CSS gebruikte workshopafbeelding en stopt bij een ontbrekende lokale verwijzing. De kandidaat wordt alleen ter beoordeling ondertekend met de bestaande sleutel. Geen automatische Play-upload, deployment of vervanging van openbare downloads. Widgets en meldingen zijn nog niet op een echt toestel/emulator getest.
+
 ### Openbare releasekandidaat 1.7.0 (17)
 
 Deze versie behoudt de beveiligde beheeromgeving en de achtergrondmeldingen van 1.6.1. Het startscherm biedt daarnaast een expliciete, afzonderlijke demonstratie voor gebruikers en de appbeoordeling. De demo draait in een eigen Android-proces en WebView-opslag, zonder beheersleutel, native widgetbridge of toegang tot de productieomgeving. Alle demo-verbindingen blijven beperkt tot het vaste HTTPS-reviewadres. SSL-fouten worden geweigerd; downloads, camera, locatie en externe navigatie zijn daar uitgeschakeld. De demonstratie is fictief en voert geen echte berichten of betalingen uit. De normale werkapp en de bestaande widgets blijven afzonderlijk beschikbaar.

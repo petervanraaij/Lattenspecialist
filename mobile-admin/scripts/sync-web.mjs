@@ -1,6 +1,7 @@
 import {cp, mkdir, readFile, writeFile} from 'node:fs/promises';
 import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {auditWebAssets} from './verify-web-assets.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(here, '..');
@@ -27,7 +28,7 @@ for (const file of ['tool-images.js','admin-dossiers.js','admin-dossiers.css','m
 for (const file of ['treatment-overview.js','treatment-overview.css']) await cp(join(siteRoot,file),join(webRoot,file));
 await cp(join(siteRoot,'admin-recovery.js'),join(webRoot,'admin-recovery.js'));
 for (const file of ['qrcode.js','html5-qrcode.min.js']) await cp(join(siteRoot,'vendor',file),join(webRoot,'vendor',file));
-for (const file of ['badge.webp', 'logo-main.webp', 'app-icon-192.png', 'app-icon-512.png']) {
+for (const file of ['badge.webp', 'logo-main.webp', 'hero-workshop.webp', 'app-icon-192.png', 'app-icon-512.png']) {
   await cp(join(siteRoot, 'images', file), join(webRoot, 'images', file));
 }
 
@@ -55,3 +56,4 @@ if(quickMaterial)window.dispatchEvent(new CustomEvent('lattenspecialist:new-requ
 console.log('Beheerbestanden voor de mobiele app zijn bijgewerkt.');
 
 await cp(join(siteRoot,'images/tools'),join(webRoot,'images/tools'),{recursive:true});
+console.log(JSON.stringify(auditWebAssets(webRoot)));
