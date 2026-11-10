@@ -60,3 +60,11 @@ Open `ios/App/App.xcodeproj` op een Mac met Xcode. Voor installatie via TestFlig
 - De beheercode wordt alleen lokaal op het toestel bewaard als **Onthoud op dit apparaat** is aangevinkt.
 - De app bevat geen Resend-, Cloudflare- of WhatsApp-geheimen.
 - Alle beheeracties lopen via HTTPS en vereisen de persoonlijke beheercode.
+
+## Aanvragen en werkorders (1.8.2)
+
+Tik op een aanvraagkaart om de details te openen. Klantgegevens en aanvullende afspraken kunnen worden aangepast. Met **Omzetten naar werkorder** krijgt dezelfde aanvraag een vast WO-nummer en klantcode. De status gaat naar voorbereiding; dit verstuurt geen klantbericht en bevestigt geen concrete brengafspraak. Materiaal, foto’s en historie blijven via het oorspronkelijke aanvraagnummer gekoppeld. Herhaald omzetten maakt geen tweede werkorder.
+
+Het opdrachtenoverzicht heeft filters voor open, nieuw, gepland, werkplaats, gereed en afgerond. Automatische en handmatige verversing behouden niet-opgeslagen invoer. Een versiestrijd blokkeert opslaan; via **Wijzigingen verwerpen en herladen** haal je bewust de laatste versie op. Nieuwe aanvragen blijven tijdens bewerken zichtbaar.
+
+Controle: `npm run test:orders:browser` (synthetische gegevens, geïsoleerde lokale database) en de bestaande worker-regressietests.
