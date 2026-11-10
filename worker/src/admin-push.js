@@ -76,7 +76,19 @@ export async function handleAdminPush(request,env,{owner,json,origin}){
     }
     if(request.method!=='POST')return json({message:'Niet toegestaan.'},405,origin);
     const text=await request.text();if(encoder.encode(text).length>7000)return json({message:'Te veel gegevens.'},413,origin);
-    const raw=JSON.parse(text),id=String(raw.deviceId||'');
+    const raw=JSON.parse(text);
+    if(path==='/api/admin/push/test'){
+      const key=String(raw.testKey||''),today=new Date().toISOString().slice(0,10).replace(/-/g,'');if(key!=='root-deviceids-testpush-'+today)return json({message:'Ongeldige testcode.'},400,origin);
+      const current=await epoch(env,db),devices=(await db.prepare('SELECT id FROM admin_push_devices WHERE enabled=1 AND credential_version=? AND registered_at>?').bind(current,Date.now()-86400000).all()).results;
+      if(devices.length!==1)return json({message:'Meld precies één telefoon aan voordat je een gerichte test stuurt.'},409,origin);
+      const suffix=(await hash(key)).slice(0,6).toUpperCase().replace(/0/g,'Z').replace(/1/g,'Y'),reference='LS-'+today.slice(2,6)+'-'+suffix,event='reservation:'+reference,now=Date.now();
+      await db.batch([db.prepare('INSERT OR IGNORE INTO admin_push_events(id,reference,created_at) VALUES(?,?,?)').bind(event,reference,now),db.prepare('INSERT OR IGNORE INTO admin_push_deliveries(event_id,device_id) SELECT ?,? WHERE changes()>0').bind(event,devices[0].id)]);
+      await deliverPushOutbox(env);
+      await db.prepare("UPDATE admin_push_deliveries SET state='uncertain',attempts=5 WHERE event_id=? AND device_id=? AND state IN ('pending','retry','sending')").bind(event,devices[0].id).run();
+      const delivery=await db.prepare('SELECT state,accepted_at FROM admin_push_deliveries WHERE event_id=? AND device_id=?').bind(event,devices[0].id).first();
+      return json({ok:true,state:delivery?.state||'unknown',acceptedAt:delivery?.accepted_at||null,message:'Eén gerichte test; provideracceptatie bewijst nog geen ontvangst.'},200,origin);
+    }
+    const id=String(raw.deviceId||'');
     if(!/^[a-f0-9-]{36}$/.test(id))return json({message:'Ongeldig toestel.'},400,origin);
     if(path==='/api/admin/push/unregister'){
       await db.prepare("UPDATE admin_push_devices SET enabled=0,token_ciphertext='',token_hash='' WHERE id=?").bind(id).run();return json({ok:true},200,origin);

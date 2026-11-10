@@ -71,6 +71,13 @@
   const valueOrDash = value => value ? escapeHtml(value) : '—';
   const customerStatusUrl = record => /^LS-[A-Z2-9]{6}$/.test(record.serviceCode || '') ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : '';
   const headers = () => ({Authorization:`Bearer ${token}`,'Content-Type':'application/json'});
+  const pushTest=document.createElement('button');pushTest.type='button';pushTest.className='btn';pushTest.textContent='Test telefoonmelding';
+  const pushTestResult=document.createElement('p');pushTestResult.setAttribute('role','status');
+  refreshButton.parentElement.append(pushTest,pushTestResult);
+  pushTest.addEventListener('click',async()=>{pushTest.disabled=true;pushTestResult.textContent='Test wordt gecontroleerd…';try{
+    const day=new Date().toISOString().slice(0,10).replace(/-/g,''),response=await fetch(endpoint+'/api/admin/push/test',{method:'POST',headers:headers(),body:JSON.stringify({testKey:'root-deviceids-testpush-'+day})}),result=await response.json();
+    if(!response.ok)throw new Error(result.message||'Test niet verstuurd.');pushTestResult.textContent=result.state==='accepted'?'Test door Google geaccepteerd. Controleer je telefoon.':'Teststatus: '+result.state+'. Niet opnieuw verzenden; controleer de verbinding.';
+  }catch(error){pushTestResult.textContent=error.message;}finally{pushTest.disabled=false;}});
   const showLoginStatus = message => { loginStatus.textContent = message; loginStatus.className = 'booking-status is-visible is-error'; };
   const suggestWax = record => {
     if (record.waxType && waxOptions.includes(record.waxType)) return record.waxType;
