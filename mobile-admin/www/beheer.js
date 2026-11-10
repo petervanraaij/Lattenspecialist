@@ -248,7 +248,7 @@
     const focused=list.contains(document.activeElement)?document.activeElement:null;
     const selection=focused&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd]:null;
     const workspaces=new Map([...list.querySelectorAll('.workorder-workspace')].map(host=>[host.closest('.admin-record').dataset.reference,host]));
-    const preserved=new Map([...list.querySelectorAll('.admin-record')].filter(card=>dirtyRequests.has(card.dataset.reference)).map(card=>[card.dataset.reference,card]));
+    const preserved=new Map([...list.querySelectorAll('.admin-record')].filter(card=>dirtyRequests.has(card.dataset.reference)||card.querySelector('.workorder-executor-dialog[open]')).map(card=>[card.dataset.reference,card]));
     const expanded=new Set([...list.querySelectorAll('.admin-record-details[open]')].map(detail=>detail.closest('.admin-record').dataset.reference));
     renderRequestAlert();
     const open = records.filter(record => !record.closedAt).length;
