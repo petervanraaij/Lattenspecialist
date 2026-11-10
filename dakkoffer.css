@@ -1,0 +1,20 @@
+.rental-shell{padding-top:48px;padding-bottom:64px}
+.rental-intro{max-width:840px;margin-bottom:36px}
+.rental-intro h1{font-size:clamp(2rem,4vw,3.1rem);line-height:1.15;margin:12px 0 18px}
+.rental-intro>p{font-size:1.05rem;line-height:1.7;margin:0 0 22px}
+.rental-contents{display:flex;flex-wrap:wrap;gap:10px 22px}
+.rental-contents a{color:#70531d;font-weight:700;text-underline-offset:4px}
+.rental-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:44px;align-items:start}
+.rental-details h2{font-size:1.35rem;line-height:1.3;margin:0 0 18px}
+.rental-details>section+section{padding-top:24px;margin-top:24px;border-top:1px solid #d8cbb1}
+.rental-details p{line-height:1.7}
+.rental-rates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 12px}
+.rental-rates>div{padding:16px 10px;background:#f4eee2;border:1px solid #e0d5bf;border-radius:10px}
+.rental-rates dt{font-size:.8rem;color:#625b50}
+.rental-rates dd{font-size:1.5rem;font-weight:800;margin:8px 0 0}
+.rental-price-note,.rental-terms{font-size:.82rem;color:#625b50}
+.rental-page .dakkoffer-rails h2{font-size:1.2rem}
+.rental-page .dakkoffer-specs{font-size:.9rem}
+.rental-page section[id]{scroll-margin-top:110px}
+.rental-page .main-nav [aria-current=page]{color:#d9b65e}
+@media(max-width:900px){.rental-layout{grid-template-columns:1fr;gap:24px}.rental-shell{padding-top:32px}.rental-intro{margin-bottom:28px}}
