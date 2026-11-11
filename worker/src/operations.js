@@ -1,6 +1,6 @@
 import {customerDossiers} from './customer-dossiers.js';
 import {centralHrm,centralHrmEnabled} from './hrm-bridge.js';
-import {ensureWorkflow,getWorkflow,materialPlans} from './inventory.js';
+import {ensureWorkflow,getWorkflow,materialPlans,definitionFor} from './inventory.js';
 const now = () => new Date().toISOString();
 const bearer = request => (request.headers.get('Authorization') || '').replace(/^Bearer /, '');
 const hex = bytes => Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
@@ -143,12 +143,70 @@ const materialView = row => ({
   qrValue:`https://lattenspecialist.nl/medewerkers.html#scan=${encodeURIComponent(row.scan_token)}`
 });
 
+const setPackages = {Koper:'wax_only',Brons:'file_only',Zilver:'wax_file',Goud:'gold',Platinum:'platinum'};
+async function editIssuedSet(db,id,raw,remove){
+  const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(id).first();
+  if(!material||material.is_training||material.internal_status==='material_removed')throw new OperationsError('Set niet gevonden.',404);
+  const record=await db.prepare('SELECT revision,payload FROM records WHERE reference=?').bind(material.reference).first();
+  if(!record||JSON.parse(record.payload).deletedAt)throw new OperationsError('Aanvraag niet gevonden.',404);
+  const packageName=clean(raw.package,30);
+  if(!remove&&!Object.hasOwn(setPackages,packageName))throw new OperationsError('Kies een geldig onderhoudspakket.');
+  if(!remove&&packageName===material.package_name)return {material:materialView(material)};
+  const options=JSON.parse(material.selected_options||'{}');
+  if(!remove){
+    const purchasedPremium=options.premiumFiling&&!options.premiumIncluded;
+    options.premiumIncluded=['Goud','Platinum'].includes(packageName);
+    options.premiumFiling=options.premiumIncluded||(packageName!=='Koper'&&Boolean(purchasedPremium));
+    if(packageName!=='Brons'&&!options.waxSku)options.waxSku='24057';
+  }
+  const next={...material,package_name:packageName,package_code:setPackages[packageName],selected_options:JSON.stringify(options),wax_type:material.wax_type||'BetaMix Red'};
+  const operation=crypto.randomUUID(),stamp=now();
+  const gate="EXISTS(SELECT 1 FROM material_events WHERE material_id=? AND json_extract(detail,'$.operation')=?)";
+  const statements=[
+    db.prepare(`UPDATE materials SET internal_status=?,package_name=?,package_code=?,selected_options=?,wax_type=?,updated_at=?
+      WHERE id=? AND is_training=0 AND internal_status<>'material_removed' AND updated_at=?
+        AND EXISTS(SELECT 1 FROM records WHERE reference=? AND revision=? AND json_extract(payload,'$.deletedAt') IS NULL)
+        AND NOT EXISTS(SELECT 1 FROM maintenance_step_sessions WHERE material_id=? AND ended_at IS NULL)
+        AND NOT EXISTS(SELECT 1 FROM work_sessions WHERE material_id=? AND ended_at IS NULL)
+      RETURNING *`).bind(remove?'material_removed':(['ready','delivered'].includes(material.internal_status)?'paused':material.internal_status),
+       remove?material.package_name:next.package_name,remove?material.package_code:next.package_code,
+       remove?material.selected_options:next.selected_options,remove?material.wax_type:next.wax_type,stamp,
+       id,material.updated_at,material.reference,record.revision,id,id),
+    db.prepare(`INSERT INTO material_events(material_id,actor,event_type,detail,created_at)
+      SELECT ?,'owner',?,?,? WHERE changes()>0`).bind(id,remove?'material_removed':'material_package_changed',
+       JSON.stringify({operation,previousPackage:material.package_name,package:remove?null:packageName}),stamp)
+  ];
+  if(!remove){
+    statements.push(db.prepare(`DELETE FROM maintenance_steps WHERE material_id=? AND status='pending'
+      AND started_at IS NULL AND NOT EXISTS(SELECT 1 FROM maintenance_step_sessions WHERE step_id=maintenance_steps.id)
+      AND NOT EXISTS(SELECT 1 FROM maintenance_measurements WHERE step_id=maintenance_steps.id)
+      AND ${gate}`).bind(id,id,operation));
+    for(const step of definitionFor(next)){
+      statements.push(db.prepare(`INSERT INTO maintenance_steps(id,material_id,step_order,step_code,title,instruction,procedure,required_items,created_at)
+        SELECT ?,?,coalesce((SELECT max(step_order) FROM maintenance_steps WHERE material_id=?),0)+1,?,?,?,?,?,?
+        WHERE ${gate} AND NOT EXISTS(SELECT 1 FROM maintenance_steps WHERE material_id=? AND step_code=?)`)
+        .bind(crypto.randomUUID(),id,id,step.code,step.title,step.instruction,step.procedure,JSON.stringify(step.requiredItems),stamp,id,operation,id,step.code));
+    }
+  }
+  statements.push(db.prepare(`UPDATE records SET revision=revision+1,updated_at=?,actor='owner',
+    payload=json_remove(json_set(payload,
+      '$.materialSourceAmount',coalesce(json_extract(payload,'$.materialSourceAmount'),json_extract(payload,'$.amount'),1),
+      '$.amount',CAST((SELECT count(*) FROM materials WHERE reference=records.reference AND internal_status<>'material_removed') AS TEXT),
+      '$.package',coalesce((SELECT CASE WHEN count(DISTINCT package_name)>1 THEN 'Meerdere pakketten'
+        ELSE max(package_name) END FROM materials WHERE reference=records.reference AND internal_status<>'material_removed'),'Geen actieve sets'),
+      '$.updatedAt',?), '$.priceQuote')
+    WHERE reference=? AND ${gate} RETURNING *`).bind(stamp,stamp,material.reference,id,operation));
+  const results=await db.batch(statements);
+  if(!results[0].results.length)throw new OperationsError('De set is gewijzigd of heeft een actieve werkstap. Pauzeer de werkstap en vernieuw de aanvraag.',409);
+  return {material:remove?null:materialView(results[0].results[0]),record:recordFromRow(results.at(-1).results[0])};
+}
+
 async function createMaterials(db, reference) {
   const row = await db.prepare('SELECT * FROM records WHERE reference=?').bind(reference).first();
   if (!row) throw new OperationsError('Aanvraag niet gevonden.',404);
-  const record = recordFromRow(row), plans=materialPlans(record);
-  await syncRecordCustomerStatus(db,reference,'Afspraak bevestigd',now());
+  const record = recordFromRow(row), plans=materialPlans({...record,amount:record.materialSourceAmount??record.amount});
   const existing = await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all();
+  if(!existing.results.length&&Number(record.currentStep||1)<=1)await syncRecordCustomerStatus(db,reference,'Afspraak bevestigd',now());
   const issued = new Set(existing.results.map(item => item.item_number));
   for (let number=1;number<=plans.length;number+=1) {
     if (issued.has(number)) continue;
@@ -160,7 +218,7 @@ async function createMaterials(db, reference) {
       db.prepare('INSERT INTO material_events(material_id,actor,event_type,created_at) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM materials WHERE id=?)').bind(id,'owner','label_created',created,id)
     ]);
   }
-  const materials=(await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all()).results;
+  const materials=(await db.prepare("SELECT * FROM materials WHERE reference=? AND internal_status<>'material_removed' ORDER BY item_number").bind(reference).all()).results;
   for(const material of materials)await ensureWorkflow(db,material);
   return materials.map(materialView);
 }
@@ -387,7 +445,12 @@ export async function handleOperations(request,env,{owner,json,origin}) {
       if(path.startsWith('/api/admin/hrm'))return json(await adminHrm(request,env,db,path),200,origin);
       if(path==='/api/admin/operations/dashboard'&&request.method==='GET')return json(await dashboard(db),200,origin);
       if(path==='/api/admin/operations/materials'&&request.method==='POST'){const raw=await body(request);return json({materials:await createMaterials(db,clean(raw.reference,30))},201,origin);}
-      if(path==='/api/admin/operations/materials'&&request.method==='GET'){const reference=clean(new URL(request.url).searchParams.get('reference'),30);const rows=await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all();return json({materials:rows.results.map(materialView)},200,origin);}
+      if(path==='/api/admin/operations/materials'&&request.method==='GET'){const reference=clean(new URL(request.url).searchParams.get('reference'),30);const rows=await db.prepare("SELECT * FROM materials WHERE reference=? AND internal_status<>'material_removed' ORDER BY item_number").bind(reference).all();return json({materials:rows.results.map(materialView)},200,origin);}
+      const setRoute = path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/set$/);
+      if (setRoute && ['PATCH','POST'].includes(request.method)) {
+        const raw = await body(request);
+        return json(await editIssuedSet(db,setRoute[1],raw,request.method==='POST'),200,origin);
+      }
       const materialCode = path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/code$/);
       if (materialCode && request.method==='PATCH') {
         const raw = await body(request);
@@ -397,7 +460,7 @@ export async function handleOperations(request,env,{owner,json,origin}) {
         const id = materialCode[1];
         const result = await db.batch([
           db.prepare(`UPDATE materials SET display_code=?1,updated_at=?2
-            WHERE id=?3 AND display_code=?4 AND is_training=0
+            WHERE id=?3 AND display_code=?4 AND is_training=0 AND internal_status<>'material_removed'
               AND NOT EXISTS(SELECT 1 FROM materials WHERE display_code=?1 AND id<>?3)
             RETURNING *`).bind(code,now(),id,previous),
           db.prepare(`INSERT INTO material_events(material_id,actor,event_type,detail,created_at)
@@ -409,10 +472,10 @@ export async function handleOperations(request,env,{owner,json,origin}) {
         return json({material:materialView(updated)},200,origin);
       }
       const adminScan=path.match(/^\/api\/admin\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6})$/i);
-      if(adminScan&&request.method==='GET'){const key=adminScan[1],material=await db.prepare('SELECT * FROM materials WHERE scan_token=? OR display_code=?').bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),record,workflow:await getWorkflow(db,material)},200,origin);}
+      if(adminScan&&request.method==='GET'){const key=adminScan[1],material=await db.prepare("SELECT * FROM materials WHERE (scan_token=? OR display_code=?) AND internal_status<>'material_removed'").bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),record,workflow:await getWorkflow(db,material)},200,origin);}
       const adminAction=path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/action$/);
       if(adminAction&&request.method==='POST'){
-        const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(adminAction[1]).first();if(!material)throw new OperationsError('Materiaal niet gevonden.',404);const raw=await body(request),action=clean(raw.action,40);if(!['pickup_depart','receive','ready','delivery_depart','delivered'].includes(action))throw new OperationsError('Gebruik voor onderhoud het stappenplan.');
+        const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(adminAction[1]).first();if(!material||material.internal_status==='material_removed')throw new OperationsError('Materiaal niet gevonden.',404);const raw=await body(request),action=clean(raw.action,40);if(!['pickup_depart','receive','ready','delivery_depart','delivered'].includes(action))throw new OperationsError('Gebruik voor onderhoud het stappenplan.');
         if(action==='ready'&&raw.overrideWorkflow!==true){await ensureWorkflow(db,material);const pending=await db.prepare("SELECT COUNT(*) amount FROM maintenance_steps WHERE material_id=? AND status NOT IN ('completed','skipped')").bind(material.id).first();if(Number(pending?.amount)>0)throw new OperationsError('Rond eerst alle werkstappen af. Gebruik alleen bij een bewuste beheer-correctie de override.',409);}
         return json({material:await workAction(db,material,action,{id:'owner',env})},200,origin);
       }
@@ -439,14 +502,14 @@ export async function handleOperations(request,env,{owner,json,origin}) {
       if(path==='/api/team/operations/materials'&&request.method==='GET'){
         const reference=clean(new URL(request.url).searchParams.get('reference'),30),record=await db.prepare('SELECT assigned_to,payload FROM records WHERE reference=? AND assigned_to=?').bind(reference,member.id).first();
         if(!record||JSON.parse(record.payload).closedAt)throw new OperationsError('Werkopdracht niet gevonden.',404);
-        const rows=await db.prepare('SELECT * FROM materials WHERE reference=? AND (assigned_to=? OR assigned_to IS NULL) AND is_training=0 ORDER BY item_number').bind(reference,member.id).all();
+        const rows=await db.prepare("SELECT * FROM materials WHERE reference=? AND (assigned_to=? OR assigned_to IS NULL) AND is_training=0 AND internal_status<>'material_removed' ORDER BY item_number").bind(reference,member.id).all();
         return json({materials:rows.results.map(materialView)},200,origin);
       }
       const scan=path.match(/^\/api\/team\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6})$/i);
-      if(scan&&request.method==='GET'){const key=scan[1],material=await db.prepare('SELECT * FROM materials WHERE scan_token=? OR display_code=?').bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);if(material.assigned_to&&material.assigned_to!==member.id)throw new OperationsError('Deze opdracht is aan een andere medewerker toegewezen.',403);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),work:{customerName:material.is_training?'Oefenklant':clean(record?.name,100),address:clean(record?.address,240),conditions:clean(record?.conditions,100),notes:clean(record?.notes,500),package:clean(material.package_name||record?.package,100),waxType:clean(material.wax_type||record?.waxType||'',100)},workflow:await getWorkflow(db,material)},200,origin);}
+      if(scan&&request.method==='GET'){const key=scan[1],material=await db.prepare("SELECT * FROM materials WHERE (scan_token=? OR display_code=?) AND internal_status<>'material_removed'").bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);if(material.assigned_to&&material.assigned_to!==member.id)throw new OperationsError('Deze opdracht is aan een andere medewerker toegewezen.',403);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),work:{customerName:material.is_training?'Oefenklant':clean(record?.name,100),address:clean(record?.address,240),conditions:clean(record?.conditions,100),notes:clean(record?.notes,500),package:clean(material.package_name||record?.package,100),waxType:clean(material.wax_type||record?.waxType||'',100)},workflow:await getWorkflow(db,material)},200,origin);}
       const action=path.match(/^\/api\/team\/operations\/materials\/([a-f0-9-]{36})\/action$/);
       if(action&&request.method==='POST'){
-        const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(action[1]).first();if(!material)throw new OperationsError('Materiaal niet gevonden.',404);if(material.assigned_to&&material.assigned_to!==member.id)throw new OperationsError('Deze opdracht is aan een andere medewerker toegewezen.',403);const raw=await body(request),requested=clean(raw.action,40);if(!['pickup_depart','receive','delivery_depart','delivered'].includes(requested))throw new OperationsError('Onderhoud en gereedmelden lopen uitsluitend via het stappenplan.',403);return json({material:await workAction(db,material,requested,{...member,env})},200,origin);
+        const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(action[1]).first();if(!material||material.internal_status==='material_removed')throw new OperationsError('Materiaal niet gevonden.',404);if(material.assigned_to&&material.assigned_to!==member.id)throw new OperationsError('Deze opdracht is aan een andere medewerker toegewezen.',403);const raw=await body(request),requested=clean(raw.action,40);if(!['pickup_depart','receive','delivery_depart','delivered'].includes(requested))throw new OperationsError('Onderhoud en gereedmelden lopen uitsluitend via het stappenplan.',403);return json({material:await workAction(db,material,requested,{...member,env})},200,origin);
       }
       throw new OperationsError('Niet gevonden.',404);
     }

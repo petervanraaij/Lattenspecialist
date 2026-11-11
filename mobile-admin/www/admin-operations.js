@@ -127,13 +127,35 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
     <input data-material-code value="${escape(item.displayCode)}" maxlength="10" autocapitalize="characters" autocomplete="off"></label>
     <button type="button" class="btn btn-dark" data-save-material-code>Code vervangen</button>
     <button type="button" class="btn btn-dark" data-owner-workplan="${escape(item.id)}">Bekijk onderhoudsplan</button>
+    <label>Pakket <select data-set-package>
+    ${[...new Set([item.package,'Koper','Brons','Zilver','Goud','Platinum'])].map(name=>`<option${name===item.package?' selected':''}>${escape(name)}</option>`).join('')}
+    </select></label>
+    <button type="button" class="btn btn-dark" data-save-set-package>Pakket wijzigen</button>
+    <button type="button" class="btn btn-dark" data-remove-set>Set verwijderen</button>
     <p data-code-message role="status"></p><div data-owner-workplan-result="${escape(item.id)}"></div>
-   </div>`).join('')}</div><button type="button" class="btn btn-gold print-labels">Print ${result.materials.length} sticker(s)</button>`;
-   target.querySelector('.print-labels').onclick=()=>printLabels(result.materials);
+   </div>`).join('')}</div><button type="button" class="btn btn-gold print-labels">Print ${result.materials.length} sticker(s)</button>${result.materials.length?'':'<p>Geen actieve sets.</p>'}`;
+   const print=target.querySelector('.print-labels');
+   print.hidden=!result.materials.length;print.onclick=()=>printLabels(result.materials);
    [...target.querySelectorAll('[data-material-code-row]')].forEach((row,index)=>{
     const input=row.querySelector('[data-material-code]'),save=row.querySelector('[data-save-material-code]'),message=row.querySelector('[data-code-message]');
     input.addEventListener('input',()=>{input.value=input.value.toUpperCase().replace(/\s+/g,'');});
     input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();save.click();}});
+    async function changeSet(remove){
+     if(card.hasAttribute('data-unsaved')){message.textContent='Sla eerst je andere wijzigingen aan de aanvraag op.';return;}
+     const item=result.materials[index],packageName=row.querySelector('[data-set-package]').value;
+     if(!remove&&packageName===item.package)return;
+     if(remove&&!confirm(`Set ${item.itemNumber} (${item.displayCode}) verwijderen uit deze aanvraag?`))return;
+     const controls=[...row.querySelectorAll('button')];
+     controls.forEach(control=>control.disabled=true);
+     message.textContent=remove?'Set verwijderen…':'Pakket opslaan…';
+     try{
+      const data=await api('/api/admin/operations/materials/'+item.id+'/set',{method:remove?'POST':'PATCH',body:JSON.stringify({package:packageName})});
+      if(data.record)card.dispatchEvent(new CustomEvent('ls-issued-set-changed',{bubbles:true,detail:data.record}));
+     }catch(error){message.textContent=error.message;}
+     finally{controls.forEach(control=>control.disabled=false);}
+    }
+    row.querySelector('[data-save-set-package]').onclick=()=>changeSet(false);
+    row.querySelector('[data-remove-set]').onclick=()=>changeSet(true);
     save.onclick=async()=>{
      const item=result.materials[index];
      if(input.value===item.displayCode)return;
