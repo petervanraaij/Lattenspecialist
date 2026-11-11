@@ -1,3 +1,4 @@
+import {requestCustomerStatements} from './customer-dossiers.js';
 // Personal access keys are random, stored only as hashes, and never included in app builds.
 export class TeamError extends Error { constructor(message, status=400) { super(message); this.status=status; } }
 const now = () => new Date().toISOString();
@@ -18,7 +19,9 @@ export async function mergeTeamRecords(records,env) {
 export async function ensureTeamRecord(record,env) {
  const db=dbFor(env);
  const {revision,assignedTo,...payload}=record;
- await db.prepare('INSERT OR IGNORE INTO records(reference,payload,updated_at) VALUES(?,?,?)').bind(record.reference,JSON.stringify(payload),now()).run();
+ const insert=db.prepare('INSERT OR IGNORE INTO records(reference,payload,updated_at) VALUES(?,?,?)').bind(record.reference,JSON.stringify(payload),now());
+ const customer=await requestCustomerStatements(db,payload);
+ if(customer.length)await db.batch([insert,...customer]);else await insert.run();
  return teamRecord(record.reference,env);
 }
 export async function saveOwnerRecord(record,raw,env) {
