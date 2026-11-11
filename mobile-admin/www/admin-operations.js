@@ -153,7 +153,13 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    }
    const format=new Intl.NumberFormat('nl-NL',{maximumFractionDigits:3});
    const usage=[...used.values()].map(entry=>`<li>${escape(entry.name)} · ${format.format(entry.quantity)} ${escape(entry.unit)}</li>`).join('');
-   target.innerHTML=`<h4>Geregistreerd verbruik</h4>${usage?'<ul>'+usage+'</ul>':'<p>Nog geen verbruik geregistreerd voor deze set.</p>'}<details class="admin-request-fields"><summary>Werkstappen en instructies</summary>${window.LSMaintenanceGuide?.preview(data)||'De werkinstructies konden niet worden weergegeven.'}</details>`;
+   const completed=(data.workflow?.steps||[]).filter(step=>step.status==='completed');
+   const stepList=completed.map(step=>{
+    const duration=step.durationSeconds>0?format.format(step.durationSeconds/60)+' min':'';
+    const materials=(step.usage||[]).map(entry=>escape(entry.name)+' '+format.format(entry.quantity)+' '+escape(entry.unit));
+    return `<li><strong>${escape(step.title)}</strong>${[duration,...materials].map(detail=>' · '+detail).join('')}</li>`;
+   }).join('');
+   target.innerHTML=`${stepList?`<h4>Uitgevoerde stappen</h4><ul>${stepList}</ul>`: ''}<h4>Geregistreerd verbruik</h4>${usage?'<ul>'+usage+'</ul>':'<p>Nog geen verbruik geregistreerd voor deze set.</p>'}<details class="admin-request-fields"><summary>Werkstappen en instructies</summary>${window.LSMaintenanceGuide?.preview(data)||'De werkinstructies konden niet worden weergegeven.'}</details>`;
    const photos=document.createElement('section'),dossier=document.createElement('section');
    photos.className='dossier-section';dossier.className='dossier-section';
    target.append(photos,dossier);

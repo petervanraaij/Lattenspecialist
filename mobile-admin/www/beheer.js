@@ -175,6 +175,17 @@
     return work ? `${name} – ${work}` : (name||'');
   };
 
+  function requestNotesMarkup(record){
+    const notes=record.notes||'';
+    const marker=/^Uitgevoerd:[ \t]*/m;
+    const heading=record.service==='Onderhoud'?marker.exec(notes):null;
+    const customerNote=(heading?notes.slice(0,heading.index):notes).trim();
+    const work=heading?notes.slice(heading.index+heading[0].length).trim():'';
+    const bullets=work.split(/\r?\n/).map(line=>line.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+    return `
+      ${customerNote?`<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(customerNote)}</p></div>`:''}
+      ${bullets.length?`<section class="admin-customer-note"><b>Uitgevoerd onderhoud</b><ul>${bullets.map(line=>`<li>${escapeHtml(line)}</li>`).join('')}</ul></section>`:''}`;
+  }
   const warmCleaningLabel = record => {
     const selection = window.LATTEN_SELECTION?.parse(record.maintenanceSelection);
     const count = Math.max(Number(record.firstWaxCount)||0,selection?window.LATTEN_SELECTION.cleaningCount(selection):0);
@@ -212,7 +223,7 @@
       <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(packageLabel(record.package))}</span>${record.service==='Onderhoud'&&Number(record.currentStep||1)===1?`<span>Warme waxreiniging: ${escapeHtml(warmCleaningLabel(record))}</span>`:''}<small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span>${record.service==='Onderhoud'&&!closed?'<button type="button" class="btn btn-gold" data-receive-label>In ontvangst nemen</button>':''}${record.service==='Onderhoud'?'<button type="button" class="btn btn-dark" data-open-intake-photos>Innamefoto’s</button>':''}<button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
       ${Number(record.waxstickCount)>0?`<section class="admin-payment admin-waxstick" data-waxstick-reference="${escapeHtml(record.reference)}"><h3>Meebesteld · ${Number(record.waxstickCount)}× Holmenkol Natural Skiwax Stick 50 g</h3><p>€ 17,50 per stuk · bij deze opdracht meegeven.</p><p class="waxstick-handover-status" role="status" aria-live="polite">Meegeefstatus laden…</p><button class="btn btn-gold waxstick-handover" type="button" disabled>Meegeven bevestigen</button><button class="btn btn-dark waxstick-invoice" type="button">Factuur maken in Pierfinity →</button><button class="btn btn-dark waxstick-reload" type="button" hidden>Status opnieuw laden</button></section>`:''}
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-grid">
-        <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}<div data-request-workplans></div>
+        <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${requestNotesMarkup(record)}<div data-request-workplans></div>
           <details class="admin-request-fields team-history"><summary>Werklogboek</summary><div class="team-audit"></div></details>
         </div>
         <form class="admin-update-form">
