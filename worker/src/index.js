@@ -312,6 +312,17 @@ const updateReservation = async (reference, raw, env) => {
   if (moveToWorkshop && (record.service !== 'Onderhoud' || record.closedAt || Number(record.currentStep) !== 3)) {
     throw new TeamError('Alle sets moeten in ontvangst zijn genomen voordat je de aanvraag doorzet.',409);
   }
+  if (moveToWorkshop && env.LATTENSPECIALIST_TEAM_DB) {
+    const outstanding = await env.LATTENSPECIALIST_TEAM_DB.prepare(`
+      SELECT 1 FROM materials m
+      WHERE m.reference=? AND m.is_training=0 AND m.internal_status<>'material_removed'
+        AND (m.received_at IS NULL OR NOT EXISTS (
+          SELECT 1 FROM maintenance_steps s
+          WHERE s.material_id=m.id AND s.step_code='inspection' AND s.status='completed'
+        ))
+      LIMIT 1`).bind(record.reference).first();
+    if (outstanding) throw new TeamError('Rond bij In ontvangst eerst de inspectie van iedere ontvangen set af.',409);
+  }
   const converting = moveToWorkshop || raw.convertToWorkOrder === true;
   if (converting && (record.service !== 'Onderhoud' || record.closedAt)) throw new ValidationError('Alleen een open onderhoudsaanvraag kan een werkorder worden.');
   const currentStep = Math.max(converting ? 2 : 1, Math.min(STATUS_STEPS.length, (moveToWorkshop ? 4 : Number(raw.currentStep)) || Number(record.currentStep) || 1));
