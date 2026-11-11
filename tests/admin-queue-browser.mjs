@@ -116,5 +116,32 @@ try{
   assert.equal((await fixture.call('/api/status/LS-PQR235')).status,404);
  });
  await scenario('Handmatige aanvraag bewaart gemengde pakketten en extra werk zonder haal- en brengservice',async()=>{await page.locator('#newAdminRequest').click();const form=page.locator('#manualRequestForm');await form.waitFor();await form.getByLabel('Naam',{exact:true}).fill('Fictieve gemengde aanvraag');await form.getByLabel('Telefoonnummer',{exact:true}).fill('0612345678');const prefix=await form.locator('#manualServicePrefix').textContent();assert.match(prefix,/^LS-\d{4}-$/);await form.locator('[name=serviceCodeSuffix]').fill('ab0123');assert.equal(await form.locator('[name=serviceCodeSuffix]').inputValue(),'AB0123');const gold=form.locator('[data-manual-package=goud]');if(!await gold.locator('[data-count=s]').isVisible())await gold.locator('summary').click();await gold.locator('[data-count=s]').fill('1');await gold.locator('[data-count=b]').fill('1');await gold.locator('[data-count=d]').fill('1');await gold.locator('[data-count=u]').check();const extra=form.locator('[data-manual-extra=repair]');await extra.locator('input').fill('1');assert.equal(await form.locator('[name=logistics] option').count(),1);assert.equal(await form.locator('[name=logistics]').inputValue(), 'Zelf brengen en zelf ophalen');await page.setViewportSize({width:390,height:844});await fits();await form.getByRole('button',{name:'Aanvraag opslaan',exact:true}).click();await form.waitFor({state:'hidden'});const row=fixture.sql.prepare("SELECT payload FROM records WHERE json_extract(payload,'$.name')=?").get('Fictieve gemengde aanvraag'),record=JSON.parse(row.payload),choice=JSON.parse(record.maintenanceSelection);assert.equal(record.serviceCode,prefix+'AB0123');assert.equal((await fixture.call('/api/status/'+record.serviceCode)).status,200);assert.equal(choice.p.goud.s,1);assert.equal(choice.p.goud.b,1);assert.equal(choice.p.goud.d,1);assert.equal(choice.p.goud.u,true);assert.equal(choice.e.repair.q,1);assert.equal(record.logistics,'Zelf brengen en zelf ophalen');assert.match(record.urgent,/Ja/);await page.locator('#newAdminRequest').click();await form.getByLabel('Naam',{exact:true}).fill('Fictieve dubbele code');await form.getByLabel('Telefoonnummer',{exact:true}).fill('0612345678');await form.locator('[name=serviceCodeSuffix]').fill('AB0123');if(!await gold.locator('[data-count=s]').isVisible())await gold.locator('summary').click();await gold.locator('[data-count=s]').fill('1');await form.getByRole('button',{name:'Aanvraag opslaan',exact:true}).click();await form.getByText('Deze servicecode is al in gebruik.',{exact:true}).waitFor();assert.equal(fixture.sql.prepare("SELECT count(*) AS n FROM records WHERE json_extract(payload,'$.name')=?").get('Fictieve dubbele code').n,0);await form.locator('.manual-request-cancel').click();});
+ await scenario('Single-ski warm cleaning opens a training work order and can be removed with confirmation',async()=>{
+  await page.locator('#adminTabs [data-tab=workplace]').click();
+  const form=page.locator('#practiceForm');
+  await form.locator('[name=executionMemberId]').selectOption(fixture.member.id);
+  await form.locator('[name=kind]').selectOption('single-ski');
+  await page.getByRole('button',{name:'Warm reinigen oefenen',exact:true}).click();
+  await form.locator('button[type=submit]').click();
+  await page.getByRole('heading',{name:/Oefenopdracht OEF-/}).waitFor();
+  assert.equal(await page.locator('#practiceResult .workflow-step').count(),1);
+  const bench=page.locator('#practiceResult .workflow-shell');
+  assert.match(await bench.textContent(),/Ski \(één\)/);
+  const id=await bench.getAttribute('data-material-id');
+  const record=fixture.sql.prepare('SELECT kind,is_training FROM materials WHERE id=?').get(id);
+  assert.equal(record.kind,'Ski (één)');
+  assert.equal(record.is_training,1);
+  assert.match(fixture.sql.prepare('SELECT required_items FROM maintenance_steps WHERE material_id=?').get(id).required_items,/24101/);
+  const remove=page.locator('[data-remove-practice="'+id+'"]');
+  await remove.click();
+  const dialog=page.getByRole('dialog',{name:'Oefening verwijderen?'});
+  await dialog.getByRole('button',{name:'Annuleren'}).click();
+  assert.equal(await remove.isVisible(),true);
+  await remove.click();
+  await dialog.getByRole('button',{name:'Verwijderen',exact:true}).click();
+  await page.getByText('Oefening verwijderd.',{exact:true}).waitFor();
+  assert.equal(await remove.count(),0);
+  assert.equal(await bench.count(),0);
+ });
  assert.deepEqual(errors,[]);console.log(`${passed} queue scenarios passed.`);
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));fixture?.close();}

@@ -85,6 +85,7 @@ function stripCosts(value){if(Array.isArray(value))return value.map(stripCosts);
 export function workspaceAllowed(path,method){
  if(['/api/admin/operations/workplace/planning','/api/admin/operations/workplace/availability'].includes(path)&&['GET','PATCH'].includes(method))return true;
  if(['/api/admin/workplace/warehouse','/api/admin/workplace/practice'].includes(path)&&method==='GET')return true;
+ if(method==='POST'&&/^\/api\/admin\/workplace\/practice\/[a-f0-9-]{36}\/remove$/.test(path))return true;
  if(['/api/admin/workplace/practice','/api/admin/workplace/warehouse/pick'].includes(path)&&method==='POST')return true;
  if(method==='POST'&&['/api/admin/push/register','/api/admin/push/unregister','/api/admin/push/received'].includes(path))return true;
  if(method==='GET'&&['/api/admin/reservations','/api/admin/team/members','/api/admin/availability','/api/admin/inventory/guides'].includes(path))return true;
