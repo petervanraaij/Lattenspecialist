@@ -207,12 +207,16 @@
       </article>`;
     }
     const currentStep = Math.max(1,Math.min(steps.length,Number(record.currentStep) || 1));
-    const details = serviceDetails(record).filter(([,value]) => value).map(([label,value]) => {
-      if(label==='Materiaal'&&record.service==='Onderhoud'){
-        return `<button type="button" class="admin-edit-material" data-edit-material><b>Materiaal</b>${escapeHtml(value)} <small>Bewerken →</small></button>`;
-      }
-      return `<span><b>${escapeHtml(label)}</b>${escapeHtml(value)}</span>`;
-    }).join('');
+    const overviewFields=[
+      ...serviceDetails(record),
+      ['Voortgang', record.status || steps[currentStep-1]],
+      ['Servicecode voor klant', record.serviceCode],
+      ['Wax voor deze beurt', record.waxType],
+      ['Verwacht klaar', record.expectedReady ? formatDate(record.expectedReady) : ''],
+      ['Bericht voor klant', record.note]
+    ];
+    const details=overviewFields.filter(([,value])=>value).map(([label,value])=>
+      `<span><b>${escapeHtml(label)}</b>${escapeHtml(value)}</span>`).join('');
     const stepOptions = steps.map((label,index) => `<option value="${index+1}"${index+1 === currentStep ? ' selected' : ''}>${index+1}. ${escapeHtml(label)}</option>`).join('');
     const wax = suggestWax(record);
     const waxChoices = waxOptions.map(option => `<option${option === wax ? ' selected' : ''}>${escapeHtml(option)}</option>`).join('');
@@ -222,10 +226,12 @@
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-stage="${recordStage(record)}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
       <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(packageLabel(record.package))}</span>${record.service==='Onderhoud'&&Number(record.currentStep||1)===1?`<span>Warme waxreiniging: ${escapeHtml(warmCleaningLabel(record))}</span>`:''}<small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span>${record.service==='Onderhoud'&&!closed?'<button type="button" class="btn btn-gold" data-receive-label>In ontvangst nemen</button>':''}${record.service==='Onderhoud'?'<button type="button" class="btn btn-dark" data-open-intake-photos>Innamefoto’s</button>':''}<button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
       ${Number(record.waxstickCount)>0?`<section class="admin-payment admin-waxstick" data-waxstick-reference="${escapeHtml(record.reference)}"><h3>Meebesteld · ${Number(record.waxstickCount)}× Holmenkol Natural Skiwax Stick 50 g</h3><p>€ 17,50 per stuk · bij deze opdracht meegeven.</p><p class="waxstick-handover-status" role="status" aria-live="polite">Meegeefstatus laden…</p><button class="btn btn-gold waxstick-handover" type="button" disabled>Meegeven bevestigen</button><button class="btn btn-dark waxstick-invoice" type="button">Factuur maken in Pierfinity →</button><button class="btn btn-dark waxstick-reload" type="button" hidden>Status opnieuw laden</button></section>`:''}
-      <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-grid">
-        <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${requestNotesMarkup(record)}<div data-request-workplans></div>
+      <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-content">
+        <div class="admin-save-actions"><button type="button" class="btn btn-dark" data-edit-request aria-expanded="false" aria-controls="edit-request-${escapeHtml(record.reference)}">Bewerken</button>${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}</div>
+        <div class="admin-info"><h3>Contact</h3><p><strong>${valueOrDash(record.name)}</strong><br><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${requestNotesMarkup(record)}<div data-request-workplans></div>
           <details class="admin-request-fields team-history"><summary>Werklogboek</summary><div class="team-audit"></div></details>
         </div>
+        <div id="edit-request-${escapeHtml(record.reference)}" data-request-editor hidden>
         <form class="admin-update-form">
           <h3>${record.workOrderNumber?'Werkorder '+escapeHtml(record.workOrderNumber):'Aanvraag bewerken'}</h3>
           ${record.workOrderNumber?`<p>Aangemaakt op ${escapeHtml(formatDateTime(record.workOrderCreatedAt))} · aanvraag ${escapeHtml(record.reference)}</p>`:''}
@@ -254,7 +260,6 @@
           ${!record.workOrderNumber&&record.service==='Onderhoud'&&!closed?'<p>Controleer de aanvraag en wijs het werk eventueel toe. Omzetten maakt één gekoppelde werkorder en een klantcode aan. Er wordt geen klantbericht verstuurd.</p><button class="btn btn-gold" type="submit" data-action="workorder">Omzetten naar werkorder</button>':''}
           <label><span>Toegewezen medewerker</span><select name="assignedTo">${window.LattenspecialistTeam?.options(record.assignedTo) || '<option value="">Nog niet toegewezen</option>'}</select></label>
           ${record.workNote ? `<div class="team-work-note"><b>Werknotitie medewerker</b><p>${escapeHtml(record.workNote)}</p></div>` : ''}
-          ${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}
 
           <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Bijv. LS-ABC234" maxlength="24" autocapitalize="characters" autocomplete="off" spellcheck="false" pattern="(?:(?:LS-)?[A-Z2-9]{6}|LS-[0-9]{4}-[A-Z0-9]{6})" aria-describedby="service-code-format-${escapeHtml(record.reference)}"><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
           ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan + klant berichten” gebeurt dit automatisch.</p>'}
@@ -270,6 +275,7 @@
           <button class="admin-close-button" type="submit" data-action="close">${closed ? 'Aanvraag opnieuw openen' : 'Aanvraag afmelden'}</button>
           <div class="admin-record-message" role="status" aria-live="polite"></div>
         </form>
+        </div>
       </div></details>
     </article>`;
   };
@@ -330,6 +336,7 @@
     }
     const preserved=new Map([...list.querySelectorAll('.admin-record')].filter(card=>dirtyRequests.has(card.dataset.reference)||card.querySelector('.workorder-executor-dialog[open]')).map(card=>[card.dataset.reference,card]));
     const expanded=new Set([...list.querySelectorAll('.admin-record-details[open]')].map(detail=>detail.closest('.admin-record').dataset.reference));
+    const editing=new Set([...list.querySelectorAll('[data-request-editor]:not([hidden])')].map(editor=>editor.closest('.admin-record').dataset.reference));
     const open = records.filter(record => !record.closedAt).length;
     const active = records.filter(record => recordStage(record)==='work').length;
     const withoutCode = records.filter(record => !record.closedAt && !record.serviceCode).length;
@@ -343,14 +350,31 @@
         const previous=old.querySelector(selector),updated=card.querySelector(selector);
         if(previous&&updated)previous.replaceWith(updated);
       }
+      setRequestEditing(old,editing.has(card.dataset.reference));
       card.replaceWith(old);
-    }else{if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
+    }else{if(editing.has(card.dataset.reference))setRequestEditing(card,true);if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
     for(const detail of list.querySelectorAll('.admin-record-details'))detail.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(detail.open));
     list.querySelectorAll('[data-waxstick-reference]').forEach(panel=>void loadWaxstickHandover(panel));
     applySearch();
     if(focused?.isConnected){focused.focus({preventScroll:true});if(selection)focused.setSelectionRange(...selection);}
   };
 
+  function setRequestEditing(card,editing){
+    const editor=card.querySelector('[data-request-editor]');
+    const toggle=card.querySelector('[data-edit-request]');
+    if(!editor||!toggle)return;
+    editor.hidden=!editing;
+    card.querySelector('.admin-info').hidden=editing;
+    toggle.textContent=editing?'Terug naar overzicht':'Bewerken';
+    toggle.setAttribute('aria-expanded',String(editing));
+  }
+
+  list.addEventListener('click',event=>{
+    const toggle=event.target.closest('[data-edit-request]');
+    if(!toggle)return;
+    const card=toggle.closest('.admin-record');
+    setRequestEditing(card,card.querySelector('[data-request-editor]').hidden);
+  });
   list.addEventListener('toggle',event=>{if(event.target.matches('.admin-record-details'))event.target.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(event.target.open));},true);
   list.addEventListener('click',event=>{const button=event.target.closest('.admin-open-request');if(button){const detail=button.closest('.admin-record').querySelector('.admin-record-details');detail.open=!detail.open;button.setAttribute('aria-expanded',String(detail.open));}});
   const trashDialog = document.createElement('dialog');
@@ -604,17 +628,6 @@
     maintenanceEditors.set(details,state);
     details.querySelector('.edit-maintenance-options').addEventListener('input',()=>{state.changed=true;});
   },true);
-
-  list.addEventListener('click',event=>{
-    const trigger=event.target.closest('[data-edit-material]');
-    if(!trigger)return;
-    const editor=trigger.closest('.admin-record').querySelector('[data-edit-maintenance]');
-    if(!editor)return;
-    editor.open=true;
-    editor.scrollIntoView({block:'start'});
-    const count=editor.querySelector('[data-ski-count]');
-    count.focus({preventScroll:true});count.select();
-  });
 
   list.addEventListener('keydown',event=>{
     if(event.key!=='Enter'||!event.target.matches('[data-ski-count]'))return;

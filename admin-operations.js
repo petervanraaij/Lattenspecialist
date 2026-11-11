@@ -135,6 +135,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    panel.append(summary,target);
    if(previous.parentElement===host)previous.remove();
    host.append(panel);
+   if(host.closest('.admin-info')?.hidden)card.querySelector('[data-edit-request]')?.click();
    summary.scrollIntoView({block:'nearest'});
   }
   button.disabled=true;
