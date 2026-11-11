@@ -121,9 +121,47 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
  async function adminAction(button){const card=button.closest('.admin-scan-card');button.disabled=true;try{await api(`/api/admin/operations/materials/${card.dataset.id}/action`,{method:'POST',body:JSON.stringify({action:button.dataset.adminAction})});await openAdminScan(card.dataset.token);loadDashboard();}catch(error){button.disabled=false;card.insertAdjacentHTML('beforeend',`<p class="admin-record-message is-error">${escape(error.message)}</p>`);}}
  async function openOwnerWorkplan(button){
   const id=button.dataset.ownerWorkplan;if(!/^[a-f0-9-]{36}$/.test(id))return;
-  const target=(button.closest('.admin-record')||button.parentElement).querySelector('[data-owner-workplan-result="'+id+'"]');if(!target)return;if(target.closest('form'))button.closest('.admin-record').append(target);
-  button.disabled=true;target.textContent='Onderhoudsplan laden…';
-  try{const data=await api('/api/admin/operations/materials/'+id+'/workflow');if(target.isConnected){target.innerHTML=window.LSMaintenanceGuide?.preview(data)||'De werkinstructies konden niet worden weergegeven. Vernieuw de app.';const photos=document.createElement('section'),dossier=document.createElement('section');photos.className='dossier-section';dossier.className='dossier-section';target.prepend(photos,dossier);window.LSMaterialPhotos?.mount(photos,id,{admin:true});window.LSDossiers?.material(dossier,id,api);}}catch(error){if(target.isConnected)target.textContent=error.message;}finally{if(button.isConnected)button.disabled=false;}
+  const card=button.closest('.admin-record');
+  const host=card?.querySelector('[data-request-workplans]');
+  let target=(card||button.parentElement).querySelector('[data-owner-workplan-result="'+id+'"]');
+  if(!target)return;
+  if(host){
+   const panel=document.createElement('details');
+   panel.className='admin-request-fields';
+   panel.open=true;
+   const summary=document.createElement('summary');
+   summary.textContent='Onderhoud en verbruik · '+(button.closest('[data-issued-set]')?.querySelector('input')?.value||button.parentElement.querySelector('input')?.value||'set');
+   const previous=target.parentElement;
+   panel.append(summary,target);
+   if(previous.parentElement===host)previous.remove();
+   host.append(panel);
+   summary.scrollIntoView({block:'nearest'});
+  }
+  button.disabled=true;
+  target.textContent='Onderhoudsplan laden…';
+  try{
+   const data=await api('/api/admin/operations/materials/'+id+'/workflow');
+   if(!target.isConnected)return;
+   const used=new Map();
+   for(const step of data.workflow?.steps||[]){
+    for(const entry of step.usage||[]){
+     const key=JSON.stringify([entry.sku,entry.unit]);
+     const total=used.get(key)||{...entry,quantity:0};
+     total.quantity+=entry.quantity;
+     used.set(key,total);
+    }
+   }
+   const format=new Intl.NumberFormat('nl-NL',{maximumFractionDigits:3});
+   const usage=[...used.values()].map(entry=>`<li>${escape(entry.name)} · ${format.format(entry.quantity)} ${escape(entry.unit)}</li>`).join('');
+   target.innerHTML=`<h4>Geregistreerd verbruik</h4>${usage?'<ul>'+usage+'</ul>':'<p>Nog geen verbruik geregistreerd voor deze set.</p>'}<details class="admin-request-fields"><summary>Werkstappen en instructies</summary>${window.LSMaintenanceGuide?.preview(data)||'De werkinstructies konden niet worden weergegeven.'}</details>`;
+   const photos=document.createElement('section'),dossier=document.createElement('section');
+   photos.className='dossier-section';dossier.className='dossier-section';
+   target.append(photos,dossier);
+   window.LSMaterialPhotos?.mount(photos,id,{admin:true});
+   window.LSDossiers?.material(dossier,id,api);
+  }catch(error){if(target.isConnected)target.textContent=error.message;}
+  finally{if(button.isConnected)button.disabled=false;}
+
  }
  async function labels(reference,create=true){const path='/api/admin/operations/materials'+(create?'':'?reference='+encodeURIComponent(reference));return api(path,create?{method:'POST',body:JSON.stringify({reference})}:{});}
  function printLabels(items){let sheet=document.querySelector('#qrPrintSheet');if(!sheet){sheet=document.createElement('div');sheet.id='qrPrintSheet';document.body.append(sheet);}sheet.replaceChildren();for(const item of items){const label=document.createElement('article'),brand=document.createElement('em'),code=document.createElement('strong'),qr=document.createElement('div'),meta=document.createElement('span');brand.textContent='DE LATTENSPECIALIST';code.textContent=item.displayCode;const image=qrcode(0,'M');image.addData(item.qrValue);image.make();qr.innerHTML=image.createSvgTag(4,1);meta.textContent=`${item.kind} · ${item.package} · ${item.reference}`;label.append(brand,code,qr,meta);sheet.append(label);}document.body.classList.add('printing-labels');window.print();setTimeout(()=>document.body.classList.remove('printing-labels'),500);}
