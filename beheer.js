@@ -94,6 +94,18 @@
   };
   const customerMessageLines = (record, type = 'status') => {
     const firstName = String(record.name || '').split(/\s+/)[0] || '';
+    if (type === 'receipt') {
+      const statusUrl = customerStatusUrl(record);
+      return [
+        firstName ? `Hoi ${firstName},` : 'Hoi,',
+        '',
+        'We hebben je materiaal ontvangen voor onderhoud bij De Lattenspecialist.',
+        statusUrl ? `Volg de voortgang van je onderhoud: ${statusUrl}` : `Aanvraagnummer: ${record.reference}`,
+        '',
+        'Groet,',
+        'De Lattenspecialist'
+      ];
+    }
     const lines = type === 'payment'
       ? [`Hallo ${firstName},`,'',`Je materiaal is gereed. Het betaalverzoek van € ${Number(record.paymentAmount || 0).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})} staat hier:`,record.paymentUrl || '','Na betaling kan het materiaal worden opgehaald of teruggebracht.','',`Aanvraagcode: ${record.reference}`,'','Groet,','De Lattenspecialist']
       : [`Hallo ${firstName},`,'','De status van je aanvraag bij De Lattenspecialist is bijgewerkt:',`*${record.status || steps[Math.max(0,Number(record.currentStep || 1)-1)]}*`];
@@ -571,7 +583,7 @@
     try {
       const [reservationResult] = await Promise.all([api('/api/admin/reservations?includeTrash=1'),loadAvailability(),window.LattenspecialistTeam?.init(api,render)]);
       records = (reservationResult.records || []).map(record=>dirtyRequests.has(record.reference)&&!record.deletedAt?records.find(old=>old.reference===record.reference)||record:record);
-      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; headerTabs.hidden = false; render(); await window.LattenspecialistOperations?.init(api,()=>records); void loadMetrics();
+      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; headerTabs.hidden = false; render(); await window.LattenspecialistOperations?.init(api,()=>records,record=>record.whatsappConsent && whatsappUrl(record,'receipt')); void loadMetrics();
       if (pendingManualOpen) requestManualOpen(pendingManualMaterial);
       window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh'));
     } finally { refreshButton.disabled = false; }

@@ -1,5 +1,5 @@
 (() => {
- let api,getRecords,members=[],hrmPin='',scanner,initialised=false,dashboardPeriod=30,wallboardRefreshTimer,wallboardMeterTimer;
+ let api,getRecords,receiptWhatsAppUrl,members=[],hrmPin='',scanner,initialised=false,dashboardPeriod=30,wallboardRefreshTimer,wallboardMeterTimer;
  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money=value=>Number(value||0).toLocaleString('nl-NL',{style:'currency',currency:'EUR'});
  const duration=seconds=>`${Math.round(Number(seconds||0)/60)} min`;
@@ -277,6 +277,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
     <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem"><h3 data-intake-photo-title></h3><button type="button" class="btn btn-dark" data-intake-photo-close aria-label="Fotovenster sluiten">×</button></div><div data-intake-photo-host></div>
     <div class="admin-save-actions"><button type="button" class="btn btn-dark" data-intake-photo-next>Later toevoegen</button><button type="button" class="btn btn-dark" data-intake-photo-close>× Sluiten</button></div>
   </section>
+  <a class="btn message-whatsapp" data-intake-whatsapp hidden>Ontvangst bevestigen via WhatsApp</a>
   <section data-intake-received hidden><h3>Al ontvangen</h3><div data-intake-received-list></div></section>`;
   document.body.append(dialog);
   const form=dialog.querySelector('form'),select=form.elements.materialId,input=form.elements.label;
@@ -351,6 +352,12 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
     message.textContent=`${received.displayCode} ontvangen. ${remaining?'Scan de sticker van de volgende set.':'Alle sets van deze aanvraag zijn ontvangen.'}`;
     document.dispatchEvent(new CustomEvent('ls-intake-updated',{detail:result.record}));
     showPhotoStep(received,true);
+    const whatsapp = dialog.querySelector('[data-intake-whatsapp]');
+    const url = !remaining && receiptWhatsAppUrl?.(result.record);
+    if (url) {
+     whatsapp.href = url;
+     whatsapp.hidden = false;
+    }
    }catch(error){message.textContent=error.message;save.disabled=camera.disabled=select.disabled=false;}
    finally{busy=false;}
   }
@@ -400,6 +407,15 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    if(!panel.isConnected)return;
    target.replaceChildren();
    if(!materials.length){target.textContent='Er zijn nog geen sets gekoppeld.';return;}
+   const record = getRecords?.().find(item => item.reference === reference);
+   const whatsappUrl = record && materials.every(item => item.receivedAt) && receiptWhatsAppUrl?.(record);
+   if (whatsappUrl) {
+    const link = document.createElement('a');
+    link.className = 'btn message-whatsapp';
+    link.href = whatsappUrl;
+    link.textContent = 'Ontvangst bevestigen via WhatsApp';
+    target.append(link);
+   }
    for(const item of materials){
     const set=document.createElement('details');
     const summary=document.createElement('summary');
@@ -420,5 +436,5 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
  document.addEventListener('ls-open-material',event=>{if(event.detail?.token){void setTab('orders');void openAdminScan(event.detail.token);}});
  document.addEventListener('click',event=>{const button=event.target.closest('.open-workorder-workspace');if(button)void openWorkorderWorkspace(button);});
  document.addEventListener('click',event=>{const workplan=event.target.closest('[data-owner-workplan]');if(workplan){void openOwnerWorkplan(workplan);return;}const button=event.target.closest('.create-material-labels');if(button)handleLabelButton(button);});
- window.LattenspecialistOperations={loadIssuedSets(card){const button=card.querySelector('.create-material-labels');if(button&&!button.disabled)return handleLabelButton(button,false);},async init(client,recordsProvider){api=client;getRecords=recordsProvider;prepareLayout();if(!document.querySelector('#adminTabs .active')||window.AdminSecurity?.locked)setTab('orders');},clear(){clearInterval(wallboardRefreshTimer);clearInterval(wallboardMeterTimer);wallboardRefreshTimer=null;wallboardMeterTimer=null;hrmPin='';document.querySelector('[data-admin-panel=customers]')?.replaceChildren();document.querySelectorAll('[data-owner-workplan-result]').forEach(host=>host.replaceChildren());window.LattenspecialistInventory?.clear();if(scanner)scanner.stop().catch(()=>{});scanner=null;}};
+ window.LattenspecialistOperations={loadIssuedSets(card){const button=card.querySelector('.create-material-labels');if(button&&!button.disabled)return handleLabelButton(button,false);},async init(client,recordsProvider,receiptLink){api=client;getRecords=recordsProvider;receiptWhatsAppUrl=receiptLink;prepareLayout();if(!document.querySelector('#adminTabs .active')||window.AdminSecurity?.locked)setTab('orders');},clear(){clearInterval(wallboardRefreshTimer);clearInterval(wallboardMeterTimer);wallboardRefreshTimer=null;wallboardMeterTimer=null;hrmPin='';document.querySelector('[data-admin-panel=customers]')?.replaceChildren();document.querySelectorAll('[data-owner-workplan-result]').forEach(host=>host.replaceChildren());window.LattenspecialistInventory?.clear();if(scanner)scanner.stop().catch(()=>{});scanner=null;}};
 })();

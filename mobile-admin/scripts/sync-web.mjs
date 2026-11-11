@@ -16,8 +16,7 @@ html = html
   .replace('<link rel="manifest" href="beheer.webmanifest">', '')
   .replace('<body class="admin-body">', '<body class="admin-body native-admin-body">')
   .replace('<a class="brand" href="/" aria-label="De Lattenspecialist">', '<div class="brand" aria-label="De Lattenspecialist">')
-  .replace('</a>\r\n      <div class="app-header-actions">', '</div>\r\n      <div class="app-header-actions">')
-  .replace('</a>\n      <div class="app-header-actions">', '</div>\n      <div class="app-header-actions">')
+  .replace(/<\/a>(\s+<nav id="adminTabs")/, '</div>$1')
   .replace('</head>', '  <link rel="stylesheet" href="native.css">\n</head>')
   .replace('</body>', '  <script src="native.js"></script>\n</body>');
 
@@ -37,6 +36,7 @@ html{background:#f4f0e8}
 body.native-admin-body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);overscroll-behavior-y:none}
 .native-admin-body .site-header{top:env(safe-area-inset-top)}
 .native-admin-body .install-button{display:none!important}
+.native-push-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:16px;font-size:.875rem}
 @media(max-width:560px){.native-admin-body .admin-main{padding-top:24px}.native-admin-body .container{width:min(100% - 24px,1180px)}}
 `);
 
@@ -53,7 +53,7 @@ const quickMaterial=widgetBridge?.consumeQuickMaterial();
 if(quickMaterial)window.dispatchEvent(new CustomEvent('lattenspecialist:new-request',{detail:{material:quickMaterial}}));
 if(widgetBridge?.getPushStatus){
  const panel=document.createElement('section');panel.setAttribute('role','status');panel.className='native-push-status';
- const label=document.createElement('span'),check=document.createElement('button');check.type='button';check.className='btn btn-ghost';check.textContent='Verbinding controleren';
+ const label=document.createElement('span'),check=document.createElement('button');check.type='button';check.className='btn btn-dark';check.textContent='Verbinding controleren';
  check.onclick=()=>{syncWidgetToken();widgetBridge.refresh();updatePushState();};panel.append(label,check);
  document.querySelector('#adminDashboard')?.prepend(panel);
  function updatePushState(){try{const state=JSON.parse(widgetBridge.getPushStatus());label.textContent='Directe meldingen: '+(state.permitted?state.status:'meldingen staan uit')+(state.lastReceived?' · laatst ontvangen '+new Date(state.lastReceived).toLocaleTimeString('nl-NL'):'');}catch{label.textContent='Directe meldingen: status niet beschikbaar';}}
