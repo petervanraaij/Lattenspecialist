@@ -40,7 +40,7 @@
   summary.before(orderFilters);
   const listStatus=document.createElement('p');listStatus.className='admin-list-status';listStatus.setAttribute('role','status');list.before(listStatus);
   const syncStatus=document.createElement('p');syncStatus.className='admin-sync-status';syncStatus.setAttribute('role','status');refreshButton.parentElement.append(syncStatus);
-  for(const type of ['input','change'])list.addEventListener(type,event=>{const card=event.target.closest('.admin-record');if(card&&event.target.closest('.admin-update-form')){dirtyRequests.add(card.dataset.reference);card.dataset.unsaved='true';card.querySelector('.discard-request').hidden=false;syncStatus.textContent='Niet-opgeslagen wijzigingen blijven bewaard tijdens verversen.';}});
+  for(const type of ['input','change'])list.addEventListener(type,event=>{const card=event.target.closest('.admin-record');if(card&&event.target.closest('.admin-update-form')&&!event.target.closest('[data-material-code-row]')){dirtyRequests.add(card.dataset.reference);card.dataset.unsaved='true';card.querySelector('.discard-request').hidden=false;syncStatus.textContent='Niet-opgeslagen wijzigingen blijven bewaard tijdens verversen.';}});
   orderFilters.addEventListener('click',event=>{const button=event.target.closest('[data-order-filter]');if(!button)return;activeFilter=button.dataset.orderFilter;applySearch();});
   let polling=false;
   async function pollRequests(){
@@ -551,6 +551,16 @@
     maintenanceEditors.set(details,state);
     details.addEventListener('input',()=>{state.changed=true;});
   },true);
+
+  list.addEventListener('ls-issued-set-changed',event=>{
+    const updated=event.detail;
+    records=records.map(record=>record.reference===updated.reference?updated:record);
+    render();
+    const card=list.querySelector(`[data-reference="${CSS.escape(updated.reference)}"]`);
+    const details=card?.querySelector('.admin-record-details');
+    if(details)details.open=true;
+    card?.querySelector('.create-material-labels')?.click();
+  });
 
   list.addEventListener('input', event => {
     if (event.target.matches('input[name="serviceCode"]')) {

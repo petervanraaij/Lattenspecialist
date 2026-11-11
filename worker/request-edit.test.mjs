@@ -32,5 +32,27 @@ try {
  const {teamStatusRecord}=await import('./src/team.js');
  assert.equal(await teamStatusRecord('LS-TEST23',f.env),null);
  assert.equal((await teamStatusRecord('LS-NEW234',f.env)).reference,reference);
+ const [,untouched,removed]=generated.data.materials;
+ const untouchedBefore=f.sql.prepare('SELECT * FROM materials WHERE id=?').get(untouched.id);
+ const historyBefore=f.sql.prepare('SELECT * FROM maintenance_steps WHERE material_id=? ORDER BY step_order').all(untouched.id);
+ const originalWorkflow=await f.call(labels+'/'+first.id+'/workflow');
+ const inspection=originalWorkflow.data.workflow.steps.find(step=>step.code==='inspection');
+ assert.ok(inspection);
+ f.sql.prepare("UPDATE maintenance_steps SET status='completed',started_at='2026-11-11',completed_at='2026-11-11' WHERE id=?").run(inspection.id);
+ const revised=await f.call(labels+'/'+first.id+'/set','PATCH',{package:'Brons'});
+ assert.equal(revised.status,200,JSON.stringify(revised));
+ assert.equal(revised.data.material.displayCode,code);
+ assert.equal(revised.data.material.qrValue,first.qrValue);
+ const steps=(await f.call(labels+'/'+first.id+'/workflow')).data.workflow.steps;
+ assert.equal(steps.find(step=>step.code==='inspection').id,inspection.id);
+ assert.ok(!steps.some(step=>step.code==='wax'));
+ const deleted=await f.call(labels+'/'+removed.id+'/set','POST',{});
+ assert.equal(deleted.status,200,JSON.stringify(deleted));
+ assert.equal(deleted.data.record.amount,'2');
+ assert.equal((await f.call('/api/admin/operations/scan/'+removed.displayCode)).status,404);
+ const reloaded=await f.call(labels,'POST',{reference});
+ assert.deepEqual(reloaded.data.materials.map(item=>item.id),[first.id,untouched.id]);
+ assert.deepEqual(f.sql.prepare('SELECT * FROM materials WHERE id=?').get(untouched.id),untouchedBefore);
+ assert.deepEqual(f.sql.prepare('SELECT * FROM maintenance_steps WHERE material_id=? ORDER BY step_order').all(untouched.id),historyBefore);
  console.log('PASS editing request, adding a third set, unique set codes, replacement, stable QR and customer code rotation');
 } finally { f.close(); }

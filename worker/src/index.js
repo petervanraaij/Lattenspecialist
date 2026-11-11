@@ -360,15 +360,25 @@ const updateReservation = async (reference, raw, env) => {
     const plans = materialPlans(proposed);
     if (plans.length > 20) throw new ValidationError('Kies maximaal 20 sets per aanvraag.');
     details.amount = String(plans.length);
+    const hasSetEdits = Object.hasOwn(record,'materialSourceAmount');
     const db = env.LATTENSPECIALIST_TEAM_DB;
     if (db) {
-      const issued = (await db.prepare('SELECT item_number FROM materials WHERE reference=?').bind(reference).all()).results;
-      const oldPlans = materialPlans(record);
+      const issued = (await db.prepare('SELECT item_number,package_name,internal_status FROM materials WHERE reference=?').bind(reference).all()).results;
+      const oldPlans = materialPlans({...record,amount:record.materialSourceAmount??record.amount});
       if (issued.some(({item_number:n}) => JSON.stringify(oldPlans[n-1]) !== JSON.stringify(plans[n-1]))) {
         throw new ValidationError('Er zijn al materiaalcodes uitgegeven voor de bestaande sets. Je kunt sets toevoegen zolang de bestaande sets en hun werkzaamheden op dezelfde positie blijven.');
       }
+      if(hasSetEdits){
+        const active=issued.filter(item=>item.internal_status!=='material_removed');
+        const issuedNumbers=new Set(issued.map(item=>item.item_number));
+        const pending=plans.filter((_,index)=>!issuedNumbers.has(index+1));
+        const packages=new Set([...active.map(item=>item.package_name),...pending.map(item=>item.packageName)]);
+        details.materialSourceAmount=String(plans.length);
+        details.amount=String(active.length+pending.length);
+        details.package=packages.size>1?'Meerdere pakketten':([...packages][0]||'Geen actieve sets');
+      }
     }
-    details.priceQuote = maintenancePriceQuote(selection, proposed);
+    if(!hasSetEdits)details.priceQuote = maintenancePriceQuote(selection, proposed);
   }
   const defaultPlannedMinutes = record.service === 'Onderhoud' ? Math.max(1, Math.min(20, Number(record.amount) || 1)) * 60 : 0;
   const plannedMinutes = Object.prototype.hasOwnProperty.call(raw, 'plannedMinutes') ? Number(raw.plannedMinutes) : Number(record.plannedMinutes ?? defaultPlannedMinutes);
