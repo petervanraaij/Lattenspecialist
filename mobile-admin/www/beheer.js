@@ -385,6 +385,18 @@
   });
 
   list.addEventListener('click',async event=>{const button=event.target.closest('.discard-request');if(!button)return;const card=button.closest('.admin-record'),reference=card.dataset.reference;button.disabled=true;try{const result=await api('/api/admin/reservations?includeTrash=1');const latest=result.records?.find(record=>record.reference===reference);if(!latest)throw new Error('Deze aanvraag is niet meer beschikbaar.');dirtyRequests.delete(reference);card.removeAttribute('data-unsaved');records=records.map(record=>record.reference===reference?latest:record);render();syncStatus.textContent='Aanvraag herladen; lokale wijzigingen zijn verworpen.';}catch(error){button.disabled=false;syncStatus.textContent=error.message;}});
+  window.addEventListener('lattenspecialist:show-request',event=>{
+    const record=records.find(item=>item.reference===event.detail?.reference && !item.deletedAt);
+    if(!record)return;
+    search.value='';
+    activeFilter=recordStage(record);
+    applySearch();
+    const card=list.querySelector(`[data-reference="${CSS.escape(record.reference)}"]`);
+    const details=card?.querySelector('.admin-record-details');
+    if(details)details.open=true;
+    card?.querySelector('.admin-open-request')?.focus({preventScroll:true});
+    card?.scrollIntoView({behavior:'smooth',block:'center'});
+  });
   window.addEventListener('lattenspecialist:workorder-opened',event=>{const record=records.find(item=>item.reference===event.detail?.reference);if(record){activeFilter=recordStage(record);applySearch();}});
   list.addEventListener('click',event=>{if(event.target.closest('[data-open-private-admin]'))void window.AdminSecurity?.open();});
   window.addEventListener('lattenspecialist:admin-unlocked',()=>loadDashboard().catch(error=>{syncStatus.textContent=error.message;}));

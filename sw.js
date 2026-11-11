@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v156-header-tabs';
+const CACHE_NAME = 'lattenspecialist-v157-request-scan';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -40,11 +40,11 @@ const APP_SHELL = [
   '/customer-status.css',
   '/customer-app.js?v=20261111-status-menu',
   '/pwa-install.js?v=1',
-  '/beheer.js?v=20261111-header-tabs',
+  '/beheer.js?v=20261111-request-scan',
   '/admin-team.js?v=1',
   '/team.css?v=1',
   '/admin-metrics.css?v=1',
-  '/admin-operations.js?v=20261111-header-tabs',
+  '/admin-operations.js?v=20261111-request-scan',
   '/admin-operations.css?v=20261111-header-tabs',
   '/admin-operations-extra.css?v=1',
   '/vendor/qrcode.js',

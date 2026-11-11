@@ -39,6 +39,18 @@ try{
   await page.locator('#adminTabs [data-tab=workplace]').click();
   await page.locator('[data-admin-subnav=workplace] [data-tab=instructions]').click();await page.locator('[data-admin-panel=instructions] [data-edit-guide]').waitFor();
   await page.locator('#adminTabs [data-tab=orders]').click();
+  await page.locator('[data-order-filter=planned]').click();
+  await page.locator('details.availability-admin > summary').click();
+  const scan=page.locator('#adminManualScan');
+  await scan.locator('[name=scan]').fill(' ls-2611-closed ');
+  await scan.locator('button').click();
+  await page.locator('[data-reference="LS-2611-CLOSED"] .admin-record-details[open]').waitFor();
+  assert.equal(await page.locator('[data-order-filter=closed]').getAttribute('aria-pressed'),'true');
+  await scan.locator('[name=scan]').fill('LS-2611-UNKNWN');
+  await scan.locator('button').click();
+  await page.getByText('Geen aanvraag gevonden met deze code.',{exact:true}).waitFor();
+  await page.locator('details.availability-admin > summary').click();
+  await page.locator('[data-order-filter=new]').click();
  });
  await scenario('Cancel deletion, move an application to the trash and restore its original status',async()=>{
   const card=page.locator('[data-reference="LS-2611-NEW234"]');
