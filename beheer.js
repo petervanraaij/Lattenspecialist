@@ -21,9 +21,6 @@
   const manualForm = document.querySelector('#manualRequestForm');
   const manualStatus = document.querySelector('#manualRequestStatus');
   const manualSelection=window.LattenManualSelection.mount(manualForm);
-  const manualAddress = document.querySelector('#manualPickupAddress');
-  const manualAddressStatus = document.querySelector('#manualAddressStatus');
-  let manualAddressTimer, manualAddressController;
   let token = sessionStorage.getItem('lattenspecialist-admin-token') || localStorage.getItem('lattenspecialist-admin-token') || '';
   let records = [];
   let activeFilter='new';
@@ -524,17 +521,13 @@
     } catch { if (version === metricsVersion && token === auth) target.textContent = 'Tellingen tijdelijk niet beschikbaar. Je kunt de reserveringen gewoon beheren.'; }
   };
   document.querySelector('#metricsPeriod').addEventListener('change', loadMetrics);
-  const updateManualAddress = () => {
-    const pickup = false;
-    manualAddress.hidden = !pickup;
-    manualAddress.querySelectorAll('input').forEach(input => { input.required = pickup; input.disabled = !pickup; });
-  };
+
   let pendingManualOpen = false;
   let pendingManualMaterial = '';
   const openManualRequest = material => {
     const date=new Intl.DateTimeFormat('nl-NL',{timeZone:'Europe/Amsterdam',year:'2-digit',month:'2-digit'}).formatToParts();
     document.querySelector('#manualServicePrefix').textContent=`LS-${date.find(p=>p.type==='year').value}${date.find(p=>p.type==='month').value}-`;
-    manualForm.reset(); manualSelection.reset(); manualStatus.textContent='';updateManualAddress();manualDialog.showModal();manualForm.elements.name.focus(); };
+    manualForm.reset(); manualSelection.reset(); manualStatus.textContent='';manualDialog.showModal();manualForm.elements.name.focus(); };
   const requestManualOpen = material => {
     pendingManualOpen = true;
     pendingManualMaterial = material || '';
@@ -549,14 +542,6 @@
   window.addEventListener('lattenspecialist:new-request',event=>requestManualOpen(event.detail?.material||''));
   manualDialog.querySelector('.manual-request-close').addEventListener('click',()=>manualDialog.close());
   manualDialog.querySelector('.manual-request-cancel').addEventListener('click',()=>manualDialog.close());
-  manualForm.elements.logistics.addEventListener('change',updateManualAddress);
-  const lookupManualAddress = async () => {
-    const postcode=manualForm.elements.postcode.value.toUpperCase().replace(/\s+/g,'');const houseNumber=manualForm.elements.houseNumber.value.trim();
-    if(!/^\d{4}[A-Z]{2}$/.test(postcode)||!/^\d{1,5}/.test(houseNumber))return;
-    manualAddressController?.abort();manualAddressController=new AbortController();manualAddressStatus.textContent='Adres zoeken…';
-    try{const response=await fetch(`${endpoint}/api/address?postcode=${encodeURIComponent(postcode)}&houseNumber=${encodeURIComponent(houseNumber)}`,{cache:'no-store',signal:manualAddressController.signal});const result=await response.json().catch(()=>({}));if(!response.ok||!result.address?.address)throw new Error(result.message||'Adres niet gevonden.');manualForm.elements.postcode.value=result.address.postcode;manualForm.elements.houseNumber.value=result.address.houseNumber;manualForm.elements.address.value=result.address.address;manualForm.elements.addressCity.value=result.address.city;manualAddressStatus.textContent=result.address.freePickup?'Adres gevonden · binnen gratis servicegebied':'Adres gevonden · buiten gratis servicegebied';manualAddressStatus.className=`address-status ${result.address.freePickup?'is-success':'is-error'}`;}catch(error){if(error.name!=='AbortError'){manualForm.elements.address.value='';manualAddressStatus.textContent=error.message;manualAddressStatus.className='address-status is-error';}}
-  };
-  ['postcode','houseNumber'].forEach(name=>manualForm.elements[name].addEventListener('input',()=>{clearTimeout(manualAddressTimer);manualForm.elements.address.value='';manualAddressTimer=setTimeout(lookupManualAddress,450);}));
   manualForm.elements.serviceCodeSuffix?.addEventListener('input',event=>{
     event.target.value=event.target.value.toUpperCase().replace(/\s+/g,'');
   });
