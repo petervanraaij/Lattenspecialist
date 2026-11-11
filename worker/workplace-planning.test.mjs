@@ -3,6 +3,22 @@ import {maintenanceFixture} from './maintenance-fixture.mjs';
 const f=await maintenanceFixture(),original=globalThis.fetch;Object.assign(f.env,{LATTENSPECIALIST_ADMIN_SECURITY_ENABLED:'true'});
 const base='/api/admin/operations/workplace/',id=f.member.id,date='2099-12-01';
 try{
+ const workorders=()=>f.call(base+'workorders?memberId='+id);
+ assert.deepEqual((await workorders()).data.workorders,[]);
+ assert.equal((await f.call(base+'workorders','GET',undefined,f.staff)).status,401);
+ const material=f.materials[0];
+ f.env.LATTENSPECIALIST_ADMIN_SECURITY_ENABLED='false';
+ const scanned=await f.call('/api/admin/operations/materials/intake','POST',{
+  reference:'LS-2610-GUIDEX',materialId:material.id,label:'LS-2601-0001'
+ });
+ f.env.LATTENSPECIALIST_ADMIN_SECURITY_ENABLED='true';
+ assert.equal(scanned.status,200,JSON.stringify(scanned.data));
+ const open=await workorders();
+ assert.deepEqual(open.data.workorders.map(order=>order.code),['LS-2601-0001']);
+ assert.equal(open.data.workorders[0].material,material.kind);
+ assert.equal('scanToken' in open.data.workorders[0],false);
+ f.sql.prepare("UPDATE materials SET internal_status='ready' WHERE id=?").run(material.id);
+ assert.deepEqual((await workorders()).data.workorders,[]);
  assert.equal((await f.call(base+'availability','PATCH',{executionMemberId:id,dates:[{date,preference:'preferred',startTime:'10:00',endTime:'16:30'}]})).status,200);
  const staff=await f.call('/api/team/operations/availability','GET',undefined,f.staff);assert.equal(staff.data.dates[0].start_time,'10:00');
  f.sql.prepare('UPDATE member_availability SET note=? WHERE member_id=?').run('PRIVATE HRM NOTE',id);
