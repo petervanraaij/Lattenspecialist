@@ -26,6 +26,14 @@ assert.equal((await call('/api/admin/team/members','GET',undefined,ta)).status,4
 assert.equal((await call('/api/admin/reservations','GET',undefined,ta)).status,401);
 assert.equal((await call('/api/admin/availability','PATCH',{dates:[]},ta)).status,401);
 assert.equal((await call('/api/admin/team/members','POST',{name:'Again',login:'robin'})).status,409);
+const editMember = '/api/admin/team/members/'+custom.data.id;
+assert.equal((await call(editMember,'PATCH',{action:'edit',name:'Robin',login:'robin'})).status,409);
+const edited = await call(editMember,'PATCH',{action:'edit',name:'Nieuwe naam',login:'eigen-nieuw'});
+assert.equal(edited.status,200);
+assert.equal(edited.data.id,custom.data.id);
+assert.equal(edited.data.name,'Nieuwe naam');
+assert.equal((await call('/api/team/login','POST',{login:'eigen-nieuw',accessKey:customKey},'')).status,200);
+
 const stored=db.sql.prepare('SELECT key_hash FROM members WHERE id=?').get(a.id);assert.notEqual(stored.key_hash,a.accessKey);
 let response=await call('/api/admin/reservations/'+reference,'PATCH',{assignedTo:a.id,revision:0});assert.equal(response.status,200,JSON.stringify(response));assert.equal(response.data.record.revision,1);
 response=await call('/api/team/tasks','GET',undefined,ta);assert.equal(response.data.records.length,1);
@@ -43,6 +51,12 @@ assert.equal((await call('/api/admin/reservations/'+reference,'PATCH',{currentSt
 assert.equal((await call('/api/admin/reservations/'+other,'PATCH',{currentStep:5})).status,409);
 response=await call('/api/admin/reservations','GET');assert.equal(response.data.records.find(r=>r.reference===other).currentStep,3,'Rejected legacy write must not alter saved record');
 assert.equal(response.data.records.find(r=>r.reference===reference).workNote,update.workNote);
+const moved = await call('/api/admin/reservations/'+other,'PATCH',{moveToWorkshop:true,revision:0});
+assert.equal(moved.status,200,JSON.stringify(moved));
+assert.equal(moved.data.record.currentStep,4);
+assert.ok(moved.data.record.workOrderNumber);
+assert.equal((await call('/api/admin/reservations/'+other,'PATCH',{moveToWorkshop:true,revision:1})).status,409);
+
 assert.equal((await call('/api/admin/team/audit?reference='+reference)).data.events.length,2);
 response=await call('/api/admin/reservations/'+reference,'PATCH',{assignedTo:b.id,revision:2});assert.equal(response.status,200);
 assert.equal((await call('/api/team/tasks','GET',undefined,ta)).data.records.length,0);

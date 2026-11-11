@@ -236,7 +236,7 @@
     const closed = Boolean(record.closedAt);
     const minutes=plannedMinutes(record);
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-stage="${recordStage(record)}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
-      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(packageLabel(record.package))}</span>${record.service==='Onderhoud'&&Number(record.currentStep||1)===1?`<span>Warme waxreiniging: ${escapeHtml(warmCleaningLabel(record))}</span>`:''}<small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span>${record.service==='Onderhoud'&&!closed&&currentStep<3?'<button type="button" class="btn btn-gold" data-receive-label>In ontvangst nemen</button>':''}<button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
+      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(packageLabel(record.package))}</span>${record.service==='Onderhoud'&&Number(record.currentStep||1)===1?`<span>Warme waxreiniging: ${escapeHtml(warmCleaningLabel(record))}</span>`:''}<small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span>${record.service==='Onderhoud'&&!closed&&currentStep<3?'<button type="button" class="btn btn-gold" data-receive-label>In ontvangst nemen</button>':''}${record.service==='Onderhoud'&&!closed&&currentStep===3?'<button type="button" class="btn btn-gold" data-move-to-workshop>Naar werkplaats</button>':''}<button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
       ${Number(record.waxstickCount)>0?`<section class="admin-payment admin-waxstick" data-waxstick-reference="${escapeHtml(record.reference)}"><h3>Meebesteld · ${Number(record.waxstickCount)}× Holmenkol Natural Skiwax Stick 50 g</h3><p>€ 17,50 per stuk · bij deze opdracht meegeven.</p><p class="waxstick-handover-status" role="status" aria-live="polite">Meegeefstatus laden…</p><button class="btn btn-gold waxstick-handover" type="button" disabled>Meegeven bevestigen</button><button class="btn btn-dark waxstick-invoice" type="button">Factuur maken in Pierfinity →</button><button class="btn btn-dark waxstick-reload" type="button" hidden>Status opnieuw laden</button></section>`:''}
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-content">
         <div class="admin-save-actions"><button type="button" class="btn btn-dark" data-edit-request aria-expanded="false" aria-controls="edit-request-${escapeHtml(record.reference)}">Bewerken</button>${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}</div>
@@ -687,6 +687,32 @@
     if(updated.customerStatus==='Materiaal ontvangen')activeFilter=recordStage(updated);
     records=records.map(record=>record.reference===updated.reference?updated:record);
     render();
+  });
+
+  list.addEventListener('click',async event=>{
+    const button=event.target.closest('[data-move-to-workshop]');
+    if(!button)return;
+    const card=button.closest('.admin-record');
+    const reference=card.dataset.reference;
+    const record=records.find(item=>item.reference===reference);
+    if(!record)return;
+    if(dirtyRequests.has(reference)){
+      syncStatus.textContent='Sla de wijzigingen in deze aanvraag eerst op.';
+      return;
+    }
+    button.disabled=true;
+    try{
+      const result=await api('/api/admin/reservations/'+encodeURIComponent(reference),{
+        method:'PATCH',body:JSON.stringify({moveToWorkshop:true,revision:record.revision??0})
+      });
+      records=records.map(item=>item.reference===reference?result.record:item);
+      activeFilter='work';
+      render();
+      syncStatus.textContent='Werkorder staat nu in In werkplaats.';
+    }catch(error){
+      syncStatus.textContent=error.message;
+      button.disabled=false;
+    }
   });
 
   list.addEventListener('ls-issued-set-changed',event=>{
