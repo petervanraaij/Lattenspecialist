@@ -13,7 +13,7 @@ test('admin order shows selected waxsticks and records handover only after expli
   w.LATTENSPECIALIST_BOOKING={endpoint:'https://api.example'};w.sessionStorage.setItem('lattenspecialist-admin-token','test');
   w.fetch=async(url,options={})=>{
     let value={dates:[]};
-    if(url.endsWith('/reservations'))value={records:[{reference:'LS-2611-ABC234',name:'Testklant',service:'Onderhoud',waxstickCount:2},{reference:'LS-2611-BCD234',name:'Zonder stick',service:'Onderhoud'}]};
+    if(new URL(url).pathname === '/api/admin/reservations')value={records:[{reference:'LS-2611-ABC234',name:'Testklant',service:'Onderhoud',waxstickCount:2},{reference:'LS-2611-BCD234',name:'Zonder stick',service:'Onderhoud'}]};
     if(url.includes('/inventory/waxsticks/')){if(options.method==='POST')posts.push(JSON.parse(options.body));value={ordered:2,delivered:posts.length?2:0,remaining:posts.length?0:2,handedOverAt:posts.length?'2026-11-09T18:00:00Z':null};}
     return{ok:true,status:200,json:async()=>value};
   };

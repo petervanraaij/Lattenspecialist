@@ -17,10 +17,13 @@ async function admin(t, serviceCode = 'LS-ABC234') {
   const requests = [];
   w.fetch = async (url, options) => {
     requests.push({url, options});
-    return {ok:true, status:200, json:async () => url.endsWith('/reservations') ? {records:[{reference:'LS-2609-ABC234', name:'Testklant', serviceCode, createdAt:'2026-09-24T10:00:00Z'}]} : {dates:[]}};
+    return {ok:true, status:200, json:async () => new URL(url).pathname === '/api/admin/reservations' ? {records:[{reference:'LS-2609-ABC234', name:'Testklant', serviceCode, createdAt:'2026-09-24T10:00:00Z'}]} : {dates:[]}};
   };
   w.eval(selection);w.eval(manual);w.eval(script); await turn();
-  return {w, d:w.document, requests};
+  const d = w.document;
+  d.querySelector('.admin-open-request').click();
+  d.querySelector('[data-edit-request]').click();
+  return {w, d, requests};
 }
 
 test('copying a personal customer link never sends a message or uses the reservation reference', async t => {
@@ -45,7 +48,7 @@ test('clipboard denial selects the correct link for manual copying', async t => 
 });
 
 test('no personal link is shown until a valid maintenance code exists', async t => {
-  for (const code of [null, 'LS-2609-ABC234']) {
+  for (const code of [null, 'LS-INVALID']) {
     const {d} = await admin(t, code);
     assert.equal(d.querySelector('.copy-customer-link'), null);
     assert.match(d.querySelector('.admin-update-form').textContent, /persoonlijke klantlink/);
