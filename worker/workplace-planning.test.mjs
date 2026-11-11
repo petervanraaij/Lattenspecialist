@@ -17,7 +17,31 @@ try{
  assert.deepEqual(open.data.workorders.map(order=>order.code),['LS-2601-0001']);
  assert.equal(open.data.workorders[0].material,material.kind);
  assert.equal('scanToken' in open.data.workorders[0],false);
- f.sql.prepare("UPDATE materials SET internal_status='ready' WHERE id=?").run(material.id);
+ f.env.LATTENSPECIALIST_ADMIN_SECURITY_ENABLED='false';
+ const reference='LS-2610-GUIDEX';
+ const reservation='/api/admin/reservations/'+reference;
+ const current=()=>f.sql.prepare('SELECT revision,payload FROM records WHERE reference=?').get(reference);
+ const move=()=>f.call(reservation,'PATCH',{moveToWorkshop:true,revision:current().revision});
+ assert.equal((await move()).status,409);
+ for(const [index,set] of f.materials.entries()){
+  if(index>0)assert.equal((await f.call('/api/admin/operations/materials/intake','POST',{reference,materialId:set.id,label:'LS-2601-0002'})).status,200);
+  const path='/api/team/operations/materials/'+set.id+'/workflow';
+  const loaded=await f.call(path,'GET',undefined,f.staff);
+  const [inspection,next]=loaded.data.workflow.steps;
+  const act=(step,action,body)=>f.call('/api/team/operations/steps/'+step.id+'/'+action,'POST',body,f.staff);
+  assert.equal((await act(inspection,'start',{guideVersion:inspection.guide.version})).status,200);
+  assert.equal(JSON.parse(current().payload).currentStep,3);
+  const done=await act(inspection,'finish',{guideChecks:{version:inspection.guide.version,checkedIds:inspection.guide.checks.map(check=>check.id)}});
+  assert.equal(done.status,200,JSON.stringify(done.data));
+  assert.equal((await act(next,'start',{})).status,409);
+  if(index===0)assert.equal((await move()).status,409);
+ }
+ const moved=await move();
+ assert.equal(moved.status,200,JSON.stringify(moved.data));
+ assert.equal(moved.data.record.currentStep,4);
+ assert.equal(f.sql.prepare("SELECT COUNT(*) n FROM maintenance_steps WHERE step_code='inspection' AND status='completed'").get().n,2);
+ f.env.LATTENSPECIALIST_ADMIN_SECURITY_ENABLED='true';
+ f.sql.prepare("UPDATE materials SET internal_status='ready' WHERE reference=?").run(reference);
  assert.deepEqual((await workorders()).data.workorders,[]);
  assert.equal((await f.call(base+'availability','PATCH',{executionMemberId:id,dates:[{date,preference:'preferred',startTime:'10:00',endTime:'16:30'}]})).status,200);
  const staff=await f.call('/api/team/operations/availability','GET',undefined,f.staff);assert.equal(staff.data.dates[0].start_time,'10:00');
