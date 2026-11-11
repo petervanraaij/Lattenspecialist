@@ -299,7 +299,15 @@
     const reservedMinutes=records.filter(record=>!record.closedAt&&Number(record.currentStep||1)<steps.length).reduce((total,record)=>total+plannedMinutes(record),0);
     summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> benodigde tijd</span><span><b>${active}</b> in behandeling</span><span><b>${window.AdminSecurity?.locked?records.filter(record=>recordStage(record)==='new').length:withoutCode}</b> ${window.AdminSecurity?.locked?'nieuw':'zonder servicecode'}</span>`;
     list.innerHTML = records.length ? [...records].sort((a,b)=>['new','planned','work','ready','closed','trash'].indexOf(recordStage(a))-['new','planned','work','ready','closed','trash'].indexOf(recordStage(b))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
-    for(const card of list.querySelectorAll('.admin-record')){const old=preserved.get(card.dataset.reference);if(card.dataset.stage==='trash'){dirtyRequests.delete(card.dataset.reference);continue;}if(old){old.dataset.stage=card.dataset.stage;card.replaceWith(old);}else{if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
+    for(const card of list.querySelectorAll('.admin-record')){const old=preserved.get(card.dataset.reference);if(card.dataset.stage==='trash'){dirtyRequests.delete(card.dataset.reference);continue;}if(old){
+      old.dataset.stage=card.dataset.stage;
+      old.dataset.search=card.dataset.search;
+      for(const selector of ['.admin-record-head','.admin-info']){
+        const previous=old.querySelector(selector),updated=card.querySelector(selector);
+        if(previous&&updated)previous.replaceWith(updated);
+      }
+      card.replaceWith(old);
+    }else{if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
     for(const detail of list.querySelectorAll('.admin-record-details'))detail.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(detail.open));
     list.querySelectorAll('[data-waxstick-reference]').forEach(panel=>void loadWaxstickHandover(panel));
     applySearch();
@@ -564,7 +572,6 @@
     const button=event.target.closest('[data-add-ski-pair]');
     if(!button)return;
     const card=button.closest('.admin-record'),message=card.querySelector('[data-add-ski-message]');
-    if(card.hasAttribute('data-unsaved')){message.textContent='Sla eerst je andere wijzigingen op.';return;}
     const record=records.find(item=>item.reference===card.dataset.reference);
     button.disabled=true;
     message.textContent='Paar ski’s toevoegen…';
@@ -572,6 +579,11 @@
       const result=await api('/api/admin/operations/materials/add-ski-pair',{method:'POST',body:JSON.stringify({
         reference:record.reference,revision:record.revision??0,package:card.querySelector('[data-extra-ski-package]').value
       })});
+      const planned=card.querySelector('[name=plannedMinutes]');
+      if(planned&&planned.value===planned.defaultValue){
+        planned.value=String(plannedMinutes(result.record));
+        planned.defaultValue=planned.value;
+      }
       card.dispatchEvent(new CustomEvent('ls-issued-set-changed',{bubbles:true,detail:result.record}));
       const refreshed=list.querySelector(`[data-reference="${CSS.escape(record.reference)}"] [data-add-ski-message]`);
       if(refreshed)refreshed.textContent='Extra paar toegevoegd met code '+result.material.displayCode+'.';
