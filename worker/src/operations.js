@@ -428,7 +428,7 @@ export async function handleOperations(request,env,{owner,json,origin}) {
       }
       throw new OperationsError('Niet gevonden.',404);
     }
-    const feedback=path.match(/^\/api\/feedback\/(LS-[A-Z2-9]{6})$/);
+    const feedback=path.match(/^\/api\/feedback\/(LS-(?:\d{2}(?:0[1-9]|1[0-2])-[A-Z0-9]{6}|[A-Z2-9]{6}))$/);
     if(feedback&&request.method==='POST'){const record=await db.prepare("SELECT reference,payload FROM records WHERE json_extract(payload,'$.serviceCode')=?").bind(feedback[1]).first();if(!record)throw new OperationsError('Onderhoudscode niet gevonden.',404);const raw=await body(request),score=name=>raw[name]==null||raw[name]===''?null:Math.max(1,Math.min(5,Number(raw[name])));if(!Number.isInteger(score('overall')))throw new OperationsError('Geef een beoordeling van 1 tot 5.');await db.prepare(`INSERT INTO customer_feedback(reference,overall,quality,communication,pickup,speed,comment,created_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(reference) DO UPDATE SET overall=excluded.overall,quality=excluded.quality,communication=excluded.communication,pickup=excluded.pickup,speed=excluded.speed,comment=excluded.comment,created_at=excluded.created_at`).bind(record.reference,score('overall'),score('quality'),score('communication'),score('pickup'),score('speed'),clean(raw.comment,1000),now()).run();return json({ok:true},201,origin);}
     throw new OperationsError('Niet gevonden.',404);
   } catch(error){return json({message:error instanceof OperationsError?error.message:'Deze functie is tijdelijk niet beschikbaar.'},error instanceof OperationsError?error.status:503,origin);}

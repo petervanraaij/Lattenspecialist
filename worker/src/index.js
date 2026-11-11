@@ -177,6 +177,11 @@ const createServiceCode = () => {
   return `LS-${Array.from(bytes, byte => alphabet[byte % alphabet.length]).join('')}`;
 };
 
+const serviceCodePattern = /^LS-(?:\d{2}(?:0[1-9]|1[0-2])-[A-Z0-9]{6}|[A-Z2-9]{6})$/;
+const serviceMonth = () => {
+  const date = new Intl.DateTimeFormat('nl-NL',{timeZone:'Europe/Amsterdam',year:'2-digit',month:'2-digit'}).formatToParts();
+  return date.find(part=>part.type==='year').value + date.find(part=>part.type==='month').value;
+};
 const normalizeServiceCode = value => clean(value, 24).toUpperCase().replace(/\s+/g, '');
 const normalizePostcode = value => clean(value, 12).toUpperCase().replace(/\s+/g, '');
 const isIsoDate = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
@@ -334,7 +339,7 @@ const updateReservation = async (reference, raw, env) => {
   let serviceCode = normalizeServiceCode(raw.serviceCode || record.serviceCode);
   if (/^[A-Z2-9]{6}$/.test(serviceCode)) serviceCode = `LS-${serviceCode}`;
   if ((converting || raw.generateServiceCode === true || raw.sendStatusEmail === true || raw.sendWhatsApp === true) && !serviceCode) serviceCode = await assignUniqueServiceCode(store, env);
-  if (serviceCode && !/^LS-[A-Z2-9]{6}$/.test(serviceCode)) throw new ValidationError('Gebruik LS- gevolgd door zes letters of cijfers van 2 t/m 9.');
+  if (serviceCode && !serviceCodePattern.test(serviceCode)) throw new ValidationError('Gebruik LS- gevolgd door zes letters of cijfers van 2 t/m 9.');
   if (serviceCode) {
     const existing = await teamStatusRecord(serviceCode, env);
     const owner = existing?.reference || await store.get(`service:${serviceCode}`);
@@ -472,17 +477,22 @@ const sendLattenspecialistEmail = async (data, reference, env) => {
   await sendResendEmail(message, env);
 };
 
-const saveLattenspecialistReservation = async (data, reference, env, ctx) => {
+const saveLattenspecialistReservation = async (data, reference, env, ctx, serviceCode = null) => {
   if (!env.LATTENSPECIALIST_TEAM_DB && !env.LATTENSPECIALIST_RESERVATIONS_KV) return;
   const now = new Date().toISOString();
   const plannedMinutes = data.service === 'Onderhoud' ? Math.max(1, Math.min(20, Number(data.amount) || 1)) * 60 : 0;
-  const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], customerStatus: 'Aanvraag ontvangen', currentStep: 1, expectedReady: '', plannedMinutes, note: '', serviceCode: null, waxType: 'Nog te bepalen', paymentAmount: '', paymentUrl: '', closedAt: null};
+  const stored = {...data, reference, createdAt: now, updatedAt: now, status: STATUS_STEPS[0], customerStatus: 'Aanvraag ontvangen', currentStep: 1, expectedReady: '', plannedMinutes, note: '', serviceCode, waxType: 'Nog te bepalen', paymentAmount: '', paymentUrl: '', closedAt: null};
   delete stored.turnstileToken;
   delete stored.website;
   // Personal reservation data belongs in the EU-jurisdiction D1 database. KV is
   // retained only as a compatibility fallback when no D1 binding is configured.
-  if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(stored, env);
+  if (env.LATTENSPECIALIST_TEAM_DB) {
+    const saved = await ensureTeamRecord(stored, env);
+    if (!saved && serviceCode && await teamStatusRecord(serviceCode, env)) throw new TeamError('Deze servicecode is al in gebruik.', 409);
+    if (!saved) throw new Error('Saved reservation missing.');
+  }
   else await env.LATTENSPECIALIST_RESERVATIONS_KV.put(`reservation:${reference}`, JSON.stringify(stored));
+  if (serviceCode && env.LATTENSPECIALIST_RESERVATIONS_KV) await env.LATTENSPECIALIST_RESERVATIONS_KV.put(`service:${serviceCode}`, reference);
   await queueReservationPush(data,reference,env,ctx);
 };
 
@@ -575,7 +585,7 @@ const application = {
 
     if (site === 'lattenspecialist' && request.method === 'GET' && url.pathname.startsWith('/api/status/')) {
       const code = normalizeServiceCode(decodeURIComponent(url.pathname.slice('/api/status/'.length)));
-      if (!/^LS-[A-Z2-9]{6}$/.test(code)) return json({message: 'Controleer de servicecode.'}, 400, origin);
+      if (!serviceCodePattern.test(code)) return json({message: 'Controleer de servicecode.'}, 400, origin);
       try {
         const record = await getReservationByServiceCode(code, env);
         return record && !record.deletedAt ? json({ok: true, record: publicStatus(record)}, 200, origin) : json({message: 'Servicecode niet gevonden.'}, 404, origin);
@@ -611,15 +621,22 @@ const application = {
     if (site === 'lattenspecialist' && url.pathname === '/api/admin/reservations' && request.method === 'POST') {
       if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
       try {
-        const {data} = readAndValidateLattenspecialist(await request.json(), true);
+        const raw = await request.json();
+        const {data} = readAndValidateLattenspecialist(raw, true);
+        const suffix = normalizeServiceCode(raw.serviceCodeSuffix);
+        if (suffix && !/^[A-Z0-9]{6}$/.test(suffix)) throw new ValidationError('Vul zes letters of cijfers in na het jaar en de maand.');
+        const serviceCode = suffix ? `LS-${serviceMonth()}-${suffix}` : null;
+        if (serviceCode && (await teamStatusRecord(serviceCode, env) || await env.LATTENSPECIALIST_RESERVATIONS_KV?.get(`service:${serviceCode}`))) {
+          throw new TeamError('Deze servicecode is al in gebruik.', 409);
+        }
         const reference = createReference();
-        await saveLattenspecialistReservation(data, reference, env, ctx);
-        const record = (await listReservations(env)).find(item => item.reference === reference);
+        await saveLattenspecialistReservation(data, reference, env, ctx, serviceCode);
+        const record = env.LATTENSPECIALIST_TEAM_DB ? await teamRecord(reference, env) : await env.LATTENSPECIALIST_RESERVATIONS_KV?.get(`reservation:${reference}`, 'json');
         if (!record) throw new Error('Saved reservation missing.');
         return json({ok: true, record}, 201, origin);
       } catch (error) {
         const validation = error instanceof ValidationError;
-        return json({message: validation ? error.message : 'De aanvraag kon niet worden opgeslagen.'}, validation ? 400 : 502, origin);
+        return json({message: validation || error instanceof TeamError ? error.message : 'De aanvraag kon niet worden opgeslagen.'}, error instanceof TeamError ? error.status : validation ? 400 : 502, origin);
       }
     }
 
