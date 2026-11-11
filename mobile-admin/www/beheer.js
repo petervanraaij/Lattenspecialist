@@ -191,7 +191,7 @@
     const closed = Boolean(record.closedAt);
     const minutes=plannedMinutes(record);
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-stage="${recordStage(record)}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
-      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</span><small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span><button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
+      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</span><small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span>${record.service==='Onderhoud'&&!closed?'<button type="button" class="btn btn-gold" data-receive-label>In ontvangst nemen</button>':''}<button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
       ${Number(record.waxstickCount)>0?`<section class="admin-payment admin-waxstick" data-waxstick-reference="${escapeHtml(record.reference)}"><h3>Meebesteld · ${Number(record.waxstickCount)}× Holmenkol Natural Skiwax Stick 50 g</h3><p>€ 17,50 per stuk · bij deze opdracht meegeven.</p><p class="waxstick-handover-status" role="status" aria-live="polite">Meegeefstatus laden…</p><button class="btn btn-gold waxstick-handover" type="button" disabled>Meegeven bevestigen</button><button class="btn btn-dark waxstick-invoice" type="button">Factuur maken in Pierfinity →</button><button class="btn btn-dark waxstick-reload" type="button" hidden>Status opnieuw laden</button></section>`:''}
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-grid">
         <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
@@ -617,6 +617,12 @@
       if(refreshed)refreshed.textContent='Aantal opgeslagen: '+targetCount+' paar ski’s.';
     }catch(error){message.textContent=error.message;}
     finally{button.disabled=false;}
+  });
+
+  document.addEventListener('ls-intake-updated',event=>{
+    const updated=event.detail;
+    records=records.map(record=>record.reference===updated.reference?updated:record);
+    render();
   });
 
   list.addEventListener('ls-issued-set-changed',event=>{

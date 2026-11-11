@@ -93,21 +93,31 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    target.querySelector('#refreshWallboard').onclick=loadWallboard;target.querySelector('#fullscreenWallboard').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else target.requestFullscreen?.();};startWallboardMeters(target);
   }catch(error){target.innerHTML=`<p class="admin-record-message is-error">${escape(error.message)}</p>`;}
  }
- function scanToken(value){const text=String(value||'').trim();if(/^[a-f0-9]{48}$/i.test(text))return text.toLowerCase();if(/^LSM-[A-F0-9]{6}$/i.test(text))return text.toUpperCase();try{return new URLSearchParams(new URL(text).hash.replace(/^#/,'')).get('scan')||'';}catch{return text.match(/[a-f0-9]{48}/i)?.[0]?.toLowerCase()||text.match(/LSM-[A-F0-9]{6}/i)?.[0]?.toUpperCase()||'';}}
+ function scanToken(value){
+  const text=String(value||'').trim();
+  const pattern=/^(?:[a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{4,12})$/i;
+  if(pattern.test(text))return text;
+  try{
+   const url=new URL(text);
+   const hash=new URLSearchParams(url.hash.slice(1));
+   return [...hash.values(),...url.searchParams.values(),...url.pathname.split('/')].find(part=>pattern.test(part))||'';
+  }catch{return '';}
+ }
  async function toggleScanner(){const target=document.querySelector('#adminQrReader'),button=document.querySelector('#adminStartScanner');if(scanner){await scanner.stop().catch(()=>{});scanner.clear();scanner=null;target.hidden=true;button.textContent='QR-camera openen';return;}target.hidden=false;scanner=new Html5Qrcode('adminQrReader');try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240}},async value=>{await toggleScanner();openAdminScan(value);});button.textContent='Camera sluiten';}catch{scanner=null;target.hidden=true;document.querySelector('#adminScanResult').textContent='Geef cameratoegang of voer de QR-link handmatig in.';}}
  async function openAdminScan(value){
   const target=document.querySelector('#adminScanResult');
   const code=String(value||'').trim().toUpperCase();
   if(/^LS-\d{4}-[A-Z0-9]+$/.test(code)){
    const record=getRecords().find(item=>item.reference?.toUpperCase()===code && !item.deletedAt);
-   if(!record){target.textContent='Geen aanvraag gevonden met deze code.';return;}
+   if(record){
    target.textContent='';
    void setTab('orders');
    window.dispatchEvent(new CustomEvent('lattenspecialist:show-request',{detail:{reference:record.reference}}));
    return;
+   }
   }
   const token=scanToken(value);
-  if(!token){target.textContent='Voer een geldige aanvraagcode, materiaalcode of QR-link in.';return;}target.closest('details').open=true;target.textContent='Materiaal laden…';try{const {material,record}=await api('/api/admin/operations/scan/'+token);const actions=[];if(material.internalStatus==='label_created')actions.push(['pickup_depart','Onderweg ophalen'],['receive','Ontvangen']);if(material.internalStatus==='pickup_underway')actions.push(['receive','Ontvangen']);if(material.internalStatus==='ready')actions.push(['delivery_depart','Onderweg terugbrengen'],['delivered','Afgeleverd']);if(material.internalStatus==='delivery_underway')actions.push(['delivered','Afgeleverd']);target.innerHTML=`<article class="admin-scan-card" data-id="${material.id}" data-token="${material.token}"><div><strong>${escape(material.displayCode)}</strong><span>${escape(material.customerStatus)}</span></div><h3>${escape(material.kind)} · ${escape(material.package)}</h3><p>${escape(record.name)}<br>${escape(record.address||'')}</p><div>${actions.map(([action,label])=>`<button class="btn btn-dark" type="button" data-admin-action="${action}">${label}</button>`).join('')||'Onderhoud loopt via de medewerkersapp.'}</div><button type="button" class="btn btn-dark" data-owner-workplan="${escape(material.id)}">Bekijk onderhoudsplan</button><div data-owner-workplan-result="${escape(material.id)}"></div></article>`;}catch(error){target.textContent=error.message;}}
+  if(!token){target.textContent='Voer een geldige aanvraagcode, materiaalcode of QR-link in.';return;}target.closest('details').open=true;target.textContent='Materiaal laden…';try{const {material,record}=await api('/api/admin/operations/scan/'+token);const actions=[];if(material.internalStatus==='label_created')actions.push(['pickup_depart','Onderweg ophalen'],['receive','Ontvangen']);if(material.internalStatus==='pickup_underway')actions.push(['receive','Ontvangen']);if(material.internalStatus==='ready')actions.push(['delivery_depart','Onderweg terugbrengen'],['delivered','Afgeleverd']);if(material.internalStatus==='delivery_underway')actions.push(['delivered','Afgeleverd']);target.innerHTML=`<article class="admin-scan-card" data-id="${material.id}" data-token="${material.token}"><div><strong>${escape(material.displayCode)}</strong><span>${escape(material.customerStatus)}</span></div><h3>${escape(material.kind)} · ${escape(material.package)}</h3><p>${escape(record.name)}<br>${escape(record.address||'')}</p><div>${actions.map(([action,label])=>`<button class="btn btn-dark" type="button" data-admin-action="${action}">${label}</button>`).join('')||'Onderhoud loopt via de medewerkersapp.'}</div><button type="button" class="btn btn-dark" data-owner-workplan="${escape(material.id)}">Bekijk onderhoudsplan</button><div data-owner-workplan-result="${escape(material.id)}"></div></article>`;}catch(error){target.textContent=/^LS-\d{4}-[A-Z0-9]{6}$/.test(code)?'Geen aanvraag gevonden met deze code.':error.message;}}
  async function adminAction(button){const card=button.closest('.admin-scan-card');button.disabled=true;try{await api(`/api/admin/operations/materials/${card.dataset.id}/action`,{method:'POST',body:JSON.stringify({action:button.dataset.adminAction})});await openAdminScan(card.dataset.token);loadDashboard();}catch(error){button.disabled=false;card.insertAdjacentHTML('beforeend',`<p class="admin-record-message is-error">${escape(error.message)}</p>`);}}
  async function openOwnerWorkplan(button){
   const id=button.dataset.ownerWorkplan;if(!/^[a-f0-9-]{36}$/.test(id))return;
@@ -201,6 +211,91 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    if(result.materials.length===1)target.querySelector('[data-execute-material]').click();target.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(error){target.textContent=error.message;}finally{button.disabled=false;}
  }
+ let intakeDialog;
+ async function openIntake(button){
+  if(intakeDialog)return;
+  const reference=button.closest('.admin-record').dataset.reference;
+  const dialog=document.createElement('dialog');
+  intakeDialog=dialog;
+  dialog.className='workorder-executor-dialog';
+  dialog.innerHTML=`<form data-intake-form>
+    <h3>In ontvangst nemen</h3>
+    <label>Set<select name="materialId" required><option value="">Sets laden…</option></select></label>
+    <button type="button" class="btn btn-dark" data-intake-camera disabled>QR-camera openen</button>
+    <div id="intakeQrReader" hidden></div>
+    <label>Onderhoudscode op de sticker<input name="label" maxlength="500" autocomplete="off" autocapitalize="characters" required></label>
+    <p data-intake-message role="status" aria-live="polite"></p>
+    <button type="submit" class="btn btn-gold" disabled>Koppel en ontvang</button>
+    <button type="button" class="btn btn-dark" data-intake-close>Sluiten</button>
+  </form>`;
+  document.body.append(dialog);
+  const form=dialog.querySelector('form'),select=form.elements.materialId,input=form.elements.label;
+  const message=dialog.querySelector('[data-intake-message]'),camera=dialog.querySelector('[data-intake-camera]');
+  const reader=dialog.querySelector('#intakeQrReader'),save=form.querySelector('[type=submit]');
+  let intakeScanner=null,busy=false,cameraStart=null;
+  async function stop(){
+   await cameraStart?.catch(()=>{});
+   if(intakeScanner){
+    await intakeScanner.stop().catch(()=>{});
+    try{intakeScanner.clear();}catch{}
+    intakeScanner=null;
+   }
+   reader.hidden=true;camera.textContent='QR-camera openen';
+  }
+  function showSets(materials){
+   const pending=materials.filter(item=>['label_created','pickup_underway'].includes(item.internalStatus));
+   select.replaceChildren(...pending.map(item=>new Option(`Set ${item.itemNumber} · ${item.kind} · ${item.package}`,item.id)));
+   if(!pending.length)select.add(new Option('Alles is ontvangen'));
+   select.disabled=!pending.length;
+   camera.disabled=save.disabled=input.disabled=!pending.length;
+   return pending.length;
+  }
+  async function receive(){
+   if(busy||!form.reportValidity())return;
+   busy=true;save.disabled=camera.disabled=select.disabled=true;
+   try{
+    const result=await api('/api/admin/operations/materials/intake',{method:'POST',body:JSON.stringify({reference,materialId:select.value,label:input.value})});
+    const received=result.materials.find(item=>item.id===select.value);
+    const remaining=showSets(result.materials);
+    input.value='';
+    message.textContent=`${received.displayCode} ontvangen. ${remaining?'Scan de sticker van de volgende set.':'Alle sets van deze aanvraag zijn ontvangen.'}`;
+    document.dispatchEvent(new CustomEvent('ls-intake-updated',{detail:result.record}));
+   }catch(error){message.textContent=error.message;save.disabled=camera.disabled=select.disabled=false;}
+   finally{busy=false;}
+  }
+  camera.onclick=async()=>{
+   if(intakeScanner){await stop();return;}
+   if(typeof Html5Qrcode!=='function'){message.textContent='Vul de code op de sticker handmatig in.';return;}
+   reader.hidden=false;camera.disabled=true;
+   const scannerInstance=new Html5Qrcode(reader.id);
+   intakeScanner=scannerInstance;
+   let captured=false;
+   try{
+    cameraStart=scannerInstance.start({facingMode:'environment'},{fps:10},async value=>{
+     if(!intakeScanner||busy||captured)return;
+     captured=true;input.value=value;
+     await stop();
+     if(dialog.open)await receive();
+    });
+    await cameraStart;
+    camera.textContent='Camera sluiten';
+   }catch{await stop();message.textContent='Camera niet beschikbaar. Vul de code op de sticker in.';}
+   finally{cameraStart=null;camera.disabled=false;}
+  };
+  select.onchange=()=>{input.value='';message.textContent='';};
+  form.onsubmit=event=>{event.preventDefault();void receive();};
+  dialog.querySelector('[data-intake-close]').onclick=()=>dialog.close();
+  dialog.addEventListener('close',async()=>{await stop();dialog.remove();if(intakeDialog===dialog)intakeDialog=null;},{once:true});
+  dialog.showModal();
+  try{
+   const result=await api('/api/admin/operations/materials/intake',{method:'POST',body:JSON.stringify({reference})});
+   if(dialog.open&&!showSets(result.materials))message.textContent='Er zijn geen sets meer om in ontvangst te nemen.';
+  }catch(error){message.textContent=error.message;}
+ }
+ document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-receive-label]');
+  if(button)void openIntake(button);
+ });
  document.addEventListener('ls-open-material',event=>{if(event.detail?.token){void setTab('orders');void openAdminScan(event.detail.token);}});
  document.addEventListener('click',event=>{const button=event.target.closest('.open-workorder-workspace');if(button)void openWorkorderWorkspace(button);});
  document.addEventListener('click',event=>{const workplan=event.target.closest('[data-owner-workplan]');if(workplan){void openOwnerWorkplan(workplan);return;}const button=event.target.closest('.create-material-labels');if(button)handleLabelButton(button);});
