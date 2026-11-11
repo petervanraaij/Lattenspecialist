@@ -200,5 +200,26 @@ try{
   const {data}=await fixture.call('/api/admin/operations/materials/'+id+'/workflow');
   assert.deepEqual(data.workflow.steps.map(step=>step.code),['inspection','setup','bindings_off','repair','filing','premium_file','premium_diamond','bindings_on','finish','practice_delivery']);
  });
+ await scenario('Two selected employees can run separate exercises at the same time',async()=>{
+  const added=await fixture.call('/api/admin/team/members','POST',{name:'Tweede oefenmedewerker',login:'oefen.twee'});
+  assert.equal(added.status,201);
+  await page.reload();
+  await page.locator('#adminTabs [data-tab=workplace]').click();
+  const form=page.locator('#practiceForm');
+  await form.locator('[name=activity]').selectOption('filing');
+  for(const member of [fixture.member,added.data]){
+   await form.locator('[name=executionMemberId]').selectOption(member.id);
+   await form.locator('button[type=submit]').click();
+   const panel=page.locator('[data-practice-member="'+member.id+'"]');
+   await panel.getByRole('heading',{name:'Uitvoerder: '+member.name}).waitFor();
+   const id=await panel.locator('.workflow-shell').getAttribute('data-material-id');
+   const {data}=await fixture.call('/api/admin/operations/materials/'+id+'/workflow');
+   const step=data.workflow.steps[0];
+   const started=await fixture.call('/api/admin/operations/steps/'+step.id+'/start','POST',{executionMemberId:member.id,guideVersion:step.guide.version});
+   assert.equal(started.status,200);
+  }
+  assert.equal(await page.locator('#practiceResult [data-practice-member]').count(),2);
+  assert.equal(fixture.sql.prepare('SELECT COUNT(DISTINCT member_id) AS n FROM maintenance_step_sessions WHERE ended_at IS NULL AND is_training=1').get().n,2);
+ });
  assert.deepEqual(errors,[]);console.log(`${passed} queue scenarios passed.`);
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));fixture?.close();}

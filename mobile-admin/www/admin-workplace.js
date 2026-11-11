@@ -8,13 +8,13 @@
   async function people(){try{const data=await api('/api/admin/team/members'),options='<option value="">Kies medewerker</option>'+(data.members||[]).filter(m=>m.active).map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');for(const select of [practice.querySelector('[name=executionMemberId]'),host.querySelector('[data-warehouse-member]')])select.innerHTML=options;host.querySelector('[data-workplace-status]').textContent='';}catch(e){host.querySelector('[data-workplace-status]').textContent=e.message;}}
   await people();
   const sessions=document.createElement('section');sessions.innerHTML='<h3>Eerdere oefeningen</h3><button type="button" data-refresh-practice>Oefeningen vernieuwen</button><p data-practice-message role="status"></p><div data-practice-sessions></div>';practice.prepend(sessions);
-  async function list(){const target=sessions.querySelector('[data-practice-sessions]');try{const data=await api('/api/admin/workplace/practice');target.innerHTML=(data.sessions||[]).map(item=>`<p><button type="button" data-resume-practice="${esc(item.id)}" data-member="${esc(item.memberId)}">${esc(item.displayCode)} · ${esc(item.kind)} · ${esc(item.title)} · ${esc(item.memberName)} · ${esc(item.status==='ready'?'Afgerond':item.status==='maintenance'?'Bezig':'Openen')}</button> ${['ready','delivered'].includes(item.status)?'':`<button class="admin-trash-cross" type="button" data-remove-practice="${esc(item.id)}" data-code="${esc(item.displayCode)}" aria-label="Verwijder oefening ${esc(item.displayCode)}" title="Oefening verwijderen">×</button>`}</p>`).join('')||'<p>Nog geen oefeningen.</p>';}catch(e){target.textContent=e.message;}}
+  async function list(){const target=sessions.querySelector('[data-practice-sessions]');try{const data=await api('/api/admin/workplace/practice');target.innerHTML=(data.sessions||[]).map(item=>`<p><button type="button" data-resume-practice="${esc(item.id)}" data-member="${esc(item.memberId)}" data-member-name="${esc(item.memberName)}">${esc(item.displayCode)} · ${esc(item.kind)} · ${esc(item.title)} · ${esc(item.memberName)} · ${esc(item.status==='ready'?'Afgerond':item.status==='maintenance'?'Bezig':'Openen')}</button> ${['ready','delivered'].includes(item.status)?'':`<button class="admin-trash-cross" type="button" data-remove-practice="${esc(item.id)}" data-code="${esc(item.displayCode)}" aria-label="Verwijder oefening ${esc(item.displayCode)}" title="Oefening verwijderen">×</button>`}</p>`).join('')||'<p>Nog geen oefeningen.</p>';}catch(e){target.textContent=e.message;}}
   const confirm=document.createElement('dialog');
   confirm.className='workorder-executor-dialog';
   confirm.setAttribute('aria-labelledby','removePracticeTitle');
   confirm.innerHTML='<form method="dialog"><h3 id="removePracticeTitle">Oefening verwijderen?</h3><p data-remove-description></p><div class="admin-save-actions"><button class="btn btn-dark" value="cancel" autofocus>Annuleren</button><button class="btn btn-gold" value="remove">Verwijderen</button></div></form>';
   sessions.append(confirm);
-  let pending,opened;
+  let pending;
   confirm.addEventListener('close',async()=>{
    const button=pending;pending=null;
    if(!button||confirm.returnValue!=='remove')return;
@@ -22,7 +22,7 @@
    button.disabled=true;message.textContent='';
    try{
     await api('/api/admin/workplace/practice/'+encodeURIComponent(id)+'/remove',{method:'POST',body:'{}'});
-    if(opened===id){practice.querySelector('#practiceResult').replaceChildren();opened=null;}
+    practice.querySelector(`[data-practice-material="${CSS.escape(id)}"]`)?.remove();
     await list();
     message.textContent='Oefening verwijderd.';
    }catch(e){message.textContent=e.message;}
@@ -37,12 +37,14 @@
     confirm.returnValue='cancel';confirm.showModal();return;
    }
    const button=event.target.closest('[data-resume-practice]');if(!button)return;
-   opened=button.dataset.resumePractice;
-   const target=practice.querySelector('#practiceResult');target.replaceChildren();
-   const bench=document.createElement('section');target.append(bench);
-   void window.LSWorkflows.open(bench,opened,{admin:true,memberId:button.dataset.member});
+   const {resumePractice,member,memberName}=button.dataset;
+   const target=practice.querySelector('#practiceResult');
+   const panel=window.LSWorkflows.practicePanel(target,member,memberName,resumePractice);
+   const bench=panel.lastElementChild;
+   if(!bench.hasChildNodes())void window.LSWorkflows.open(bench,resumePractice,{admin:true,memberId:member});
+   panel.scrollIntoView({block:'start',behavior:'smooth'});
   });
-  document.addEventListener('ls-practice-created',event=>{opened=event.detail.id;void list();});
+  document.addEventListener('ls-practice-created',()=>void list());
   void list();
 
   const warehouse=()=>window.LSWarehouse.open(api,host.querySelector('[data-warehouse-host]'),{owner:true,memberId:host.querySelector('[data-warehouse-member]').value});

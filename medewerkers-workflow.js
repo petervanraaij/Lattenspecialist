@@ -291,9 +291,24 @@
     };
   }
 
+  function practicePanel(result, memberId, name, materialId) {
+    const current = [...result.children].find(panel => panel.dataset.practiceMember === memberId);
+    if (current?.dataset.practiceMaterial === materialId) return current;
+    const panel = document.createElement('article');
+    panel.dataset.practiceMember = memberId;
+    panel.dataset.practiceMaterial = materialId;
+    const heading = document.createElement('h3');
+    heading.textContent = 'Uitvoerder: ' + name;
+    panel.append(heading, document.createElement('section'));
+    if (current) current.replaceWith(panel);
+    else result.append(panel);
+    return panel;
+  }
+
   async function createPractice(form) {
     const status = document.getElementById('practiceStatus'), result = document.getElementById('practiceResult'), button = form.querySelector('button[type=submit]');
     const values = Object.fromEntries(new FormData(form));
+    const memberName = form.elements.executionMemberId?.selectedOptions[0]?.textContent;
     if (values.activity === 'full') {
       values.maintenanceSelection = {
         p: {[values.practicePackage]: {
@@ -309,7 +324,7 @@
     values.premiumFiling = values.activity === 'filing' && form.elements.premiumFiling?.checked === true;
     if (values.activity === 'wax') values.waxProtocol = 'yellow-red'; else delete values.finishWax;
     if (values.activity !== 'wax') delete values.waxSku;
-    button.disabled = true; status.classList.remove('is-error'); status.textContent = 'Oefenopdracht aanmaken…'; result.replaceChildren();
+    button.disabled = true; status.classList.remove('is-error'); status.textContent = 'Oefenopdracht aanmaken…'; if(form.dataset.ownerPractice!=='true')result.replaceChildren();
     try {
       const owner=form.dataset.ownerPractice==='true', context=owner?form:undefined;
       if(owner){form.dataset.ownerWorkflow='true';form.dataset.executionMemberId=values.executionMemberId;}
@@ -317,7 +332,10 @@
       const material = data.material || data.workflow?.material || {};
       if (!material.id) throw new Error('De oefening is aangemaakt, maar kon niet worden geopend. Vernieuw en probeer opnieuw.');
       status.textContent = 'Oefening klaar. Start hieronder de eerste stap.';
-      const host = document.createElement('section'); if(owner){host.dataset.ownerWorkflow='true';host.dataset.executionMemberId=values.executionMemberId;} result.append(host);
+      const panel = owner ? practicePanel(result, values.executionMemberId, memberName, material.id) : null;
+      const host = panel ? panel.lastElementChild : document.createElement('section');
+      if(owner){host.dataset.ownerWorkflow='true';host.dataset.executionMemberId=values.executionMemberId;}
+      else result.append(host);
       await loadInto(host, material.id, data);
       if(owner)document.dispatchEvent(new CustomEvent('ls-practice-created',{detail:{id:material.id}}));
     } catch (error) {
@@ -367,7 +385,7 @@
     const form=input.closest('.workflow-step').querySelector('[data-workflow-action="finish"]');
     if(form&&!form.dataset.submitting)form.requestSubmit();
   });
-  window.LSWorkflows={open(host,materialId,{admin=false,memberId=''}={}){host.dataset.ownerWorkflow=String(admin);host.dataset.executionMemberId=memberId;return loadInto(host,materialId);}};
+  window.LSWorkflows={practicePanel,open(host,materialId,{admin=false,memberId=''}={}){host.dataset.ownerWorkflow=String(admin);host.dataset.executionMemberId=memberId;return loadInto(host,materialId);}};
   watchScans();
   setInterval(updateTimers, 1000);
 })();
