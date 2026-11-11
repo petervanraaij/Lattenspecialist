@@ -122,6 +122,12 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   button.disabled=true;target.textContent='Onderhoudscodes laden…';
   try{
    const result=await labels(reference,create);
+   const count=card.querySelector('[data-ski-count]');
+   if(count&&result.materials.length&&count.value===count.defaultValue){
+    count.defaultValue=String(result.materials.filter(item=>item.kind==='Ski').length);
+    count.value=count.defaultValue;
+   }
+
    button.textContent=result.materials.length?'Ontbrekende codes maken':'Onderhoudscodes en QR-stickers maken';
    target.innerHTML=`<div class="material-label-list">${result.materials.map(item=>`<div data-material-code-row>
     <label>Set ${item.itemNumber} · ${escape(item.kind)} · ${escape(item.package)}

@@ -40,7 +40,7 @@
   summary.before(orderFilters);
   const listStatus=document.createElement('p');listStatus.className='admin-list-status';listStatus.setAttribute('role','status');list.before(listStatus);
   const syncStatus=document.createElement('p');syncStatus.className='admin-sync-status';syncStatus.setAttribute('role','status');refreshButton.parentElement.append(syncStatus);
-  for(const type of ['input','change'])list.addEventListener(type,event=>{const card=event.target.closest('.admin-record');if(card&&event.target.closest('.admin-update-form')&&!event.target.closest('[data-material-code-row],[data-extra-ski-package]')){dirtyRequests.add(card.dataset.reference);card.dataset.unsaved='true';card.querySelector('.discard-request').hidden=false;syncStatus.textContent='Niet-opgeslagen wijzigingen blijven bewaard tijdens verversen.';}});
+  for(const type of ['input','change'])list.addEventListener(type,event=>{const card=event.target.closest('.admin-record');if(card&&event.target.closest('.admin-update-form')&&!event.target.closest('[data-material-code-row],[data-extra-ski-package],[data-ski-count]')){dirtyRequests.add(card.dataset.reference);card.dataset.unsaved='true';card.querySelector('.discard-request').hidden=false;syncStatus.textContent='Niet-opgeslagen wijzigingen blijven bewaard tijdens verversen.';}});
   orderFilters.addEventListener('click',event=>{const button=event.target.closest('[data-order-filter]');if(!button)return;activeFilter=button.dataset.orderFilter;applySearch();});
   let polling=false;
   async function pollRequests(){
@@ -208,8 +208,9 @@
           </details>
           ${record.service==='Onderhoud'?`<details class="edit-maintenance" data-edit-maintenance>
             <summary>Sets, pakketten en werkzaamheden aanpassen</summary>
-            <label>Pakket voor het extra paar<select data-extra-ski-package>${['Koper','Brons','Zilver','Goud','Platinum'].map(name=>`<option${name===record.package?' selected':''}>${name}</option>`).join('')}</select></label>
-            <button type="button" class="btn btn-gold" data-add-ski-pair>Extra paar ski’s toevoegen</button>
+            <label>Aantal paren ski’s<input type="number" min="0" max="20" step="1" required data-ski-count value="${record.material==='Ski'?Number(record.amount)||0:Object.values(window.LATTEN_SELECTION?.parse(record.maintenanceSelection)?.p||{}).reduce((total,item)=>total+item.s,0)}"></label>
+            <label>Pakket voor nieuwe paren<select data-extra-ski-package>${['Koper','Brons','Zilver','Goud','Platinum'].map(name=>`<option${name===record.package?' selected':''}>${name}</option>`).join('')}</select></label>
+            <button type="button" class="btn btn-gold" data-add-ski-pair>Aantal opslaan</button>
             <p data-add-ski-message role="status"></p>
             <div><div class="material-labels" aria-live="polite"></div><button class="btn btn-dark create-material-labels" type="button">Onderhoudscodes en QR-stickers maken</button></div>
             <details class="edit-maintenance-options">
@@ -580,7 +581,14 @@
     if(!editor)return;
     editor.open=true;
     editor.scrollIntoView({block:'start'});
-    editor.querySelector('[data-extra-ski-package]').focus({preventScroll:true});
+    const count=editor.querySelector('[data-ski-count]');
+    count.focus({preventScroll:true});count.select();
+  });
+
+  list.addEventListener('keydown',event=>{
+    if(event.key!=='Enter'||!event.target.matches('[data-ski-count]'))return;
+    event.preventDefault();
+    event.target.closest('[data-edit-maintenance]').querySelector('[data-add-ski-pair]').click();
   });
 
   list.addEventListener('click',async event=>{
@@ -588,12 +596,17 @@
     if(!button)return;
     const card=button.closest('.admin-record'),message=card.querySelector('[data-add-ski-message]');
     const record=records.find(item=>item.reference===card.dataset.reference);
+    const count=card.querySelector('[data-ski-count]');
+    if(!count.reportValidity())return;
+    const targetCount=count.valueAsNumber;
+    if(targetCount<Number(count.defaultValue)&&!confirm('Aantal verlagen? De laatst toegevoegde paren worden uit deze aanvraag gehaald.'))return;
     button.disabled=true;
-    message.textContent='Paar ski’s toevoegen…';
+    message.textContent='Aantal opslaan…';
     try{
       const result=await api('/api/admin/operations/materials/add-ski-pair',{method:'POST',body:JSON.stringify({
-        reference:record.reference,revision:record.revision??0,package:card.querySelector('[data-extra-ski-package]').value
+        reference:record.reference,revision:record.revision??0,targetCount,package:card.querySelector('[data-extra-ski-package]').value
       })});
+      count.defaultValue=String(targetCount);
       const planned=card.querySelector('[name=plannedMinutes]');
       if(planned&&planned.value===planned.defaultValue){
         planned.value=String(plannedMinutes(result.record));
@@ -601,7 +614,7 @@
       }
       card.dispatchEvent(new CustomEvent('ls-issued-set-changed',{bubbles:true,detail:result.record}));
       const refreshed=list.querySelector(`[data-reference="${CSS.escape(record.reference)}"] [data-add-ski-message]`);
-      if(refreshed)refreshed.textContent='Extra paar toegevoegd met code '+result.material.displayCode+'.';
+      if(refreshed)refreshed.textContent='Aantal opgeslagen: '+targetCount+' paar ski’s.';
     }catch(error){message.textContent=error.message;}
     finally{button.disabled=false;}
   });
