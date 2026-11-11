@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v148-practice-removal';
+const CACHE_NAME = 'lattenspecialist-v149-full-practice';
 const APP_SHELL = [
   '/',
   '/index.html',
