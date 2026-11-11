@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v154-tidy-tabs';
+const CACHE_NAME = 'lattenspecialist-v155-top-tabs';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -45,7 +45,7 @@ const APP_SHELL = [
   '/team.css?v=1',
   '/admin-metrics.css?v=1',
   '/admin-operations.js?v=20261111-tidy-tabs',
-  '/admin-operations.css?v=20261030-guides-2',
+  '/admin-operations.css?v=top-tabs-20261030-guides-2',
   '/admin-operations-extra.css?v=1',
   '/vendor/qrcode.js',
   '/vendor/html5-qrcode.min.js',
