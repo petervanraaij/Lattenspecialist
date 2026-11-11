@@ -15,7 +15,8 @@ async function body(request,ErrorType){const reader=request.body?.getReader();if
 export async function materialPhotos(request,env,{db,materialId,photoId,member,owner,json,origin,ErrorType}){
  const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(materialId).first();if(!material)throw new ErrorType('Materiaal niet gevonden.',404);
  if(!owner&&material.assigned_to&&material.assigned_to!==member.id)throw new ErrorType('Geen toegang tot dit materiaal.',403);
- if(material.is_training)throw new ErrorType('Foto’s horen bij een echte onderhoudsopdracht.',400);
+ if(material.internal_status==='practice_removed')throw new ErrorType('Deze oefening is verwijderd.',404);
+ if(material.is_training && JSON.parse(material.selected_options||'{}').activity!=='full')throw new ErrorType('Kies een volledige oefenopdracht om foto’s toe te voegen.',400);
  await ensurePhotos(db);const storage=env.LATTENSPECIALIST_RESERVATIONS_KV;if(!storage)throw new ErrorType('Foto-opslag is niet beschikbaar.',503);
  if(photoId&&request.method==='GET'){
   const photo=await db.prepare('SELECT * FROM material_photos WHERE id=? AND material_id=?').bind(photoId,materialId).first();if(!photo)throw new ErrorType('Foto niet gevonden.',404);
@@ -31,7 +32,7 @@ export async function materialPhotos(request,env,{db,materialId,photoId,member,o
  const matches=p=>p.sha256===digest&&p.stage===raw.stage&&p.note===raw.note;
  if(existing){if(!matches(existing))throw new ErrorType('Deze upload is al met andere gegevens opgeslagen.',409);return json({id:existing.id,saved:true},200,origin);}
  const count=await db.prepare('SELECT COUNT(*) amount FROM material_photos WHERE material_id=?').bind(materialId).first();if(Number(count.amount)>=40)throw new ErrorType('Er zijn al 40 foto’s bij dit materiaal.',409);
- const id=crypto.randomUUID(),key=`material-photo:${materialId}:${id}`,created=new Date().toISOString();await storage.put(key,bytes);
+ const id=crypto.randomUUID(),key=`${material.is_training?'practice-photo':'material-photo'}:${materialId}:${id}`,created=new Date().toISOString();await storage.put(key,bytes);
  try{await db.batch([db.prepare('INSERT OR IGNORE INTO material_photos(id,material_id,request_id,stage,note,storage_key,sha256,byte_size,actor,created_at) SELECT ?,?,?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM material_photos WHERE material_id=?)<40').bind(id,materialId,raw.requestId,raw.stage,raw.note,key,digest,bytes.length,(owner?'owner':member.id),created,materialId),db.prepare("INSERT INTO material_events(material_id,actor,event_type,detail,created_at) SELECT ?,?,'photo_added',?,? WHERE EXISTS(SELECT 1 FROM material_photos WHERE id=?)").bind(materialId,(owner?'owner':member.id),JSON.stringify({photoId:id,stage:raw.stage,bytes:bytes.length}),created,id)]);}catch(error){await storage.delete(key);throw error;}
  const saved=await db.prepare('SELECT * FROM material_photos WHERE material_id=? AND request_id=?').bind(materialId,raw.requestId).first();if(!saved){await storage.delete(key);throw new ErrorType('Er zijn al 40 foto’s bij dit materiaal.',409);}if(saved.id!==id){await storage.delete(key);if(!matches(saved))throw new ErrorType('Deze upload is al opgeslagen.',409);}
  return json({id:saved.id,saved:true},201,origin);

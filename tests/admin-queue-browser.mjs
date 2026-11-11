@@ -143,5 +143,44 @@ try{
   assert.equal(await remove.count(),0);
   assert.equal(await bench.count(),0);
  });
+ await scenario('Complete practice order requires both photos and stays a training order',async()=>{
+  const form=page.locator('#practiceForm');
+  await form.locator('[name=executionMemberId]').selectOption(fixture.member.id);
+  await page.getByRole('button',{name:'Hele onderhoudsopdracht oefenen'}).click();
+  await form.locator('button[type=submit]').click();
+  const bench=page.locator('#practiceResult .workflow-shell');
+  await bench.getByRole('heading',{name:/Oefenopdracht OEF-/}).waitFor();
+  const id=await bench.getAttribute('data-material-id');
+  const workflowPath='/api/admin/operations/materials/'+id+'/workflow';
+  const photoPath='/api/admin/operations/materials/'+id+'/photos';
+  const work=(await fixture.call(workflowPath)).data;
+  assert.equal(work.material.isTraining,true);
+  assert.equal(work.material.fullPractice,true);
+  assert.deepEqual(work.workflow.steps.map(step=>step.code),['inspection','setup','filing','deep_clean','wax','scrape','brush','finish','practice_delivery']);
+  const disclosure=bench.locator('.material-photo-disclosure');
+  await disclosure.locator('summary').click();
+  for(const step of work.workflow.steps){
+   const base='/api/admin/operations/steps/'+step.id;
+   const values={executionMemberId:fixture.member.id,guideVersion:step.guide.version};
+   if(step.needsStartWeight)values.startWeight=100;
+   const started=await fixture.call(base+'/start','POST',values);
+   assert.equal(started.status,200,JSON.stringify(started.data));
+   const finish={...values,endWeight:99,guideChecks:{version:step.guide.version,checkedIds:step.guide.checks.map(check=>check.id)},toolSkus:[]};
+   const stage={inspection:'intake',practice_delivery:'delivery'}[step.code];
+   if(stage){
+    assert.equal((await fixture.call(base+'/finish','POST',finish)).status,409);
+    await disclosure.locator('[data-photo-upload] [name=stage]').selectOption(stage);
+    await disclosure.locator('[data-photo-files]').setInputFiles(resolve(root,'images/badge.webp'));
+    await disclosure.locator('[data-photo-upload] [type=submit]').click();
+    await disclosure.locator('[data-photo-list="'+stage+'"] [data-photo-open]').click();
+    await disclosure.locator('[data-photo-list="'+stage+'"] img').waitFor();
+   }
+   const finished=await fixture.call(base+'/finish','POST',finish);
+   assert.equal(finished.status,200,JSON.stringify(finished.data));
+  }
+  assert.equal((await fixture.call(workflowPath)).data.material.internalStatus,'ready');
+  assert.deepEqual((await fixture.call(photoPath)).data.photos.map(photo=>photo.stage),['intake','delivery']);
+  assert.equal(fixture.sql.prepare('SELECT COUNT(*) AS n FROM records WHERE reference=?').get(work.material.reference).n,0);
+ });
  assert.deepEqual(errors,[]);console.log(`${passed} queue scenarios passed.`);
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));fixture?.close();}
