@@ -15,7 +15,7 @@
   const root=document.createElement('section');root.className='material-photo-panel';root.innerHTML=`<h3>Foto’s bij dit materiaal</h3><p>Leg vast hoe dit paar ski’s of snowboard binnenkomt en hoe je het oplevert. Foto’s zijn intern; klanten kunnen ze niet openen.</p><form data-photo-upload><label>Moment<select name="stage"><option value="intake">Binnenkomst</option><option value="delivery">Oplevering</option></select></label><label>Toelichting<input name="note" maxlength="500" placeholder="Bijvoorbeeld: kras onder linker ski"></label><div class="workflow-actions"><label class="photo-file-button">Foto maken<input data-photo-camera type="file" accept="image/*" capture="environment"></label><label class="photo-file-button">Foto’s kiezen<input data-photo-files type="file" accept="image/*" multiple></label></div><p data-photo-selection aria-live="polite">Nog geen foto gekozen.</p><button type="submit" class="primary">Foto’s opslaan</button></form><p data-photo-status role="status" aria-live="polite"></p><button type="button" data-photo-refresh>Foto’s vernieuwen</button><div class="material-photo-columns"><section><h4>Binnenkomst</h4><div data-photo-list="intake"></div></section><section><h4>Oplevering</h4><div data-photo-list="delivery"></div></section></div>`;host.append(root);
   if(options.intakeOnly){
    root.querySelector('h3').textContent='Innamefoto’s';
-   root.querySelector(':scope > p').textContent='Leg de staat van dit materiaal bij binnenkomst vast.';
+   root.querySelector(':scope > p').textContent='Een innamefoto wordt meteen bij deze set opgeslagen. Foto’s uit je galerij kun je samen opslaan.';
    const stage=document.createElement('input');
    stage.type='hidden';stage.name='stage';stage.value='intake';
    root.querySelector('[name=stage]').closest('label').replaceWith(stage);
@@ -39,10 +39,53 @@
     ids.set(file,crypto.randomUUID());
     files.push(file);
    }
-   input.value='';
    renderSelection();
+   if(options.intakeOnly && input.matches('[data-photo-camera]') && input.files.length){
+    void savePhotos(form).finally(()=>{input.value='';});
+   }else input.value='';
   }));
-  root.querySelector('[data-photo-upload]').onsubmit=async event=>{event.preventDefault();if(busy)return;if(!files.length){status.textContent='Kies eerst een foto.';return;}busy=true;options.onBusy?.(true);const form=event.currentTarget;for(const field of form.elements)field.disabled=true;let saved=0;try{const stage=form.elements.stage.value,note=form.elements.note.value;for(const file of [...files]){status.textContent=`Foto ${saved+1} van ${files.length} opslaan…`;const image=await jpeg(file);if(!alive())return;await api('',{method:'POST',body:JSON.stringify({stage,note,image,requestId:ids.get(file)})});saved++;}if(alive()){status.textContent=`${saved} foto’s opgeslagen bij ${stage==='intake'?'binnenkomst':'oplevering'}.`;files=[];renderSelection();await refresh();if(alive())options.onSaved?.();}}catch(error){if(alive()){files=files.slice(saved);renderSelection();status.textContent=`${saved} opgeslagen. ${error.message} Je kunt opnieuw proberen.`;}}finally{busy=false;options.onBusy?.(false);if(alive())for(const field of form.elements)field.disabled=false;}};
+  const form=root.querySelector('[data-photo-upload]');
+  form.onsubmit=event=>{event.preventDefault();void savePhotos(form);};
+  async function savePhotos(form){
+   if(busy)return;
+   if(!files.length){status.textContent='Kies eerst een foto.';return;}
+   busy=true;
+   options.onBusy?.(true);
+   for(const field of form.elements)field.disabled=true;
+   let saved=0,lastPhotoId;
+   try{
+    const stage=form.elements.stage.value,note=form.elements.note.value;
+    for(const file of files){
+     status.textContent=`Foto ${saved+1} van ${files.length} opslaan…`;
+     const image=await jpeg(file);
+     if(!alive())return;
+     const result=await api('',{method:'POST',body:JSON.stringify({stage,note,image,requestId:ids.get(file)})});
+     saved++;
+     lastPhotoId=result.id;
+    }
+    if(!alive())return;
+    const count=saved===1?'1 foto':`${saved} foto’s`;
+    status.textContent=`${count} opgeslagen bij ${stage==='intake'?'binnenkomst':'oplevering'}.`;
+    files=[];
+    renderSelection();
+    await refresh();
+    if(!alive())return;
+    if(options.intakeOnly && lastPhotoId){
+     root.querySelector(`[data-photo-open="${CSS.escape(lastPhotoId)}"]`)?.click();
+    }
+    options.onSaved?.();
+   }catch(error){
+    if(alive()){
+     files=files.slice(saved);
+     renderSelection();
+     status.textContent=`${saved} opgeslagen. ${error.message} Je kunt opnieuw proberen.`;
+    }
+   }finally{
+    busy=false;
+    options.onBusy?.(false);
+    if(alive())for(const field of form.elements)field.disabled=false;
+   }
+  }
   root.querySelector('[data-photo-refresh]').onclick=refresh;
   root.onclick=async event=>{const button=event.target.closest('[data-photo-open]');if(!button)return;button.disabled=true;try{const blob=await api('/'+button.dataset.photoOpen,{},true);if(!alive())return;const url=URL.createObjectURL(blob);urls.add(url);const view=button.parentElement.querySelector('[data-photo-view]');view.replaceChildren();const img=document.createElement('img');img.src=url;img.alt='Materiaal bij '+button.parentElement.parentElement.parentElement.querySelector('h4').textContent;view.append(img);button.hidden=true;}catch(error){if(alive())status.textContent=error.message;}finally{button.disabled=false;}};
   refresh();
