@@ -48,7 +48,7 @@ try{
   for(const checkbox of await page.locator('#practiceResult [data-workflow-action=finish] input[type=checkbox]').all())await checkbox.check();
   await page.locator('#practiceResult [data-workflow-action=finish] button[type=submit]').click();
   await page.locator('#practiceResult .workflow-step.is-completed').waitFor();
-  await page.locator('[data-refresh-practice]').click();await page.locator('[data-resume-practice]').first().click();await page.locator('#practiceResult .workflow-step').waitFor();
+  await page.locator('[data-practice-history] > summary').click();await page.locator('[data-refresh-practice]').click();await page.locator('[data-resume-practice]').first().click();await page.locator('#practiceResult .workflow-step').waitFor();
 
   await page.locator('[data-admin-subnav=workplace] [data-tab=instructions]').click();await page.locator('[data-library-materials]').click();await page.locator('.tool-photo-card').first().waitFor();
   assert.ok(await page.locator('.tool-photo-card img').count()>0);
