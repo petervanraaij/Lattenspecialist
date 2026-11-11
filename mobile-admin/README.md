@@ -4,6 +4,8 @@ Deze map bevat de native beheerapp voor `nl.lattenspecialist.beheer`. De app bun
 
 ## Bijwerken
 
+Neem bij elke wijziging aan Beheer ook de Android-app mee. Synchroniseer de webbestanden, verhoog Androids versiecode en versienaam, bouw de ondertekende AAB en publiceer deze op het bestaande interne Google Play-testkanaal. Controleer in Play Console dat de uitgave beschikbaar is voor interne testers.
+
 ```text
 npm install
 npm run prepare:assets
