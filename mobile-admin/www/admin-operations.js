@@ -218,7 +218,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   const dialog=document.createElement('dialog');
   intakeDialog=dialog;
   dialog.className='workorder-executor-dialog';
-  dialog.innerHTML=`<form data-intake-form>
+  dialog.innerHTML=`<section data-intake-scan><form data-intake-form>
     <h3>In ontvangst nemen</h3>
     <label>Set<select name="materialId" required><option value="">Sets laden…</option></select></label>
     <button type="button" class="btn btn-dark" data-intake-camera disabled>QR-camera openen</button>
@@ -227,12 +227,45 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
     <p data-intake-message role="status" aria-live="polite"></p>
     <button type="submit" class="btn btn-gold" disabled>Koppel en ontvang</button>
     <button type="button" class="btn btn-dark" data-intake-close>Sluiten</button>
-  </form>`;
+  </form></section>
+  <section data-intake-photos hidden>
+    <h3 data-intake-photo-title></h3><div data-intake-photo-host></div>
+    <button type="button" class="btn btn-dark" data-intake-photo-next>Later toevoegen</button>
+  </section>
+  <section data-intake-received hidden><h3>Al ontvangen</h3><div data-intake-received-list></div></section>`;
   document.body.append(dialog);
   const form=dialog.querySelector('form'),select=form.elements.materialId,input=form.elements.label;
   const message=dialog.querySelector('[data-intake-message]'),camera=dialog.querySelector('[data-intake-camera]');
   const reader=dialog.querySelector('#intakeQrReader'),save=form.querySelector('[type=submit]');
-  let intakeScanner=null,busy=false,cameraStart=null;
+  const scanSection=dialog.querySelector('[data-intake-scan]');
+  const photos=dialog.querySelector('[data-intake-photos]');
+  const photoHost=dialog.querySelector('[data-intake-photo-host]');
+  const photoNext=dialog.querySelector('[data-intake-photo-next]');
+  const receivedSection=dialog.querySelector('[data-intake-received]');
+  let intakeScanner=null,busy=false,cameraStart=null,photoBusy=false,receivedSets=[];
+  function showPhotoStep(item,fromReceipt=false){
+   scanSection.hidden=true;receivedSection.hidden=true;photos.hidden=false;
+   dialog.querySelector('[data-intake-photo-title]').textContent=`Set ${item.itemNumber} · ${item.displayCode}`;
+   photoHost.replaceChildren();
+   photoNext.textContent=fromReceipt?'Later toevoegen':'Terug naar ontvangst';
+   window.LSMaterialPhotos?.mount(photoHost,item.id,{
+    admin:true,intakeOnly:true,
+    onBusy(value){photoBusy=value;photoNext.disabled=value;},
+    onSaved(){photoNext.textContent='Verder';}
+   });
+   photoNext.focus();
+  }
+  photoNext.onclick=()=>{
+   if(photoBusy)return;
+   photos.hidden=true;photoHost.replaceChildren();scanSection.hidden=false;
+   receivedSection.hidden=!receivedSets.length;
+   if(!select.disabled)camera.focus();
+   else dialog.querySelector('[data-intake-close]').focus();
+  };
+  receivedSection.onclick=event=>{
+   const button=event.target.closest('[data-intake-photo-material]');
+   if(button)showPhotoStep(receivedSets.find(item=>item.id===button.dataset.intakePhotoMaterial));
+  };
   async function stop(){
    await cameraStart?.catch(()=>{});
    if(intakeScanner){
@@ -246,6 +279,15 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    const pending=materials.filter(item=>['label_created','pickup_underway'].includes(item.internalStatus));
    select.replaceChildren(...pending.map(item=>new Option(`Set ${item.itemNumber} · ${item.kind} · ${item.package}`,item.id)));
    if(!pending.length)select.add(new Option('Alles is ontvangen'));
+   receivedSets=materials.filter(item=>item.receivedAt);
+   receivedSection.hidden=!receivedSets.length;
+   const receivedList=dialog.querySelector('[data-intake-received-list]');
+   receivedList.replaceChildren(...receivedSets.map(item=>{
+    const button=document.createElement('button');
+    button.type='button';button.className='btn btn-dark';button.dataset.intakePhotoMaterial=item.id;
+    button.textContent=`Innamefoto’s · set ${item.itemNumber} · ${item.displayCode}`;
+    return button;
+   }));
    select.disabled=!pending.length;
    camera.disabled=save.disabled=input.disabled=!pending.length;
    return pending.length;
@@ -261,6 +303,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
     input.value='';
     message.textContent=`${received.displayCode} ontvangen. ${remaining?'Scan de sticker van de volgende set.':'Alle sets van deze aanvraag zijn ontvangen.'}`;
     document.dispatchEvent(new CustomEvent('ls-intake-updated',{detail:result.record}));
+    showPhotoStep(received,true);
    }catch(error){message.textContent=error.message;save.disabled=camera.disabled=select.disabled=false;}
    finally{busy=false;}
   }
@@ -286,6 +329,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   select.onchange=()=>{input.value='';message.textContent='';};
   form.onsubmit=event=>{event.preventDefault();void receive();};
   dialog.querySelector('[data-intake-close]').onclick=()=>dialog.close();
+  dialog.addEventListener('cancel',event=>{if(photoBusy||busy)event.preventDefault();});
   dialog.addEventListener('close',async()=>{await stop();dialog.remove();if(intakeDialog===dialog)intakeDialog=null;},{once:true});
   dialog.showModal();
   try{
