@@ -13,7 +13,7 @@ export async function mergeTeamRecords(records,env) {
  const saved=await env.LATTENSPECIALIST_TEAM_DB.prepare('SELECT * FROM records').all();
  const combined=new Map(records.map(r=>[r.reference,{...r,revision:0,assignedTo:''}]));
  for(const row of saved.results) combined.set(row.reference,fromRow(row));
- return [...combined.values()].sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
+ return [...combined.values()].filter(record=>!record.purgedAt).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
 }
 export async function ensureTeamRecord(record,env) {
  const db=dbFor(env);
@@ -32,10 +32,31 @@ export async function saveOwnerRecord(record,raw,env) {
  )` : '';
  const result=await db.prepare(`UPDATE records SET payload=?1,revision=revision+1,assigned_to=?2,actor='owner',updated_at=?3
  WHERE reference=?4 AND revision=?5 AND (?2 IS NULL OR (?6 IS NOT NULL AND assigned_to=?2) OR EXISTS(SELECT 1 FROM members WHERE id=?2 AND active=1))
+ AND NOT EXISTS (
+   SELECT 1 FROM records AS other WHERE other.reference<>?4
+   AND json_extract(other.payload,'$.serviceCode')=json_extract(?1,'$.serviceCode')
+ )
  ${requirePausedWork} RETURNING *`)
  .bind(JSON.stringify(payload),assigned || null,now(),record.reference,raw.revision,raw.trashAction ?? null).first();
+ if (!result && payload.serviceCode) {
+   const existing = await teamStatusRecord(payload.serviceCode,env);
+   if (existing && existing.reference !== record.reference) throw new TeamError('Deze servicecode is al in gebruik.',409);
+ }
  if(!result) throw new TeamError(raw.trashAction==='remove'?'De aanvraag is gewijzigd of er loopt een werkstap. Pauzeer lopend werk en vernieuw het overzicht.':'De aanvraag of toewijzing is gewijzigd. Vernieuw en probeer opnieuw.',409);
  return fromRow(result);
+}
+export async function purgeOwnerTrash(entries,env) {
+ const db=dbFor(env);
+ if(!Array.isArray(entries) || !entries.length || entries.some(entry=>!entry || !/^LS-\d{4}-[A-Z2-9]{6}$/.test(entry.reference) || !Number.isInteger(entry.revision))) {
+   throw new TeamError('Vernieuw de prullenbak en probeer opnieuw.');
+ }
+ const time=now();
+ const result=await db.prepare(`UPDATE records SET payload=json_object('reference',reference,'deletedAt',json_extract(payload,'$.deletedAt'),'purgedAt',?2),
+ assigned_to=NULL, revision=revision+1, actor='owner', updated_at=?2
+ WHERE json_extract(payload,'$.deletedAt') IS NOT NULL AND json_extract(payload,'$.purgedAt') IS NULL
+ AND EXISTS (SELECT 1 FROM json_each(?1) AS entry WHERE json_extract(entry.value,'$.reference')=records.reference AND json_extract(entry.value,'$.revision')=records.revision)
+ RETURNING reference`).bind(JSON.stringify(entries),time).all();
+ return result.results.map(row=>row.reference);
 }
 async function readBody(request) {
  const reader=request.body?.getReader(); if(!reader) return {};

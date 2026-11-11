@@ -209,7 +209,7 @@
           ${record.workNote ? `<div class="team-work-note"><b>Werknotitie medewerker</b><p>${escapeHtml(record.workNote)}</p></div>` : ''}
           ${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}
           <button class="btn btn-dark team-history" type="button">Bekijk werklogboek</button><div class="team-audit" hidden></div>
-          <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Nog niet toegekend" readonly><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
+          <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Bijv. LS-ABC234" maxlength="24" autocapitalize="characters" autocomplete="off" spellcheck="false" pattern="(LS-)?[A-Z2-9]{6}" aria-describedby="service-code-format-${escapeHtml(record.reference)}"><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
           <div><button class="btn btn-dark create-material-labels" type="button">Maak / bekijk QR-stickers</button><div class="material-labels" role="status"></div></div>
           ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan + klant berichten” gebeurt dit automatisch.</p>'}
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
@@ -251,6 +251,13 @@
     const query=search.value.trim().toLowerCase();let visible=0;
     list.querySelectorAll('.admin-record').forEach(card=>{const matches=activeFilter==='open'?!['closed','trash'].includes(card.dataset.stage):card.dataset.stage===activeFilter;card.hidden=!matches||Boolean(query&&!card.dataset.search.includes(query));if(!card.hidden)visible++;});
     orderFilters.replaceChildren(...Object.entries(filterLabels).map(([key,label])=>{const button=document.createElement('button');button.type='button';button.dataset.orderFilter=key;button.setAttribute('aria-pressed',String(activeFilter===key));const count=records.filter(record=>key==='open'?!['closed','trash'].includes(recordStage(record)):recordStage(record)===key).length;button.textContent=label+' · '+count;return button;}));
+    if(activeFilter==='trash' && records.some(record=>record.deletedAt)) {
+      const empty=document.createElement('button');
+      empty.type='button';
+      empty.textContent='Prullenbak legen';
+      empty.addEventListener('click',openEmptyTrash);
+      orderFilters.append(empty);
+    }
     listStatus.textContent=visible?`${visible} ${visible===1?'opdracht':'opdrachten'} getoond`:'Geen opdrachten gevonden. Kies een ander filter of pas je zoekopdracht aan.';
   };
   const render = () => {
@@ -288,6 +295,43 @@
   </form>`;
   document.body.append(trashDialog);
   let selectedForTrash;
+  const emptyTrashDialog=document.createElement('dialog');
+  emptyTrashDialog.className='workorder-executor-dialog';
+  emptyTrashDialog.setAttribute('aria-labelledby','emptyTrashTitle');
+  emptyTrashDialog.innerHTML=`<form method="dialog">
+    <h3 id="emptyTrashTitle">Prullenbak definitief legen?</h3>
+    <p data-empty-trash-description></p>
+    <div class="admin-save-actions">
+      <button class="btn btn-dark" value="cancel" autofocus>Annuleren</button>
+      <button class="btn btn-gold" value="empty">Definitief legen</button>
+    </div>
+  </form>`;
+  document.body.append(emptyTrashDialog);
+  let emptyTrashSelection;
+  function openEmptyTrash() {
+    emptyTrashSelection=records.filter(record=>record.deletedAt).map(record=>({reference:record.reference,revision:record.revision ?? 0}));
+    emptyTrashDialog.querySelector('[data-empty-trash-description]').textContent=
+      `Alle ${emptyTrashSelection.length} aanvragen in de prullenbak worden definitief verwijderd, ook buiten je zoekresultaten. Je kunt ze daarna niet meer terugzetten.`;
+    emptyTrashDialog.returnValue='cancel';
+    emptyTrashDialog.showModal();
+  }
+  emptyTrashDialog.addEventListener('close',async()=>{
+    const entries=emptyTrashSelection;
+    emptyTrashSelection=null;
+    if(!entries?.length || !token || emptyTrashDialog.returnValue!=='empty') return;
+    const startedToken=token;
+    try {
+      const result=await api('/api/admin/reservations/trash',{method:'POST',body:JSON.stringify({entries})});
+      if(token!==startedToken) return;
+      const removed=new Set(result.references);
+      records=records.filter(record=>!removed.has(record.reference));
+      render();
+      listStatus.textContent=removed.size===entries.length ? 'Prullenbak geleegd.' : 'Gewijzigde aanvragen zijn overgeslagen. Vernieuw het overzicht.';
+      window.dispatchEvent(new Event('lattenspecialist:widget-refresh'));
+    } catch(error) {
+      if(token===startedToken) listStatus.textContent=error.message;
+    }
+  });
   async function changeTrash(record, action) {
     const startedToken = token;
     try {
@@ -440,6 +484,13 @@
     const card = button.closest('.admin-record'); const message = card.querySelector('.admin-record-message'); button.disabled = true; message.textContent = 'Servicecode maken…';
     try { const result = await api(`/api/admin/reservations/${encodeURIComponent(card.dataset.reference)}`,{method:'PATCH',body:JSON.stringify({generateServiceCode:true,revision:records.find(r=>r.reference===card.dataset.reference)?.revision ?? 0})}); records = records.map(record => record.reference === result.record.reference ? result.record : record); render(); }
     catch (error) { message.textContent = error.message; message.className = 'admin-record-message is-error'; button.disabled = false; }
+  });
+
+  list.addEventListener('input', event => {
+    if (event.target.matches('input[name="serviceCode"]')) {
+      const input = event.target;
+      input.value = input.value.toUpperCase().replace(/\s+/g, '');
+    }
   });
 
   list.addEventListener('submit', async event => {
