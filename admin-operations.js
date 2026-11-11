@@ -50,7 +50,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   const secondary=document.createElement('div');
   secondary.innerHTML=Object.entries(navigation).filter(([,item])=>item.sections.length).map(([id,{label,sections}])=>
    `<nav class="workplace-tabs" data-admin-subnav="${id}" aria-label="${label} onderdelen" hidden>${sections.map(([section,title])=>`<button type="button" data-tab="${section}">${title}</button>`).join('')}</nav>`).join('');
-  tabs.after(secondary);
+  dashboard.prepend(secondary);
   const workshopSummary=document.querySelector('#adminSummary');
   workshopSummary.hidden=true;
   secondary.after(workshopSummary);
