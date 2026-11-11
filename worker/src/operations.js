@@ -201,12 +201,47 @@ async function editIssuedSet(db,id,raw,remove){
   return {material:remove?null:materialView(results[0].results[0]),record:recordFromRow(results.at(-1).results[0])};
 }
 
-async function createMaterials(db, reference) {
+async function addSkiPair(db,raw){
+  const reference=clean(raw.reference,30);
+  const row=await db.prepare('SELECT * FROM records WHERE reference=?').bind(reference).first();
+  const record=recordFromRow(row);
+  if(!record||record.deletedAt||record.purgedAt||record.service!=='Onderhoud')throw new OperationsError('Onderhoudsaanvraag niet gevonden.',404);
+  if(!Number.isInteger(raw.revision)||row.revision!==raw.revision)throw new OperationsError('De aanvraag is gewijzigd. Vernieuw en probeer opnieuw.',409);
+  const packageName=clean(raw.package,30);
+  if(!Object.hasOwn(setPackages,packageName))throw new OperationsError('Kies een geldig pakket.');
+  await createMaterials(db,reference,false);
+  const id=crypto.randomUUID(),stamp=now(),code='LSM-'+randomHex(3).toUpperCase();
+  const wax=packageName==='Brons'?'':'BetaMix Red';
+  const premium=['Goud','Platinum'].includes(packageName);
+  const options=JSON.stringify({waxSku:wax?'24057':'',premiumIncluded:premium,premiumFiling:premium});
+  const [insert,,updated]=await db.batch([
+    db.prepare(`INSERT INTO materials(id,scan_token,display_code,reference,item_number,kind,package_name,wax_type,assigned_to,created_at,updated_at,package_code,selected_options)
+      SELECT ?,?,?,r.reference,coalesce((SELECT max(item_number) FROM materials WHERE reference=r.reference),0)+1,
+      'Ski',?,?,r.assigned_to,?,?,?,? FROM records r WHERE r.reference=? AND r.revision=?
+        AND json_extract(r.payload,'$.deletedAt') IS NULL
+        AND (SELECT count(*) FROM materials WHERE reference=r.reference AND internal_status<>'material_removed')<20 RETURNING *`)
+      .bind(id,randomHex(24),code,packageName,wax,stamp,stamp,setPackages[packageName],options,reference,raw.revision),
+    db.prepare(`INSERT INTO material_events(material_id,actor,event_type,created_at)
+      SELECT id,'owner','label_created',? FROM materials WHERE id=?`).bind(stamp,id),
+    db.prepare(`UPDATE records SET revision=revision+1,updated_at=?,actor='owner',payload=json_remove(json_set(payload,
+      '$.materialSourceAmount',coalesce(json_extract(payload,'$.materialSourceAmount'),json_extract(payload,'$.amount'),1),
+      '$.amount',CAST((SELECT count(*) FROM materials WHERE reference=records.reference AND internal_status<>'material_removed') AS TEXT),
+      '$.material',(SELECT CASE WHEN count(DISTINCT kind)=1 THEN max(kind) ELSE 'Meerdere / combinatie' END FROM materials WHERE reference=records.reference AND internal_status<>'material_removed'),
+      '$.package',(SELECT CASE WHEN count(DISTINCT package_name)=1 THEN max(package_name) ELSE 'Meerdere pakketten' END FROM materials WHERE reference=records.reference AND internal_status<>'material_removed'),
+      '$.plannedMinutes',min(2400,coalesce(json_extract(payload,'$.plannedMinutes'),60)+60),
+      '$.updatedAt',?), '$.priceQuote') WHERE reference=? AND EXISTS(SELECT 1 FROM materials WHERE id=?) RETURNING *`)
+      .bind(stamp,stamp,reference,id)
+  ]);
+  if(!insert.results.length)throw new OperationsError('De aanvraag is gewijzigd of heeft al 20 sets. Vernieuw de aanvraag.',409);
+  return {record:recordFromRow(updated.results[0]),material:materialView(insert.results[0])};
+}
+
+async function createMaterials(db, reference, confirmAppointment=true) {
   const row = await db.prepare('SELECT * FROM records WHERE reference=?').bind(reference).first();
   if (!row) throw new OperationsError('Aanvraag niet gevonden.',404);
   const record = recordFromRow(row), plans=materialPlans({...record,amount:record.materialSourceAmount??record.amount});
   const existing = await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all();
-  if(!existing.results.length&&Number(record.currentStep||1)<=1)await syncRecordCustomerStatus(db,reference,'Afspraak bevestigd',now());
+  if(confirmAppointment&&!existing.results.length&&Number(record.currentStep||1)<=1)await syncRecordCustomerStatus(db,reference,'Afspraak bevestigd',now());
   const issued = new Set(existing.results.map(item => item.item_number));
   for (let number=1;number<=plans.length;number+=1) {
     if (issued.has(number)) continue;
@@ -446,6 +481,9 @@ export async function handleOperations(request,env,{owner,json,origin}) {
       if(path==='/api/admin/operations/dashboard'&&request.method==='GET')return json(await dashboard(db),200,origin);
       if(path==='/api/admin/operations/materials'&&request.method==='POST'){const raw=await body(request);return json({materials:await createMaterials(db,clean(raw.reference,30))},201,origin);}
       if(path==='/api/admin/operations/materials'&&request.method==='GET'){const reference=clean(new URL(request.url).searchParams.get('reference'),30);const rows=await db.prepare("SELECT * FROM materials WHERE reference=? AND internal_status<>'material_removed' ORDER BY item_number").bind(reference).all();return json({materials:rows.results.map(materialView)},200,origin);}
+      if(path==='/api/admin/operations/materials/add-ski-pair'&&request.method==='POST'){
+        return json(await addSkiPair(db,await body(request)),201,origin);
+      }
       const setRoute = path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/set$/);
       if (setRoute && ['PATCH','POST'].includes(request.method)) {
         const raw = await body(request);
