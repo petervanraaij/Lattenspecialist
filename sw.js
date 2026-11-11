@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v152-practice-overview';
+const CACHE_NAME = 'lattenspecialist-v153-three-tabs';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -44,7 +44,7 @@ const APP_SHELL = [
   '/admin-team.js?v=1',
   '/team.css?v=1',
   '/admin-metrics.css?v=1',
-  '/admin-operations.js?v=20261030-guides-2',
+  '/admin-operations.js?v=20261111-three-tabs',
   '/admin-operations.css?v=20261030-guides-2',
   '/admin-operations-extra.css?v=1',
   '/vendor/qrcode.js',

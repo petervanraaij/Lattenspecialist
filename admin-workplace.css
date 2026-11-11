@@ -7,3 +7,5 @@
 @media(min-width:1000px){.workplace-week{grid-template-columns:repeat(7,minmax(0,1fr))}.workplace-week article{padding:12px}.workplace-week p{font-size:13px}}@media(max-width:600px){.admin-workplace .availability-day{min-height:70px}.availability-day small{font-size:0}.availability-day.is-available small:after{content:'Ja';font-size:10px}.availability-day.is-preferred small:after{content:'Voorkeur';font-size:9px}.availability-day.is-unavailable small:after{content:'Nee';font-size:10px}}
 
 [data-practice-sessions]>p{display:flex;gap:8px;align-items:center}[data-practice-sessions] button[data-remove-practice]{flex:0 0 38px;width:38px;height:38px;padding:0;color:#76362e}
+
+[data-admin-subnav][hidden]{display:none}[data-admin-subnav] a{align-self:center}
