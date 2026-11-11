@@ -27,8 +27,8 @@
   let records = [];
   let activeFilter='open';
   const dirtyRequests=new Set();
-  const recordStage=record=>record.closedAt?'closed':Number(record.currentStep||1)>=8?'ready':Number(record.currentStep||1)>=3?'work':Number(record.currentStep||1)===2?'planned':'new';
-  const filterLabels={open:'Alle open',new:'Nieuw',planned:'Gepland',work:'In de werkplaats',ready:'Gereed',closed:'Afgerond'};
+  const recordStage=record=>record.deletedAt?'trash':record.closedAt?'closed':Number(record.currentStep||1)>=8?'ready':Number(record.currentStep||1)>=3?'work':Number(record.currentStep||1)===2?'planned':'new';
+  const filterLabels={open:'Alle open',new:'Nieuw',planned:'Gepland',work:'In de werkplaats',ready:'Gereed',closed:'Afgerond',trash:'Prullenbak'};
   const orderFilters=document.createElement('section');orderFilters.className='admin-order-filters';orderFilters.setAttribute('aria-label','Opdrachten filteren');
   summary.before(orderFilters);
   const listStatus=document.createElement('p');listStatus.className='admin-list-status';listStatus.setAttribute('role','status');list.before(listStatus);
@@ -53,10 +53,10 @@
     if(!token||dashboard.hidden||document.hidden||polling)return;
     polling=true;
     const startedToken=token,startedRecords=JSON.stringify(records);
-    try{const result=await api('/api/admin/reservations');const next=result.records||[];
+    try{const result=await api('/api/admin/reservations?includeTrash=1');const next=result.records||[];
       if(token!==startedToken||dashboard.hidden||JSON.stringify(records)!==startedRecords)return;
       // Keep edits in progress intact. Only redraw when the server data changes.
-      if(JSON.stringify(next)!==JSON.stringify(records)){records=next.map(record=>dirtyRequests.has(record.reference)?records.find(old=>old.reference===record.reference)||record:record);render();}
+      if(JSON.stringify(next)!==JSON.stringify(records)){records=next.map(record=>dirtyRequests.has(record.reference)&&!record.deletedAt?records.find(old=>old.reference===record.reference)||record:record);render();}
       else renderRequestAlert();
       syncStatus.textContent=dirtyRequests.size?'Bijgewerkt · je niet-opgeslagen wijzigingen zijn bewaard.':'Bijgewerkt om '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
     }catch{requestAlert.hidden=false;requestAlert.textContent='Aanvragen konden niet worden bijgewerkt. Controleer je verbinding en druk op Vernieuwen.';}
@@ -176,6 +176,14 @@
 
   const renderRecord = record => {
     if(record.workspaceOnly)return `<article class="admin-record" data-reference="${escapeHtml(record.reference)}" data-stage="${recordStage(record)}" data-search="${escapeHtml([record.reference,record.workOrderNumber,record.material,record.package].filter(Boolean).join(' ').toLowerCase())}"><div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber||record.reference)}</span><strong>${escapeHtml(record.material||'Onderhoud')} · ${escapeHtml(record.amount||1)}×</strong><span>${escapeHtml(record.package||'')} · ${escapeHtml(record.status||'Aanvraag ontvangen')}</span><small>Open werkplaats →</small></button></div><details class="admin-record-details"><summary>Werkzaamheden en foto’s</summary>${record.workOrderNumber||Number(record.currentStep)>=2?'<button type="button" class="btn btn-gold open-workorder-workspace">Werkzaamheden en foto’s openen</button>':'<p>Deze aanvraag moet nog door beheer worden bevestigd.</p>'}<p>Klantgegevens en administratie zijn vergrendeld.</p><button type="button" class="btn btn-dark" data-open-private-admin>Beheer ontgrendelen</button></details></article>`;
+    if (record.deletedAt) {
+      const title = escapeHtml(record.name || 'Naam onbekend');
+      const reference = escapeHtml(record.reference);
+      return `<article class="admin-record is-closed" data-reference="${reference}" data-stage="trash" data-search="${escapeHtml((record.reference+' '+(record.name||'')).toLowerCase())}">
+        <div class="admin-record-head"><div><span class="admin-request-code">${reference}</span><h3>${title}</h3><p>Verwijderd op ${escapeHtml(formatDateTime(record.deletedAt))}</p></div>
+        <button class="btn btn-gold" type="button" data-trash-action="restore">Terugzetten</button></div>
+      </article>`;
+    }
     const currentStep = Math.max(1,Math.min(steps.length,Number(record.currentStep) || 1));
     const details = serviceDetails(record).filter(([,value]) => value).map(([label,value]) => `<span><b>${escapeHtml(label)}</b>${escapeHtml(value)}</span>`).join('');
     const stepOptions = steps.map((label,index) => `<option value="${index+1}"${index+1 === currentStep ? ' selected' : ''}>${index+1}. ${escapeHtml(label)}</option>`).join('');
@@ -185,7 +193,7 @@
     const closed = Boolean(record.closedAt);
     const minutes=plannedMinutes(record);
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-stage="${recordStage(record)}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
-      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</span><small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span></div></div>
+      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(record.package || '')}</span><small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span><button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
       ${Number(record.waxstickCount)>0?`<section class="admin-payment admin-waxstick" data-waxstick-reference="${escapeHtml(record.reference)}"><h3>Meebesteld · ${Number(record.waxstickCount)}× Holmenkol Natural Skiwax Stick 50 g</h3><p>€ 17,50 per stuk · bij deze opdracht meegeven.</p><p class="waxstick-handover-status" role="status" aria-live="polite">Meegeefstatus laden…</p><button class="btn btn-gold waxstick-handover" type="button" disabled>Meegeven bevestigen</button><button class="btn btn-dark waxstick-invoice" type="button">Factuur maken in Pierfinity →</button><button class="btn btn-dark waxstick-reload" type="button" hidden>Status opnieuw laden</button></section>`:''}
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-grid">
         <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
@@ -241,8 +249,8 @@
   }
   const applySearch = () => {
     const query=search.value.trim().toLowerCase();let visible=0;
-    list.querySelectorAll('.admin-record').forEach(card=>{const matches=activeFilter==='open'?card.dataset.stage!=='closed':card.dataset.stage===activeFilter;card.hidden=!matches||Boolean(query&&!card.dataset.search.includes(query));if(!card.hidden)visible++;});
-    orderFilters.replaceChildren(...Object.entries(filterLabels).map(([key,label])=>{const button=document.createElement('button');button.type='button';button.dataset.orderFilter=key;button.setAttribute('aria-pressed',String(activeFilter===key));const count=records.filter(record=>key==='open'?recordStage(record)!=='closed':recordStage(record)===key).length;button.textContent=label+' · '+count;return button;}));
+    list.querySelectorAll('.admin-record').forEach(card=>{const matches=activeFilter==='open'?!['closed','trash'].includes(card.dataset.stage):card.dataset.stage===activeFilter;card.hidden=!matches||Boolean(query&&!card.dataset.search.includes(query));if(!card.hidden)visible++;});
+    orderFilters.replaceChildren(...Object.entries(filterLabels).map(([key,label])=>{const button=document.createElement('button');button.type='button';button.dataset.orderFilter=key;button.setAttribute('aria-pressed',String(activeFilter===key));const count=records.filter(record=>key==='open'?!['closed','trash'].includes(recordStage(record)):recordStage(record)===key).length;button.textContent=label+' · '+count;return button;}));
     listStatus.textContent=visible?`${visible} ${visible===1?'opdracht':'opdrachten'} getoond`:'Geen opdrachten gevonden. Kies een ander filter of pas je zoekopdracht aan.';
   };
   const render = () => {
@@ -257,8 +265,8 @@
     const withoutCode = records.filter(record => !record.closedAt && !record.serviceCode).length;
     const reservedMinutes=records.filter(record=>!record.closedAt&&Number(record.currentStep||1)<steps.length).reduce((total,record)=>total+plannedMinutes(record),0);
     summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> benodigde tijd</span><span><b>${active}</b> in behandeling</span><span><b>${window.AdminSecurity?.locked?records.filter(record=>recordStage(record)==='new').length:withoutCode}</b> ${window.AdminSecurity?.locked?'nieuw':'zonder servicecode'}</span>`;
-    list.innerHTML = records.length ? [...records].sort((a,b)=>['new','planned','work','ready','closed'].indexOf(recordStage(a))-['new','planned','work','ready','closed'].indexOf(recordStage(b))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
-    for(const card of list.querySelectorAll('.admin-record')){const old=preserved.get(card.dataset.reference);if(old)card.replaceWith(old);else{if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
+    list.innerHTML = records.length ? [...records].sort((a,b)=>['new','planned','work','ready','closed','trash'].indexOf(recordStage(a))-['new','planned','work','ready','closed','trash'].indexOf(recordStage(b))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
+    for(const card of list.querySelectorAll('.admin-record')){const old=preserved.get(card.dataset.reference);if(card.dataset.stage==='trash'){dirtyRequests.delete(card.dataset.reference);continue;}if(old)card.replaceWith(old);else{if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
     for(const detail of list.querySelectorAll('.admin-record-details'))detail.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(detail.open));
     list.querySelectorAll('[data-waxstick-reference]').forEach(panel=>void loadWaxstickHandover(panel));
     applySearch();
@@ -267,7 +275,62 @@
 
   list.addEventListener('toggle',event=>{if(event.target.matches('.admin-record-details'))event.target.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(event.target.open));},true);
   list.addEventListener('click',event=>{const button=event.target.closest('.admin-open-request');if(button){const detail=button.closest('.admin-record').querySelector('.admin-record-details');detail.open=!detail.open;button.setAttribute('aria-expanded',String(detail.open));}});
-  list.addEventListener('click',async event=>{const button=event.target.closest('.discard-request');if(!button)return;const card=button.closest('.admin-record'),reference=card.dataset.reference;button.disabled=true;try{const result=await api('/api/admin/reservations');const latest=result.records?.find(record=>record.reference===reference);if(!latest)throw new Error('Deze aanvraag is niet meer beschikbaar.');dirtyRequests.delete(reference);card.removeAttribute('data-unsaved');records=records.map(record=>record.reference===reference?latest:record);render();syncStatus.textContent='Aanvraag herladen; lokale wijzigingen zijn verworpen.';}catch(error){button.disabled=false;syncStatus.textContent=error.message;}});
+  const trashDialog = document.createElement('dialog');
+  trashDialog.className = 'workorder-executor-dialog';
+  trashDialog.setAttribute('aria-labelledby','trashRequestTitle');
+  trashDialog.innerHTML = `<form method="dialog">
+    <h3 id="trashRequestTitle">Aanvraag verwijderen?</h3>
+    <p data-trash-description></p>
+    <div class="admin-save-actions">
+      <button class="btn btn-dark" value="cancel" autofocus>Annuleren</button>
+      <button class="btn btn-gold" value="remove">Naar prullenbak</button>
+    </div>
+  </form>`;
+  document.body.append(trashDialog);
+  let selectedForTrash;
+  async function changeTrash(record, action) {
+    const startedToken = token;
+    try {
+      const result = await api(`/api/admin/reservations/${encodeURIComponent(record.reference)}`, {
+        method:'PATCH',
+        body:JSON.stringify({trashAction:action,revision:record.revision ?? 0})
+      });
+      if (token !== startedToken) return;
+      dirtyRequests.delete(record.reference);
+      records = records.map(item => item.reference === record.reference ? result.record : item);
+      if (action === 'restore') activeFilter = recordStage(result.record);
+      render();
+      listStatus.textContent = action === 'remove' ? 'Aanvraag verplaatst naar de prullenbak.' : 'Aanvraag teruggezet.';
+      window.dispatchEvent(new Event('lattenspecialist:widget-refresh'));
+    } catch (error) {
+      if (token === startedToken) listStatus.textContent = error.message;
+    }
+  }
+  list.addEventListener('click', event => {
+    const button = event.target.closest('[data-trash-action]');
+    if (!button) return;
+    const reference = button.closest('.admin-record').dataset.reference;
+    const record = records.find(item => item.reference === reference);
+    if (!record) return;
+    if (button.dataset.trashAction === 'restore') {
+      button.disabled = true;
+      void changeTrash(record,'restore').finally(() => { button.disabled = false; });
+      return;
+    }
+    selectedForTrash = record;
+    const warning = dirtyRequests.has(reference) ? ' Niet-opgeslagen wijzigingen vervallen.' : '';
+    trashDialog.querySelector('[data-trash-description]').textContent =
+      `${record.name || record.reference} gaat naar de prullenbak. Je kunt de aanvraag daar terugzetten.${warning}`;
+    trashDialog.returnValue = 'cancel';
+    trashDialog.showModal();
+  });
+  trashDialog.addEventListener('close', () => {
+    const record = selectedForTrash;
+    selectedForTrash = undefined;
+    if (record && token && trashDialog.returnValue === 'remove') void changeTrash(record,'remove');
+  });
+
+  list.addEventListener('click',async event=>{const button=event.target.closest('.discard-request');if(!button)return;const card=button.closest('.admin-record'),reference=card.dataset.reference;button.disabled=true;try{const result=await api('/api/admin/reservations?includeTrash=1');const latest=result.records?.find(record=>record.reference===reference);if(!latest)throw new Error('Deze aanvraag is niet meer beschikbaar.');dirtyRequests.delete(reference);card.removeAttribute('data-unsaved');records=records.map(record=>record.reference===reference?latest:record);render();syncStatus.textContent='Aanvraag herladen; lokale wijzigingen zijn verworpen.';}catch(error){button.disabled=false;syncStatus.textContent=error.message;}});
   window.addEventListener('lattenspecialist:workorder-opened',()=>{activeFilter='open';applySearch();});
   list.addEventListener('click',event=>{if(event.target.closest('[data-open-private-admin]'))void window.AdminSecurity?.open();});
   window.addEventListener('lattenspecialist:admin-unlocked',()=>loadDashboard().catch(error=>{syncStatus.textContent=error.message;}));
@@ -341,8 +404,8 @@
     refreshButton.disabled = true;
     if(!records.length)list.innerHTML = '<div class="admin-empty"><strong>Reserveringen laden…</strong></div>';
     try {
-      const [reservationResult] = await Promise.all([api('/api/admin/reservations'),loadAvailability(),window.LattenspecialistTeam?.init(api,render)]);
-      records = (reservationResult.records || []).map(record=>dirtyRequests.has(record.reference)?records.find(old=>old.reference===record.reference)||record:record);
+      const [reservationResult] = await Promise.all([api('/api/admin/reservations?includeTrash=1'),loadAvailability(),window.LattenspecialistTeam?.init(api,render)]);
+      records = (reservationResult.records || []).map(record=>dirtyRequests.has(record.reference)&&!record.deletedAt?records.find(old=>old.reference===record.reference)||record:record);
       loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render(); await window.LattenspecialistOperations?.init(api,()=>records); void loadMetrics();
       if (pendingManualOpen) requestManualOpen(pendingManualMaterial);
       window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh'));

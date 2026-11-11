@@ -96,7 +96,7 @@ export function workspaceAllowed(path,method){
 export async function workspaceResponse(response,path){
  if(!response.ok||!response.headers.get('Content-Type')?.includes('application/json')||path.startsWith('/api/admin/push/'))return response;
  const value=await response.json();
- if(path==='/api/admin/reservations')value.records=(value.records||[]).map(workspaceRecord);
+ if(path==='/api/admin/reservations')value.records=(value.records||[]).filter(record=>!record.deletedAt).map(workspaceRecord);
  if(path==='/api/admin/team/members')value.members=(value.members||[]).map(member=>pick(member,['id','name','active']));
  if(value.record)value.record=workspaceRecord(value.record);
  if(path==='/api/team/tasks')value.records=(value.records||[]).map(workspaceRecord);

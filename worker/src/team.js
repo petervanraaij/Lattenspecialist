@@ -26,10 +26,15 @@ export async function saveOwnerRecord(record,raw,env) {
  if(!Number.isInteger(raw.revision)) throw new TeamError('Vernieuw de beheerapp voordat je deze aanvraag opslaat.',409);
  const {revision,assignedTo,...payload}=record;
  const assigned=Object.hasOwn(raw,'assignedTo') ? String(raw.assignedTo || '') : (assignedTo || '');
+ const requirePausedWork = raw.trashAction === 'remove' ? `AND NOT EXISTS(
+   SELECT 1 FROM maintenance_step_sessions AS session JOIN materials AS material ON material.id=session.material_id
+   WHERE material.reference=?4 AND session.ended_at IS NULL
+ )` : '';
  const result=await db.prepare(`UPDATE records SET payload=?1,revision=revision+1,assigned_to=?2,actor='owner',updated_at=?3
- WHERE reference=?4 AND revision=?5 AND (?2 IS NULL OR EXISTS(SELECT 1 FROM members WHERE id=?2 AND active=1)) RETURNING *`)
- .bind(JSON.stringify(payload),assigned || null,now(),record.reference,raw.revision).first();
- if(!result) throw new TeamError('De aanvraag of toewijzing is gewijzigd. Vernieuw en probeer opnieuw.',409);
+ WHERE reference=?4 AND revision=?5 AND (?2 IS NULL OR (?6 IS NOT NULL AND assigned_to=?2) OR EXISTS(SELECT 1 FROM members WHERE id=?2 AND active=1))
+ ${requirePausedWork} RETURNING *`)
+ .bind(JSON.stringify(payload),assigned || null,now(),record.reference,raw.revision,raw.trashAction ?? null).first();
+ if(!result) throw new TeamError(raw.trashAction==='remove'?'De aanvraag is gewijzigd of er loopt een werkstap. Pauzeer lopend werk en vernieuw het overzicht.':'De aanvraag of toewijzing is gewijzigd. Vernieuw en probeer opnieuw.',409);
  return fromRow(result);
 }
 async function readBody(request) {

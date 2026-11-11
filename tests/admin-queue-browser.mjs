@@ -38,6 +38,24 @@ try{
   await page.locator('#adminTabs [data-tab=instructions]').click();await page.locator('[data-admin-panel=instructions] [data-edit-guide]').waitFor();
   await page.locator('#adminTabs [data-tab=orders]').click();
  });
+ await scenario('Cancel deletion, move an application to the trash and restore its original status',async()=>{
+  const card=page.locator('[data-reference="LS-2611-NEW234"]');
+  const remove=card.getByRole('button',{name:'Aanvraag verwijderen'});
+  await remove.click();
+  const dialog=page.getByRole('dialog',{name:'Aanvraag verwijderen?'});
+  await dialog.getByRole('button',{name:'Annuleren'}).click();
+  assert.equal(await card.getAttribute('data-stage'),'new');
+  await remove.click();
+  await dialog.getByRole('button',{name:'Naar prullenbak'}).click();
+  await page.getByText('Aanvraag verplaatst naar de prullenbak.',{exact:true}).waitFor();
+  assert.equal(await card.isVisible(),false);
+  assert.equal((await fixture.call('/api/admin/reservations')).data.records.some(r=>r.reference==='LS-2611-NEW234'),false);
+  await page.locator('[data-order-filter=trash]').click();
+  await card.getByRole('button',{name:'Terugzetten'}).click();
+  await page.getByText('Aanvraag teruggezet.',{exact:true}).waitFor();
+  assert.equal(await card.getAttribute('data-stage'),'new');
+  await page.locator('[data-order-filter=open]').click();
+ });
  await scenario('Filters show only open orders; completed orders remain available',async()=>{assert.equal(await page.locator('.admin-record:visible').count(),4);await page.getByRole('button',{name:'Nieuw · 2',exact:true}).click();assert.equal(await page.locator('.admin-record:visible').count(),2);await page.getByRole('button',{name:'Afgerond · 1',exact:true}).click();assert.equal(await page.locator('.admin-record:visible').count(),1);assert.equal(await page.locator('.admin-record:visible').getAttribute('data-reference'),'LS-2611-CLOSED');});
  await scenario('Dirty values and expanded order survive refresh and incoming requests',async()=>{await page.getByRole('button',{name:'Alle open · 4',exact:true}).click();const card=page.locator('[data-reference="LS-2611-NEW234"]');await card.locator('.admin-record-details>summary').click();await card.locator('[name=note]').fill('Niet verliezen na verlaten veld');await page.locator('#adminSearch').focus();add('LS-2611-NEW567',1);await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.getByRole('button',{name:'Nieuw · 3',exact:true}).waitFor();assert.equal(await card.locator('[name=note]').inputValue(),'Niet verliezen na verlaten veld');assert.equal(await card.locator('.admin-record-details').getAttribute('open'),'');await page.locator('#refreshAdmin').click();await page.getByRole('button',{name:'Nieuw · 3',exact:true}).waitFor();assert.equal(await card.locator('[name=note]').inputValue(),'Niet verliezen na verlaten veld');});
  await scenario('Failed refresh preserves input, and new request shortcut opens its details',async()=>{failReservations=true;await page.locator('#refreshAdmin').click();await page.getByText(/Bijwerken mislukt: Testverbinding/).waitFor();assert.equal(await page.locator('[data-reference="LS-2611-NEW234"] [name=note]').inputValue(),'Niet verliezen na verlaten veld');failReservations=false;await page.getByRole('button',{name:'Bekijk LS-2611-NEW567 · Test LS-2611-NEW567',exact:true}).click();assert.equal(await page.locator('[data-reference="LS-2611-NEW567"] .admin-record-details').getAttribute('open'),'');assert.equal(await page.locator('[data-reference="LS-2611-NEW234"] [name=note]').inputValue(),'Niet verliezen na verlaten veld');});
