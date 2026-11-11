@@ -191,19 +191,29 @@
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-grid">
         <div class="admin-info"><h3>Contact</h3><p><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${record.notes ? `<div class="admin-customer-note"><b>Opmerking klant</b><p>${escapeHtml(record.notes)}</p></div>` : ''}</div>
         <form class="admin-update-form">
-          <h3>${record.workOrderNumber?'Werkorder '+escapeHtml(record.workOrderNumber):'Aanvraag aanvullen'}</h3>
+          <h3>${record.workOrderNumber?'Werkorder '+escapeHtml(record.workOrderNumber):'Aanvraag bewerken'}</h3>
           ${record.workOrderNumber?`<p>Aangemaakt op ${escapeHtml(formatDateTime(record.workOrderCreatedAt))} · aanvraag ${escapeHtml(record.reference)}</p>`:''}
           <label><span>Naam klant</span><input name="name" required maxlength="120" value="${escapeHtml(record.name||'')}"></label>
           <label><span>Telefoon klant</span><input name="phone" type="tel" maxlength="40" value="${escapeHtml(record.phone||'')}"></label>
           <label><span>E-mailadres klant</span><input name="email" type="email" maxlength="160" value="${escapeHtml(record.email||'')}"></label>
           <label><span>Aanvraag en aanvullende afspraken</span><textarea name="notes" maxlength="4000" rows="4">${escapeHtml(record.notes||'')}</textarea></label>
+          <details class="admin-request-fields">
+            <summary>Afspraak en adres bewerken</summary>
+            ${[['pickupDate','Brengdatum (JJJJ-MM-DD of In overleg)'],['logistics','Brengen en ophalen'],['address','Adres'],['postcode','Postcode'],['houseNumber','Huisnummer'],['addressCity','Plaats'],['destination','Bestemming'],['conditions','Omstandigheden'],...(record.service==='Verhuur'?[['rentaltype','Huurmateriaal'],['rentfrom','Huur vanaf'],['rentto','Huur tot']]:[])].map(([key,title])=>`<label><span>${title}</span><input name="${key}" value="${escapeHtml(record[key]||'')}"></label>`).join('')}
+          </details>
+          ${record.service==='Onderhoud'?`<details class="edit-maintenance" data-edit-maintenance>
+            <summary>Sets, pakketten en werkzaamheden aanpassen</summary>
+            <label><span>Spoed voor de aanvraag</span><input name="urgent" type="checkbox"></label>
+            <div data-edit-maintenance-fields></div>
+            <label><span>Waxsticks (aantal)</span><input name="waxstickCount" type="number" min="0" max="20" value="${Number(record.waxstickCount)||0}"></label>
+          </details>`:''}
           ${!record.workOrderNumber&&record.service==='Onderhoud'&&!closed?'<p>Controleer de aanvraag en wijs het werk eventueel toe. Omzetten maakt één gekoppelde werkorder en een klantcode aan. Er wordt geen klantbericht verstuurd.</p><button class="btn btn-gold" type="submit" data-action="workorder">Omzetten naar werkorder</button>':''}
           <label><span>Toegewezen medewerker</span><select name="assignedTo">${window.LattenspecialistTeam?.options(record.assignedTo) || '<option value="">Nog niet toegewezen</option>'}</select></label>
           ${record.workNote ? `<div class="team-work-note"><b>Werknotitie medewerker</b><p>${escapeHtml(record.workNote)}</p></div>` : ''}
           ${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}
           <button class="btn btn-dark team-history" type="button">Bekijk werklogboek</button><div class="team-audit" hidden></div>
           <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Bijv. LS-ABC234" maxlength="24" autocapitalize="characters" autocomplete="off" spellcheck="false" pattern="(?:(?:LS-)?[A-Z2-9]{6}|LS-[0-9]{4}-[A-Z0-9]{6})" aria-describedby="service-code-format-${escapeHtml(record.reference)}"><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
-          <div><button class="btn btn-dark create-material-labels" type="button">Maak / bekijk QR-stickers</button><div class="material-labels" role="status"></div></div>
+          <div><button class="btn btn-dark create-material-labels" type="button">Onderhoudscodes en QR-stickers</button><div class="material-labels" role="status"></div></div>
           ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan + klant berichten” gebeurt dit automatisch.</p>'}
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
           <label><span>Wax voor deze beurt</span><select name="waxType">${waxChoices}</select><small class="field-hint">Voorstel op basis van de opgegeven omstandigheden; controleer dit zelf.</small></label>
@@ -515,6 +525,33 @@
     catch (error) { message.textContent = error.message; message.className = 'admin-record-message is-error'; button.disabled = false; }
   });
 
+  const maintenanceEditors = new WeakMap();
+  list.addEventListener('toggle', event => {
+    const details=event.target;
+    if(!details.matches('[data-edit-maintenance]')||!details.open||maintenanceEditors.has(details))return;
+    const form=details.closest('form');
+    const record=records.find(item=>item.reference===form.closest('.admin-record').dataset.reference);
+    const model=window.LATTEN_SELECTION;
+    const editor=window.LattenManualSelection.mount(form,details.querySelector('[data-edit-maintenance-fields]'));
+    const saved=model.parse(record.maintenanceSelection);
+    if(saved)editor.set(saved);
+    else {
+      const id=Object.keys(model.packages).find(key=>model.packages[key]===record.package);
+      if(id&&['Ski','Snowboard'].includes(record.material)){
+        const count=Number(record.amount)||1;
+        const wax=Object.keys(model.waxes).find(key=>model.waxes[key]===(record.performanceWax||record.waxType));
+        const selection=model.empty();
+        selection.p[id]={s:record.material==='Ski'?count:0,b:record.material==='Snowboard'?count:0,
+          d:0,r:0,c:Number(record.firstWaxCount)||0,w:id==='slijpen'?'none':(wax||'beta'),u:false};
+        selection.u=String(record.urgent).startsWith('Ja');
+        editor.set(selection);
+      }
+    }
+    const state={editor,changed:false};
+    maintenanceEditors.set(details,state);
+    details.addEventListener('input',()=>{state.changed=true;});
+  },true);
+
   list.addEventListener('input', event => {
     if (event.target.matches('input[name="serviceCode"]')) {
       const input = event.target;
@@ -529,6 +566,18 @@
     if (action === 'whatsapp' && !form.elements.whatsappConsent.checked) { message.textContent = 'WhatsApp kan alleen na toestemming van de klant.'; message.className = 'admin-record-message is-error'; return; }
     if (action === 'email' && !existing?.email) { message.textContent = 'Bij deze aanvraag is geen e-mailadres ingevuld.'; message.className = 'admin-record-message is-error'; return; }
     const payload = {name:values.name,phone:values.phone,email:values.email,notes:values.notes,serviceCode:values.serviceCode,currentStep,status:steps[currentStep-1],expectedReady:values.expectedReady,plannedMinutes:Number(values.plannedMinutes),note:values.note,waxType:values.waxType,whatsappConsent:form.elements.whatsappConsent.checked,paymentAmount:String(values.paymentAmount || '').replace(',','.'),paymentUrl:values.paymentUrl};
+    for(const key of ['pickupDate','logistics','address','postcode','houseNumber','addressCity','destination','conditions','rentaltype','rentfrom','rentto']){
+      if(Object.hasOwn(values,key)&&values[key]!==String(existing?.[key]||''))payload[key]=values[key];
+    }
+    const maintenance=maintenanceEditors.get(form.querySelector('[data-edit-maintenance]'));
+    if(maintenance?.changed){
+      const chosen=maintenance.editor.get();
+      if(!chosen){message.textContent='Kies minstens één geldig onderhoudspakket of losse werkzaamheid.';return;}
+      Object.assign(payload,chosen.legacy,{maintenanceSelection:JSON.stringify(chosen.selection),waxstickCount:Number(values.waxstickCount)});
+      if(Number(payload.plannedMinutes)===Number(existing?.plannedMinutes)&&chosen.legacy.amount!==String(existing.amount)){
+        payload.plannedMinutes=Number(chosen.legacy.amount)*60;
+      }
+    }
     payload.revision=existing?.revision ?? 0;payload.assignedTo=values.assignedTo || '';
     if (action === 'email') payload.sendStatusEmail = true;
     if (action === 'payment') { payload.sendPaymentEmail = true; payload.sendWhatsApp = true; payload.notificationType = 'payment'; }

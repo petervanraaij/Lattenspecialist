@@ -7,7 +7,7 @@ import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsa
 import {handleMetrics} from './metrics.js';
 import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, ensureTeamRecord, saveOwnerRecord, purgeOwnerTrash} from './team.js';
 import {handleOperations, verifyAdminAccessCode} from './operations.js';
-import {handleInventory, validMaintenanceSelection} from './inventory.js';
+import {handleInventory, validMaintenanceSelection, materialPlans} from './inventory.js';
 import {handleAccounting} from './accounting.js';
 import {handleAdminRecovery} from './admin-recovery.js';
 import {handleAdminPush,queueReservationPush,deliverPushOutbox} from './admin-push.js';
@@ -331,12 +331,51 @@ const updateReservation = async (reference, raw, env) => {
   if (paymentAmount && (!/^\d{1,4}(\.\d{1,2})?$/.test(paymentAmount) || Number(paymentAmount) <= 0)) throw new ValidationError('Vul een geldig bedrag in.');
   const paymentUrl = clean(Object.prototype.hasOwnProperty.call(raw, 'paymentUrl') ? raw.paymentUrl : record.paymentUrl, 500);
   if (paymentUrl && !isHttpsUrl(paymentUrl)) throw new ValidationError('De betaallink moet met https:// beginnen.');
+  const details = {};
+  const editable = {address:180,addressCity:100,postcode:12,houseNumber:16,logistics:100,
+    pickupDate:30,destination:100,conditions:80,rentaltype:60,rentfrom:10,rentto:10};
+  for (const [field, limit] of Object.entries(editable)) {
+    if (Object.hasOwn(raw, field)) details[field] = clean(raw[field], limit);
+  }
+  if (details.pickupDate && details.pickupDate !== 'In overleg' && !isIsoDate(details.pickupDate)) {
+    throw new ValidationError('Kies een geldige brengdatum.');
+  }
+  if (['rentfrom','rentto'].some(field => details[field] && !isIsoDate(details[field]))) {
+    throw new ValidationError('Controleer de huurdatums.');
+  }
+  const rentalStart = details.rentfrom ?? record.rentfrom;
+  const rentalEnd = details.rentto ?? record.rentto;
+  if (rentalStart && rentalEnd && rentalEnd < rentalStart) throw new ValidationError('De einddatum ligt vóór de begindatum.');
+  if (record.service === 'Onderhoud' && Object.hasOwn(raw, 'maintenanceSelection')) {
+    const selection = clean(raw.maintenanceSelection, 5000);
+    if (!selection || !validMaintenanceSelection(selection)) throw new ValidationError('Kies geldige werkzaamheden.');
+    Object.assign(details, {maintenanceSelection:selection, material:clean(raw.material,40), amount:clean(raw.amount,3),
+      package:clean(raw.package,60), urgent:clean(raw.urgent,80), waxstickCount:Number(raw.waxstickCount ?? record.waxstickCount ?? 0),
+      firstWaxCount:Number(raw.firstWaxCount ?? record.firstWaxCount ?? 0), performanceWax:''});
+    if (!details.material || !details.package || !/^(?:[1-9]|1[0-9]|20)$/.test(details.amount) ||
+        ![details.waxstickCount,details.firstWaxCount].every(count=>Number.isInteger(count)&&count>=0&&count<=20)) {
+      throw new ValidationError('Controleer materiaal, pakket en aantallen.');
+    }
+    const proposed = {...record,...details,waxType};
+    const plans = materialPlans(proposed);
+    if (plans.length > 20) throw new ValidationError('Kies maximaal 20 sets per aanvraag.');
+    details.amount = String(plans.length);
+    const db = env.LATTENSPECIALIST_TEAM_DB;
+    if (db) {
+      const issued = (await db.prepare('SELECT item_number FROM materials WHERE reference=?').bind(reference).all()).results;
+      const oldPlans = materialPlans(record);
+      if (issued.some(({item_number:n}) => JSON.stringify(oldPlans[n-1]) !== JSON.stringify(plans[n-1]))) {
+        throw new ValidationError('Er zijn al materiaalcodes uitgegeven voor de bestaande sets. Je kunt sets toevoegen zolang de bestaande sets en hun werkzaamheden op dezelfde positie blijven.');
+      }
+    }
+    details.priceQuote = maintenancePriceQuote(selection, proposed);
+  }
   const defaultPlannedMinutes = record.service === 'Onderhoud' ? Math.max(1, Math.min(20, Number(record.amount) || 1)) * 60 : 0;
   const plannedMinutes = Object.prototype.hasOwnProperty.call(raw, 'plannedMinutes') ? Number(raw.plannedMinutes) : Number(record.plannedMinutes ?? defaultPlannedMinutes);
   if (!Number.isInteger(plannedMinutes) || plannedMinutes < 0 || plannedMinutes > 2400 || (plannedMinutes > 0 && plannedMinutes < 15)) throw new ValidationError('Plan tussen 15 minuten en 40 uur voor deze aanvraag.');
   const sendsPaymentRequest = raw.sendPaymentEmail === true || (raw.sendWhatsApp === true && raw.notificationType === 'payment');
   if (sendsPaymentRequest && (!paymentAmount || !paymentUrl)) throw new ValidationError('Vul eerst een bedrag en geldige betaallink in.');
-  let serviceCode = normalizeServiceCode(raw.serviceCode || record.serviceCode);
+  let serviceCode = normalizeServiceCode(Object.hasOwn(raw,'serviceCode') ? raw.serviceCode : record.serviceCode);
   if (/^[A-Z2-9]{6}$/.test(serviceCode)) serviceCode = `LS-${serviceCode}`;
   if ((converting || raw.generateServiceCode === true || raw.sendStatusEmail === true || raw.sendWhatsApp === true) && !serviceCode) serviceCode = await assignUniqueServiceCode(store, env);
   if (serviceCode && !serviceCodePattern.test(serviceCode)) throw new ValidationError('Gebruik LS- gevolgd door zes letters of cijfers van 2 t/m 9.');
@@ -346,7 +385,7 @@ const updateReservation = async (reference, raw, env) => {
     if (owner && owner !== reference) throw new ValidationError('Deze servicecode is al in gebruik.');
   }
   const updated = {
-    ...record, name, phone, email, notes, serviceCode: serviceCode || null, currentStep, status: converting && Number(record.currentStep || 1) === 1 ? 'Werkorder aangemaakt' : status, customerStatus, expectedReady, note, whatsappConsent,
+    ...record, ...details, name, phone, email, notes, serviceCode: serviceCode || null, currentStep, status: converting && Number(record.currentStep || 1) === 1 ? 'Werkorder aangemaakt' : status, customerStatus, expectedReady, note, whatsappConsent,
     workOrderNumber: record.workOrderNumber || (converting ? `WO-${reference.slice(3)}` : null),
     workOrderCreatedAt: record.workOrderCreatedAt || (converting ? new Date().toISOString() : null),
     waxType, plannedMinutes, paymentAmount, paymentUrl, closedAt: closed ? (record.closedAt || new Date().toISOString()) : null,
@@ -354,7 +393,7 @@ const updateReservation = async (reference, raw, env) => {
   };
   const saved = env.LATTENSPECIALIST_TEAM_DB ? await saveOwnerRecord(updated, raw, env) : updated;
   if (!env.LATTENSPECIALIST_TEAM_DB) await store.put(key, JSON.stringify(saved));
-  if (serviceCode) await store.put(`service:${serviceCode}`, reference);
+  if (serviceCode && store) await store.put(`service:${serviceCode}`, reference);
   return saved;
 };
 

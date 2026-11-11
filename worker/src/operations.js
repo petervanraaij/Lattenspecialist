@@ -149,13 +149,15 @@ async function createMaterials(db, reference) {
   const record = recordFromRow(row), plans=materialPlans(record);
   await syncRecordCustomerStatus(db,reference,'Afspraak bevestigd',now());
   const existing = await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all();
-  for (let number=existing.results.length+1;number<=plans.length;number+=1) {
+  const issued = new Set(existing.results.map(item => item.item_number));
+  for (let number=1;number<=plans.length;number+=1) {
+    if (issued.has(number)) continue;
     const plan=plans[number-1],selectedOptions={...plan.options,waxSku:plan.waxSku};
     const created=now(),id=crypto.randomUUID(),token=randomHex(24),display=`LSM-${randomHex(3).toUpperCase()}`;
     await db.batch([
       db.prepare(`INSERT INTO materials(id,scan_token,display_code,reference,item_number,kind,package_name,wax_type,assigned_to,created_at,updated_at,package_code,selected_options)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,token,display,reference,number,clean(plan.kind,80),clean(plan.packageName,100),clean(plan.waxType || record.waxType || 'Nog te bepalen',100),record.assignedTo || null,created,created,plan.packageCode,JSON.stringify(selectedOptions)),
-      db.prepare('INSERT INTO material_events(material_id,actor,event_type,created_at) VALUES(?,?,?,?)').bind(id,'owner','label_created',created)
+        SELECT ?,?,?,?,?,?,?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM materials WHERE reference=? AND item_number=?)`).bind(id,token,display,reference,number,clean(plan.kind,80),clean(plan.packageName,100),clean(plan.waxType || record.waxType || 'Nog te bepalen',100),record.assignedTo || null,created,created,plan.packageCode,JSON.stringify(selectedOptions),reference,number),
+      db.prepare('INSERT INTO material_events(material_id,actor,event_type,created_at) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM materials WHERE id=?)').bind(id,'owner','label_created',created,id)
     ]);
   }
   const materials=(await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all()).results;
@@ -386,6 +388,26 @@ export async function handleOperations(request,env,{owner,json,origin}) {
       if(path==='/api/admin/operations/dashboard'&&request.method==='GET')return json(await dashboard(db),200,origin);
       if(path==='/api/admin/operations/materials'&&request.method==='POST'){const raw=await body(request);return json({materials:await createMaterials(db,clean(raw.reference,30))},201,origin);}
       if(path==='/api/admin/operations/materials'&&request.method==='GET'){const reference=clean(new URL(request.url).searchParams.get('reference'),30);const rows=await db.prepare('SELECT * FROM materials WHERE reference=? ORDER BY item_number').bind(reference).all();return json({materials:rows.results.map(materialView)},200,origin);}
+      const materialCode = path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/code$/);
+      if (materialCode && request.method==='PATCH') {
+        const raw = await body(request);
+        const code = clean(raw.code,24).toUpperCase();
+        const previous = clean(raw.previousCode,24).toUpperCase();
+        if (!/^LSM-[A-F0-9]{6}$/.test(code)) throw new OperationsError('Gebruik LSM- met zes tekens: 0–9 of A–F.');
+        const id = materialCode[1];
+        const result = await db.batch([
+          db.prepare(`UPDATE materials SET display_code=?1,updated_at=?2
+            WHERE id=?3 AND display_code=?4 AND is_training=0
+              AND NOT EXISTS(SELECT 1 FROM materials WHERE display_code=?1 AND id<>?3)
+            RETURNING *`).bind(code,now(),id,previous),
+          db.prepare(`INSERT INTO material_events(material_id,actor,event_type,detail,created_at)
+            SELECT ?,'owner','material_code_changed',?,? WHERE changes()>0 AND ?<>?`)
+            .bind(id,JSON.stringify({previousCode:previous,code}),now(),previous,code)
+        ]);
+        const updated = result[0].results[0];
+        if (!updated) throw new OperationsError('Deze code is al in gebruik of het materiaal is gewijzigd. Vernieuw de aanvraag.',409);
+        return json({material:materialView(updated)},200,origin);
+      }
       const adminScan=path.match(/^\/api\/admin\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6})$/i);
       if(adminScan&&request.method==='GET'){const key=adminScan[1],material=await db.prepare('SELECT * FROM materials WHERE scan_token=? OR display_code=?').bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),record,workflow:await getWorkflow(db,material)},200,origin);}
       const adminAction=path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/action$/);
