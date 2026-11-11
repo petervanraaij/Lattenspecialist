@@ -178,7 +178,12 @@
       </article>`;
     }
     const currentStep = Math.max(1,Math.min(steps.length,Number(record.currentStep) || 1));
-    const details = serviceDetails(record).filter(([,value]) => value).map(([label,value]) => `<span><b>${escapeHtml(label)}</b>${escapeHtml(value)}</span>`).join('');
+    const details = serviceDetails(record).filter(([,value]) => value).map(([label,value]) => {
+      if(label==='Materiaal'&&record.service==='Onderhoud'){
+        return `<button type="button" class="admin-edit-material" data-edit-material><b>Materiaal</b>${escapeHtml(value)} <small>Bewerken →</small></button>`;
+      }
+      return `<span><b>${escapeHtml(label)}</b>${escapeHtml(value)}</span>`;
+    }).join('');
     const stepOptions = steps.map((label,index) => `<option value="${index+1}"${index+1 === currentStep ? ' selected' : ''}>${index+1}. ${escapeHtml(label)}</option>`).join('');
     const wax = suggestWax(record);
     const waxChoices = waxOptions.map(option => `<option${option === wax ? ' selected' : ''}>${escapeHtml(option)}</option>`).join('');
@@ -567,6 +572,16 @@
     maintenanceEditors.set(details,state);
     details.querySelector('.edit-maintenance-options').addEventListener('input',()=>{state.changed=true;});
   },true);
+
+  list.addEventListener('click',event=>{
+    const trigger=event.target.closest('[data-edit-material]');
+    if(!trigger)return;
+    const editor=trigger.closest('.admin-record').querySelector('[data-edit-maintenance]');
+    if(!editor)return;
+    editor.open=true;
+    editor.scrollIntoView({block:'start'});
+    editor.querySelector('[data-extra-ski-package]').focus({preventScroll:true});
+  });
 
   list.addEventListener('click',async event=>{
     const button=event.target.closest('[data-add-ski-pair]');
