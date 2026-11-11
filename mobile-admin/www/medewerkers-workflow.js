@@ -258,9 +258,54 @@
     }
   }
 
+  function mountPracticePackage(form) {
+    const host = form.querySelector('[data-practice-full]');
+    const model = window.LATTEN_SELECTION;
+    if (!host || !model) return;
+    const options = entries => entries.map(([key,label]) => `<option value="${escape(key)}">${escape(label)}</option>`).join('');
+    host.innerHTML = `<legend>Pakket en extra werkzaamheden</legend>
+      <label>Pakket<select name="practicePackage">${options(Object.entries(model.packages))}</select></label>
+      <label>Eindwax<select name="practiceEndWax">${options(Object.entries(model.waxes).filter(([key]) => key !== 'none'))}</select></label>
+      <label><input type="checkbox" name="practiceCleaning"> Warme waxreiniging</label>
+      <label><input type="checkbox" name="practicePremium"> Premium slijpen</label>
+      <label><input type="checkbox" name="practiceBindings"> Snowboardbindingen demonteren en terugplaatsen</label>
+      <label>Kleine belagreparaties<input type="number" name="practiceRepairs" min="0" max="20" step="1" value="0"></label>`;
+    const fields = form.elements;
+    fields.practicePackage.value = 'zilver';
+
+    function enable(name, enabled) {
+      fields[name].disabled = !enabled;
+      fields[name].closest('label').hidden = !enabled;
+      if (!enabled && fields[name].type === 'checkbox') fields[name].checked = false;
+    }
+
+    return () => {
+      const full = fields.activity.value === 'full';
+      host.hidden = !full;
+      host.disabled = !full;
+      const selected = fields.practicePackage.value;
+      enable('practiceEndWax', selected !== 'slijpen');
+      enable('practiceCleaning', selected !== 'slijpen');
+      enable('practicePremium', ['slijpen','zilver'].includes(selected));
+      enable('practiceBindings', fields.kind.value === 'Snowboard');
+    };
+  }
+
   async function createPractice(form) {
     const status = document.getElementById('practiceStatus'), result = document.getElementById('practiceResult'), button = form.querySelector('button[type=submit]');
     const values = Object.fromEntries(new FormData(form));
+    if (values.activity === 'full') {
+      values.maintenanceSelection = {
+        p: {[values.practicePackage]: {
+          s: Number(values.kind !== 'Snowboard'), b: Number(values.kind === 'Snowboard'),
+          w: values.practiceEndWax || 'none', c: Number(Boolean(values.practiceCleaning)),
+          f: Boolean(values.practicePremium), d: Number(Boolean(values.practiceBindings)),
+          r: Number(values.practiceRepairs), u: false
+        }},
+        e: {}, u: false
+      };
+      for (const key of Object.keys(values).filter(key => key.startsWith('practice'))) delete values[key];
+    }
     values.premiumFiling = values.activity === 'filing' && form.elements.premiumFiling?.checked === true;
     if (values.activity === 'wax') values.waxProtocol = 'yellow-red'; else delete values.finishWax;
     if (values.activity !== 'wax') delete values.waxSku;
@@ -298,7 +343,8 @@
   const practiceForm = document.getElementById('practiceForm');
   if (practiceForm) {
     const activity = practiceForm.elements.activity, wax = practiceForm.querySelector('[data-practice-wax]');
-    const update = () => { const visible=activity.value==='wax';wax.hidden=!visible;const full=practiceForm.querySelector('[data-practice-full]');if(full)full.hidden=activity.value!=='full';const cleaning=practiceForm.querySelector('[data-practice-clean]');if(cleaning)cleaning.hidden=activity.value!=='warm_clean';const premium=practiceForm.querySelector('[data-practice-premium]');if(premium)premium.hidden=activity.value!=='filing';practiceForm.elements.waxSku.disabled=!visible;if(practiceForm.elements.finishWax)practiceForm.elements.finishWax.disabled=!visible;
+    const updatePackage = mountPracticePackage(practiceForm);
+    const update = () => { updatePackage?.();const visible=activity.value==='wax';wax.hidden=!visible;const cleaning=practiceForm.querySelector('[data-practice-clean]');if(cleaning)cleaning.hidden=activity.value!=='warm_clean';const premium=practiceForm.querySelector('[data-practice-premium]');if(premium)premium.hidden=activity.value!=='filing';practiceForm.elements.waxSku.disabled=!visible;if(practiceForm.elements.finishWax)practiceForm.elements.finishWax.disabled=!visible;
       const preview=document.getElementById('practiceTreatmentOverview');if(preview)preview.hidden=activity.value==='full';if(preview&&window.LSTreatmentOverview){const finish=practiceForm.elements.finishWax?.value||'none',sku={alpha:'24101',ultra:'24121',performance:'27933'}[finish],steps=visible?[{code:'practice_clean'},{code:'practice_wax',waxDetails:{sku:'24057'}}]:[{code:activity.value==='warm_clean'?'practice_clean':activity.value==='filing'?'practice_filing':'practice_repair'}];if(visible&&sku)steps.push({code:'practice_finish_wax',waxDetails:{sku}});if(activity.value==='filing'&&practiceForm.elements.premiumFiling?.checked)steps.push({code:'premium_file'},{code:'premium_diamond'});preview.innerHTML=window.LSTreatmentOverview.render(window.LSTreatmentOverview.workflow({steps,isTraining:true,material:{package:'Deze oefening'}}),{open:true});}
     };
     document.querySelectorAll('[data-practice-activity]').forEach(button => button.addEventListener('click', () => { activity.value = button.dataset.practiceActivity; update(); }));
