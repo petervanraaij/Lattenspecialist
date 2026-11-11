@@ -134,6 +134,7 @@ try{
   assert.equal(record.kind,'Ski (één)');
   assert.equal(record.is_training,1);
   assert.match(fixture.sql.prepare('SELECT required_items FROM maintenance_steps WHERE material_id=?').get(id).required_items,/24101/);
+  await page.locator('[data-practice-history] > summary').click();
   const remove=page.locator('[data-remove-practice="'+id+'"]');
   await remove.click();
   const dialog=page.getByRole('dialog',{name:'Oefening verwijderen?'});
@@ -222,6 +223,7 @@ try{
   }
   assert.equal(await page.locator('#practiceResult [data-practice-member]').count(),2);
   assert.equal(fixture.sql.prepare('SELECT COUNT(DISTINCT member_id) AS n FROM maintenance_step_sessions WHERE ended_at IS NULL AND is_training=1').get().n,2);
+  await page.locator('[data-practice-history] > summary').click();
   await page.getByRole('button',{name:'Oefeningen vernieuwen'}).click();
   const overview=page.locator('[data-active-practice]');
   await overview.getByRole('button',{name:/Tweede oefenmedewerker.*Stap 1 van 1/}).waitFor();
