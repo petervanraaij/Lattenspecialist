@@ -8,3 +8,25 @@
 
 .admin-tools[hidden]{display:none!important}
 .manual-maintenance{border:1px solid #d8c99f;border-radius:14px;padding:18px;margin:20px 0}.manual-package{border:1px solid #ded6c8;border-radius:10px;padding:14px;margin:10px 0}.manual-package summary{cursor:pointer;font-weight:800}.manual-package .manual-request-grid{margin-top:16px}.manual-extra-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(80px,1fr) minmax(120px,1fr);align-items:end;gap:12px;border-top:1px solid #e8e0d3;padding:14px 0}.manual-extra-row input,.manual-extra-row select{width:100%}[data-manual-summary]{padding:15px;background:#f6f0df;border-radius:10px;margin-top:16px}@media(max-width:600px){.manual-extra-row{grid-template-columns:1fr 1fr}.manual-extra-row>b{grid-column:1/-1}.manual-maintenance{padding:12px}}
+
+/* Keep all three primary tabs in view on a phone. */
+.admin-app-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 0 16px}
+.admin-app-tabs button{min-width:0;overflow-wrap:anywhere}
+@media(max-width:560px){
+ .admin-app-tabs{gap:4px;padding:5px}
+ .admin-app-tabs button{padding:8px 4px;min-height:44px;font-size:.85rem;line-height:1.2}
+}
+
+.admin-dashboard{container-type:inline-size}
+.admin-dashboard .admin-toolbar{flex-wrap:wrap}
+.admin-dashboard .admin-toolbar h1{
+ margin-bottom:0;
+ font-size:clamp(1.25rem,7cqi,4rem);
+ white-space:nowrap;
+}
+
+.admin-order-filters{flex-direction:column}
+.admin-status-menu,.admin-status-archive{display:flex;flex-wrap:wrap;gap:8px}
+.admin-status-menu button{flex:1 1 140px;min-height:44px}
+.admin-status-archive button{font-size:.85rem}
+.admin-summary[hidden]{display:none}
