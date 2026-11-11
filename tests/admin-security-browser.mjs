@@ -50,28 +50,28 @@ try{
   await page.locator('#practiceResult .workflow-step.is-completed').waitFor();
   await page.locator('[data-refresh-practice]').click();await page.locator('[data-resume-practice]').first().click();await page.locator('#practiceResult .workflow-step').waitFor();
 
-  await page.locator('[data-workplace-tab=tools]').click();await page.locator('.tool-photo-card').first().waitFor();
+  await page.locator('[data-admin-subnav=workplace] [data-tab=instructions]').click();await page.locator('[data-library-materials]').click();await page.locator('.tool-photo-card').first().waitFor();
   assert.ok(await page.locator('.tool-photo-card img').count()>0);
-  await page.locator('[data-workplace-tab=warehouse]').click();await page.locator('[data-warehouse-item]').first().waitFor();
+  await page.locator('[data-admin-subnav=workplace] [data-tab=warehouse]').click();await page.locator('[data-warehouse-item]').first().waitFor();
   await page.locator('[data-warehouse-member]').selectOption(fixture.member.id);
   const item=page.locator('[data-warehouse-item="24101"]');await item.locator('[name=quantity]').fill('10');await item.locator('[type=submit]').click();
   await page.getByText('Laatst uit reserve gepakt',{exact:true}).waitFor();
   await page.locator('[data-warehouse-item="24101"]').getByText(/Werkbank: 10/).waitFor();
   assert.equal(fixture.sql.prepare("SELECT SUM(quantity) n FROM warehouse_issues WHERE sku='24101'").get().n,10);
   assert.equal(await page.locator('[data-warehouse-host]').textContent().then(t=>t.includes('unitCost')),false);await fits();
-  await mkdir(resolve(root,'output/workplace-review'),{recursive:true});await page.locator('.admin-workplace .workplace-tabs').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(root,'output/workplace-review/phone.png')});
+  await mkdir(resolve(root,'output/workplace-review'),{recursive:true});await page.locator('[data-admin-subnav=workplace]').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(root,'output/workplace-review/phone.png')});
   await page.locator('#adminTabs [data-tab=inventory]').click();
  });
  await scenario('Workshop availability calendar saves real shifts and central planning updates without a staff login',async()=>{
   await page.locator('.admin-security-dialog button').filter({hasText:'Sluiten'}).click();await page.locator('#adminTabs [data-tab=workplace]').click();
-  await page.locator('[data-workplace-tab=availability]').click();const host=page.locator('[data-workplace-content=availability]');
+  await page.locator('[data-admin-subnav=workplace] [data-tab=availability]').click();const host=page.locator('[data-workplace-content=availability]');
   await host.locator('[data-planning-member]').selectOption(fixture.member.id);await host.locator('.availability-day:not([disabled])').first().waitFor();
   const date=await host.locator('.availability-day:not([disabled])').first().getAttribute('data-date');await host.locator('[data-date="'+date+'"]').click();await host.locator('#availabilityStart').fill('10:00');await host.locator('#availabilityEnd').fill('15:30');
   await host.getByRole('button',{name:'Beschikbaarheid opslaan',exact:true}).click();await host.getByText('Beschikbaarheid en werktijden opgeslagen.',{exact:true}).waitFor();
   assert.equal(fixture.sql.prepare('SELECT start_time FROM member_availability WHERE member_id=? AND work_date=?').get(fixture.member.id,date).start_time,'10:00');await fits();
   await mkdir(resolve(root,'output/workplace-planning-review'),{recursive:true});await host.locator('#availabilityMonthLabel').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(root,'output/workplace-planning-review/availability-phone.png')});
   Object.assign(fixture.env,{HRM_CENTRAL_ENABLED:'true',HRM_CONNECTOR_SECRET:'x'.repeat(64)});
-  await page.locator('[data-workplace-tab=planning]').click();const plan=page.locator('[data-workplace-content=planning]');await plan.locator('[data-planning-member]').selectOption(fixture.member.id);await plan.getByText('Fictieve werkplaatstaken',{exact:true}).waitFor();
+  await page.locator('[data-admin-subnav=workplace] [data-tab=planning-work]').click();const plan=page.locator('[data-workplace-content=planning]');await plan.locator('[data-planning-member]').selectOption(fixture.member.id);await plan.getByText('Fictieve werkplaatstaken',{exact:true}).waitFor();
   assert.ok(await plan.locator('[data-planning-week]').textContent().then(t=>t.includes('10:00')));await plan.locator('[data-task-status]').selectOption('done');await plan.locator('[data-task-status] option:checked').filter({hasText:'Afgerond'}).waitFor({state:'attached'});assert.equal(planningStatus,'done');
   await fits();await plan.locator('[data-planning-summary]').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(root,'output/workplace-planning-review/planning-phone.png')});await page.setViewportSize({width:1024,height:900});await fits();await page.screenshot({path:resolve(root,'output/workplace-planning-review/planning-tablet.png')});await page.setViewportSize({width:390,height:844});
   fixture.env.HRM_CENTRAL_ENABLED='false';await page.locator('#adminTabs [data-tab=inventory]').click();
