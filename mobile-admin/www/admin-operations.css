@@ -24,3 +24,9 @@
  font-size:clamp(1.25rem,7cqi,4rem);
  white-space:nowrap;
 }
+
+.admin-order-filters{flex-direction:column}
+.admin-status-menu,.admin-status-archive{display:flex;flex-wrap:wrap;gap:8px}
+.admin-status-menu button{flex:1 1 140px;min-height:44px}
+.admin-status-archive button{font-size:.85rem}
+.admin-summary[hidden]{display:none}

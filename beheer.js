@@ -25,11 +25,17 @@
   let manualAddressTimer, manualAddressController;
   let token = sessionStorage.getItem('lattenspecialist-admin-token') || localStorage.getItem('lattenspecialist-admin-token') || '';
   let records = [];
-  let activeFilter='open';
+  let activeFilter='new';
   const dirtyRequests=new Set();
-  const recordStage=record=>record.deletedAt?'trash':record.closedAt?'closed':Number(record.currentStep||1)>=8?'ready':Number(record.currentStep||1)>=3?'work':Number(record.currentStep||1)===2?'planned':'new';
-  const filterLabels={open:'Alle open',new:'Nieuw',planned:'Gepland',work:'In de werkplaats',ready:'Gereed',closed:'Afgerond',trash:'Prullenbak'};
+  const recordStage=record=>record.deletedAt?'trash':record.closedAt?'closed':Number(record.currentStep||1)>=8?'ready':Number(record.currentStep||1) >=4?'work':Number(record.currentStep||1)>=2?'planned':'new';
+  const filterLabels={new:'Nieuwe aanvragen',planned:'In ontvangst',work:'In werkplaats',ready:'Klaar voor afgifte',closed:'Afgerond',trash:'Prullenbak'};
   const orderFilters=document.createElement('section');orderFilters.className='admin-order-filters';orderFilters.setAttribute('aria-label','Opdrachten filteren');
+  const statusMenu=document.createElement('nav');
+  statusMenu.className='admin-status-menu';
+  statusMenu.setAttribute('aria-label','Aanvraagstatus');
+  const archiveMenu=document.createElement('div');
+  archiveMenu.className='admin-status-archive';
+  orderFilters.append(statusMenu,archiveMenu);
   summary.before(orderFilters);
   const listStatus=document.createElement('p');listStatus.className='admin-list-status';listStatus.setAttribute('role','status');list.before(listStatus);
   const syncStatus=document.createElement('p');syncStatus.className='admin-sync-status';syncStatus.setAttribute('role','status');refreshButton.parentElement.append(syncStatus);
@@ -249,14 +255,25 @@
   }
   const applySearch = () => {
     const query=search.value.trim().toLowerCase();let visible=0;
-    list.querySelectorAll('.admin-record').forEach(card=>{const matches=activeFilter==='open'?!['closed','trash'].includes(card.dataset.stage):card.dataset.stage===activeFilter;card.hidden=!matches||Boolean(query&&!card.dataset.search.includes(query));if(!card.hidden)visible++;});
-    orderFilters.replaceChildren(...Object.entries(filterLabels).map(([key,label])=>{const button=document.createElement('button');button.type='button';button.dataset.orderFilter=key;button.setAttribute('aria-pressed',String(activeFilter===key));const count=records.filter(record=>key==='open'?!['closed','trash'].includes(recordStage(record)):recordStage(record)===key).length;button.textContent=label+' · '+count;return button;}));
+    list.querySelectorAll('.admin-record').forEach(card=>{const matches=card.dataset.stage===activeFilter;card.hidden=!matches||Boolean(query&&!card.dataset.search.includes(query));if(!card.hidden)visible++;});
+    const makeFilter=([key,label])=>{
+      const button=document.createElement('button');
+      button.type='button';
+      button.dataset.orderFilter=key;
+      button.setAttribute('aria-pressed',String(activeFilter===key));
+      const count=records.filter(record=>recordStage(record)===key).length;
+      button.textContent=label+' · '+count;
+      return button;
+    };
+    const filters=Object.entries(filterLabels);
+    statusMenu.replaceChildren(...filters.slice(0,4).map(makeFilter));
+    archiveMenu.replaceChildren(...filters.slice(4).map(makeFilter));
     if(activeFilter==='trash' && records.some(record=>record.deletedAt)) {
       const empty=document.createElement('button');
       empty.type='button';
       empty.textContent='Prullenbak legen';
       empty.addEventListener('click',openEmptyTrash);
-      orderFilters.append(empty);
+      archiveMenu.append(empty);
     }
     listStatus.textContent=visible?`${visible} ${visible===1?'opdracht':'opdrachten'} getoond`:'Geen opdrachten gevonden. Kies een ander filter of pas je zoekopdracht aan.';
   };
@@ -375,7 +392,7 @@
   });
 
   list.addEventListener('click',async event=>{const button=event.target.closest('.discard-request');if(!button)return;const card=button.closest('.admin-record'),reference=card.dataset.reference;button.disabled=true;try{const result=await api('/api/admin/reservations?includeTrash=1');const latest=result.records?.find(record=>record.reference===reference);if(!latest)throw new Error('Deze aanvraag is niet meer beschikbaar.');dirtyRequests.delete(reference);card.removeAttribute('data-unsaved');records=records.map(record=>record.reference===reference?latest:record);render();syncStatus.textContent='Aanvraag herladen; lokale wijzigingen zijn verworpen.';}catch(error){button.disabled=false;syncStatus.textContent=error.message;}});
-  window.addEventListener('lattenspecialist:workorder-opened',()=>{activeFilter='open';applySearch();});
+  window.addEventListener('lattenspecialist:workorder-opened',event=>{const record=records.find(item=>item.reference===event.detail?.reference);if(record){activeFilter=recordStage(record);applySearch();}});
   list.addEventListener('click',event=>{if(event.target.closest('[data-open-private-admin]'))void window.AdminSecurity?.open();});
   window.addEventListener('lattenspecialist:admin-unlocked',()=>loadDashboard().catch(error=>{syncStatus.textContent=error.message;}));
   let metricsVersion = 0;
@@ -516,10 +533,10 @@
     try {
       const result = await api(`/api/admin/reservations/${encodeURIComponent(card.dataset.reference)}`,{method:'PATCH',body:JSON.stringify(payload)});
       dirtyRequests.delete(result.record.reference);card.removeAttribute('data-unsaved');
+      if(existing && recordStage(existing)!==recordStage(result.record))activeFilter=recordStage(result.record);
       records = records.map(record => record.reference === result.record.reference ? result.record : record); render();
       const updated = document.querySelector(`[data-reference="${CSS.escape(result.record.reference)}"]`); const updatedMessage = updated?.querySelector('.admin-record-message');
       if (!updatedMessage) return;
-      if(action==='workorder'){activeFilter='planned';applySearch();}
       let messageText = action==='workorder'?'Werkorder aangemaakt. De aanvraag, materialen en historie blijven gekoppeld.':'Opgeslagen.';
       if (action === 'email') messageText = result.notifications?.email?.sent ? 'Opgeslagen en status per e-mail verstuurd.' : 'Opgeslagen; de status-e-mail kon niet worden verstuurd.';
       if (action === 'payment') messageText = result.notifications?.paymentEmail?.sent ? 'Betaalverzoek per e-mail verstuurd.' : `Opgeslagen; betaalmail niet verstuurd (${result.notifications?.paymentEmail?.reason || 'controleer de gegevens'}).`;
@@ -546,7 +563,7 @@
   addAvailabilityButton.addEventListener('click',() => { const date = customAvailabilityDate.value; if (!date) return; availableDates.add(date); renderAvailability(); customAvailabilityDate.value = ''; });
   search.addEventListener('input',applySearch);
   refreshButton.addEventListener('click',() => loadDashboard().catch(error => { syncStatus.textContent='Bijwerken mislukt: '+error.message+' Je invoer is bewaard.'; }));
-  logoutButton.addEventListener('click',() => { window.AdminSecurity?.logout(); sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];dirtyRequests.clear();list.replaceChildren();orderFilters.replaceChildren();listStatus.textContent='';syncStatus.textContent='';window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false;window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh')); });
+  logoutButton.addEventListener('click',() => { window.AdminSecurity?.logout(); sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];dirtyRequests.clear();list.replaceChildren();statusMenu.replaceChildren();archiveMenu.replaceChildren();listStatus.textContent='';syncStatus.textContent='';window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false;window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh')); });
 
   let installPrompt; const installButton = document.querySelector('#installAdmin');
   window.addEventListener('beforeinstallprompt',event => { event.preventDefault(); installPrompt=event; installButton.hidden=false; });
