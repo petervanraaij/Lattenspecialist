@@ -56,6 +56,24 @@ try{
   assert.equal(await card.getAttribute('data-stage'),'new');
   await page.locator('[data-order-filter=open]').click();
  });
+ await scenario('Enter a customer service code and replace it without leaving an old working link',async()=>{
+  const reference='LS-2611-NEW234';
+  const card=page.locator('[data-reference="'+reference+'"]');
+  await card.locator('.admin-open-request').click();
+  await card.locator('[name=serviceCode]').fill('pqr234');
+  await card.locator('.save-record[data-action=save]').click();
+  await card.locator('input.customer-status-link[value$="LS-PQR234"]').waitFor();
+  const oldStatus=await fixture.call('/api/status/LS-PQR234');
+  assert.equal(oldStatus.status,200);
+  await card.locator('[name=serviceCode]').fill('LS-PQR235');
+  await card.locator('.save-record[data-action=save]').click();
+  await card.locator('input.customer-status-link[value$="LS-PQR235"]').waitFor();
+  assert.equal((await fixture.call('/api/status/LS-PQR234')).status,404);
+  assert.equal((await fixture.call('/api/status/LS-PQR235')).status,200);
+  const other=(await fixture.call('/api/admin/reservations')).data.records.find(r=>r.reference==='LS-2611-PLAN23');
+  assert.equal((await fixture.call('/api/admin/reservations/'+other.reference,'PATCH',{serviceCode:'LS-PQR235',revision:other.revision})).status,400);
+  await card.locator('.admin-open-request').click();
+ });
  await scenario('Filters show only open orders; completed orders remain available',async()=>{assert.equal(await page.locator('.admin-record:visible').count(),4);await page.getByRole('button',{name:'Nieuw · 2',exact:true}).click();assert.equal(await page.locator('.admin-record:visible').count(),2);await page.getByRole('button',{name:'Afgerond · 1',exact:true}).click();assert.equal(await page.locator('.admin-record:visible').count(),1);assert.equal(await page.locator('.admin-record:visible').getAttribute('data-reference'),'LS-2611-CLOSED');});
  await scenario('Dirty values and expanded order survive refresh and incoming requests',async()=>{await page.getByRole('button',{name:'Alle open · 4',exact:true}).click();const card=page.locator('[data-reference="LS-2611-NEW234"]');await card.locator('.admin-record-details>summary').click();await card.locator('[name=note]').fill('Niet verliezen na verlaten veld');await page.locator('#adminSearch').focus();add('LS-2611-NEW567',1);await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await page.getByRole('button',{name:'Nieuw · 3',exact:true}).waitFor();assert.equal(await card.locator('[name=note]').inputValue(),'Niet verliezen na verlaten veld');assert.equal(await card.locator('.admin-record-details').getAttribute('open'),'');await page.locator('#refreshAdmin').click();await page.getByRole('button',{name:'Nieuw · 3',exact:true}).waitFor();assert.equal(await card.locator('[name=note]').inputValue(),'Niet verliezen na verlaten veld');});
  await scenario('Failed refresh preserves input, and new request shortcut opens its details',async()=>{failReservations=true;await page.locator('#refreshAdmin').click();await page.getByText(/Bijwerken mislukt: Testverbinding/).waitFor();assert.equal(await page.locator('[data-reference="LS-2611-NEW234"] [name=note]').inputValue(),'Niet verliezen na verlaten veld');failReservations=false;await page.getByRole('button',{name:'Bekijk LS-2611-NEW567 · Test LS-2611-NEW567',exact:true}).click();assert.equal(await page.locator('[data-reference="LS-2611-NEW567"] .admin-record-details').getAttribute('open'),'');assert.equal(await page.locator('[data-reference="LS-2611-NEW234"] [name=note]').inputValue(),'Niet verliezen na verlaten veld');});
@@ -71,5 +89,31 @@ try{
  });
  await scenario('Explicit discard restores server data without silently keeping a stale revision',async()=>{await page.getByRole('button',{name:'Alle open · 5',exact:true}).click();const card=page.locator('[data-reference="LS-2611-NEW234"]');await card.getByRole('button',{name:'Wijzigingen verwerpen en herladen',exact:true}).click();await page.getByText('Aanvraag herladen; lokale wijzigingen zijn verworpen.').waitFor();assert.equal(await card.locator('[name=note]').inputValue(),'');assert.equal(await card.getByRole('button',{name:'Wijzigingen verwerpen en herladen',exact:true}).isVisible(),false);});
  await scenario('Mobile and desktop layout fit; filters stay inside orders tab',async()=>{await fits();await page.getByRole('button',{name:'Alle open · 5',exact:true}).click();await mkdir(resolve(root,'output/admin-queue-review'),{recursive:true});await page.locator('.admin-order-filters').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(root,'output/admin-queue-review/mobile.png')});await page.setViewportSize({width:1440,height:1000});await fits();await page.screenshot({path:resolve(root,'output/admin-queue-review/desktop.png')});await page.locator('#adminTabs [data-tab=overview]').click();assert.equal(await page.locator('.admin-order-filters').isVisible(),false);});
+ await scenario('Emptying trash requires confirmation and cannot remove open requests',async()=>{
+  await page.locator('#adminTabs [data-tab=orders]').click();
+  await page.locator('[data-order-filter=open]').click();
+  const ref='LS-2611-NEW234';
+  const card=page.locator('[data-reference="'+ref+'"]');
+  await card.getByRole('button',{name:'Aanvraag verwijderen'}).click();
+  await page.getByRole('button',{name:'Naar prullenbak'}).click();
+  await page.getByText('Aanvraag verplaatst naar de prullenbak.',{exact:true}).waitFor();
+  await page.locator('[data-order-filter=trash]').click();
+  const empty=page.getByRole('button',{name:'Prullenbak legen',exact:true});
+  const dialog=page.getByRole('dialog',{name:'Prullenbak definitief legen?'});
+  await empty.click();
+  await dialog.getByRole('button',{name:'Annuleren'}).click();
+  assert.equal(await card.isVisible(),true);
+  const visible=(await fixture.call('/api/admin/reservations?includeTrash=1')).data.records;
+  const active=visible.find(r=>!r.deletedAt);
+  const entry={reference:active.reference,revision:active.revision};
+  assert.equal((await fixture.call('/api/admin/reservations/trash','POST',{entries:[entry]},'wrong-owner')).status,401);
+  assert.deepEqual((await fixture.call('/api/admin/reservations/trash','POST',{entries:[entry]})).data.references,[]);
+  await empty.click();
+  await dialog.getByRole('button',{name:'Definitief legen'}).click();
+  await page.getByText('Prullenbak geleegd.',{exact:true}).waitFor();
+  assert.equal(await card.count(),0);
+  assert.equal((await fixture.call('/api/admin/reservations/'+ref,'PATCH',{trashAction:'restore',revision:0})).status,404);
+  assert.equal((await fixture.call('/api/status/LS-PQR235')).status,404);
+ });
  assert.deepEqual(errors,[]);console.log(`${passed} queue scenarios passed.`);
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));fixture?.close();}

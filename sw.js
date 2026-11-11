@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lattenspecialist-v145-reservation-trash';
+const CACHE_NAME = 'lattenspecialist-v146-service-code';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -40,7 +40,7 @@ const APP_SHELL = [
   '/customer-status.css',
   '/customer-app.js?v=20261109-dakkoffer-1',
   '/pwa-install.js?v=1',
-  '/beheer.js?v=20261111-trash-1',
+  '/beheer.js?v=20261111-service-code-1',
   '/admin-team.js?v=1',
   '/team.css?v=1',
   '/admin-metrics.css?v=1',

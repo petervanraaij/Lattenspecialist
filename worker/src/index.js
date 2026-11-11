@@ -5,7 +5,7 @@ import {centralHrm,centralHrmEnabled,verifyHrmExport} from './hrm-bridge.js';
 import {legacyHrmMembers} from './operations.js';
 import {completeStuiterbaasBooking, stuiterbaasPhone} from './stuiterbaas-whatsapp.js';
 import {handleMetrics} from './metrics.js';
-import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, ensureTeamRecord, saveOwnerRecord} from './team.js';
+import {handleTeam, TeamError, teamRecord, teamStatusRecord, mergeTeamRecords, ensureTeamRecord, saveOwnerRecord, purgeOwnerTrash} from './team.js';
 import {handleOperations, verifyAdminAccessCode} from './operations.js';
 import {handleInventory, validMaintenanceSelection} from './inventory.js';
 import {handleAccounting} from './accounting.js';
@@ -269,10 +269,10 @@ const listReservations = async env => {
   return mergeTeamRecords(records, env);
 };
 
-const assignUniqueServiceCode = async store => {
+const assignUniqueServiceCode = async (store, env) => {
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const code = createServiceCode();
-    if (!await store.get(`service:${code}`)) return code;
+    if (!await store.get(`service:${code}`) && !await teamStatusRecord(code, env)) return code;
   }
   throw new Error('Unable to create a unique service code.');
 };
@@ -281,7 +281,7 @@ const updateReservation = async (reference, raw, env) => {
   const store = requireReservationStore(env);
   const key = `reservation:${reference}`;
   const record = await teamRecord(reference, env) || await store.get(key, 'json');
-  if (!record) return null;
+  if (!record || record.purgedAt) return null;
   if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(record, env);
   const trashAction = raw.trashAction;
   if (trashAction === 'remove' || trashAction === 'restore') {
@@ -332,10 +332,12 @@ const updateReservation = async (reference, raw, env) => {
   const sendsPaymentRequest = raw.sendPaymentEmail === true || (raw.sendWhatsApp === true && raw.notificationType === 'payment');
   if (sendsPaymentRequest && (!paymentAmount || !paymentUrl)) throw new ValidationError('Vul eerst een bedrag en geldige betaallink in.');
   let serviceCode = normalizeServiceCode(raw.serviceCode || record.serviceCode);
-  if ((converting || raw.generateServiceCode === true || raw.sendStatusEmail === true || raw.sendWhatsApp === true) && !serviceCode) serviceCode = await assignUniqueServiceCode(store);
-  if (serviceCode && !/^LS-[A-Z2-9]{6}$/.test(serviceCode)) throw new ValidationError('De servicecode heeft geen geldig formaat.');
+  if (/^[A-Z2-9]{6}$/.test(serviceCode)) serviceCode = `LS-${serviceCode}`;
+  if ((converting || raw.generateServiceCode === true || raw.sendStatusEmail === true || raw.sendWhatsApp === true) && !serviceCode) serviceCode = await assignUniqueServiceCode(store, env);
+  if (serviceCode && !/^LS-[A-Z2-9]{6}$/.test(serviceCode)) throw new ValidationError('Gebruik LS- gevolgd door zes letters of cijfers van 2 t/m 9.');
   if (serviceCode) {
-    const owner = await store.get(`service:${serviceCode}`);
+    const existing = await teamStatusRecord(serviceCode, env);
+    const owner = existing?.reference || await store.get(`service:${serviceCode}`);
     if (owner && owner !== reference) throw new ValidationError('Deze servicecode is al in gebruik.');
   }
   const updated = {
@@ -371,7 +373,8 @@ const getReservationByServiceCode = async (code, env) => {
   const store = requireReservationStore(env);
   const reference = await store.get(`service:${code}`);
   if (!reference) return null;
-  return await teamRecord(reference, env) || store.get(`reservation:${reference}`, 'json');
+  const record = await teamRecord(reference, env) || await store.get(`reservation:${reference}`, 'json');
+  return record?.serviceCode === code ? record : null;
 };
 
 const sendResendEmail = async (message, env) => {
@@ -578,6 +581,19 @@ const application = {
         return record && !record.deletedAt ? json({ok: true, record: publicStatus(record)}, 200, origin) : json({message: 'Servicecode niet gevonden.'}, 404, origin);
       } catch {
         return json({message: 'De status kon niet worden opgehaald.'}, 502, origin);
+      }
+    }
+
+    if (site === 'lattenspecialist' && url.pathname === '/api/admin/reservations/trash' && request.method === 'POST') {
+      if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
+      try {
+        const {entries} = await request.json();
+        const references = await purgeOwnerTrash(entries, env);
+        const store = requireReservationStore(env);
+        await Promise.allSettled(references.map(reference => store.delete(`reservation:${reference}`)));
+        return json({ok:true, references},200,origin);
+      } catch (error) {
+        return json({message:error instanceof TeamError ? error.message : 'De prullenbak kon niet worden geleegd.'},error instanceof TeamError ? error.status : 502,origin);
       }
     }
 
