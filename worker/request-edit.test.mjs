@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import {maintenanceFixture} from './maintenance-fixture.mjs';
+const f=await maintenanceFixture();
+try {
+ const reference=f.materials[0].reference;
+ const path='/api/admin/reservations/'+reference;
+ const labels='/api/admin/operations/materials';
+ const load=async()=> (await f.call('/api/admin/reservations')).data.records.find(r=>r.reference===reference);
+ const old=await load();
+ const selection=JSON.parse(old.maintenanceSelection);
+ selection.p.platinum.b++;
+ const changed=await f.call(path,'PATCH',{revision:old.revision,maintenanceSelection:JSON.stringify(selection),material:old.material,package:old.package,amount:'3',pickupDate:'2026-12-02',address:'Fictieve straat 1',serviceCode:'LS-TEST23'});
+ assert.equal(changed.status,200,JSON.stringify(changed));
+ assert.equal(changed.data.record.amount,'3');
+ assert.equal(changed.data.record.address,'Fictieve straat 1');
+ const generated=await f.call(labels,'POST',{reference});
+ assert.equal(generated.status,201,JSON.stringify(generated));
+ assert.equal(generated.data.materials.length,3);
+ assert.equal(new Set(generated.data.materials.map(item=>item.displayCode)).size,3);
+ const [first,second]=generated.data.materials;
+ const codePath=labels+'/'+first.id+'/code';
+ assert.equal((await f.call(codePath,'PATCH',{previousCode:first.displayCode,code:second.displayCode})).status,409);
+ const code='LSM-'+(first.displayCode==='LSM-FEDCBA'?'ABCDEF':'FEDCBA');
+ const renamed=await f.call(codePath,'PATCH',{previousCode:first.displayCode,code});
+ assert.equal(renamed.status,200,JSON.stringify(renamed));
+ assert.equal(renamed.data.material.qrValue,first.qrValue);
+ assert.equal((await f.call('/api/admin/operations/scan/'+first.displayCode)).status,404);
+ assert.equal((await f.call('/api/admin/operations/scan/'+code)).data.material.id,first.id);
+ const saved=await load();
+ const replace=await f.call(path,'PATCH',{revision:saved.revision,serviceCode:'LS-NEW234'});
+ assert.equal(replace.status,200,JSON.stringify(replace));
+ const {teamStatusRecord}=await import('./src/team.js');
+ assert.equal(await teamStatusRecord('LS-TEST23',f.env),null);
+ assert.equal((await teamStatusRecord('LS-NEW234',f.env)).reference,reference);
+ console.log('PASS editing request, adding a third set, unique set codes, replacement, stable QR and customer code rotation');
+} finally { f.close(); }
