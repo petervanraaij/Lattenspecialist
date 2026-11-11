@@ -54,5 +54,16 @@ try {
  assert.deepEqual(reloaded.data.materials.map(item=>item.id),[first.id,untouched.id]);
  assert.deepEqual(f.sql.prepare('SELECT * FROM materials WHERE id=?').get(untouched.id),untouchedBefore);
  assert.deepEqual(f.sql.prepare('SELECT * FROM maintenance_steps WHERE material_id=? ORDER BY step_order').all(untouched.id),historyBefore);
+ const setCount=(targetCount,revision)=>f.call(labels+'/add-ski-pair','POST',{reference,revision,targetCount,package:'Goud'});
+ const before=await load();
+ const more=await setCount(3,before.revision);
+ assert.equal(more.status,201,JSON.stringify(more));
+ const expanded=(await f.call(labels+'?reference='+reference)).data.materials;
+ assert.equal(expanded.filter(item=>item.kind==='Ski').length,3);
+ assert.equal(expanded.find(item=>item.id===first.id).displayCode,code);
+ assert.equal((await setCount(3,before.revision)).status,409);
+ const less=await setCount(1,more.data.record.revision);
+ assert.equal(less.status,201,JSON.stringify(less));
+ assert.deepEqual((await f.call(labels+'?reference='+reference)).data.materials.map(item=>item.id),[first.id,untouched.id]);
  console.log('PASS editing request, adding a third set, unique set codes, replacement, stable QR and customer code rotation');
 } finally { f.close(); }

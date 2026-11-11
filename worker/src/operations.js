@@ -209,31 +209,49 @@ async function addSkiPair(db,raw){
   if(!Number.isInteger(raw.revision)||row.revision!==raw.revision)throw new OperationsError('De aanvraag is gewijzigd. Vernieuw en probeer opnieuw.',409);
   const packageName=clean(raw.package,30);
   if(!Object.hasOwn(setPackages,packageName))throw new OperationsError('Kies een geldig pakket.');
-  await createMaterials(db,reference,false);
-  const id=crypto.randomUUID(),stamp=now(),code='LSM-'+randomHex(3).toUpperCase();
+  const active=await createMaterials(db,reference,false);
+  const skis=active.filter(item=>item.kind==='Ski');
+  const target=raw.targetCount??skis.length+1;
+  if(!Number.isInteger(target)||target<0||target>20)throw new OperationsError('Vul een aantal van 0 tot 20 paren in.');
+  const delta=target-skis.length;
+  if(!delta)return {record,materials:active};
+  if(active.length+delta>20)throw new OperationsError('Een aanvraag kan maximaal 20 sets bevatten.');
+  const stamp=now();
   const wax=packageName==='Brons'?'':'BetaMix Red';
   const premium=['Goud','Platinum'].includes(packageName);
   const options=JSON.stringify({waxSku:wax?'24057':'',premiumIncluded:premium,premiumFiling:premium});
-  const [insert,,updated]=await db.batch([
-    db.prepare(`INSERT INTO materials(id,scan_token,display_code,reference,item_number,kind,package_name,wax_type,assigned_to,created_at,updated_at,package_code,selected_options)
-      SELECT ?,?,?,r.reference,coalesce((SELECT max(item_number) FROM materials WHERE reference=r.reference),0)+1,
-      'Ski',?,?,r.assigned_to,?,?,?,? FROM records r WHERE r.reference=? AND r.revision=?
-        AND json_extract(r.payload,'$.deletedAt') IS NULL
-        AND (SELECT count(*) FROM materials WHERE reference=r.reference AND internal_status<>'material_removed')<20 RETURNING *`)
-      .bind(id,randomHex(24),code,packageName,wax,stamp,stamp,setPackages[packageName],options,reference,raw.revision),
-    db.prepare(`INSERT INTO material_events(material_id,actor,event_type,created_at)
-      SELECT id,'owner','label_created',? FROM materials WHERE id=?`).bind(stamp,id),
+  const newSets=Array.from({length:Math.max(delta,0)},()=>({id:crypto.randomUUID(),token:randomHex(24),code:'LSM-'+randomHex(3).toUpperCase()}));
+  const remove=skis.slice(target).map(item=>item.id);
+  const mutation=delta>0
+    ? db.prepare(`INSERT INTO materials(id,scan_token,display_code,reference,item_number,kind,package_name,wax_type,assigned_to,created_at,updated_at,package_code,selected_options)
+      SELECT json_extract(j.value,'$.id'),json_extract(j.value,'$.token'),json_extract(j.value,'$.code'),r.reference,
+        coalesce((SELECT max(item_number) FROM materials WHERE reference=r.reference),0)+CAST(j.key AS INTEGER)+1,
+        'Ski',?,?,r.assigned_to,?,?,?,? FROM records r CROSS JOIN json_each(?) j
+      WHERE r.reference=? AND r.revision=? AND json_extract(r.payload,'$.deletedAt') IS NULL RETURNING *`)
+      .bind(packageName,wax,stamp,stamp,setPackages[packageName],options,JSON.stringify(newSets),reference,raw.revision)
+    : null;
+  const removedIds=JSON.stringify(remove);
+  const archive=delta<0?db.prepare(`UPDATE materials SET internal_status='material_removed',updated_at=?1
+    WHERE id IN (SELECT value FROM json_each(?2))
+      AND EXISTS(SELECT 1 FROM records WHERE reference=?3 AND revision=?4 AND json_extract(payload,'$.deletedAt') IS NULL)
+      AND NOT EXISTS(SELECT 1 FROM maintenance_step_sessions WHERE ended_at IS NULL AND material_id IN (SELECT value FROM json_each(?2)))
+      AND NOT EXISTS(SELECT 1 FROM work_sessions WHERE ended_at IS NULL AND material_id IN (SELECT value FROM json_each(?2)))
+    RETURNING *`).bind(stamp,removedIds,reference,raw.revision):null;
+  const [changed,updated]=await db.batch([archive??mutation,
     db.prepare(`UPDATE records SET revision=revision+1,updated_at=?,actor='owner',payload=json_remove(json_set(payload,
       '$.materialSourceAmount',coalesce(json_extract(payload,'$.materialSourceAmount'),json_extract(payload,'$.amount'),1),
       '$.amount',CAST((SELECT count(*) FROM materials WHERE reference=records.reference AND internal_status<>'material_removed') AS TEXT),
-      '$.material',(SELECT CASE WHEN count(DISTINCT kind)=1 THEN max(kind) ELSE 'Meerdere / combinatie' END FROM materials WHERE reference=records.reference AND internal_status<>'material_removed'),
+      '$.material',(SELECT CASE WHEN count(*)=0 THEN json_extract(records.payload,'$.material') WHEN count(DISTINCT kind)=1 THEN max(kind) ELSE 'Meerdere / combinatie' END FROM materials WHERE reference=records.reference AND internal_status<>'material_removed'),
       '$.package',(SELECT CASE WHEN count(DISTINCT package_name)=1 THEN max(package_name) ELSE 'Meerdere pakketten' END FROM materials WHERE reference=records.reference AND internal_status<>'material_removed'),
-      '$.plannedMinutes',min(2400,coalesce(json_extract(payload,'$.plannedMinutes'),60)+60),
-      '$.updatedAt',?), '$.priceQuote') WHERE reference=? AND EXISTS(SELECT 1 FROM materials WHERE id=?) RETURNING *`)
-      .bind(stamp,stamp,reference,id)
+      '$.plannedMinutes',max(0,min(2400,coalesce(json_extract(payload,'$.plannedMinutes'),60)+?*60)),
+      '$.updatedAt',?), '$.priceQuote') WHERE reference=? AND revision=? AND changes()=? RETURNING *`)
+      .bind(stamp,delta,stamp,reference,raw.revision,Math.abs(delta)),
+    db.prepare(`INSERT INTO material_events(material_id,actor,event_type,created_at)
+      SELECT value,'owner',?,? FROM json_each(?) WHERE changes()>0`)
+      .bind(delta>0?'label_created':'material_removed',stamp,JSON.stringify(delta>0?newSets.map(item=>item.id):remove))
   ]);
-  if(!insert.results.length)throw new OperationsError('De aanvraag is gewijzigd of heeft al 20 sets. Vernieuw de aanvraag.',409);
-  return {record:recordFromRow(updated.results[0]),material:materialView(insert.results[0])};
+  if(!updated.results.length)throw new OperationsError('De aanvraag is gewijzigd of op een te verwijderen set loopt nog werk. Vernieuw de aanvraag.',409);
+  return {record:recordFromRow(updated.results[0]),material:delta>0?materialView(changed.results[0]):null};
 }
 
 async function createMaterials(db, reference, confirmAppointment=true) {
