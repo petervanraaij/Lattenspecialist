@@ -229,7 +229,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
     <button type="button" class="btn btn-dark" data-intake-close>Sluiten</button>
   </form></section>
   <section data-intake-photos hidden>
-    <h3 data-intake-photo-title></h3><div data-intake-photo-host></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem"><h3 data-intake-photo-title></h3><button type="button" class="btn btn-dark" data-intake-photo-close aria-label="Fotovenster sluiten">×</button></div><div data-intake-photo-host></div>
     <button type="button" class="btn btn-dark" data-intake-photo-next>Later toevoegen</button>
   </section>
   <section data-intake-received hidden><h3>Al ontvangen</h3><div data-intake-received-list></div></section>`;
@@ -241,6 +241,8 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   const photos=dialog.querySelector('[data-intake-photos]');
   const photoHost=dialog.querySelector('[data-intake-photo-host]');
   const photoNext=dialog.querySelector('[data-intake-photo-next]');
+  const photoClose=dialog.querySelector('[data-intake-photo-close]');
+  photoClose.onclick=()=>{if(!photoBusy)dialog.close();};
   const receivedSection=dialog.querySelector('[data-intake-received]');
   let intakeScanner=null,busy=false,cameraStart=null,photoBusy=false,receivedSets=[];
   function showPhotoStep(item,fromReceipt=false){
@@ -250,7 +252,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    photoNext.textContent=fromReceipt?'Later toevoegen':'Terug naar ontvangst';
    window.LSMaterialPhotos?.mount(photoHost,item.id,{
     admin:true,intakeOnly:true,
-    onBusy(value){photoBusy=value;photoNext.disabled=value;},
+    onBusy(value){photoBusy=value;photoNext.disabled=value;photoClose.disabled=value;},
     onSaved(){photoNext.textContent='Verder';}
    });
    photoNext.focus();
