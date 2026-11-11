@@ -621,6 +621,7 @@
 
   document.addEventListener('ls-intake-updated',event=>{
     const updated=event.detail;
+    if(updated.customerStatus==='Materiaal ontvangen')activeFilter=recordStage(updated);
     records=records.map(record=>record.reference===updated.reference?updated:record);
     render();
   });
