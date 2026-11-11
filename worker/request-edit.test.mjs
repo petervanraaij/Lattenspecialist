@@ -65,5 +65,21 @@ try {
  const less=await setCount(1,more.data.record.revision);
  assert.equal(less.status,201,JSON.stringify(less));
  assert.deepEqual((await f.call(labels+'?reference='+reference)).data.materials.map(item=>item.id),[first.id,untouched.id]);
+ f.sql.prepare("UPDATE records SET payload=json_set(payload,'$.currentStep',1,'$.customerStatus','Aanvraag ontvangen') WHERE reference=?").run(reference);
+ const intake=labels+'/intake';
+ const pending=await f.call(intake,'POST',{reference});
+ assert.equal(pending.status,200,JSON.stringify(pending));
+ const receive=(material,label)=>f.call(intake,'POST',{reference,materialId:material.id,label});
+ const firstIntake=await receive(first,'LS-2601-0001');
+ assert.equal(firstIntake.status,200,JSON.stringify(firstIntake));
+ assert.equal(firstIntake.data.materials[0].displayCode,'LS-2601-0001');
+ assert.equal(firstIntake.data.materials[0].qrValue,first.qrValue);
+ assert.equal(firstIntake.data.materials[0].internalStatus,'received');
+ assert.notEqual(firstIntake.data.record.customerStatus,'Materiaal ontvangen');
+ assert.equal((await receive(untouched,'LS-2601-0001')).status,409);
+ const received=await receive(untouched,'https://lattenspecialist.nl/medewerkers.html#scan=LS-2601-0002');
+ assert.equal(received.status,200,JSON.stringify(received));
+ assert.equal(received.data.record.customerStatus,'Materiaal ontvangen');
+ assert.equal((await f.call('/api/admin/operations/scan/LS-2601-0002')).data.material.id,untouched.id);
  console.log('PASS editing request, adding a third set, unique set codes, replacement, stable QR and customer code rotation');
 } finally { f.close(); }

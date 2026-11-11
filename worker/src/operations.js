@@ -276,6 +276,54 @@ async function createMaterials(db, reference, confirmAppointment=true) {
   return materials.map(materialView);
 }
 
+function intakeCode(raw){
+  const value=clean(raw,500);
+  const pattern=/^(?:LS-\d{4}-[A-Z0-9]{4,12}|LSM-[A-F0-9]{6}|[A-F0-9]{48})$/i;
+  if(pattern.test(value))return value.toUpperCase();
+  try{
+    const url=new URL(value);
+    if(!['lattenspecialist.nl','www.lattenspecialist.nl'].includes(url.hostname)||url.protocol!=='https:')return '';
+    const hash=new URLSearchParams(url.hash.slice(1));
+    const candidates=[...hash.values(),...url.searchParams.values(),...url.pathname.split('/')];
+    return (candidates.find(part=>pattern.test(part))||'').toUpperCase();
+  }catch{return '';}
+}
+
+async function receiveLabel(db,raw){
+  const reference=clean(raw.reference,30),id=clean(raw.materialId,36),code=intakeCode(raw.label);
+  if(!code)throw new OperationsError('QR-code niet herkend. Vul de onderhoudscode op de sticker in.');
+  const material=await db.prepare(`SELECT m.* FROM materials m JOIN records r ON r.reference=m.reference
+    WHERE m.id=? AND m.reference=? AND m.is_training=0 AND m.internal_status<>'material_removed'
+      AND json_extract(r.payload,'$.deletedAt') IS NULL AND json_extract(r.payload,'$.closedAt') IS NULL`).bind(id,reference).first();
+  if(!material)throw new OperationsError('Deze set hoort niet bij een open aanvraag.',404);
+  const displayCode=code===material.scan_token.toUpperCase()?material.display_code:code;
+  if(displayCode.length===48)throw new OperationsError('Deze QR-sticker hoort niet bij deze set.',409);
+  if(!['label_created','pickup_underway'].includes(material.internal_status)){
+    if(!material.received_at||displayCode!==material.display_code)throw new OperationsError('Deze set is al verwerkt.',409);
+  }else{
+    const stamp=now();
+    const [updated]=await db.batch([
+      db.prepare(`UPDATE materials SET display_code=?1,internal_status='received',customer_status='Materiaal ontvangen',received_at=?2,updated_at=?2
+        WHERE id=?3 AND reference=?4 AND internal_status IN ('label_created','pickup_underway')
+          AND EXISTS(SELECT 1 FROM records WHERE reference=?4 AND json_extract(payload,'$.deletedAt') IS NULL AND json_extract(payload,'$.closedAt') IS NULL)
+          AND NOT EXISTS(SELECT 1 FROM materials WHERE display_code=?1 AND id<>?3)
+          AND NOT EXISTS(SELECT 1 FROM records WHERE reference=?1 OR json_extract(payload,'$.serviceCode')=?1)
+        RETURNING id`).bind(displayCode,stamp,id,reference),
+      db.prepare(`INSERT INTO material_events(material_id,actor,event_type,detail,created_at)
+        SELECT ?,'owner','receive',json_object('label',?),? WHERE changes()=1`).bind(id,displayCode,stamp),
+      db.prepare(`UPDATE records SET revision=revision+1,actor='operations',updated_at=?1,
+        payload=CASE WHEN NOT EXISTS(SELECT 1 FROM materials WHERE reference=?2 AND internal_status IN ('label_created','pickup_underway'))
+          AND coalesce(json_extract(payload,'$.currentStep'),1)<3
+        THEN json_set(payload,'$.status','Materiaal ontvangen','$.customerStatus','Materiaal ontvangen','$.currentStep',3,'$.updatedAt',?1)
+        ELSE json_set(payload,'$.updatedAt',?1) END
+        WHERE reference=?2 AND changes()=1`).bind(stamp,reference)
+    ]);
+    if(!updated.results.length)throw new OperationsError('Deze sticker is al gekoppeld of de set is gewijzigd.',409);
+  }
+  const items=await db.prepare(`SELECT * FROM materials WHERE reference=? AND internal_status<>'material_removed' ORDER BY item_number`).bind(reference).all();
+  return {materials:items.results.map(materialView),record:recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(reference).first())};
+}
+
 async function workAction(db, material, action, actor) {
   const timestamp=now(),status=internalStatus(action),customer=materialPublicStatus(action);
   if (!status) throw new OperationsError('Onbekende scanactie.');
@@ -502,6 +550,14 @@ export async function handleOperations(request,env,{owner,json,origin}) {
       if(path==='/api/admin/operations/materials/add-ski-pair'&&request.method==='POST'){
         return json(await addSkiPair(db,await body(request)),201,origin);
       }
+      if(path==='/api/admin/operations/materials/intake'&&request.method==='POST'){
+        const raw=await body(request);
+        if(raw.materialId)return json(await receiveLabel(db,raw),200,origin);
+        const reference=clean(raw.reference,30);
+        const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(reference).first());
+        if(!record||record.service!=='Onderhoud'||record.closedAt||record.deletedAt)throw new OperationsError('Open onderhoudsaanvraag niet gevonden.',404);
+        return json({materials:await createMaterials(db,reference,false)},200,origin);
+      }
       const setRoute = path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/set$/);
       if (setRoute && ['PATCH','POST'].includes(request.method)) {
         const raw = await body(request);
@@ -527,7 +583,7 @@ export async function handleOperations(request,env,{owner,json,origin}) {
         if (!updated) throw new OperationsError('Deze code is al in gebruik of het materiaal is gewijzigd. Vernieuw de aanvraag.',409);
         return json({material:materialView(updated)},200,origin);
       }
-      const adminScan=path.match(/^\/api\/admin\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6})$/i);
+      const adminScan=path.match(/^\/api\/admin\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{4,12})$/i);
       if(adminScan&&request.method==='GET'){const key=adminScan[1],material=await db.prepare("SELECT * FROM materials WHERE (scan_token=? OR display_code=?) AND internal_status<>'material_removed'").bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),record,workflow:await getWorkflow(db,material)},200,origin);}
       const adminAction=path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/action$/);
       if(adminAction&&request.method==='POST'){
@@ -561,7 +617,7 @@ export async function handleOperations(request,env,{owner,json,origin}) {
         const rows=await db.prepare("SELECT * FROM materials WHERE reference=? AND (assigned_to=? OR assigned_to IS NULL) AND is_training=0 AND internal_status<>'material_removed' ORDER BY item_number").bind(reference,member.id).all();
         return json({materials:rows.results.map(materialView)},200,origin);
       }
-      const scan=path.match(/^\/api\/team\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6})$/i);
+      const scan=path.match(/^\/api\/team\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{4,12})$/i);
       if(scan&&request.method==='GET'){const key=scan[1],material=await db.prepare("SELECT * FROM materials WHERE (scan_token=? OR display_code=?) AND internal_status<>'material_removed'").bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);if(material.assigned_to&&material.assigned_to!==member.id)throw new OperationsError('Deze opdracht is aan een andere medewerker toegewezen.',403);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),work:{customerName:material.is_training?'Oefenklant':clean(record?.name,100),address:clean(record?.address,240),conditions:clean(record?.conditions,100),notes:clean(record?.notes,500),package:clean(material.package_name||record?.package,100),waxType:clean(material.wax_type||record?.waxType||'',100)},workflow:await getWorkflow(db,material)},200,origin);}
       const action=path.match(/^\/api\/team\/operations\/materials\/([a-f0-9-]{36})\/action$/);
       if(action&&request.method==='POST'){

@@ -90,7 +90,7 @@ export function workspaceAllowed(path,method){
  if(method==='POST'&&['/api/admin/push/register','/api/admin/push/unregister','/api/admin/push/received'].includes(path))return true;
  if(method==='GET'&&['/api/admin/reservations','/api/admin/team/members','/api/admin/availability','/api/admin/inventory/guides'].includes(path))return true;
  if(path==='/api/admin/operations/materials'&&['GET','POST'].includes(method))return true;
- if(method==='GET'&&/^\/api\/admin\/operations\/scan\/(?:[a-f0-9]{48}|LSM-[A-F0-9]{6})$/i.test(path))return true;
+ if(method==='GET'&&/^\/api\/admin\/operations\/scan\/(?:[a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{4,12})$/i.test(path))return true;
  if(/^\/api\/admin\/operations\/materials\/[a-f0-9-]{36}\/(workflow|photos(?:\/[a-f0-9-]{36})?)$/.test(path)&&['GET','POST'].includes(method))return true;
  return method==='POST'&&/^\/api\/admin\/operations\/steps\/[a-f0-9-]{36}\/(start|pause|finish)$/.test(path);
 }
