@@ -244,8 +244,11 @@
       ${analyticsCards(data.analytics, data.practice)}
       <section class="inventory-section"><div class="inventory-section-head"><div><span class="inventory-kicker">BESTELLINGEN</span><h3>Ontvangst en voorraad</h3><p>Boek een bestelling pas als de levering fysiek is gecontroleerd.</p></div><span>${data.orders.length}</span></div><div class="inventory-top-grid inventory-orders-grid">${data.orders.map(order => orderCard(order, data.orderLines)).join('') || '<div class="inventory-empty"><b>Geen bestellingen</b></div>'}</div></section>
       ${inventoryTable(data.items)}
-      ${movementSection(data.movements)}
-      ${toolsSection(data.tools)}`;
+      ${movementSection(data.movements)}`;
+  }
+
+  function renderTools(data) {
+    return `<div class="inventory-title"><h2>Gereedschap en reservevoorraad</h2><button class="btn btn-dark" type="button" data-refresh-inventory>Vernieuwen</button></div>${toolsSection(data.tools)}`;
   }
 
   function renderSuppliers(data) {
@@ -270,7 +273,7 @@
 
   function render(raw, panel, selectedView) {
     if (selectedView === 'creditors' || selectedView === 'debtors') panel.innerHTML = renderAccounting(raw, selectedView === 'creditors' ? 'purchase' : 'sales');
-    else { const data = normalize(raw); panel.innerHTML = selectedView === 'suppliers' ? renderSuppliers(data) : renderInventory(data); }
+    else { const data = normalize(raw); panel.innerHTML = selectedView === 'tools' ? renderTools(data) : selectedView === 'suppliers' ? renderSuppliers(data) : renderInventory(data); }
     bindPanel(panel);
   }
 
@@ -279,11 +282,11 @@
     const panel = target, selectedView = view, activeClient = client;
     loading = true;
     panel.setAttribute('aria-busy', 'true');
-    const accounting = selectedView === 'creditors' || selectedView === 'debtors', label = selectedView === 'suppliers' ? 'Leveranciers' : selectedView === 'creditors' ? 'Crediteuren' : selectedView === 'debtors' ? 'Debiteuren' : 'Voorraad en kosten';
+    const accounting = selectedView === 'creditors' || selectedView === 'debtors', label = selectedView === 'tools' ? 'Gereedschap en reservevoorraad' : selectedView === 'suppliers' ? 'Leveranciers' : selectedView === 'creditors' ? 'Crediteuren' : selectedView === 'debtors' ? 'Debiteuren' : 'Voorraad en kosten';
     panel.innerHTML = `<div class="inventory-loading"><i></i><b>${label} laden…</b></div>`;
     try { const result = accounting ? await Promise.all([activeClient('/api/admin/accounting/overview'),activeClient('/api/admin/inventory/overview')]).then(([accountingData,inventoryData]) => ({...accountingData,suppliers:inventoryData.suppliers || [],orders:inventoryData.orders || []})) : await activeClient('/api/admin/inventory/overview'); if (panel === target && selectedView === view && activeClient === client) render(result, panel, selectedView); }
     catch (error) { if (panel === target && selectedView === view) { panel.innerHTML = `<div class="inventory-error" role="alert"><b>${label} konden niet worden geladen</b><p>${escape(error.message)}</p><button class="btn btn-dark" type="button">Opnieuw proberen</button></div>`; panel.querySelector('button').onclick = load; } }
-    finally { loading = false; panel.removeAttribute('aria-busy'); if (panel !== target && target && !target.childElementCount) load(); }
+    finally { loading = false; panel.removeAttribute('aria-busy'); if (target && (panel !== target || selectedView !== view || activeClient !== client)) void load(); }
   }
 
   async function receiveOrder(event) {
@@ -356,8 +359,8 @@
   }
 
   window.LattenspecialistInventory = {
-    open(api, panel, selectedView = 'inventory') { client = api; target = panel; view = ['inventory','suppliers','creditors','debtors'].includes(selectedView) ? selectedView : 'inventory'; load(); },
+    open(api, panel, selectedView = 'inventory') { client = api; target = panel; view = ['inventory','tools','suppliers','creditors','debtors'].includes(selectedView) ? selectedView : 'inventory'; load(); },
     clear() { client = null; target = null; loading = false; view = 'inventory'; }
   };
-  window.addEventListener('lattenspecialist:inventory-updated',()=>{if(client&&target?.isConnected&&!target.hidden&&view==='inventory')void load();});
+  window.addEventListener('lattenspecialist:inventory-updated',()=>{if(client&&target?.isConnected&&!target.hidden&&['inventory','tools'].includes(view))void load();});
 })();
