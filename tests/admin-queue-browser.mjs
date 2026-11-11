@@ -220,6 +220,17 @@ try{
   }
   assert.equal(await page.locator('#practiceResult [data-practice-member]').count(),2);
   assert.equal(fixture.sql.prepare('SELECT COUNT(DISTINCT member_id) AS n FROM maintenance_step_sessions WHERE ended_at IS NULL AND is_training=1').get().n,2);
+  await page.getByRole('button',{name:'Oefeningen vernieuwen'}).click();
+  const overview=page.locator('[data-active-practice]');
+  await overview.getByRole('button',{name:/Tweede oefenmedewerker.*Stap 1 van 1/}).waitFor();
+  assert.equal(await overview.locator('time').count(),2);
+  const timer=overview.locator('time').first();
+  const initial=await timer.textContent();
+  await page.waitForFunction(before=>document.querySelector('[data-active-practice] time')?.textContent!==before,initial);
+  const active=fixture.sql.prepare('SELECT step_id FROM maintenance_step_sessions WHERE member_id=? AND ended_at IS NULL').get(added.data.id);
+  assert.equal((await fixture.call('/api/admin/operations/steps/'+active.step_id+'/pause','POST',{executionMemberId:added.data.id})).status,200);
+  await overview.getByRole('button',{name:/Tweede oefenmedewerker/}).waitFor({state:'detached'});
+  assert.equal(await overview.locator('time').count(),1);
  });
  assert.deepEqual(errors,[]);console.log(`${passed} queue scenarios passed.`);
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));fixture?.close();}
