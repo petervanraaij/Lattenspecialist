@@ -80,7 +80,7 @@
   const formatPlannedTime = minutes => { const value=Math.max(0,Number(minutes)||0),hours=Math.floor(value/60),rest=value%60;return hours&&rest?`${hours} u ${rest} min`:hours?`${hours} uur`:`${rest} min`; };
   const normalizeWhatsAppPhone = value => { let digits = String(value || '').replace(/\D/g,''); if (digits.startsWith('00')) digits = digits.slice(2); if (digits.startsWith('0')) digits = `31${digits.slice(1)}`; return digits; };
   const valueOrDash = value => value ? escapeHtml(value) : '—';
-  const customerStatusUrl = record => /^LS-[A-Z2-9]{6}$/.test(record.serviceCode || '') ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : '';
+  const customerStatusUrl = record => /^LS-(?:[0-9]{4}-[A-Z0-9]{6}|[A-Z2-9]{6})$/.test(record.serviceCode || '') ? `https://lattenspecialist.nl/app.html#status=${encodeURIComponent(record.serviceCode)}` : '';
   const headers = () => ({Authorization:`Bearer ${token}`,'Content-Type':'application/json'});
   const pushTest=document.createElement('button');pushTest.type='button';pushTest.className='btn';pushTest.textContent='Test telefoonmelding';
   const pushTestResult=document.createElement('p');pushTestResult.setAttribute('role','status');
@@ -209,7 +209,7 @@
           ${record.workNote ? `<div class="team-work-note"><b>Werknotitie medewerker</b><p>${escapeHtml(record.workNote)}</p></div>` : ''}
           ${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}
           <button class="btn btn-dark team-history" type="button">Bekijk werklogboek</button><div class="team-audit" hidden></div>
-          <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Bijv. LS-ABC234" maxlength="24" autocapitalize="characters" autocomplete="off" spellcheck="false" pattern="(LS-)?[A-Z2-9]{6}" aria-describedby="service-code-format-${escapeHtml(record.reference)}"><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
+          <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Bijv. LS-ABC234" maxlength="24" autocapitalize="characters" autocomplete="off" spellcheck="false" pattern="(?:(?:LS-)?[A-Z2-9]{6}|LS-[0-9]{4}-[A-Z0-9]{6})" aria-describedby="service-code-format-${escapeHtml(record.reference)}"><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
           <div><button class="btn btn-dark create-material-labels" type="button">Maak / bekijk QR-stickers</button><div class="material-labels" role="status"></div></div>
           ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan + klant berichten” gebeurt dit automatisch.</p>'}
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
@@ -405,7 +405,10 @@
   };
   let pendingManualOpen = false;
   let pendingManualMaterial = '';
-  const openManualRequest = material => { manualForm.reset(); manualSelection.reset(); manualStatus.textContent='';updateManualAddress();manualDialog.showModal();manualForm.elements.name.focus(); };
+  const openManualRequest = material => {
+    const date=new Intl.DateTimeFormat('nl-NL',{timeZone:'Europe/Amsterdam',year:'2-digit',month:'2-digit'}).formatToParts();
+    document.querySelector('#manualServicePrefix').textContent=`LS-${date.find(p=>p.type==='year').value}${date.find(p=>p.type==='month').value}-`;
+    manualForm.reset(); manualSelection.reset(); manualStatus.textContent='';updateManualAddress();manualDialog.showModal();manualForm.elements.name.focus(); };
   const requestManualOpen = material => {
     pendingManualOpen = true;
     pendingManualMaterial = material || '';
@@ -428,6 +431,9 @@
     try{const response=await fetch(`${endpoint}/api/address?postcode=${encodeURIComponent(postcode)}&houseNumber=${encodeURIComponent(houseNumber)}`,{cache:'no-store',signal:manualAddressController.signal});const result=await response.json().catch(()=>({}));if(!response.ok||!result.address?.address)throw new Error(result.message||'Adres niet gevonden.');manualForm.elements.postcode.value=result.address.postcode;manualForm.elements.houseNumber.value=result.address.houseNumber;manualForm.elements.address.value=result.address.address;manualForm.elements.addressCity.value=result.address.city;manualAddressStatus.textContent=result.address.freePickup?'Adres gevonden · binnen gratis servicegebied':'Adres gevonden · buiten gratis servicegebied';manualAddressStatus.className=`address-status ${result.address.freePickup?'is-success':'is-error'}`;}catch(error){if(error.name!=='AbortError'){manualForm.elements.address.value='';manualAddressStatus.textContent=error.message;manualAddressStatus.className='address-status is-error';}}
   };
   ['postcode','houseNumber'].forEach(name=>manualForm.elements[name].addEventListener('input',()=>{clearTimeout(manualAddressTimer);manualForm.elements.address.value='';manualAddressTimer=setTimeout(lookupManualAddress,450);}));
+  manualForm.elements.serviceCodeSuffix?.addEventListener('input',event=>{
+    event.target.value=event.target.value.toUpperCase().replace(/\s+/g,'');
+  });
   manualForm.addEventListener('submit',async event => {
     event.preventDefault();
     if (!manualForm.reportValidity()) return;
@@ -437,7 +443,8 @@
     const submit=manualForm.querySelector('[type="submit"]');submit.disabled=true;manualStatus.textContent='Aanvraag opslaan…';manualStatus.className='admin-record-message';
     try {
       const result=await api('/api/admin/reservations',{method:'POST',body:JSON.stringify({...values,...chosen.legacy,maintenanceSelection:JSON.stringify(chosen.selection),service:'Onderhoud',pickupDate:values.pickupDate||'In overleg',urgent:chosen.legacy.urgent,notes:extraNotes,whatsappConsent:manualForm.elements.whatsappConsent.checked})});
-      records.unshift(result.record);render();manualDialog.close();
+      records.unshift(result.record);activeFilter='new';search.value='';render();manualDialog.close();
+      if(result.record.serviceCode) listStatus.textContent=`Aanvraag opgeslagen met servicecode ${result.record.serviceCode}.`;
       const card=document.querySelector(`[data-reference="${CSS.escape(result.record.reference)}"]`);card?.scrollIntoView({behavior:'smooth',block:'start'});
     } catch(error){manualStatus.textContent=error.message;manualStatus.className='admin-record-message is-error';}
     finally{submit.disabled=false;}

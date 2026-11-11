@@ -26,10 +26,11 @@ function app(t,fetcher,{hash='',saved=''}={}) {
 }
 function submit(w,d,code) {d.getElementById('serviceCode').value=code;d.getElementById('statusForm').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));}
 
-test('servicecodes distinguish public status from booking references; trip dates are real dates',()=>{
+test('servicecodes accept legacy and dated formats; trip dates are real dates',()=>{
   assert.equal(normalizeCode(' ls-abc234 '),'LS-ABC234');
   assert.equal(validCode('LS-ABC234'),true);
-  assert.equal(validCode('LS-2609-ABC234'),false);
+  assert.equal(validCode('LS-2609-ABC234'),true);
+  assert.equal(validCode('LS-2613-ABC234'),false);
   assert.equal(validDate('2027-02-30'),false);
   assert.equal(validDate('2027-13-01'),false);
   assert.equal(readTrip({destination:'Sölden',skidate:'2027-02-20',conditions:'injected'}).conditions,'Weet ik nog niet');

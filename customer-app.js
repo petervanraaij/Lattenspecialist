@@ -631,10 +631,10 @@
   var STEPS = ["Aanvraag ontvangen", "Afspraak bevestigd", "Onderweg om op te halen", "Materiaal ontvangen", "Klaar om opgehaald te worden", "Onderweg terugbrengen", "Afgeleverd/afgerond"];
   var CONDITIONS = ["Weet ik nog niet", "Zacht / warm", "Rond het vriespunt", "Koud", "Kunstsneeuw / hard / ijzig"];
   var normalizeCode = (value) => String(value || "").trim().toUpperCase().replace(/\s+/g, "");
-  var validCode = (value) => /^LS-[A-Z2-9]{6}$/.test(value);
+  var validCode = (value) => /^LS-(?:\d{2}(?:0[1-9]|1[0-2])-[A-Z0-9]{6}|[A-Z2-9]{6})$/.test(value);
   function codeFromStatusHash(hash) {
     try {
-      const match = /^#status=(LS-[A-Z2-9]{6})$/i.exec(decodeURIComponent(String(hash)));
+      const match = /^#status=(LS-(?:\d{2}(?:0[1-9]|1[0-2])-[A-Z0-9]{6}|[A-Z2-9]{6}))$/i.exec(decodeURIComponent(String(hash)));
       return match ? normalizeCode(match[1]) : "";
     } catch {
       return "";
