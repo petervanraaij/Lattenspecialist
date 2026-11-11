@@ -94,7 +94,7 @@ class MemoryKV {
 }
 const store = new MemoryKV();
 let euRecord;
-const euDb = {prepare(sql) { return {bind(...values) { return {
+const euDb = {async batch(statements) { return Promise.all(statements.map(statement=>statement.run())); }, prepare(sql) { return {async run() { return {success:true}; }, bind(...values) { return {
   async run() { if (sql.startsWith('INSERT OR IGNORE INTO records')) euRecord={reference:values[0],payload:values[1],revision:0,assigned_to:null}; return {success:true}; },
   async first() { return sql.startsWith('SELECT * FROM records') ? euRecord : null; }
 }; }}; }};
