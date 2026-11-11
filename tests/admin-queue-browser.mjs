@@ -147,6 +147,8 @@ try{
   const form=page.locator('#practiceForm');
   await form.locator('[name=executionMemberId]').selectOption(fixture.member.id);
   await page.getByRole('button',{name:'Hele onderhoudsopdracht oefenen'}).click();
+  await form.locator('[name=practicePackage]').selectOption('zilver');
+  await form.locator('[name=practiceCleaning]').check();
   await form.locator('button[type=submit]').click();
   const bench=page.locator('#practiceResult .workflow-shell');
   await bench.getByRole('heading',{name:/Oefenopdracht OEF-/}).waitFor();
@@ -181,6 +183,22 @@ try{
   assert.equal((await fixture.call(workflowPath)).data.material.internalStatus,'ready');
   assert.deepEqual((await fixture.call(photoPath)).data.photos.map(photo=>photo.stage),['intake','delivery']);
   assert.equal(fixture.sql.prepare('SELECT COUNT(*) AS n FROM records WHERE reference=?').get(work.material.reference).n,0);
+ });
+ await scenario('A full Brons practice uses the selected snowboard extras and omits wax',async()=>{
+  const form=page.locator('#practiceForm');
+  await form.locator('[name=kind]').selectOption('Snowboard');
+  await form.locator('[name=practicePackage]').selectOption('slijpen');
+  assert.equal(await form.locator('[name=practiceEndWax]').isVisible(),false);
+  assert.equal(await form.locator('[name=practiceCleaning]').isVisible(),false);
+  await form.locator('[name=practicePremium]').check();
+  await form.locator('[name=practiceBindings]').check();
+  await form.locator('[name=practiceRepairs]').fill('1');
+  await form.locator('button[type=submit]').click();
+  const bench=page.locator('#practiceResult .workflow-shell');
+  await bench.getByRole('heading',{name:'Oefenklant · Brons',exact:true}).waitFor();
+  const id=await bench.getAttribute('data-material-id');
+  const {data}=await fixture.call('/api/admin/operations/materials/'+id+'/workflow');
+  assert.deepEqual(data.workflow.steps.map(step=>step.code),['inspection','setup','bindings_off','repair','filing','premium_file','premium_diamond','bindings_on','finish','practice_delivery']);
  });
  assert.deepEqual(errors,[]);console.log(`${passed} queue scenarios passed.`);
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));fixture?.close();}

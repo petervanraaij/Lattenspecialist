@@ -176,12 +176,28 @@ async function replaceTool(db,id,raw,actor){
  return replaceToolFromStock(db,current,actor,InventoryError);
 }
 
+function fullPracticePlan(raw, kind) {
+ if(raw.maintenanceSelection === undefined) {
+  return {packageName:'Zilver', packageCode:'wax_file', waxSku:'24057', options:{extraCleaning:true}};
+ }
+ const selection = parseSelection(raw.maintenanceSelection);
+ if(!selection || Object.keys(selection.p).length !== 1 || Object.keys(selection.e).length || selection.u) {
+  throw new InventoryError('Kies één pakket voor het oefenmateriaal.');
+ }
+ const [[packageId, choice]] = Object.entries(selection.p);
+ if(choice.b !== Number(kind === 'Snowboard') || choice.s !== Number(kind !== 'Snowboard') || choice.u || (packageId === 'slijpen' && choice.c)) {
+  throw new InventoryError('De gekozen werkzaamheden passen niet bij het oefenmateriaal.');
+ }
+ return materialPlans({maintenanceSelection:selection})[0];
+}
+
 async function createPractice(db,member,raw){
  const kind=String(raw.kind||'').toLowerCase()==='snowboard'?'Snowboard':String(raw.kind||'').toLowerCase()==='ski'?'Ski':raw.kind==='single-ski'?'Ski (één)':'';if(!kind)throw new InventoryError('Kies ski of snowboard.');const activity=clean(raw.activity,20);if(!['wax','warm_clean','filing','repair','full'].includes(activity))throw new InventoryError('Kies warm reinigen, waxen, vijlen of kleine belagreparaties.');let waxSku=clean(raw.waxSku,30)||'24057';if(activity==='wax'){const item=await db.prepare("SELECT sku FROM inventory_items WHERE sku=? AND tracking_mode='mass' AND procedure='wax'").bind(waxSku).first();if(!item)throw new InventoryError('Kies een geldig waxblok.');}else waxSku='';
  if(raw.waxProtocol!==undefined&&raw.waxProtocol!=='yellow-red')throw new InventoryError('Onbekende waxoefening.');if(activity==='wax'&&raw.waxProtocol==='yellow-red')waxSku='24057';
  if(raw.finishWax!==undefined&&(!['none','alpha','ultra','performance'].includes(raw.finishWax)||activity!=='wax'||raw.waxProtocol!=='yellow-red'))throw new InventoryError('Kies een geldige extra eindwax binnen de complete waxoefening.');if(raw.premiumFiling!==undefined&&typeof raw.premiumFiling!=='boolean')throw new InventoryError('Kies premium afwerking met een geldige ja/nee-keuze.');
- const timestamp=now(),id=crypto.randomUUID(),token=randomHex(24),display=`OEF-${randomHex(3).toUpperCase()}`,reference=`OEFEN-${Date.now().toString(36).toUpperCase()}-${randomHex(2).toUpperCase()}`,options={activity,waxSku:activity==='full'?'24057':waxSku,extraCleaning:activity==='full',...(activity==='wax'&&raw.waxProtocol==='yellow-red'?{waxProtocol:'yellow-red',finishWax:raw.finishWax||'none'}:{}),premiumFiling:activity==='filing'&&raw.premiumFiling===true};
- await db.batch([db.prepare(`INSERT INTO materials(id,scan_token,display_code,reference,item_number,kind,package_name,wax_type,assigned_to,internal_status,customer_status,created_at,updated_at,is_training,package_code,selected_options) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,token,display,reference,1,kind,activity==='full'?'Oefenklant · Zilver':activity==='wax'?'Oefenklant · Waxen':activity==='warm_clean'?'Oefenklant · Warm reinigen':activity==='repair'?'Oefenklant · Kleine belagreparaties':'Oefenklant · Vijlen',options.waxSku,member.id,'received','Oefensessie',timestamp,timestamp,1,activity==='full'?'wax_file':'practice',JSON.stringify(options)),db.prepare('INSERT INTO material_events(material_id,actor,event_type,detail,created_at) VALUES(?,?,?,?,?)').bind(id,member.id,'practice_created',JSON.stringify(options),timestamp)]);
+ const plan = activity==='full' ? fullPracticePlan(raw,kind) : null;
+ const timestamp=now(),id=crypto.randomUUID(),token=randomHex(24),display=`OEF-${randomHex(3).toUpperCase()}`,reference=`OEFEN-${Date.now().toString(36).toUpperCase()}-${randomHex(2).toUpperCase()}`,options={activity,waxSku,premiumFiling:activity==='filing'&&raw.premiumFiling===true,...(plan ? {...plan.options,waxSku:plan.waxSku} : {}),...(activity==='wax'&&raw.waxProtocol==='yellow-red'?{waxProtocol:'yellow-red',finishWax:raw.finishWax||'none'}:{})};
+ await db.batch([db.prepare(`INSERT INTO materials(id,scan_token,display_code,reference,item_number,kind,package_name,wax_type,assigned_to,internal_status,customer_status,created_at,updated_at,is_training,package_code,selected_options) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,token,display,reference,1,kind,plan?`Oefenklant · ${plan.packageName}`:activity==='wax'?'Oefenklant · Waxen':activity==='warm_clean'?'Oefenklant · Warm reinigen':activity==='repair'?'Oefenklant · Kleine belagreparaties':'Oefenklant · Vijlen',options.waxSku,member.id,'received','Oefensessie',timestamp,timestamp,1,plan?.packageCode || 'practice',JSON.stringify(options)),db.prepare('INSERT INTO material_events(material_id,actor,event_type,detail,created_at) VALUES(?,?,?,?,?)').bind(id,member.id,'practice_created',JSON.stringify(options),timestamp)]);
  const material=await db.prepare('SELECT * FROM materials WHERE id=?').bind(id).first();await ensureWorkflow(db,material);return{material:materialView(material),workflow:await getWorkflow(db,material)};
 }
 
