@@ -21,9 +21,6 @@
   const manualForm = document.querySelector('#manualRequestForm');
   const manualStatus = document.querySelector('#manualRequestStatus');
   const manualSelection=window.LattenManualSelection.mount(manualForm);
-  const manualAddress = document.querySelector('#manualPickupAddress');
-  const manualAddressStatus = document.querySelector('#manualAddressStatus');
-  let manualAddressTimer, manualAddressController;
   let token = sessionStorage.getItem('lattenspecialist-admin-token') || localStorage.getItem('lattenspecialist-admin-token') || '';
   let records = [];
   let activeFilter='new';
@@ -236,7 +233,7 @@
     const closed = Boolean(record.closedAt);
     const minutes=plannedMinutes(record);
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-stage="${recordStage(record)}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
-      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(packageLabel(record.package))}</span>${record.service==='Onderhoud'&&Number(record.currentStep||1)===1?`<span>Warme waxreiniging: ${escapeHtml(warmCleaningLabel(record))}</span>`:''}<small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span>${record.service==='Onderhoud'&&!closed&&currentStep<3?'<button type="button" class="btn btn-gold" data-receive-label>In ontvangst nemen</button>':''}<button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
+      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(packageLabel(record.package))}</span>${record.service==='Onderhoud'&&Number(record.currentStep||1)===1?`<span>Warme waxreiniging: ${escapeHtml(warmCleaningLabel(record))}</span>`:''}<small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span>${record.service==='Onderhoud'&&!closed&&currentStep<3?'<button type="button" class="btn btn-gold" data-receive-label>In ontvangst nemen</button>':''}${record.service==='Onderhoud'&&!closed&&currentStep===3?'<button type="button" class="btn btn-gold" data-move-to-workshop>Naar werkplaats</button>':''}<button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
       ${Number(record.waxstickCount)>0?`<section class="admin-payment admin-waxstick" data-waxstick-reference="${escapeHtml(record.reference)}"><h3>Meebesteld · ${Number(record.waxstickCount)}× Holmenkol Natural Skiwax Stick 50 g</h3><p>€ 17,50 per stuk · bij deze opdracht meegeven.</p><p class="waxstick-handover-status" role="status" aria-live="polite">Meegeefstatus laden…</p><button class="btn btn-gold waxstick-handover" type="button" disabled>Meegeven bevestigen</button><button class="btn btn-dark waxstick-invoice" type="button">Factuur maken in Pierfinity →</button><button class="btn btn-dark waxstick-reload" type="button" hidden>Status opnieuw laden</button></section>`:''}
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-content">
         <div class="admin-save-actions"><button type="button" class="btn btn-dark" data-edit-request aria-expanded="false" aria-controls="edit-request-${escapeHtml(record.reference)}">Bewerken</button>${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}</div>
@@ -524,17 +521,13 @@
     } catch { if (version === metricsVersion && token === auth) target.textContent = 'Tellingen tijdelijk niet beschikbaar. Je kunt de reserveringen gewoon beheren.'; }
   };
   document.querySelector('#metricsPeriod').addEventListener('change', loadMetrics);
-  const updateManualAddress = () => {
-    const pickup = false;
-    manualAddress.hidden = !pickup;
-    manualAddress.querySelectorAll('input').forEach(input => { input.required = pickup; input.disabled = !pickup; });
-  };
+
   let pendingManualOpen = false;
   let pendingManualMaterial = '';
   const openManualRequest = material => {
     const date=new Intl.DateTimeFormat('nl-NL',{timeZone:'Europe/Amsterdam',year:'2-digit',month:'2-digit'}).formatToParts();
     document.querySelector('#manualServicePrefix').textContent=`LS-${date.find(p=>p.type==='year').value}${date.find(p=>p.type==='month').value}-`;
-    manualForm.reset(); manualSelection.reset(); manualStatus.textContent='';updateManualAddress();manualDialog.showModal();manualForm.elements.name.focus(); };
+    manualForm.reset(); manualSelection.reset(); manualStatus.textContent='';manualDialog.showModal();manualForm.elements.name.focus(); };
   const requestManualOpen = material => {
     pendingManualOpen = true;
     pendingManualMaterial = material || '';
@@ -549,14 +542,6 @@
   window.addEventListener('lattenspecialist:new-request',event=>requestManualOpen(event.detail?.material||''));
   manualDialog.querySelector('.manual-request-close').addEventListener('click',()=>manualDialog.close());
   manualDialog.querySelector('.manual-request-cancel').addEventListener('click',()=>manualDialog.close());
-  manualForm.elements.logistics.addEventListener('change',updateManualAddress);
-  const lookupManualAddress = async () => {
-    const postcode=manualForm.elements.postcode.value.toUpperCase().replace(/\s+/g,'');const houseNumber=manualForm.elements.houseNumber.value.trim();
-    if(!/^\d{4}[A-Z]{2}$/.test(postcode)||!/^\d{1,5}/.test(houseNumber))return;
-    manualAddressController?.abort();manualAddressController=new AbortController();manualAddressStatus.textContent='Adres zoeken…';
-    try{const response=await fetch(`${endpoint}/api/address?postcode=${encodeURIComponent(postcode)}&houseNumber=${encodeURIComponent(houseNumber)}`,{cache:'no-store',signal:manualAddressController.signal});const result=await response.json().catch(()=>({}));if(!response.ok||!result.address?.address)throw new Error(result.message||'Adres niet gevonden.');manualForm.elements.postcode.value=result.address.postcode;manualForm.elements.houseNumber.value=result.address.houseNumber;manualForm.elements.address.value=result.address.address;manualForm.elements.addressCity.value=result.address.city;manualAddressStatus.textContent=result.address.freePickup?'Adres gevonden · binnen gratis servicegebied':'Adres gevonden · buiten gratis servicegebied';manualAddressStatus.className=`address-status ${result.address.freePickup?'is-success':'is-error'}`;}catch(error){if(error.name!=='AbortError'){manualForm.elements.address.value='';manualAddressStatus.textContent=error.message;manualAddressStatus.className='address-status is-error';}}
-  };
-  ['postcode','houseNumber'].forEach(name=>manualForm.elements[name].addEventListener('input',()=>{clearTimeout(manualAddressTimer);manualForm.elements.address.value='';manualAddressTimer=setTimeout(lookupManualAddress,450);}));
   manualForm.elements.serviceCodeSuffix?.addEventListener('input',event=>{
     event.target.value=event.target.value.toUpperCase().replace(/\s+/g,'');
   });
@@ -687,6 +672,32 @@
     if(updated.customerStatus==='Materiaal ontvangen')activeFilter=recordStage(updated);
     records=records.map(record=>record.reference===updated.reference?updated:record);
     render();
+  });
+
+  list.addEventListener('click',async event=>{
+    const button=event.target.closest('[data-move-to-workshop]');
+    if(!button)return;
+    const card=button.closest('.admin-record');
+    const reference=card.dataset.reference;
+    const record=records.find(item=>item.reference===reference);
+    if(!record)return;
+    if(dirtyRequests.has(reference)){
+      syncStatus.textContent='Sla de wijzigingen in deze aanvraag eerst op.';
+      return;
+    }
+    button.disabled=true;
+    try{
+      const result=await api('/api/admin/reservations/'+encodeURIComponent(reference),{
+        method:'PATCH',body:JSON.stringify({moveToWorkshop:true,revision:record.revision??0})
+      });
+      records=records.map(item=>item.reference===reference?result.record:item);
+      activeFilter='work';
+      render();
+      syncStatus.textContent='Werkorder staat nu in In werkplaats.';
+    }catch(error){
+      syncStatus.textContent=error.message;
+      button.disabled=false;
+    }
   });
 
   list.addEventListener('ls-issued-set-changed',event=>{

@@ -1,3 +1,5 @@
+import {centralHrm, centralHrmEnabled} from './hrm-bridge.js';
+import {legacyHrmMembers} from './operations.js';
 import {requestCustomerStatements} from './customer-dossiers.js';
 // Personal access keys are random, stored only as hashes, and never included in app builds.
 export class TeamError extends Error { constructor(message, status=400) { super(message); this.status=status; } }
@@ -40,7 +42,7 @@ export async function saveOwnerRecord(record,raw,env) {
    AND json_extract(other.payload,'$.serviceCode')=json_extract(?1,'$.serviceCode')
  )
  ${requirePausedWork} RETURNING *`)
- .bind(JSON.stringify(payload),assigned || null,now(),record.reference,raw.revision,raw.trashAction ?? null).first();
+ .bind(JSON.stringify(payload),assigned || null,now(),record.reference,raw.revision,(raw.moveToWorkshop ? 'workshop' : raw.trashAction) ?? null).first();
  if (!result && payload.serviceCode) {
    const existing = await teamStatusRecord(payload.serviceCode,env);
    if (existing && existing.reference !== record.reference) throw new TeamError('Deze servicecode is al in gebruik.',409);
@@ -76,6 +78,19 @@ async function identity(request,db) {
  return {...user,tokenHash};
 }
 export const staffView = record => ({reference:record.reference,revision:record.revision,customerName:String(record.name || '').split(' ')[0],material:record.material,amount:record.amount,package:record.package,pickupDate:record.pickupDate,expectedReady:record.expectedReady,conditions:record.conditions,currentStep:record.currentStep,status:record.status,waxType:record.waxType || 'Nog te bepalen',workNote:record.workNote || '',updatedAt:record.updatedAt});
+async function syncHrmMember(env, db, id) {
+ if (!centralHrmEnabled(env)) return 'unavailable';
+ try {
+  const {members} = await legacyHrmMembers(env, db, id);
+  if (members.length !== 1) return 'pending';
+  const member = members[0];
+  const {items, seconds, month_items, month_seconds} = member.totals;
+  await centralHrm(env, {operation:'bootstrap', members:[{...member, totals:{items, seconds, month_items, month_seconds}}]});
+  return 'synced';
+ } catch {
+  return 'pending';
+ }
+}
 export async function handleTeam(request,env,{owner,json,origin,steps,waxes,clean}) {
  const path=new URL(request.url).pathname;
  try {
@@ -91,11 +106,24 @@ export async function handleTeam(request,env,{owner,json,origin,steps,waxes,clea
     if(customKey&&(customKey.length<10||customKey.length>80))throw new TeamError('Kies een toegangssleutel van minimaal 10 en maximaal 80 tekens.');
     const key=customKey||secret(),id=crypto.randomUUID();
     await db.prepare('INSERT INTO members(id,name,login,key_hash,created_at) VALUES(?,?,?,?,?)').bind(id,name,login,await hash(key),now()).run();
-    return json({id,name,login,accessKey:key},201,origin);
+    return json({id,name,login,accessKey:key,hrmSync:await syncHrmMember(env,db,id)},201,origin);
    }
    const memberMatch=path.match(/^\/api\/admin\/team\/members\/([a-f0-9-]{36})$/);
    if(memberMatch && request.method==='PATCH') {
     const raw=await readBody(request),id=memberMatch[1];
+    if(raw.action==='edit') {
+     const name=clean(raw.name,80),login=clean(raw.login,120).toLowerCase();
+     if(!name || !/^[a-z0-9][a-z0-9.@_+-]{2,119}$/.test(login))throw new TeamError('Vul een naam en een geldige gebruikersnaam in (minimaal 3 tekens).');
+     let updated;
+     try {
+      updated=await db.prepare('UPDATE members SET name=?,login=? WHERE id=? RETURNING id,name,login,active').bind(name,login,id).first();
+     } catch(error) {
+      if(/unique constraint/i.test(String(error?.message||error)))throw new TeamError('Deze gebruikersnaam bestaat al.',409);
+      throw error;
+     }
+     if(!updated)throw new TeamError('Medewerker niet gevonden.',404);
+     return json({...updated,hrmSync:await syncHrmMember(env,db,id)},200,origin);
+    }
     if(!['revoke','rotate'].includes(raw.action))throw new TeamError('Kies intrekken of nieuwe toegang.');
     const customKey=String(raw.accessKey||'').trim();
     if(raw.action==='rotate'&&customKey&&(customKey.length<10||customKey.length>80))throw new TeamError('Kies een toegangssleutel van minimaal 10 en maximaal 80 tekens.');
@@ -105,7 +133,7 @@ export async function handleTeam(request,env,{owner,json,origin,steps,waxes,clea
      db.prepare('DELETE FROM sessions WHERE member_id=?').bind(id)
     ]);
     if(!results[0].results.length)throw new TeamError('Medewerker niet gevonden.',404);
-    return json({...results[0].results[0],...(raw.action==='rotate'?{accessKey:key}:{})},200,origin);
+    return json({...results[0].results[0],...(raw.action==='rotate'?{accessKey:key}:{}),hrmSync:await syncHrmMember(env,db,id)},200,origin);
    }
    if(path==='/api/admin/team/audit' && request.method==='GET') {
     const reference=new URL(request.url).searchParams.get('reference') || '';

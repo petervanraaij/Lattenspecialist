@@ -308,10 +308,14 @@ const updateReservation = async (reference, raw, env) => {
     return updated;
   }
   if (record.deletedAt) throw new TeamError('Zet deze aanvraag eerst terug uit de prullenbak.',409);
-  const converting = raw.convertToWorkOrder === true;
+  const moveToWorkshop = raw.moveToWorkshop === true;
+  if (moveToWorkshop && (record.service !== 'Onderhoud' || record.closedAt || Number(record.currentStep) !== 3)) {
+    throw new TeamError('Alle sets moeten in ontvangst zijn genomen voordat je de aanvraag doorzet.',409);
+  }
+  const converting = moveToWorkshop || raw.convertToWorkOrder === true;
   if (converting && (record.service !== 'Onderhoud' || record.closedAt)) throw new ValidationError('Alleen een open onderhoudsaanvraag kan een werkorder worden.');
-  const currentStep = Math.max(converting ? 2 : 1, Math.min(STATUS_STEPS.length, Number(raw.currentStep) || Number(record.currentStep) || 1));
-  const status = clean(Object.prototype.hasOwnProperty.call(raw, 'status') ? raw.status : record.status, 100) || STATUS_STEPS[currentStep - 1];
+  const currentStep = Math.max(converting ? 2 : 1, Math.min(STATUS_STEPS.length, (moveToWorkshop ? 4 : Number(raw.currentStep)) || Number(record.currentStep) || 1));
+  const status = moveToWorkshop ? STATUS_STEPS[3] : clean(Object.prototype.hasOwnProperty.call(raw, 'status') ? raw.status : record.status, 100) || STATUS_STEPS[currentStep - 1];
   const customerStatus = converting && Number(record.currentStep || 1) === 1 ? 'Onderhoud in voorbereiding' : currentStep !== Number(record.currentStep || 1)
     ? (currentStep <= 1 ? 'Aanvraag ontvangen' : currentStep === 2 ? 'Afspraak bevestigd' : currentStep >= 8 ? 'Klaar om opgehaald te worden' : 'Materiaal ontvangen')
     : (record.customerStatus || customerVisibleStatus(record));
@@ -671,7 +675,7 @@ const application = {
       if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
       try {
         const raw = await request.json();
-        const {data} = readAndValidateLattenspecialist(raw, true);
+        const {data} = readAndValidateLattenspecialist({...raw, logistics:'Zelf brengen en zelf ophalen'}, true);
         const suffix = normalizeServiceCode(raw.serviceCodeSuffix);
         if (suffix && !/^[A-Z0-9]{6}$/.test(suffix)) throw new ValidationError('Vul zes letters of cijfers in na het jaar en de maand.');
         const serviceCode = suffix ? `LS-${serviceMonth()}-${suffix}` : null;
