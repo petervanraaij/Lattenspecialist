@@ -95,7 +95,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
  }
  function scanToken(value){
   const text=String(value||'').trim();
-  const pattern=/^(?:[a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{4,12})$/i;
+  const pattern=/^(?:[a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{2,12})$/i;
   if(pattern.test(text))return text;
   try{
    const url=new URL(text);
@@ -253,6 +253,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   async function receive(){
    if(busy||!form.reportValidity())return;
    busy=true;save.disabled=camera.disabled=select.disabled=true;
+   message.textContent='Sticker koppelen…';
    try{
     const result=await api('/api/admin/operations/materials/intake',{method:'POST',body:JSON.stringify({reference,materialId:select.value,label:input.value})});
     const received=result.materials.find(item=>item.id===select.value);
@@ -275,7 +276,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
      if(!intakeScanner||busy||captured)return;
      captured=true;input.value=value;
      await stop();
-     if(dialog.open)await receive();
+     if(dialog.open){message.textContent='QR-code gelezen. Klik op Koppel en ontvang.';save.focus();}
     });
     await cameraStart;
     camera.textContent='Camera sluiten';

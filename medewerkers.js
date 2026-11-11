@@ -18,7 +18,7 @@
  async function load(){const version=generation;const [session,tasks]=await Promise.all([api('/api/team/session'),api('/api/team/tasks')]);if(version!==generation||!token)return;records=tasks.records;steps=tasks.steps;waxes=tasks.waxes;$('greeting').textContent='WELKOM '+session.user.name.toUpperCase();$('login').hidden=true;$('dashboard').hidden=false;$('logout').hidden=false;render();}
  function scanToken(value){
   const text=String(value||'').trim();
-  const pattern=/^(?:[a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{4,12})$/i;
+  const pattern=/^(?:[a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{2,12})$/i;
   if(pattern.test(text))return text;
   try{
    const url=new URL(text);

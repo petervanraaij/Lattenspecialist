@@ -278,7 +278,7 @@ async function createMaterials(db, reference, confirmAppointment=true) {
 
 function intakeCode(raw){
   const value=clean(raw,500);
-  const pattern=/^(?:LS-\d{4}-[A-Z0-9]{4,12}|LSM-[A-F0-9]{6}|[A-F0-9]{48})$/i;
+  const pattern=/^(?:LS-\d{4}-[A-Z0-9]{2,12}|LSM-[A-F0-9]{6}|[A-F0-9]{48})$/i;
   if(pattern.test(value))return value.toUpperCase();
   try{
     const url=new URL(value);
@@ -583,7 +583,7 @@ export async function handleOperations(request,env,{owner,json,origin}) {
         if (!updated) throw new OperationsError('Deze code is al in gebruik of het materiaal is gewijzigd. Vernieuw de aanvraag.',409);
         return json({material:materialView(updated)},200,origin);
       }
-      const adminScan=path.match(/^\/api\/admin\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{4,12})$/i);
+      const adminScan=path.match(/^\/api\/admin\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{2,12})$/i);
       if(adminScan&&request.method==='GET'){const key=adminScan[1],material=await db.prepare("SELECT * FROM materials WHERE (scan_token=? OR display_code=?) AND internal_status<>'material_removed'").bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),record,workflow:await getWorkflow(db,material)},200,origin);}
       const adminAction=path.match(/^\/api\/admin\/operations\/materials\/([a-f0-9-]{36})\/action$/);
       if(adminAction&&request.method==='POST'){
@@ -617,7 +617,7 @@ export async function handleOperations(request,env,{owner,json,origin}) {
         const rows=await db.prepare("SELECT * FROM materials WHERE reference=? AND (assigned_to=? OR assigned_to IS NULL) AND is_training=0 AND internal_status<>'material_removed' ORDER BY item_number").bind(reference,member.id).all();
         return json({materials:rows.results.map(materialView)},200,origin);
       }
-      const scan=path.match(/^\/api\/team\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{4,12})$/i);
+      const scan=path.match(/^\/api\/team\/operations\/scan\/([a-f0-9]{48}|LSM-[A-F0-9]{6}|LS-\d{4}-[A-Z0-9]{2,12})$/i);
       if(scan&&request.method==='GET'){const key=scan[1],material=await db.prepare("SELECT * FROM materials WHERE (scan_token=? OR display_code=?) AND internal_status<>'material_removed'").bind(key.toLowerCase(),key.toUpperCase()).first();if(!material)throw new OperationsError('QR-code niet herkend.',404);if(material.assigned_to&&material.assigned_to!==member.id)throw new OperationsError('Deze opdracht is aan een andere medewerker toegewezen.',403);const record=recordFromRow(await db.prepare('SELECT * FROM records WHERE reference=?').bind(material.reference).first());return json({material:materialView(material),work:{customerName:material.is_training?'Oefenklant':clean(record?.name,100),address:clean(record?.address,240),conditions:clean(record?.conditions,100),notes:clean(record?.notes,500),package:clean(material.package_name||record?.package,100),waxType:clean(material.wax_type||record?.waxType||'',100)},workflow:await getWorkflow(db,material)},200,origin);}
       const action=path.match(/^\/api\/team\/operations\/materials\/([a-f0-9-]{36})\/action$/);
       if(action&&request.method==='POST'){
