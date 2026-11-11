@@ -203,9 +203,13 @@
           </details>
           ${record.service==='Onderhoud'?`<details class="edit-maintenance" data-edit-maintenance>
             <summary>Sets, pakketten en werkzaamheden aanpassen</summary>
+            <div><div class="material-labels" aria-live="polite"></div><button class="btn btn-dark create-material-labels" type="button">Onderhoudscodes en QR-stickers maken</button></div>
+            <details class="edit-maintenance-options">
+            <summary>Aantallen en werkzaamheden zonder uitgegeven code</summary>
             <label><span>Spoed voor de aanvraag</span><input name="urgent" type="checkbox"></label>
             <div data-edit-maintenance-fields></div>
             <label><span>Waxsticks (aantal)</span><input name="waxstickCount" type="number" min="0" max="20" value="${Number(record.waxstickCount)||0}"></label>
+            </details>
           </details>`:''}
           ${!record.workOrderNumber&&record.service==='Onderhoud'&&!closed?'<p>Controleer de aanvraag en wijs het werk eventueel toe. Omzetten maakt één gekoppelde werkorder en een klantcode aan. Er wordt geen klantbericht verstuurd.</p><button class="btn btn-gold" type="submit" data-action="workorder">Omzetten naar werkorder</button>':''}
           <label><span>Toegewezen medewerker</span><select name="assignedTo">${window.LattenspecialistTeam?.options(record.assignedTo) || '<option value="">Nog niet toegewezen</option>'}</select></label>
@@ -213,7 +217,6 @@
           ${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}
           <button class="btn btn-dark team-history" type="button">Bekijk werklogboek</button><div class="team-audit" hidden></div>
           <label><span>Servicecode voor klant</span><div class="admin-code-row"><input name="serviceCode" value="${escapeHtml(record.serviceCode || '')}" placeholder="Bijv. LS-ABC234" maxlength="24" autocapitalize="characters" autocomplete="off" spellcheck="false" pattern="(?:(?:LS-)?[A-Z2-9]{6}|LS-[0-9]{4}-[A-Z0-9]{6})" aria-describedby="service-code-format-${escapeHtml(record.reference)}"><button class="btn btn-dark generate-code" type="button"${record.serviceCode ? ' hidden' : ''}>Maak code</button></div></label>
-          <div><button class="btn btn-dark create-material-labels" type="button">Onderhoudscodes en QR-stickers</button><div class="material-labels" role="status"></div></div>
           ${customerStatusUrl(record) ? `<div class="admin-customer-link"><label><span>Persoonlijke klantlink</span><input class="customer-status-link" type="text" value="${escapeHtml(customerStatusUrl(record))}" readonly aria-label="Persoonlijke klantlink"></label><div class="admin-save-actions"><button class="btn btn-dark copy-customer-link" type="button">Kopieer klantlink</button><a class="btn btn-dark" href="${escapeHtml(customerStatusUrl(record))}" target="_blank" rel="noopener noreferrer">Bekijk klantomgeving</a></div><small>Opent direct het onderhoud op Android en iPhone. Installeren is niet nodig. Deel deze link alleen met deze klant. Sla wijzigingen op voordat je de link deelt.</small><p class="customer-link-message" role="status"></p></div>` : '<p class="field-hint">Maak een servicecode om de persoonlijke klantlink te krijgen. Bij “Opslaan + klant berichten” gebeurt dit automatisch.</p>'}
           <label><span>Voortgang</span><select name="currentStep">${stepOptions}</select></label>
           <label><span>Wax voor deze beurt</span><select name="waxType">${waxChoices}</select><small class="field-hint">Voorstel op basis van de opgegeven omstandigheden; controleer dit zelf.</small></label>
@@ -530,6 +533,8 @@
     const details=event.target;
     if(!details.matches('[data-edit-maintenance]')||!details.open||maintenanceEditors.has(details))return;
     const form=details.closest('form');
+    const card=form.closest('.admin-record');
+    void window.LattenspecialistOperations?.loadIssuedSets(card);
     const record=records.find(item=>item.reference===form.closest('.admin-record').dataset.reference);
     const model=window.LATTEN_SELECTION;
     const editor=window.LattenManualSelection.mount(form,details.querySelector('[data-edit-maintenance-fields]'));
@@ -549,7 +554,7 @@
     }
     const state={editor,changed:false};
     maintenanceEditors.set(details,state);
-    details.addEventListener('input',()=>{state.changed=true;});
+    details.querySelector('.edit-maintenance-options').addEventListener('input',()=>{state.changed=true;});
   },true);
 
   list.addEventListener('ls-issued-set-changed',event=>{
@@ -559,7 +564,8 @@
     const card=list.querySelector(`[data-reference="${CSS.escape(updated.reference)}"]`);
     const details=card?.querySelector('.admin-record-details');
     if(details)details.open=true;
-    card?.querySelector('.create-material-labels')?.click();
+    const editor=card?.querySelector('[data-edit-maintenance]');
+    if(editor){editor.open=true;void window.LattenspecialistOperations?.loadIssuedSets(card);}
   });
 
   list.addEventListener('input', event => {
