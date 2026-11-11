@@ -514,6 +514,25 @@ export async function handleOperations(request,env,{owner,json,origin}) {
   const path=new URL(request.url).pathname,db=env.LATTENSPECIALIST_TEAM_DB;
   try {
     if(!db)throw new OperationsError('Bedrijfsdatabase niet beschikbaar.',503);
+    if(path==='/api/admin/operations/workplace/workorders'&&request.method==='GET'){
+      if(!owner)throw new OperationsError('Log in met de beheercode.',401);
+      const memberId=new URL(request.url).searchParams.get('memberId')||'';
+      const result=await db.prepare(`
+        SELECT m.display_code AS code,m.kind AS material,m.package_name AS package,
+          m.customer_status AS status,json_extract(r.payload,'$.expectedReady') AS expectedReady,
+          COALESCE(json_extract(r.payload,'$.plannedMinutes') * 1.0 /
+            NULLIF((SELECT COUNT(*) FROM materials s WHERE s.reference=m.reference AND s.internal_status<>'material_removed' AND s.is_training=0),0),60) AS plannedMinutes
+        FROM materials m JOIN records r ON r.reference=m.reference
+        WHERE m.is_training=0 AND m.received_at IS NOT NULL
+          AND m.internal_status NOT IN ('ready','delivered','material_removed')
+          AND json_extract(r.payload,'$.deletedAt') IS NULL
+          AND json_extract(r.payload,'$.closedAt') IS NULL
+          AND COALESCE(json_extract(r.payload,'$.currentStep'),1)<8
+          AND (?1='' OR COALESCE(m.assigned_to,r.assigned_to)=?1)
+        ORDER BY m.received_at,m.reference,m.item_number
+      `).bind(memberId).all();
+      return json({workorders:result.results},200,origin);
+    }
     if(['/api/admin/operations/workplace/availability','/api/admin/operations/workplace/planning'].includes(path)){
       if(!owner)throw new OperationsError('Log in met de beheercode.',401);
       if(!['GET','PATCH'].includes(request.method))throw new OperationsError('Niet toegestaan.',405);

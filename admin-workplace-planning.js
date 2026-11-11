@@ -3,7 +3,7 @@
  const base='/api/admin/operations/workplace/';
  const day=date=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
  const label=date=>date?new Date(date+'T12:00:00').toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'}):'Nog niet gepland';
- async function mount(client,host,mode){
+ async function mount(client,host,mode,{selectedMember="",onSaved}={}){
   if(host.dataset.mounted)return;host.dataset.mounted='true';
   let memberId='',generation=0,dirty=false,saving=false;
   host.innerHTML=`<label>Medewerker<select data-planning-member><option value="">${mode==='planning'?'Hele werkplaats':'Kies medewerker'}</option></select></label><p data-planning-message role="status"></p>`;
@@ -54,30 +54,62 @@
   $('availabilityCopyMessage').textContent='';
   message.textContent='Keuze gewist. Sla de beschikbaarheid op om dit te bewaren.';
  };
- $('availabilityForm').onsubmit=async event=>{event.preventDefault();updateAvailabilityEditor();const dates=[...availabilityEntries.entries()].map(([date,item])=>({date,preference:item.preference,startTime:item.start_time||'',endTime:item.end_time||''}));try{const saved=await api('/api/team/operations/availability',{method:'PATCH',body:JSON.stringify({dates})});dirty=false;message.textContent=saved.message||'Beschikbaarheid en werktijden opgeslagen.';await loadAvailability();}catch(error){message.textContent=error.message;}};
+ $('availabilityForm').onsubmit=async event=>{event.preventDefault();updateAvailabilityEditor();const dates=[...availabilityEntries.entries()].map(([date,item])=>({date,preference:item.preference,startTime:item.start_time||'',endTime:item.end_time||''}));try{const saved=await api('/api/team/operations/availability',{method:'PATCH',body:JSON.stringify({dates})});dirty=false;message.textContent=saved.message||'Beschikbaarheid en werktijden opgeslagen.';await loadAvailability();onSaved?.();}catch(error){message.textContent=error.message;}};
    // A saved calendar is never overwritten by background refresh.
    $('availabilityForm').addEventListener('change',()=>{dirty=true;});
    const submit=$('availabilityForm').onsubmit;$('availabilityForm').onsubmit=async event=>{if(saving){event.preventDefault();return;}saving=true;select.disabled=true;const button=event.currentTarget.querySelector('[type=submit]');button.disabled=true;try{await submit(event);}finally{saving=false;select.disabled=false;button.disabled=!availabilityLoaded;}};
    refresh.onclick=()=>{if(!memberId){message.textContent='Kies eerst een medewerker.';return;}if(dirty&&!confirm('Niet-opgeslagen beschikbaarheid verlaten en opnieuw laden?'))return;void loadAvailability();};
    select.onchange=async()=>{if(saving)return;if(dirty&&!confirm('Je hebt niet-opgeslagen beschikbaarheid. Wil je die wijzigingen verlaten?')){select.value=memberId;return;}memberId=select.value;generation++;dirty=false;$('availabilityForm').hidden=!memberId;message.textContent='';if(memberId)await loadAvailability();};
+   if(selectedMember && [...select.options].some(option=>option.value===selectedMember)){
+    select.value=selectedMember;
+    select.parentElement.hidden=true;
+    await select.onchange();
+   }
   }else{
    host.insertAdjacentHTML('beforeend','<button type="button" data-refresh-planning>Planning vernieuwen</button><div data-planning-summary></div><div data-planning-week class="workplace-week"></div><h3>Open werkorders</h3><div data-planning-orders></div><h3>Taken uit Pierfinity</h3><div data-central-tasks></div>');
+   const editAvailability=document.createElement('button');
+   editAvailability.type='button';
+   editAvailability.textContent='Beschikbaarheid aanpassen';
+   editAvailability.hidden=true;
+   editAvailability.setAttribute('aria-expanded','false');
+   let availabilityEditor=document.createElement('div');
+   availabilityEditor.hidden=true;
+   select.parentElement.after(editAvailability,availabilityEditor);
+   editAvailability.onclick=()=>{
+    const opening=availabilityEditor.hidden;
+    availabilityEditor.hidden=!opening;
+    editAvailability.setAttribute('aria-expanded',String(opening));
+    editAvailability.textContent=opening?'Beschikbaarheid sluiten':'Beschikbaarheid aanpassen';
+    if(opening)void mount(client,availabilityEditor,'availability',{selectedMember:memberId,onSaved:()=>{generation++;busy=false;void load();}});
+   };
    let weekOffset=0,busy=false;const navigation=document.createElement('div');navigation.className='workplace-week-nav';navigation.innerHTML='<button type="button" data-week-prev>Vorige week</button><strong data-week-label></strong><button type="button" data-week-next>Volgende week</button>';host.querySelector('[data-planning-week]').before(navigation);
    async function load(){if(busy)return;busy=true;const current=generation,id=memberId;message.textContent='Planning laden…';try{
-    const [availability,orders]=await Promise.all([client(base+'availability'),client('/api/admin/reservations')]);if(current!==generation)return;
+    const [availability,orders]=await Promise.all([client(base+'availability'),client(base+'workorders'+(id?'?memberId='+encodeURIComponent(id):''))]);if(current!==generation)return;
     const today=new Date(),monday=new Date(today);monday.setHours(12,0,0,0);monday.setDate(monday.getDate()-((monday.getDay()+6)%7)+weekOffset*7);const dates=Array.from({length:7},(_,index)=>{const date=new Date(monday);date.setDate(date.getDate()+index);return day(date);});
     navigation.querySelector('[data-week-label]').textContent=label(dates[0])+' – '+label(dates[6]);
     const rows=(availability.availability||[]).filter(row=>dates.includes(row.work_date)&&(!id||row.member_id===id));
     const minutes=row=>{if(row.preference==='unavailable')return 0;const from=(row.start_time||'09:00').split(':').map(Number),until=(row.end_time||'17:00').split(':').map(Number);return Math.max(0,until[0]*60+until[1]-from[0]*60-from[1]);};
-    const work=(orders.records||[]).filter(r=>!r.closedAt&&Number(r.currentStep||1)<8&&(!id||r.assignedTo===id));const hours=rows.reduce((sum,row)=>sum+minutes(row),0)/60,needed=work.reduce((sum,r)=>sum+(Number(r.plannedMinutes)||Number(r.amount||1)*60),0)/60;
+    const work=orders.workorders||[];const hours=rows.reduce((sum,row)=>sum+minutes(row),0)/60,needed=work.reduce((sum,r)=>sum+(Number(r.plannedMinutes)||0),0)/60;
     host.querySelector('[data-planning-summary]').innerHTML=`<div class="workplace-planning-summary"><article><b>${hours.toLocaleString('nl-NL',{maximumFractionDigits:1})} uur</b><span>Beschikbaar in deze week</span></article><article><b>${work.length}</b><span>Open werkorders</span></article><article><b>${needed.toLocaleString('nl-NL',{maximumFractionDigits:1})} uur</b><span>Raming totale open werkvoorraad</span></article></div>`;
     host.querySelector('[data-planning-week]').innerHTML=dates.map(date=>`<article><h3>${escape(label(date))}</h3>${rows.filter(r=>r.work_date===date).map(r=>`<p><b>${escape(r.name)}</b><br>${r.preference==='unavailable'?'Niet beschikbaar':escape((r.start_time||'09:00')+' – '+(r.end_time||'17:00'))+(r.preference==='preferred'?' · voorkeur':'')}</p>`).join('')||'<p>Geen beschikbaarheid opgegeven</p>'}</article>`).join('');
-    host.querySelector('[data-planning-orders]').innerHTML=work.map(r=>`<article class="workplace-planning-order"><b>${escape(r.workOrderNumber||r.reference)}</b><p>${escape(r.material)} · ${escape(r.package)} · ${escape(r.status)}</p>${r.expectedReady?'<small>Verwacht gereed: '+escape(r.expectedReady)+'</small>':''}</article>`).join('')||'<p>Geen open werkorders voor deze selectie.</p>';
+    host.querySelector('[data-planning-orders]').innerHTML=work.map(r=>`<article class="workplace-planning-order"><b>${escape(r.code)}</b><p>${escape(r.material)} · ${escape(r.package)} · ${escape(r.status)}</p>${r.expectedReady?'<small>Verwacht gereed: '+escape(r.expectedReady)+'</small>':''}</article>`).join('')||'<p>Geen open werkorders voor deze selectie.</p>';
     message.textContent='Bijgewerkt om '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})+'. Open werkvoorraad omvat ook opdrachten zonder ingeplande datum.';
     const target=host.querySelector('[data-central-tasks]');if(!id){target.textContent='Kies een medewerker om de toegewezen taken uit Pierfinity te zien.';return;}
     target.textContent='Taken laden…';try{const data=await client(base+'planning?memberId='+encodeURIComponent(id));if(current!==generation)return;target.innerHTML=(data.items||[]).map(item=>`<article data-workplace-task="${escape(item.id)}"><h4>${escape(item.title)}</h4><p>${escape(label(item.startDate?.slice(0,10)))} – ${escape(label(item.endDate?.slice(0,10)))}</p><label>Status<select data-task-status data-version="${Number(item.version)}"${item.canChangeStatus?'':' disabled'}>${[['planned','Gepland'],['in_progress','Bezig'],['done','Afgerond'],['blocked','Geblokkeerd']].map(([value,text])=>`<option value="${value}"${item.status===value?' selected':''}>${text}</option>`).join('')}</select></label><p role="status"></p></article>`).join('')||'<p>Geen toegewezen taken in de komende dertig dagen.</p>';target.querySelectorAll('[data-task-status]').forEach(input=>input.onchange=async()=>{const card=input.closest('[data-workplace-task]');input.disabled=true;try{await client(base+'planning',{method:'PATCH',body:JSON.stringify({executionMemberId:id,id:card.dataset.workplaceTask,status:input.value,version:Number(input.dataset.version)})});busy=false;await load();}catch(e){card.querySelector('[role=status]').textContent=e.message;input.disabled=false;}});}catch(e){if(current===generation)target.textContent=e.message;}
    }catch(e){if(current===generation)message.textContent=e.message;}finally{busy=false;}}
-   select.onchange=()=>{memberId=select.value;generation++;busy=false;void load();};host.querySelector('[data-refresh-planning]').onclick=()=>load();navigation.querySelector('[data-week-prev]').onclick=()=>{weekOffset--;void load();};navigation.querySelector('[data-week-next]').onclick=()=>{weekOffset++;void load();};
+   select.onchange=()=>{
+    memberId=select.value;
+    editAvailability.hidden=!memberId;
+    editAvailability.textContent='Beschikbaarheid aanpassen';
+    editAvailability.setAttribute('aria-expanded','false');
+    const replacement=document.createElement('div');
+    replacement.hidden=true;
+    availabilityEditor.replaceWith(replacement);
+    availabilityEditor=replacement;
+    generation++;
+    busy=false;
+    void load();
+   };host.querySelector('[data-refresh-planning]').onclick=()=>load();navigation.querySelector('[data-week-prev]').onclick=()=>{weekOffset--;void load();};navigation.querySelector('[data-week-next]').onclick=()=>{weekOffset++;void load();};
    setInterval(()=>{if(host.isConnected&&!document.hidden&&!host.hidden&&!host.closest('[data-admin-panel]')?.hidden)void load();},60000);void load();
   }
  }
