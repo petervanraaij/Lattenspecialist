@@ -283,6 +283,26 @@ const updateReservation = async (reference, raw, env) => {
   const record = await teamRecord(reference, env) || await store.get(key, 'json');
   if (!record) return null;
   if (env.LATTENSPECIALIST_TEAM_DB) await ensureTeamRecord(record, env);
+  const trashAction = raw.trashAction;
+  if (trashAction === 'remove' || trashAction === 'restore') {
+    const restoring = trashAction === 'restore';
+    if (Boolean(record.deletedAt) !== restoring) throw new TeamError('De aanvraag is al verplaatst. Vernieuw het overzicht.',409);
+    const timestamp = new Date().toISOString();
+    const updated = {...record, updatedAt:timestamp};
+    if (restoring) {
+      updated.closedAt = record.closedBeforeDeletion ?? null;
+      delete updated.deletedAt;
+      delete updated.closedBeforeDeletion;
+    } else {
+      updated.closedBeforeDeletion = record.closedAt ?? null;
+      updated.deletedAt = timestamp;
+      updated.closedAt = record.closedAt || timestamp;
+    }
+    if (env.LATTENSPECIALIST_TEAM_DB) return saveOwnerRecord(updated, {revision:raw.revision, trashAction}, env);
+    await store.put(key, JSON.stringify(updated));
+    return updated;
+  }
+  if (record.deletedAt) throw new TeamError('Zet deze aanvraag eerst terug uit de prullenbak.',409);
   const converting = raw.convertToWorkOrder === true;
   if (converting && (record.service !== 'Onderhoud' || record.closedAt)) throw new ValidationError('Alleen een open onderhoudsaanvraag kan een werkorder worden.');
   const currentStep = Math.max(converting ? 2 : 1, Math.min(STATUS_STEPS.length, Number(raw.currentStep) || Number(record.currentStep) || 1));
@@ -473,7 +493,7 @@ const application = {
     if(!origin && request.method==='GET' && new URL(request.url).pathname==='/api/admin/reservations') {
       try {
         if(!await isAdminAuthorized(request,env))return json({message:'Open de Beheer-app en log opnieuw in.'},401,'');
-        const records=(await listReservations(env)).map(record=>({
+        const records=(await listReservations(env)).filter(record=>!record.deletedAt).map(record=>({
           reference:String(record.reference||''),service:String(record.service||''),
           currentStep:Math.max(1,Number(record.currentStep)||1),
           // Android's JSONObject.optString(null) yields the literal "null".
@@ -555,7 +575,7 @@ const application = {
       if (!/^LS-[A-Z2-9]{6}$/.test(code)) return json({message: 'Controleer de servicecode.'}, 400, origin);
       try {
         const record = await getReservationByServiceCode(code, env);
-        return record ? json({ok: true, record: publicStatus(record)}, 200, origin) : json({message: 'Servicecode niet gevonden.'}, 404, origin);
+        return record && !record.deletedAt ? json({ok: true, record: publicStatus(record)}, 200, origin) : json({message: 'Servicecode niet gevonden.'}, 404, origin);
       } catch {
         return json({message: 'De status kon niet worden opgehaald.'}, 502, origin);
       }
@@ -564,7 +584,9 @@ const application = {
     if (site === 'lattenspecialist' && url.pathname === '/api/admin/reservations' && request.method === 'GET') {
       if (!await isAdminAuthorized(request, env)) return json({message: 'Toegangscode onjuist.'}, 401, origin);
       try {
-        return json({ok: true, records: await listReservations(env)}, 200, origin);
+        const records = await listReservations(env);
+        const includeTrash = url.searchParams.get('includeTrash') === '1';
+        return json({ok: true, records: includeTrash ? records : records.filter(record => !record.deletedAt)}, 200, origin);
       } catch {
         return json({message: 'De reserveringen konden niet worden opgehaald.'}, 502, origin);
       }
@@ -593,6 +615,7 @@ const application = {
         const raw = await request.json();
         const record = await updateReservation(reference, raw, env);
         if (!record) return json({message: 'Aanvraag niet gevonden.'}, 404, origin);
+        if (raw.trashAction === 'remove' || raw.trashAction === 'restore') return json({ok:true,record},200,origin);
         const notifications = {};
         if (raw.sendStatusEmail === true) {
           try { await sendCustomerStatusEmail(record, env); notifications.email = {sent: true}; }
