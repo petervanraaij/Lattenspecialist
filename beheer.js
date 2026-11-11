@@ -6,6 +6,7 @@
   const dashboard = document.querySelector('#adminDashboard');
   const loginForm = document.querySelector('#adminLoginForm');
   const loginStatus = document.querySelector('#adminLoginStatus');
+  const headerTabs = document.querySelector('#adminTabs');
   const logoutButton = document.querySelector('#logoutAdmin');
   const list = document.querySelector('#adminList');
   const summary = document.querySelector('#adminSummary');
@@ -41,19 +42,6 @@
   const syncStatus=document.createElement('p');syncStatus.className='admin-sync-status';syncStatus.setAttribute('role','status');refreshButton.parentElement.append(syncStatus);
   for(const type of ['input','change'])list.addEventListener(type,event=>{const card=event.target.closest('.admin-record');if(card&&event.target.closest('.admin-update-form')){dirtyRequests.add(card.dataset.reference);card.dataset.unsaved='true';card.querySelector('.discard-request').hidden=false;syncStatus.textContent='Niet-opgeslagen wijzigingen blijven bewaard tijdens verversen.';}});
   orderFilters.addEventListener('click',event=>{const button=event.target.closest('[data-order-filter]');if(!button)return;activeFilter=button.dataset.orderFilter;applySearch();});
-  const requestAlert=document.createElement('section');
-  requestAlert.className='admin-request-alert';requestAlert.setAttribute('role','status');requestAlert.hidden=true;
-  dashboard.prepend(requestAlert);
-  const quickRequest=document.createElement('button');quickRequest.type='button';quickRequest.className='btn btn-primary admin-quick-request';quickRequest.textContent='+ Telefonische aanvraag';
-  quickRequest.onclick=()=>requestManualOpen('Ski');dashboard.prepend(quickRequest);
-  function renderRequestAlert(source=records){
-    const fresh=source.filter(r=>!r.closedAt&&r.service==='Onderhoud'&&Number(r.currentStep||1)===1);
-    requestAlert.replaceChildren();requestAlert.hidden=!fresh.length;
-    if(!fresh.length)return;
-    const heading=document.createElement('strong');heading.textContent=`${fresh.length} nieuwe onderhoudsaanvraag${fresh.length===1?'':'en'} · nog op te pakken`;
-    requestAlert.append(heading);
-    fresh.forEach(record=>{const button=document.createElement('button');button.type='button';button.className='btn btn-primary';button.textContent=`Bekijk ${record.reference} · ${record.name||'Aanvraag'}`;button.onclick=()=>{search.value='';activeFilter='new';render();document.querySelector('#adminTabs [data-tab="orders"]')?.click();const card=list.querySelector(`[data-reference="${CSS.escape(record.reference)}"]`);if(card){card.querySelector('.admin-record-details').open=true;card.scrollIntoView({behavior:'smooth',block:'start'});}};requestAlert.append(button);});
-  }
   let polling=false;
   async function pollRequests(){
     if(!token||dashboard.hidden||document.hidden||polling)return;
@@ -63,9 +51,8 @@
       if(token!==startedToken||dashboard.hidden||JSON.stringify(records)!==startedRecords)return;
       // Keep edits in progress intact. Only redraw when the server data changes.
       if(JSON.stringify(next)!==JSON.stringify(records)){records=next.map(record=>dirtyRequests.has(record.reference)&&!record.deletedAt?records.find(old=>old.reference===record.reference)||record:record);render();}
-      else renderRequestAlert();
       syncStatus.textContent=dirtyRequests.size?'Bijgewerkt · je niet-opgeslagen wijzigingen zijn bewaard.':'Bijgewerkt om '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
-    }catch{requestAlert.hidden=false;requestAlert.textContent='Aanvragen konden niet worden bijgewerkt. Controleer je verbinding en druk op Vernieuwen.';}
+    }catch{if(token===startedToken)syncStatus.textContent='Aanvragen konden niet worden bijgewerkt. Controleer je verbinding en druk op Vernieuwen.';}
     finally{polling=false;}
   }
   setInterval(pollRequests,30000);
@@ -281,16 +268,22 @@
     const focused=list.contains(document.activeElement)?document.activeElement:null;
     const selection=focused&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd]:null;
     const workspaces=new Map([...list.querySelectorAll('.workorder-workspace')].map(host=>[host.closest('.admin-record').dataset.reference,host]));
+    for(const record of records){
+      const previous=workspaces.get(record.reference)?.closest('.admin-record');
+      if(previous && !previous.hidden && previous.dataset.stage===activeFilter && recordStage(record)!=='trash'){
+        activeFilter=recordStage(record);
+        break;
+      }
+    }
     const preserved=new Map([...list.querySelectorAll('.admin-record')].filter(card=>dirtyRequests.has(card.dataset.reference)||card.querySelector('.workorder-executor-dialog[open]')).map(card=>[card.dataset.reference,card]));
     const expanded=new Set([...list.querySelectorAll('.admin-record-details[open]')].map(detail=>detail.closest('.admin-record').dataset.reference));
-    renderRequestAlert();
     const open = records.filter(record => !record.closedAt).length;
     const active = records.filter(record => recordStage(record)==='work').length;
     const withoutCode = records.filter(record => !record.closedAt && !record.serviceCode).length;
     const reservedMinutes=records.filter(record=>!record.closedAt&&Number(record.currentStep||1)<steps.length).reduce((total,record)=>total+plannedMinutes(record),0);
     summary.innerHTML = `<span><b>${open}</b> open</span><span><b>${formatPlannedTime(reservedMinutes)}</b> benodigde tijd</span><span><b>${active}</b> in behandeling</span><span><b>${window.AdminSecurity?.locked?records.filter(record=>recordStage(record)==='new').length:withoutCode}</b> ${window.AdminSecurity?.locked?'nieuw':'zonder servicecode'}</span>`;
     list.innerHTML = records.length ? [...records].sort((a,b)=>['new','planned','work','ready','closed','trash'].indexOf(recordStage(a))-['new','planned','work','ready','closed','trash'].indexOf(recordStage(b))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(renderRecord).join('') : '<div class="admin-empty"><strong>Nog geen websiteaanvragen</strong><p>Nieuwe aanvragen verschijnen hier automatisch.</p></div>';
-    for(const card of list.querySelectorAll('.admin-record')){const old=preserved.get(card.dataset.reference);if(card.dataset.stage==='trash'){dirtyRequests.delete(card.dataset.reference);continue;}if(old)card.replaceWith(old);else{if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
+    for(const card of list.querySelectorAll('.admin-record')){const old=preserved.get(card.dataset.reference);if(card.dataset.stage==='trash'){dirtyRequests.delete(card.dataset.reference);continue;}if(old){old.dataset.stage=card.dataset.stage;card.replaceWith(old);}else{if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
     for(const detail of list.querySelectorAll('.admin-record-details'))detail.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(detail.open));
     list.querySelectorAll('[data-waxstick-reference]').forEach(panel=>void loadWaxstickHandover(panel));
     applySearch();
@@ -474,7 +467,7 @@
     try {
       const [reservationResult] = await Promise.all([api('/api/admin/reservations?includeTrash=1'),loadAvailability(),window.LattenspecialistTeam?.init(api,render)]);
       records = (reservationResult.records || []).map(record=>dirtyRequests.has(record.reference)&&!record.deletedAt?records.find(old=>old.reference===record.reference)||record:record);
-      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; render(); await window.LattenspecialistOperations?.init(api,()=>records); void loadMetrics();
+      loginSection.hidden = true; dashboard.hidden = false; logoutButton.hidden = false; headerTabs.hidden = false; render(); await window.LattenspecialistOperations?.init(api,()=>records); void loadMetrics();
       if (pendingManualOpen) requestManualOpen(pendingManualMaterial);
       window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh'));
     } finally { refreshButton.disabled = false; }
@@ -563,11 +556,11 @@
   addAvailabilityButton.addEventListener('click',() => { const date = customAvailabilityDate.value; if (!date) return; availableDates.add(date); renderAvailability(); customAvailabilityDate.value = ''; });
   search.addEventListener('input',applySearch);
   refreshButton.addEventListener('click',() => loadDashboard().catch(error => { syncStatus.textContent='Bijwerken mislukt: '+error.message+' Je invoer is bewaard.'; }));
-  logoutButton.addEventListener('click',() => { window.AdminSecurity?.logout(); sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];dirtyRequests.clear();list.replaceChildren();statusMenu.replaceChildren();archiveMenu.replaceChildren();listStatus.textContent='';syncStatus.textContent='';window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; loginSection.hidden=false;window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh')); });
+  logoutButton.addEventListener('click',() => { window.AdminSecurity?.logout(); sessionStorage.removeItem('lattenspecialist-admin-token'); localStorage.removeItem('lattenspecialist-admin-token'); token=''; records=[];dirtyRequests.clear();list.replaceChildren();statusMenu.replaceChildren();archiveMenu.replaceChildren();listStatus.textContent='';syncStatus.textContent='';window.LattenspecialistTeam?.clear();window.LattenspecialistOperations?.clear(); dashboard.hidden=true; logoutButton.hidden=true; headerTabs.hidden=true; loginSection.hidden=false;window.dispatchEvent(new CustomEvent('lattenspecialist:widget-refresh')); });
 
   let installPrompt; const installButton = document.querySelector('#installAdmin');
   window.addEventListener('beforeinstallprompt',event => { event.preventDefault(); installPrompt=event; installButton.hidden=false; });
   installButton.addEventListener('click',async() => { if (!installPrompt) return; await installPrompt.prompt(); installPrompt=null; installButton.hidden=true; });
   if ('serviceWorker' in navigator) window.addEventListener('load',() => navigator.serviceWorker.register('/sw.js').catch(() => {}));
-  if (token) loadDashboard().catch(error => { loginSection.hidden=false; dashboard.hidden=true; logoutButton.hidden=true; showLoginStatus(error.message); });
+  if (token) loadDashboard().catch(error => { loginSection.hidden=false; dashboard.hidden=true; logoutButton.hidden=true; headerTabs.hidden=true; showLoginStatus(error.message); });
 })();

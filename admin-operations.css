@@ -30,3 +30,25 @@
 .admin-status-menu button{flex:1 1 140px;min-height:44px}
 .admin-status-archive button{font-size:.85rem}
 .admin-summary[hidden]{display:none}
+
+.admin-body .site-header .admin-app-tabs{
+ flex:0 1 670px;
+ margin:0;
+ min-width:0;
+ background:#252522;
+}
+.admin-body .site-header .admin-app-tabs[hidden]{display:none}
+.admin-body .site-header .admin-app-tabs button{color:#fff}
+.admin-body .site-header .admin-app-tabs button.active{background:#eac873;color:#161611;box-shadow:none}
+.admin-body .site-header .admin-app-tabs button:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+@media(max-width:900px){
+ .admin-body .site-header .nav-wrap:has(#adminTabs:not([hidden])){
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  column-gap:10px;
+  row-gap:4px;
+  padding-block:8px;
+ }
+ .admin-body .site-header .admin-app-tabs{grid-row:2;grid-column:1/-1}
+ .admin-body .site-header .app-header-actions{grid-row:1;grid-column:2}
+}
