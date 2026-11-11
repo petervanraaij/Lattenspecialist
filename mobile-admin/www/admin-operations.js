@@ -21,7 +21,7 @@
  const navigation = {
   orders: {label:'Aanvragen en statussen', sections:[]},
   workplace: {label:'Werkplaats', sections:[['overview','Overzicht'],['planning-work','Planning'],['availability','Beschikbaarheid'],['practice','Oefenen'],['instructions','Instructies en gereedschap'],['warehouse','Magazijn'],['wallboard','Groot scherm']]},
-  inventory: {label:'Beheer', sections:[['inventory','Voorraadbeheer'],['customers','Klanten & materiaal'],['website','Websitecijfers']]}
+  inventory: {label:'Beheer', sections:[['inventory','Voorraadbeheer'],['customers','Klanten & materiaal'],['website','Websitecijfers'],['diagnostics','Test en controle']]}
  };
  const groupFor = name => Object.keys(navigation).find(group => group === name ||
    navigation[group].sections.some(([section]) => section === name));
@@ -56,7 +56,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   secondary.after(workshopSummary);
   secondary.addEventListener('click',event=>{const button=event.target.closest('button[data-tab]');if(button)setTab(button.dataset.tab);});
   const platformLink=document.createElement('a');platformLink.href='https://app.pierfinity.nl/';platformLink.target='_blank';platformLink.rel='noopener';platformLink.className='btn btn-gold';platformLink.dataset.sensitive='true';platformLink.textContent='Bedrijfsadministratie en HRM in Pierfinity ↗';secondary.querySelector('[data-admin-subnav=inventory]').append(platformLink);
-  const panels={};for(const name of ['overview','wallboard','orders','workplace','inventory','instructions','customers','suppliers','creditors','debtors','planning','hrm','website']){const panel=document.createElement('div');panel.dataset.adminPanel=name;panel.hidden=name!=='orders';dashboard.append(panel);panels[name]=panel;}
+  const panels={};for(const name of ['overview','wallboard','orders','workplace','inventory','instructions','customers','suppliers','creditors','debtors','planning','hrm','website','diagnostics']){const panel=document.createElement('div');panel.dataset.adminPanel=name;panel.hidden=name!=='orders';dashboard.append(panel);panels[name]=panel;}
   panels.inventory.id='inventoryPanel';
   panels.suppliers.id='suppliersPanel';
   panels.creditors.id='creditorsPanel';
@@ -64,6 +64,9 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   panels.wallboard.id='wallboardPanel';panels.wallboard.innerHTML='<section class="wallboard-shell"><p>Groot-schermdashboard laden…</p></section>';
   panels.overview.append(document.querySelector('#operationsDashboard'));
   panels.website.append(document.querySelector('.website-stats'));
+  const diagnostics = document.querySelector('#adminDiagnostics');
+  panels.diagnostics.append(diagnostics);
+  diagnostics.hidden = false;
   const scanner=document.createElement('details');scanner.className='availability-admin';scanner.innerHTML='<summary>Materiaal scannen</summary><div class="availability-admin-head"><div><h2>Materiaal ontvangen of afleveren</h2></div><button id="adminStartScanner" class="btn btn-gold" type="button">QR-camera openen</button></div><form id="adminManualScan" class="team-create"><label>Aanvraagcode, materiaalcode of QR-link<input name="scan" autocomplete="off" autocapitalize="characters" spellcheck="false"></label><button class="btn btn-dark" type="submit">Open aanvraag of materiaal</button></form><div id="adminQrReader" hidden></div><div id="adminScanResult"></div>';panels.orders.append(scanner,document.querySelector('.admin-order-filters'),document.querySelector('.admin-list-status'),document.querySelector('#adminList'));
   const teamPanel=document.querySelector('#teamPanel');teamPanel.hidden=true;panels.planning.append(document.querySelector('.availability-admin'),document.querySelector('#routeManager'));panels.hrm.append(document.querySelector('#hrmAdminPanel'),teamPanel);
   tabs.onclick=event=>{const button=event.target.closest('[data-tab]');if(button)setTab(button.dataset.tab);};document.querySelector('#adminStartScanner').onclick=toggleScanner;document.querySelector('#adminManualScan').onsubmit=event=>{event.preventDefault();openAdminScan(new FormData(event.target).get('scan'));};document.querySelector('#adminScanResult').onclick=event=>{const button=event.target.closest('[data-admin-action]');if(button)adminAction(button);};

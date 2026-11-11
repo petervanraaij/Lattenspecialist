@@ -49,7 +49,7 @@ test('personal WhatsApp link opens only its status without input or silently rem
   assert.equal(d.getElementById('statusForm').hidden,false);
 });
 test('invalid personal link cannot load a previously saved customers status',async t=>{
-  const {d,requests}=app(t,async()=>reply({record}),{hash:'#status=LS-2609-ABC234',saved:'LS-DEF567'});
+  const {d,requests}=app(t,async()=>reply({record}),{hash:'#status=LS-2613-ABC234',saved:'LS-DEF567'});
   await turn();
   assert.equal(requests.length,0);
   assert.equal(d.getElementById('statusForm').hidden,false);
@@ -107,14 +107,14 @@ test('a late response cannot restore a forgotten code or show another request',a
   assert.equal(d.getElementById('statusResult').textContent,'');
   assert.equal(w.localStorage.getItem('lattenspecialist-customer-code'),null);
 });
-test('network failure replaces previous status; invalid request codes are never sent',async t=>{
+test('network failure replaces previous status; malformed codes are never sent',async t=>{
   let failing=false;
   const {w,d,requests}=app(t,async()=>{if(failing)throw new Error('offline');return reply({record});});
   submit(w,d,'LS-ABC234');await turn();
   failing=true;d.getElementById('refreshStatus').click();await turn();
   assert.match(d.getElementById('statusResult').textContent,/niet worden opgehaald/);
   assert.doesNotMatch(d.getElementById('statusResult').textContent,/Premium koud/);
-  const before=requests.length;submit(w,d,'LS-2609-ABC234');
+  const before=requests.length;submit(w,d,'LS-2613-ABC234');
   assert.equal(requests.length,before);
   assert.match(d.getElementById('codeFeedback').textContent,/aanvraagcode/);
 });
