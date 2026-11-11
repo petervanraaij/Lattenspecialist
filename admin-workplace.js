@@ -7,8 +7,39 @@
   const practice=document.getElementById('adminPracticePanel');practice.hidden=false;host.querySelector('[data-workplace-content=practice]').append(practice);
   async function people(){try{const data=await api('/api/admin/team/members'),options='<option value="">Kies medewerker</option>'+(data.members||[]).filter(m=>m.active).map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');for(const select of [practice.querySelector('[name=executionMemberId]'),host.querySelector('[data-warehouse-member]')])select.innerHTML=options;host.querySelector('[data-workplace-status]').textContent='';}catch(e){host.querySelector('[data-workplace-status]').textContent=e.message;}}
   await people();
-  const sessions=document.createElement('section');sessions.innerHTML='<h3>Eerdere oefeningen</h3><button type="button" data-refresh-practice>Oefeningen vernieuwen</button><p data-practice-message role="status"></p><div data-practice-sessions></div>';practice.prepend(sessions);
-  async function list(){const target=sessions.querySelector('[data-practice-sessions]');try{const data=await api('/api/admin/workplace/practice');target.innerHTML=(data.sessions||[]).map(item=>`<p><button type="button" data-resume-practice="${esc(item.id)}" data-member="${esc(item.memberId)}" data-member-name="${esc(item.memberName)}">${esc(item.displayCode)} · ${esc(item.kind)} · ${esc(item.title)} · ${esc(item.memberName)} · ${esc(item.status==='ready'?'Afgerond':item.status==='maintenance'?'Bezig':'Openen')}</button> ${['ready','delivered'].includes(item.status)?'':`<button class="admin-trash-cross" type="button" data-remove-practice="${esc(item.id)}" data-code="${esc(item.displayCode)}" aria-label="Verwijder oefening ${esc(item.displayCode)}" title="Oefening verwijderen">×</button>`}</p>`).join('')||'<p>Nog geen oefeningen.</p>';}catch(e){target.textContent=e.message;}}
+  const sessions=document.createElement('section');sessions.innerHTML='<h3>Nu aan het oefenen</h3><div data-active-practice></div><p data-active-practice-error role="status"></p><h3>Eerdere oefeningen</h3><button type="button" data-refresh-practice>Oefeningen vernieuwen</button><p data-practice-message role="status"></p><div data-practice-sessions></div>';practice.prepend(sessions);
+  const activeTarget=sessions.querySelector('[data-active-practice]');
+  const activeError=sessions.querySelector('[data-active-practice-error]');
+  let snapshot='';
+  function tick(){
+   for(const timer of activeTarget.querySelectorAll('[data-started-at]')){
+    const elapsed=Math.max(0,Math.floor((Date.now()-Date.parse(timer.dataset.startedAt))/1000));
+    const time=[Math.floor(elapsed/3600),Math.floor(elapsed/60)%60,elapsed%60].map(value=>String(value).padStart(2,'0')).join(':');
+    if(timer.textContent!==time)timer.textContent=time;
+   }
+  }
+  function renderActive(active){
+   activeError.textContent='';
+   const next=JSON.stringify(active);
+   if(next===snapshot)return;
+   snapshot=next;
+   activeTarget.innerHTML=active.map(item=>`<p><button type="button" data-resume-practice="${esc(item.id)}" data-member="${esc(item.memberId)}" data-member-name="${esc(item.memberName)}"><strong>${esc(item.memberName)}</strong> · ${esc(item.title)} · ${esc(item.kind)}<br>Stap ${esc(item.stepNumber)} van ${esc(item.stepCount)} · ${esc(item.stepTitle)}<br>Bezig met deze stap <time data-started-at="${esc(item.startedAt)}"></time></button></p>`).join('')||'<p>Er loopt nu geen oefenstap.</p>';
+   tick();
+  }
+  let loading=false;
+  async function refreshActive(){
+   if(loading || document.hidden || !sessions.getClientRects().length)return;
+   loading=true;
+   try{
+    const data=await api('/api/admin/workplace/practice');
+    renderActive(data.active||[]);
+   }catch{
+    activeError.textContent='Het overzicht kon niet worden bijgewerkt.';
+   }finally{loading=false;}
+  }
+  setInterval(()=>{if(!document.hidden&&sessions.getClientRects().length)tick();},1000);
+  setInterval(refreshActive,10000);
+  async function list(){const target=sessions.querySelector('[data-practice-sessions]');try{const data=await api('/api/admin/workplace/practice');renderActive(data.active||[]);target.innerHTML=(data.sessions||[]).map(item=>`<p><button type="button" data-resume-practice="${esc(item.id)}" data-member="${esc(item.memberId)}" data-member-name="${esc(item.memberName)}">${esc(item.displayCode)} · ${esc(item.kind)} · ${esc(item.title)} · ${esc(item.memberName)} · ${esc(item.status==='ready'?'Afgerond':item.status==='maintenance'?'Bezig':'Openen')}</button> ${['ready','delivered'].includes(item.status)?'':`<button class="admin-trash-cross" type="button" data-remove-practice="${esc(item.id)}" data-code="${esc(item.displayCode)}" aria-label="Verwijder oefening ${esc(item.displayCode)}" title="Oefening verwijderen">×</button>`}</p>`).join('')||'<p>Nog geen oefeningen.</p>';}catch(e){target.textContent=e.message;}}
   const confirm=document.createElement('dialog');
   confirm.className='workorder-executor-dialog';
   confirm.setAttribute('aria-labelledby','removePracticeTitle');

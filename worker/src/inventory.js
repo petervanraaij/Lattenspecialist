@@ -268,8 +268,22 @@ export async function handleInventory(request,env,{owner,json,origin}){
   }
   if(['/api/admin/workplace/practice','/api/admin/workplace/warehouse','/api/admin/workplace/warehouse/pick'].includes(path)){
    if(!owner)throw new InventoryError('Geen toegang tot de werkplaats.',401);
+   if(path==='/api/admin/workplace/practice'&&request.method==='GET'){
+    const [history,active]=await Promise.all([
+     db.prepare("SELECT m.id,m.display_code AS displayCode,m.kind,m.package_name AS title,m.internal_status AS status,m.assigned_to AS memberId,p.name AS memberName FROM materials m LEFT JOIN members p ON p.id=m.assigned_to WHERE m.is_training=1 AND m.internal_status<>'practice_removed' ORDER BY m.updated_at DESC LIMIT 50").all(),
+     db.prepare(`SELECT m.id,m.display_code AS displayCode,m.kind,m.package_name AS title,
+       p.name AS memberName,p.id AS memberId,s.title AS stepTitle,s.step_order AS stepNumber,x.started_at AS startedAt,
+       (SELECT COUNT(*) FROM maintenance_steps WHERE material_id=m.id) AS stepCount
+       FROM maintenance_step_sessions x
+       JOIN materials m ON m.id=x.material_id
+       JOIN maintenance_steps s ON s.id=x.step_id
+       JOIN members p ON p.id=x.member_id
+       WHERE x.ended_at IS NULL AND x.is_training=1 AND m.is_training=1
+       AND m.internal_status<>'practice_removed' ORDER BY p.name,m.display_code`).all()
+    ]);
+    return json({sessions:history.results,active:active.results},200,origin);
+   }
    await ensureToolStock(db);
-   if(path==='/api/admin/workplace/practice'&&request.method==='GET')return json({sessions:(await db.prepare("SELECT m.id,m.display_code AS displayCode,m.kind,m.package_name AS title,m.internal_status AS status,m.assigned_to AS memberId,p.name AS memberName FROM materials m LEFT JOIN members p ON p.id=m.assigned_to WHERE m.is_training=1 AND m.internal_status<>'practice_removed' ORDER BY m.updated_at DESC LIMIT 50").all()).results},200,origin);
    if(path==='/api/admin/workplace/warehouse'&&request.method==='GET')return json(await warehouseOverview(db),200,origin);
    if(request.method!=='POST')throw new InventoryError('Niet toegestaan.',405);
    const raw=await readBody(request),member=await db.prepare('SELECT id,name,login FROM members WHERE id=? AND active=1').bind(String(raw.executionMemberId||'')).first();
