@@ -117,11 +117,12 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
  }
  async function labels(reference,create=true){const path='/api/admin/operations/materials'+(create?'':'?reference='+encodeURIComponent(reference));return api(path,create?{method:'POST',body:JSON.stringify({reference})}:{});}
  function printLabels(items){let sheet=document.querySelector('#qrPrintSheet');if(!sheet){sheet=document.createElement('div');sheet.id='qrPrintSheet';document.body.append(sheet);}sheet.replaceChildren();for(const item of items){const label=document.createElement('article'),brand=document.createElement('em'),code=document.createElement('strong'),qr=document.createElement('div'),meta=document.createElement('span');brand.textContent='DE LATTENSPECIALIST';code.textContent=item.displayCode;const image=qrcode(0,'M');image.addData(item.qrValue);image.make();qr.innerHTML=image.createSvgTag(4,1);meta.textContent=`${item.kind} · ${item.package} · ${item.reference}`;label.append(brand,code,qr,meta);sheet.append(label);}document.body.classList.add('printing-labels');window.print();setTimeout(()=>document.body.classList.remove('printing-labels'),500);}
- async function handleLabelButton(button){
+ async function handleLabelButton(button,create=true){
   const card=button.closest('.admin-record'),reference=card.dataset.reference,target=card.querySelector('.material-labels');
   button.disabled=true;target.textContent='Onderhoudscodes laden…';
   try{
-   const result=await labels(reference,true);
+   const result=await labels(reference,create);
+   button.textContent=result.materials.length?'Ontbrekende codes maken':'Onderhoudscodes en QR-stickers maken';
    target.innerHTML=`<div class="material-label-list">${result.materials.map(item=>`<div data-material-code-row>
     <label>Set ${item.itemNumber} · ${escape(item.kind)} · ${escape(item.package)}
     <input data-material-code value="${escape(item.displayCode)}" maxlength="10" autocapitalize="characters" autocomplete="off"></label>
@@ -133,7 +134,8 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
     <button type="button" class="btn btn-dark" data-save-set-package>Pakket wijzigen</button>
     <button type="button" class="btn btn-dark" data-remove-set>Set verwijderen</button>
     <p data-code-message role="status"></p><div data-owner-workplan-result="${escape(item.id)}"></div>
-   </div>`).join('')}</div><button type="button" class="btn btn-gold print-labels">Print ${result.materials.length} sticker(s)</button>${result.materials.length?'':'<p>Geen actieve sets.</p>'}`;
+   </div>`).join('')}</div><button type="button" class="btn btn-gold print-labels">Print ${result.materials.length} sticker(s)</button>${result.materials.length?'':'<p>Er zijn geen actieve sets met een onderhoudscode.</p>'}`;
+   if(!create&&!result.materials.length)card.querySelector('.edit-maintenance-options').open=true;
    const print=target.querySelector('.print-labels');
    print.hidden=!result.materials.length;print.onclick=()=>printLabels(result.materials);
    [...target.querySelectorAll('[data-material-code-row]')].forEach((row,index)=>{
@@ -196,5 +198,5 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
  document.addEventListener('ls-open-material',event=>{if(event.detail?.token){void setTab('orders');void openAdminScan(event.detail.token);}});
  document.addEventListener('click',event=>{const button=event.target.closest('.open-workorder-workspace');if(button)void openWorkorderWorkspace(button);});
  document.addEventListener('click',event=>{const workplan=event.target.closest('[data-owner-workplan]');if(workplan){void openOwnerWorkplan(workplan);return;}const button=event.target.closest('.create-material-labels');if(button)handleLabelButton(button);});
- window.LattenspecialistOperations={async init(client,recordsProvider){api=client;getRecords=recordsProvider;prepareLayout();if(!document.querySelector('#adminTabs .active')||window.AdminSecurity?.locked)setTab('orders');},clear(){clearInterval(wallboardRefreshTimer);clearInterval(wallboardMeterTimer);wallboardRefreshTimer=null;wallboardMeterTimer=null;hrmPin='';document.querySelector('[data-admin-panel=customers]')?.replaceChildren();document.querySelectorAll('[data-owner-workplan-result]').forEach(host=>host.replaceChildren());window.LattenspecialistInventory?.clear();if(scanner)scanner.stop().catch(()=>{});scanner=null;}};
+ window.LattenspecialistOperations={loadIssuedSets(card){const button=card.querySelector('.create-material-labels');if(button&&!button.disabled)return handleLabelButton(button,false);},async init(client,recordsProvider){api=client;getRecords=recordsProvider;prepareLayout();if(!document.querySelector('#adminTabs .active')||window.AdminSecurity?.locked)setTab('orders');},clear(){clearInterval(wallboardRefreshTimer);clearInterval(wallboardMeterTimer);wallboardRefreshTimer=null;wallboardMeterTimer=null;hrmPin='';document.querySelector('[data-admin-panel=customers]')?.replaceChildren();document.querySelectorAll('[data-owner-workplan-result]').forEach(host=>host.replaceChildren());window.LattenspecialistInventory?.clear();if(scanner)scanner.stop().catch(()=>{});scanner=null;}};
 })();
