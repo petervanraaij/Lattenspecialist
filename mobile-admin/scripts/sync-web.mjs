@@ -45,6 +45,15 @@ document.documentElement.classList.add('native-app');
 const installButton=document.getElementById('installAdmin');
 if(installButton) installButton.hidden=true;
 const widgetBridge=window.LattenspecialistWidget;
+if (widgetBridge?.openWhatsAppBusiness) {
+ document.addEventListener('click', event => {
+  const link = event.target.closest('a[href^="intent://send?"]');
+  if (!link) return;
+  event.preventDefault();
+  widgetBridge.openWhatsAppBusiness(link.getAttribute('href'));
+ });
+}
+
 const syncWidgetToken=()=>widgetBridge?.setAdminToken(localStorage.getItem('lattenspecialist-admin-token')||sessionStorage.getItem('lattenspecialist-admin-token')||'');
 syncWidgetToken();
 window.addEventListener('lattenspecialist:widget-refresh',()=>{syncWidgetToken();widgetBridge?.refresh();});

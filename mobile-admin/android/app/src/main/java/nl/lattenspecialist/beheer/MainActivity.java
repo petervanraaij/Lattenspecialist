@@ -46,6 +46,29 @@ public class MainActivity extends BridgeActivity {
 
     private final class WidgetBridge {
         @JavascriptInterface
+        public void openWhatsAppBusiness(String url) {
+            if (url == null || url.length() > 12000 || !url.startsWith("intent://send?")) return;
+            String suffix = "#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end";
+            if (!url.endsWith(suffix)) return;
+            String query = url.substring("intent://send?".length(), url.length() - suffix.length());
+            android.net.Uri uri = android.net.Uri.parse("whatsapp://send?" + query);
+            String phone = uri.getQueryParameter("phone");
+            String message = uri.getQueryParameter("text");
+            if (phone == null || !phone.matches("[1-9][0-9]{6,14}") || message == null || message.isEmpty()) return;
+
+            android.net.Uri target = new android.net.Uri.Builder().scheme("whatsapp").authority("send")
+                    .appendQueryParameter("phone", phone).appendQueryParameter("text", message).build();
+            Intent intent = new Intent(Intent.ACTION_VIEW, target).setPackage("com.whatsapp.w4b");
+            runOnUiThread(() -> {
+                try {
+                    startActivity(intent);
+                } catch (android.content.ActivityNotFoundException error) {
+                    android.widget.Toast.makeText(MainActivity.this, "Installeer WhatsApp Business om dit bericht te openen.", android.widget.Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
         public void setAdminToken(String token) {
             String safeToken = token == null ? "" : token.trim();
             if (safeToken.length() > 256) return;
