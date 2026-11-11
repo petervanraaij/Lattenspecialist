@@ -53,11 +53,15 @@
    options.onBusy?.(true);
    for(const field of form.elements)field.disabled=true;
    let saved=0,lastPhotoId;
+   const rejected=[];
+   const stage=form.elements.stage.value;
    try{
-    const stage=form.elements.stage.value,note=form.elements.note.value;
+    const note=form.elements.note.value;
     for(const file of files){
-     status.textContent=`Foto ${saved+1} van ${files.length} opslaan…`;
-     const image=await jpeg(file);
+     status.textContent=`Foto ${saved+rejected.length+1} van ${files.length} opslaan…`;
+     let image;
+     try{image=await jpeg(file);}
+     catch(error){rejected.push(error.message);continue;}
      if(!alive())return;
      const result=await api('',{method:'POST',body:JSON.stringify({stage,note,image,requestId:ids.get(file)})});
      saved++;
@@ -66,6 +70,7 @@
     if(!alive())return;
     const count=saved===1?'1 foto':`${saved} foto’s`;
     status.textContent=`${count} opgeslagen bij ${stage==='intake'?'binnenkomst':'oplevering'}.`;
+    if(rejected.length)status.textContent+=` ${rejected.length} overgeslagen. ${[...new Set(rejected)].join(' ')}`;
     files=[];
     renderSelection();
     await refresh();
@@ -73,12 +78,13 @@
     if(options.intakeOnly && lastPhotoId){
      root.querySelector(`[data-photo-open="${CSS.escape(lastPhotoId)}"]`)?.click();
     }
-    options.onSaved?.();
+    if(saved)options.onSaved?.();
    }catch(error){
     if(alive()){
-     files=files.slice(saved);
+     files=files.slice(saved+rejected.length);
      renderSelection();
      status.textContent=`${saved} opgeslagen. ${error.message} Je kunt opnieuw proberen.`;
+     if(saved){await refresh();if(alive())options.onSaved?.();}
     }
    }finally{
     busy=false;

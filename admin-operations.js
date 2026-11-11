@@ -215,6 +215,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
  async function openIntake(button){
   if(intakeDialog)return;
   const reference=button.closest('.admin-record').dataset.reference;
+  const photosOnly=button.hasAttribute('data-open-intake-photos');
   const dialog=document.createElement('dialog');
   intakeDialog=dialog;
   dialog.className='workorder-executor-dialog';
@@ -230,9 +231,9 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   </form></section>
   <section data-intake-photos hidden>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem"><h3 data-intake-photo-title></h3><button type="button" class="btn btn-dark" data-intake-photo-close aria-label="Fotovenster sluiten">×</button></div><div data-intake-photo-host></div>
-    <button type="button" class="btn btn-dark" data-intake-photo-next>Later toevoegen</button>
+    <div class="admin-save-actions"><button type="button" class="btn btn-dark" data-intake-photo-next>Later toevoegen</button><button type="button" class="btn btn-dark" data-intake-photo-close>× Sluiten</button></div>
   </section>
-  <section data-intake-received hidden><h3>Al ontvangen</h3><div data-intake-received-list></div></section>`;
+  <section data-intake-received hidden><h3>${photosOnly?"Innamefoto’s":"Al ontvangen"}</h3><div data-intake-received-list></div>${photosOnly?'<button type="button" class="btn btn-dark" data-intake-list-close>Sluiten</button>':''}</section>`;
   document.body.append(dialog);
   const form=dialog.querySelector('form'),select=form.elements.materialId,input=form.elements.label;
   const message=dialog.querySelector('[data-intake-message]'),camera=dialog.querySelector('[data-intake-camera]');
@@ -241,27 +242,28 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   const photos=dialog.querySelector('[data-intake-photos]');
   const photoHost=dialog.querySelector('[data-intake-photo-host]');
   const photoNext=dialog.querySelector('[data-intake-photo-next]');
-  const photoClose=dialog.querySelector('[data-intake-photo-close]');
-  photoClose.onclick=()=>{if(!photoBusy)dialog.close();};
+  const photoCloseButtons=dialog.querySelectorAll('[data-intake-photo-close]');
+  for(const close of photoCloseButtons)close.onclick=()=>{if(!photoBusy)dialog.close();};
   const receivedSection=dialog.querySelector('[data-intake-received]');
   let intakeScanner=null,busy=false,cameraStart=null,photoBusy=false,receivedSets=[];
   function showPhotoStep(item,fromReceipt=false){
    scanSection.hidden=true;receivedSection.hidden=true;photos.hidden=false;
    dialog.querySelector('[data-intake-photo-title]').textContent=`Set ${item.itemNumber} · ${item.displayCode}`;
    photoHost.replaceChildren();
-   photoNext.textContent=fromReceipt?'Later toevoegen':'Terug naar ontvangst';
+   photoNext.textContent=photosOnly?'Terug naar sets':fromReceipt?'Later toevoegen':'Terug naar ontvangst';
    window.LSMaterialPhotos?.mount(photoHost,item.id,{
     admin:true,intakeOnly:true,
-    onBusy(value){photoBusy=value;photoNext.disabled=value;photoClose.disabled=value;},
-    onSaved(){photoNext.textContent='Verder';}
+    onBusy(value){photoBusy=value;photoNext.disabled=value;for(const close of photoCloseButtons)close.disabled=value;},
+    onSaved(){if(!photosOnly)photoNext.textContent='Verder met inname';}
    });
    photoNext.focus();
   }
   photoNext.onclick=()=>{
    if(photoBusy)return;
-   photos.hidden=true;photoHost.replaceChildren();scanSection.hidden=false;
-   receivedSection.hidden=!receivedSets.length;
-   if(!select.disabled)camera.focus();
+   photos.hidden=true;photoHost.replaceChildren();scanSection.hidden=photosOnly;
+   receivedSection.hidden=!photosOnly&&!receivedSets.length;
+   if(photosOnly)receivedSection.querySelector('button')?.focus();
+   else if(!select.disabled)camera.focus();
    else dialog.querySelector('[data-intake-close]').focus();
   };
   receivedSection.onclick=event=>{
@@ -281,8 +283,8 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    const pending=materials.filter(item=>['label_created','pickup_underway'].includes(item.internalStatus));
    select.replaceChildren(...pending.map(item=>new Option(`Set ${item.itemNumber} · ${item.kind} · ${item.package}`,item.id)));
    if(!pending.length)select.add(new Option('Alles is ontvangen'));
-   receivedSets=materials.filter(item=>item.receivedAt);
-   receivedSection.hidden=!receivedSets.length;
+   receivedSets=photosOnly?materials:materials.filter(item=>item.receivedAt);
+   receivedSection.hidden=!photosOnly&&!receivedSets.length;
    const receivedList=dialog.querySelector('[data-intake-received-list]');
    receivedList.replaceChildren(...receivedSets.map(item=>{
     const button=document.createElement('button');
@@ -333,6 +335,22 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   dialog.querySelector('[data-intake-close]').onclick=()=>dialog.close();
   dialog.addEventListener('cancel',event=>{if(photoBusy||busy)event.preventDefault();});
   dialog.addEventListener('close',async()=>{await stop();dialog.remove();if(intakeDialog===dialog)intakeDialog=null;},{once:true});
+  if(photosOnly){
+   scanSection.hidden=true;
+   receivedSection.hidden=false;
+   const list=dialog.querySelector('[data-intake-received-list]');
+   list.textContent='Sets laden…';
+   dialog.querySelector('[data-intake-list-close]').onclick=()=>dialog.close();
+   dialog.showModal();
+   try{
+    const {materials}=await labels(reference,false);
+    if(!dialog.open)return;
+    showSets(materials);
+    if(materials.length===1)showPhotoStep(materials[0]);
+    if(!materials.length)list.textContent='Er zijn nog geen sets gekoppeld. Gebruik In ontvangst nemen om een set te koppelen.';
+   }catch(error){list.textContent=error.message;}
+   return;
+  }
   dialog.showModal();
   try{
    const result=await api('/api/admin/operations/materials/intake',{method:'POST',body:JSON.stringify({reference})});
@@ -340,7 +358,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   }catch(error){message.textContent=error.message;}
  }
  document.addEventListener('click',event=>{
-  const button=event.target.closest('[data-receive-label]');
+  const button=event.target.closest('[data-receive-label],[data-open-intake-photos]');
   if(button)void openIntake(button);
  });
  document.addEventListener('ls-open-material',event=>{if(event.detail?.token){void setTab('orders');void openAdminScan(event.detail.token);}});
