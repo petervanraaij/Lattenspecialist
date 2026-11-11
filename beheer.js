@@ -116,7 +116,12 @@
   };
   const whatsappUrl = (record, type = 'status') => {
     const phone = normalizeWhatsAppPhone(record.phone);
-    return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(customerMessageLines(record,type).join('\n'))}` : '';
+    if (!/^[1-9][0-9]{6,14}$/.test(phone)) return '';
+    const text = encodeURIComponent(customerMessageLines(record,type).join('\n'));
+    if (/Android/i.test(navigator.userAgent)) {
+      return `intent://send?phone=${phone}&text=${text}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`;
+    }
+    return `https://wa.me/${phone}?text=${text}`;
   };
   const smsUrl = record => {
     const phone = String(record.phone || '').replace(/[^+\d]/g,'');
@@ -231,12 +236,14 @@
     const waxChoices = waxOptions.map(option => `<option${option === wax ? ' selected' : ''}>${escapeHtml(option)}</option>`).join('');
     const searchText = [record.reference,record.serviceCode,record.name,record.phone,record.email,record.postcode,record.address,record.material,record.package,record.rentaltype,record.status].filter(Boolean).join(' ').toLowerCase();
     const closed = Boolean(record.closedAt);
+    const statusLink = record.whatsappConsent ? whatsappUrl(record) : '';
+    const whatsappLabel = /Android/i.test(navigator.userAgent) ? 'WhatsApp Business' : 'WhatsApp';
     const minutes=plannedMinutes(record);
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-stage="${recordStage(record)}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
       <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(packageLabel(record.package))}</span>${record.service==='Onderhoud'&&Number(record.currentStep||1)===1?`<span>Warme waxreiniging: ${escapeHtml(warmCleaningLabel(record))}</span>`:''}<small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span>${record.service==='Onderhoud'&&!closed&&currentStep<3?'<button type="button" class="btn btn-gold" data-receive-label>In ontvangst nemen</button>':''}${record.service==='Onderhoud'&&!closed&&currentStep===3?'<button type="button" class="btn btn-gold" data-move-to-workshop>Naar werkplaats</button>':''}<button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
       ${Number(record.waxstickCount)>0?`<section class="admin-payment admin-waxstick" data-waxstick-reference="${escapeHtml(record.reference)}"><h3>Meebesteld · ${Number(record.waxstickCount)}× Holmenkol Natural Skiwax Stick 50 g</h3><p>€ 17,50 per stuk · bij deze opdracht meegeven.</p><p class="waxstick-handover-status" role="status" aria-live="polite">Meegeefstatus laden…</p><button class="btn btn-gold waxstick-handover" type="button" disabled>Meegeven bevestigen</button><button class="btn btn-dark waxstick-invoice" type="button">Factuur maken in Pierfinity →</button><button class="btn btn-dark waxstick-reload" type="button" hidden>Status opnieuw laden</button></section>`:''}
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-content">
-        <div class="admin-save-actions"><button type="button" class="btn btn-dark" data-edit-request aria-expanded="false" aria-controls="edit-request-${escapeHtml(record.reference)}">Bewerken</button>${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}</div>
+        <div class="admin-save-actions">${statusLink?`<a class="btn message-whatsapp" href="${escapeHtml(statusLink)}">Status delen via ${whatsappLabel}</a>`:""}<button type="button" class="btn btn-dark" data-edit-request aria-expanded="false" aria-controls="edit-request-${escapeHtml(record.reference)}">Bewerken</button>${record.workOrderNumber?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}</div>
         <div class="admin-info"><h3>Contact</h3><p><strong>${valueOrDash(record.name)}</strong><br><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>Aanvraag</h3><div class="admin-detail-grid">${details}</div>${requestNotesMarkup(record)}
           ${record.service==='Onderhoud'?'<section><h3>Ontvangst</h3><details class="admin-request-fields" data-inline-intake><summary>Innamefoto’s</summary><div data-inline-intake-content></div></details></section>':''}
           <div data-request-workplans></div>
@@ -757,7 +764,8 @@
       updatedMessage.textContent = messageText; updatedMessage.className = 'admin-record-message is-success';
       if (action === 'whatsapp') {
         const url = whatsappUrl(result.record);
-        if (url) window.location.href = url;
+        if (url.startsWith('intent:') && window.LattenspecialistWidget?.openWhatsAppBusiness) window.LattenspecialistWidget.openWhatsAppBusiness(url);
+        else if (url) window.location.href = url;
         else { updatedMessage.textContent = 'Opgeslagen, maar het WhatsApp-nummer is niet geldig.'; updatedMessage.className = 'admin-record-message is-error'; }
       }
       if (action === 'sms') {
