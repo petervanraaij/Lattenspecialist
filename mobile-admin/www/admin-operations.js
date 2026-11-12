@@ -18,9 +18,15 @@
  function periodDays(amount){const days=[];for(let offset=amount-1;offset>=0;offset-=1){const date=new Date();date.setHours(12,0,0,0);date.setDate(date.getDate()-offset);days.push(date.toISOString().slice(0,10));}return days;}
  function flowChart(flow,period){const days=periodDays(period),received=new Map((flow.received||[]).map(item=>[item.day,Number(item.count)||0])),completed=new Map((flow.completed||[]).map(item=>[item.day,Number(item.count)||0])),maximum=Math.max(1,...days.flatMap(day=>[received.get(day)||0,completed.get(day)||0]));return `<div class="flow-bars" style="--flow-columns:${days.length}">${days.map((day,index)=>`<div class="flow-day" title="${escape(dayLabel(day))}: ${received.get(day)||0} binnen, ${completed.get(day)||0} klaar"><div class="flow-columns"><i class="received" style="height:${Math.max(2,(received.get(day)||0)/maximum*100)}%"></i><i class="completed" style="height:${Math.max(2,(completed.get(day)||0)/maximum*100)}%"></i></div>${index===0||index===days.length-1?`<small>${escape(dayLabel(day))}</small>`:'<small></small>'}</div>`).join('')}</div>`;}
  function turnaroundChart(flow,period){const days=periodDays(period),values=new Map((flow.turnaround||[]).map(item=>[item.day,Number(item.seconds)||0])),points=days.map((day,index)=>({day,index,value:values.get(day)||0})).filter(item=>item.value>0),maximum=Math.max(60,...points.map(item=>item.value)),coordinates=points.map(item=>`${points.length===1?50:item.index/(days.length-1)*100},${94-item.value/maximum*82}`).join(' ');return `<div class="turnaround-chart"><svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Gemiddelde doorlooptijd per dag">${coordinates?`<polyline points="${coordinates}" vector-effect="non-scaling-stroke"></polyline>${points.map(item=>`<circle cx="${points.length===1?50:item.index/(days.length-1)*100}" cy="${94-item.value/maximum*82}" r="1.8"><title>${escape(dayLabel(item.day))}: ${duration(item.value)}</title></circle>`).join('')}`:''}</svg><div><small>${escape(dayLabel(days[0]))}</small><strong>${points.length?`Hoogste ${duration(maximum)}`:'Nog geen afgeronde materialen'}</strong><small>${escape(dayLabel(days.at(-1)))}</small></div></div>`;}
+ const workshopGroups = [
+  {id:'maintenance',label:'Nog te onderhouden',entry:'work-queue',sections:[['warehouse','Magazijn']]},
+  {id:'training',label:'Oefenen',entry:'practice',sections:[['instructions','Instructies en gereedschap'],['tool-stock','Gereedschap en reserve']]},
+  {id:'planning',label:'Dashboard en planning',entry:'overview',sections:[['overview','Overzicht'],['planning-work','Planning'],['availability','Beschikbaarheid'],['wallboard','Groot scherm']]}
+ ];
+ const workshopGroupFor=name=>workshopGroups.find(group=>group.entry===name||group.sections.some(([tab])=>tab===name));
  const navigation = {
   orders: {label:'Aanvragen en statussen', sections:[]},
-  workplace: {label:'Werkplaats', sections:[['work-queue','Nog te onderhouden'],['overview','Overzicht'],['planning-work','Planning'],['availability','Beschikbaarheid'],['practice','Oefenen'],['instructions','Instructies en gereedschap'],['warehouse','Magazijn'],['tool-stock','Gereedschap en reserve'],['wallboard','Groot scherm']]},
+  workplace: {label:'Werkplaats', sections:workshopGroups.flatMap(group=>[[group.entry,group.label],...group.sections])},
   inventory: {label:'Beheer', sections:[['inventory','Voorraadbeheer'],['customers','Klanten & materiaal'],['website','Websitecijfers'],['employees','Medewerkers'],['diagnostics','Test en controle']]}
  };
  const groupFor = name => Object.keys(navigation).find(group => group === name ||
@@ -33,13 +39,23 @@
    button.classList.toggle('active',selected);
    button.setAttribute('aria-pressed',String(selected));
   });
+  const workshopGroup=workshopGroupFor(name);
+  const workshopMenu=document.querySelector('[data-workshop-menu]');
+  if(workshopMenu){
+   workshopMenu.hidden=group!=='workplace';
+   workshopMenu.querySelectorAll('[data-workshop-group]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.workshopGroup===workshopGroup?.id)));
+   workshopMenu.querySelectorAll('[data-workshop-subnav]').forEach(menu=>{
+    menu.hidden=menu.dataset.workshopSubnav!==workshopGroup?.id;
+    menu.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.tab===name)));
+   });
+  }
   for(const menu of document.querySelectorAll('[data-admin-subnav]')){
    menu.hidden=menu.dataset.adminSubnav!==group;
    menu.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.tab===name)));
   }
  }
 
- const workshopViews = {workplace:'practice','planning-work':'planning',availability:'availability',practice:'practice',warehouse:'warehouse'};
+ const workshopViews = {'planning-work':'planning',availability:'availability',practice:'practice',warehouse:'warehouse'};
  async function setTab(name){
   if(name==='workplace')name='work-queue';
   const workshopView=workshopViews[name];
@@ -49,8 +65,13 @@
 if(window.AdminSecurity?.locked&&!['orders','instructions','workplace','work-queue'].includes(name)){void window.AdminSecurity.open();return;}const tools=document.querySelector('.admin-tools');if(tools)tools.hidden=name!=='orders';const heading=document.querySelector('.admin-toolbar h1');if(heading)heading.textContent=navigation[groupFor(selectedTab)]?.label||'Beheer';clearInterval(wallboardRefreshTimer);clearInterval(wallboardMeterTimer);wallboardRefreshTimer=null;wallboardMeterTimer=null;updateNavigation(selectedTab);document.querySelector('#adminSummary').hidden=groupFor(selectedTab)!=='workplace';document.querySelectorAll('[data-admin-panel]').forEach(panel=>panel.hidden=panel.dataset.adminPanel!==panelName);if(workshopView)window.LSAdminWorkplace.open(api,document.querySelector('[data-admin-panel=workplace]'),workshopView);if(name==='customers')window.LSDossiers?.open(api,document.querySelector('[data-admin-panel=customers]'));if(name==='work-queue')void loadWorkQueue();if(name==='overview')loadDashboard();if(name==='wallboard'){loadWallboard();wallboardRefreshTimer=setInterval(loadWallboard,60000);}if(name==='instructions')window.LattenspecialistGuides.open(api,document.querySelector('[data-admin-panel=instructions]'),!window.AdminSecurity?.locked,false,true);if(name==='tool-stock')window.LattenspecialistInventory?.open(api,document.querySelector('[data-admin-panel=tool-stock]'),'tools');if(name==='inventory')window.LattenspecialistInventory?.open(api,document.querySelector('#inventoryPanel'),'inventory');if(name==='suppliers')window.LattenspecialistInventory?.open(api,document.querySelector('#suppliersPanel'),'suppliers');if(name==='creditors')window.LattenspecialistInventory?.open(api,document.querySelector('#creditorsPanel'),'creditors');if(name==='debtors')window.LattenspecialistInventory?.open(api,document.querySelector('#debtorsPanel'),'debtors');if(name==='planning')loadRoutes();if(name==='hrm')showHrmLock();}
  function prepareLayout(){if(initialised)return;initialised=true;const dashboard=document.querySelector('#adminDashboard'),tabs=document.querySelector('#adminTabs');tabs.innerHTML=Object.entries(navigation).map(([id,{label}])=>`<button type="button" data-tab="${id}">${label}</button>`).join('');
   const secondary=document.createElement('div');
-  secondary.innerHTML=Object.entries(navigation).filter(([,item])=>item.sections.length).map(([id,{label,sections}])=>
+  secondary.innerHTML=Object.entries(navigation).filter(([id,item])=>id!=='workplace'&&item.sections.length).map(([id,{label,sections}])=>
    `<nav class="workplace-tabs" data-admin-subnav="${id}" aria-label="${label} onderdelen" hidden>${sections.map(([section,title])=>`<button type="button" data-tab="${section}">${title}</button>`).join('')}</nav>`).join('');
+  const workshopMenu=document.createElement('div');
+  workshopMenu.dataset.workshopMenu='';
+  workshopMenu.hidden=true;
+  workshopMenu.innerHTML=`<nav class="workplace-tabs" aria-label="Werkplaats hoofdtabbladen">${workshopGroups.map(group=>`<button type="button" data-tab="${group.entry}" data-workshop-group="${group.id}">${group.label}</button>`).join('')}</nav>${workshopGroups.map(group=>`<nav class="workplace-tabs" data-workshop-subnav="${group.id}" aria-label="${group.label} onderdelen" hidden>${group.sections.map(([id,label])=>`<button type="button" data-tab="${id}">${label}</button>`).join('')}</nav>`).join('')}`;
+  secondary.prepend(workshopMenu);
   dashboard.prepend(secondary);
   const workshopSummary=document.querySelector('#adminSummary');
   workshopSummary.hidden=true;
