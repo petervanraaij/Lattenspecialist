@@ -279,16 +279,19 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace','work-que
    const [team,...orders]=await Promise.all([api('/api/admin/team/members'),...records.map(record=>labels(record.reference,false))]);
    if(!status.isConnected||target.hidden)return;
    const people=(team.members||[]).filter(member=>member.active);
-   const sets=orders.flatMap(order=>order.materials).filter(item=>item.receivedAt&&!['ready','delivered','material_removed'].includes(item.internalStatus));
-   status.textContent=sets.length?'':'Geen ski’s of snowboards in de werkplaats.';
-   for(const [title,items] of [['Ski’s',sets.filter(item=>/ski/i.test(item.kind))],['Snowboards',sets.filter(item=>/snowboard/i.test(item.kind))],['Overig materiaal',sets.filter(item=>!/ski|snowboard/i.test(item.kind))]]){
+   status.textContent='Geen ski’s of snowboards in de werkplaats.';
+   for(const [index,record] of records.entries()){
+    const items=orders[index].materials.filter(item=>item.receivedAt&&!['ready','delivered','material_removed'].includes(item.internalStatus));
     if(!items.length)continue;
+    status.textContent='';
     const group=document.createElement('section');
-    group.innerHTML=`<h3>${title}</h3>`;
+    const reference=record.workOrderNumber||record.reference;
+    const customer=!record.workspaceOnly&&record.name?.trim();
+    group.innerHTML=`<h3>${escape(customer||reference)}</h3>${customer?`<p>${escape(reference)}</p>`:''}`;
     for(const item of items){
      const entry=document.createElement('details');
      entry.className='admin-record';
-     entry.innerHTML=`<summary><strong>${escape(item.displayCode)}</strong> · ${escape(item.package)}</summary><form><label>Uitvoerder<select name="executor" required><option value="">Kies medewerker</option>${people.map(person=>`<option value="${escape(person.id)}">${escape(person.name)}</option>`).join('')}</select></label><button type="submit" class="btn btn-gold">Open werkstappen</button></form><div data-work-queue-steps></div>`;
+     entry.innerHTML=`<summary><strong>${escape(item.displayCode)}</strong> · ${escape(item.kind)} · ${escape(item.package)}</summary><form><label>Uitvoerder<select name="executor" required><option value="">Kies medewerker</option>${people.map(person=>`<option value="${escape(person.id)}">${escape(person.name)}</option>`).join('')}</select></label><button type="submit" class="btn btn-gold">Open werkstappen</button></form><div data-work-queue-steps></div>`;
      const form=entry.querySelector('form');
      form.elements.executor.value=item.assignedTo||(people.length===1?people[0].id:'');
      form.onsubmit=event=>{
