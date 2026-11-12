@@ -86,20 +86,6 @@
     return `${label}${quantity !== undefined && quantity !== null && quantity !== '' ? ` · ${quantity}${unit ? ` ${unit}` : ''}` : ''}${available !== undefined && available !== null ? ` · voorraad ${Number(available).toLocaleString('nl-NL')}${unit ? ` ${unit}` : ''}` : ''}`;
   }
 
-  function usageValues(step) {
-    const values = Array.isArray(step.usage) ? step.usage : step.usage && typeof step.usage === 'object' ? Object.entries(step.usage).map(([label, value]) => ({label, quantity:value})) : [];
-    const result = values.map(item => {
-      if (typeof item === 'string') return item;
-      const label = item.label || item.name || item.sku || item.item_sku || 'Verbruik';
-      const quantity = item.quantity ?? item.amount ?? item.used ?? '';
-      const unit = item.unit || '';
-      return `${label}${quantity !== '' ? `: ${quantity}${unit ? ` ${unit}` : ''}` : ''}`;
-    });
-    if (step.startWeight && completed(step)) result.unshift(`Begin: ${step.startWeight.toLocaleString('nl-NL')} g · Eind: ${step.endWeight.toLocaleString('nl-NL')} g`, `Wax gebruikt: ${(step.startWeight - step.endWeight).toLocaleString('nl-NL', {maximumFractionDigits:2})} g`);
-    if (step.cost) result.push(`Kosten: ${money(step.cost)}`);
-    return result;
-  }
-
   function timing(step) {
     if (active(step)) return `<span>Looptijd <b class="workflow-live-time" data-started="${escape(step.startedAt)}" data-seconds="${step.durationSeconds}">${formatDuration(step.durationSeconds)}</b></span>`;
     if (paused(step)) return `<span>Gepauzeerd na <b>${formatDuration(step.durationSeconds)}</b></span>`;
@@ -110,13 +96,6 @@
   function stamp(value) {
     const time=new Date(value).getTime();
     return value&&Number.isFinite(time)?new Date(time).toLocaleString('nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-  }
-
-  function stepPositions(step,actionable) {
-    const done=completed(step),running=active(step),resume=paused(step),mayStart=(actionable||resume)&&!running&&!done;
-    const startText=done||running?'Gestart':resume?'Hervat stap':'Start stap';
-    const startTime=stamp(step.startedAt),endTime=stamp(step.completedAt);
-    return `<div class="workflow-step-positions" role="group" aria-label="Start en klaar van ${escape(step.title)}"><div class="workflow-start-position ${startTime?'is-started':''}"><span class="workflow-position-label">1 · START</span><button type="button" data-workflow-start class="${mayStart?'primary':''}"${mayStart?'':' disabled'}><span aria-hidden="true">${startTime?'✓':'▶'}</span> ${startText}</button><small>${startTime?`Gestart ${escape(startTime)}`:done?'Geen starttijd vastgelegd':mayStart?'Start de handeling en de timer':'Eerst de vorige stap afronden'}</small></div><div class="workflow-done-position ${done?'is-done':''}"><span class="workflow-position-label">2 · KLAAR</span><label><input type="checkbox" data-workflow-complete aria-label="${escape(step.title)} klaar"${done?' checked':''}${running?'':' disabled'}><span>Klaar – afvinken</span></label><small>${done?endTime?`Afgerond ${escape(endTime)}`:'Afgerond geregistreerd':running?'Controleer de stap en vink hem af':resume?'Hervat de stap vóór je afvinkt':'Eerst deze stap starten'}</small></div></div>`;
   }
 
   function lockStep(form) {
@@ -130,8 +109,8 @@
   function startForm(step) {
     const resume = paused(step);
     const wax=step.waxDetails,info=wax?`<aside class="wax-weight-hint" style="border-left:6px solid ${{Geel:'#e1bb35',Rood:'#bc3838',Blauw:'#2d71af',Paars:'#80519c'}[wax.color]||'#666'}"><strong>${escape(wax.color)} · ${escape(wax.name)}</strong><p>${wax.lastMeasuredWeight!==null?`Richtgewicht vóór start: <b>${Number(wax.lastMeasuredWeight).toLocaleString('nl-NL')} gram</b> · laatst gemeten ${escape(stamp(wax.measuredAt))}`:'Nog geen eerder eindgewicht bekend.'}</p><small>Dit is het laatst gewogen blok van deze wax, niet de totale voorraad. Gebruik je een ander of nieuw blok, dan kan het gewicht afwijken. Weeg altijd zelf.</small></aside>`:'';
-    const weight = waxStep(step) && !step.startWeight ? `<label>Gewicht waxblok vóór start (gram)<input name="startWeight" type="number" inputmode="decimal" min="0.1" max="5000" step="0.01" required placeholder="bijv. 182,40"></label><p class="workflow-help">${step.cleaningWaxSku?"Reiniging: gebruik altijd Alpha Mix Yellow. Dit verbruik staat los van de volgende glijwax.":"Weeg het gekozen waxblok zonder losse verpakking."} Na afloop weeg je hetzelfde blok opnieuw.</p>` : `<p class="workflow-help">${resume ? 'De eerder gemeten tijd en het begingewicht blijven bewaard.' : 'De timer start zodra je op de knop drukt. Rond deze stap af voordat je doorgaat.'}</p>`;
-    return `<div class="workflow-actions"><form data-workflow-action="start" data-guide-version-start="${escape(step.guide?.version||'')}" data-step-id="${escape(step.id)}">${info}${weight}<button type="submit" class="primary">Start deze werkstap</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
+    const weight = waxStep(step) && !step.startWeight ? `<label>Gewicht waxblok vóór start (gram)<input name="startWeight" type="number" inputmode="decimal" min="0.1" max="5000" step="0.01" required placeholder="bijv. 182,40"></label><p class="workflow-help">${step.cleaningWaxSku?"Reiniging: gebruik altijd Alpha Mix Yellow. Dit verbruik staat los van de volgende glijwax.":"Weeg het gekozen waxblok zonder losse verpakking."} Na afloop weeg je hetzelfde blok opnieuw.</p>` : '';
+    return `<div class="workflow-actions"><form data-workflow-action="start" data-guide-version-start="${escape(step.guide?.version||'')}" data-step-id="${escape(step.id)}">${info}${weight}<button type="submit" class="primary">${resume?'Hervat stap':'Start stap'}</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
   }
 
   document.addEventListener('change',event=>{const input=event.target;if(input.name==='toolSkus'){const select=input.closest('fieldset')?.querySelector(`[name="asset_${CSS.escape(input.value)}"]`);if(select)select.disabled=!input.checked;}});
@@ -144,14 +123,17 @@
 
   function finishFormFields(step) {
     const tools = toolChoices(step), toolFlag = tools ? ' data-has-tool-choices="true"' : '';
-    if (waxStep(step)) return `<div class="workflow-actions"><form data-workflow-action="finish" data-step-id="${escape(step.id)}" data-start-weight="${step.startWeight || ''}"${toolFlag}><label>Gewicht waxblok na afloop (gram)<input name="endWeight" type="number" inputmode="decimal" min="0" max="5000" step="0.01" required${step.startWeight ? ` max="${step.startWeight}"` : ''} placeholder="lager dan het begingewicht"></label>${tools}<button class="primary" type="submit">Afronden &amp; verbruik boeken</button><button type="button" data-workflow-pause>Pauzeer timer</button><p class="workflow-help">Begingewicht: <strong>${step.startWeight ? `${step.startWeight.toLocaleString('nl-NL')} g` : 'nog niet ontvangen'}</strong>. Het verschil gaat automatisch van de voorraad af.</p><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
-    if (cleaningStep(step)) return `<div class="workflow-actions"><form class="workflow-consumption-form" data-workflow-action="finish" data-step-id="${escape(step.id)}"${toolFlag}><label>Cleaner gebruikt (ml)<input name="cleanerMl" type="number" inputmode="decimal" min="0" max="1000" step="0.1" value="0"></label><label>Fleece gebruikt (cm)<input name="fleeceCm" type="number" inputmode="decimal" min="0" max="1000" step="0.1" value="0"></label>${tools}<button class="primary" type="submit">Stap afronden</button><button type="button" data-workflow-pause>Pauzeer timer</button><p class="workflow-help">Vul het echte verbruik in; ook bij een oefening wordt dit van de voorraad afgeboekt.</p><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
-    if (repairStep(step)) return `<div class="workflow-actions"><form data-workflow-action="finish" data-step-id="${escape(step.id)}"${toolFlag}><label>Reparatiestrips gebruikt (stuks)<input name="repairStrips" type="number" inputmode="numeric" min="0" max="50" step="1" value="0"></label><label>Kleur reparatiestrip<select name="repairColor"><option value="transparent">Transparant</option><option value="black">Zwart</option></select></label>${tools}<button class="primary" type="submit">Stap afronden</button><button type="button" data-workflow-pause>Pauzeer timer</button><p class="workflow-help">Boek alleen de werkelijk gebruikte strips.</p><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
-    return `<div class="workflow-actions"><form data-workflow-action="finish" data-step-id="${escape(step.id)}"${toolFlag}><p class="workflow-help">De tijd en het gebruik van toegewezen gereedschappen worden bij afronden vastgelegd.</p>${tools}<button class="primary" type="submit">Stap afronden</button><button type="button" data-workflow-pause>Pauzeer timer</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
+    if (waxStep(step)) return `<div class="workflow-actions"><form data-workflow-action="finish" data-step-id="${escape(step.id)}" data-start-weight="${step.startWeight || ''}"${toolFlag}><label>Gewicht waxblok na afloop (gram)<input name="endWeight" type="number" inputmode="decimal" min="0" max="5000" step="0.01" required${step.startWeight ? ` max="${step.startWeight}"` : ''} placeholder="lager dan het begingewicht"></label>${tools}<button type="button" data-workflow-pause>Pauzeer timer</button><button class="primary" type="submit">Stap afronden</button><p class="workflow-help">Begingewicht: <strong>${step.startWeight ? `${step.startWeight.toLocaleString('nl-NL')} g` : 'nog niet ontvangen'}</strong>. Het verschil gaat automatisch van de voorraad af.</p><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
+    if (cleaningStep(step)) return `<div class="workflow-actions"><form class="workflow-consumption-form" data-workflow-action="finish" data-step-id="${escape(step.id)}"${toolFlag}><label>Cleaner gebruikt (ml)<input name="cleanerMl" type="number" inputmode="decimal" min="0" max="1000" step="0.1" value="0"></label><label>Fleece gebruikt (cm)<input name="fleeceCm" type="number" inputmode="decimal" min="0" max="1000" step="0.1" value="0"></label>${tools}<button type="button" data-workflow-pause>Pauzeer timer</button><button class="primary" type="submit">Stap afronden</button><p class="workflow-help">Vul het echte verbruik in; ook bij een oefening wordt dit van de voorraad afgeboekt.</p><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
+    if (repairStep(step)) return `<div class="workflow-actions"><form data-workflow-action="finish" data-step-id="${escape(step.id)}"${toolFlag}><label>Reparatiestrips gebruikt (stuks)<input name="repairStrips" type="number" inputmode="numeric" min="0" max="50" step="1" value="0"></label><label>Kleur reparatiestrip<select name="repairColor"><option value="transparent">Transparant</option><option value="black">Zwart</option></select></label>${tools}<button type="button" data-workflow-pause>Pauzeer timer</button><button class="primary" type="submit">Stap afronden</button><p class="workflow-help">Boek alleen de werkelijk gebruikte strips.</p><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
+    return `<div class="workflow-actions"><form data-workflow-action="finish" data-step-id="${escape(step.id)}"${toolFlag}><p class="workflow-help">De tijd en het gebruik van toegewezen gereedschappen worden bij afronden vastgelegd.</p>${tools}<button type="button" data-workflow-pause>Pauzeer timer</button><button class="primary" type="submit">Stap afronden</button><p class="workflow-message" role="status" aria-live="polite"></p></form></div>`;
   }
 
   function finishForm(step) {
-    return finishFormFields(step).replace(/(<form\b[^>]*>)/,match=>match+(window.LSMaintenanceGuide?.checks(step)||''));
+    const actions=step.guide?.steps||[];
+    const checklist=actions.length?`<fieldset class="guide-checks workflow-action-checklist"><legend>Uitvoering</legend>${actions.map(text=>`<label><input type="checkbox" required><span>${escape(text)}</span></label>`).join('')}</fieldset>`:'';
+    return finishFormFields(step).replace(/(<form\b[^>]*>)/,match=>match+checklist+(window.LSMaintenanceGuide?.checks(step)||''));
+
   }
 
   function stepCard(step, actionable) {
@@ -160,11 +142,13 @@
       const time=finishedAt?` <time datetime="${escape(step.completedAt)}">${escape(finishedAt)}</time>`:'';
       return `<article class="workflow-step is-completed workflow-step-compact" data-step-id="${escape(step.id)}"><div class="workflow-step-main"><h4>${escape(step.title)}</h4><span>Afgerond${time}</span></div></article>`;
     }
-    const state = active(step) || paused(step) ? 'is-active' : actionable ? 'is-next' : 'is-locked';
-    const requirements = step.requirements.length ? `<div class="workflow-needs" aria-label="Benodigdheden">${step.requirements.map(item => `<span>${escape(requirementLabel(item))}</span>`).join('')}</div>` : '<div class="workflow-needs"><span>Geen voorraadartikel geregistreerd</span></div>';
-    const results = usageValues(step);
-    const actions = active(step) ? finishForm(step) : (paused(step) || actionable) && !completed(step) ? startForm(step) : '';
-    return `<article class="workflow-step ${state}" data-step-id="${escape(step.id)}"><div class="workflow-step-main"><div class="workflow-step-head"><h4>${escape(step.title)}</h4><span>${completed(step) ? 'Afgerond' : active(step) ? 'Bezig' : paused(step) ? 'Gepauzeerd' : actionable ? 'Volgende stap' : 'Wacht'}</span></div>${stepPositions(step,actionable)}${step.instruction ? `<p class="workflow-instruction">${escape(step.instruction)}</p>` : ''}${requirements}${window.LSMaintenanceGuide?.instruction(step,actionable||active(step)||paused(step))||''}<div class="workflow-timing">${timing(step)}</div>${results.length ? `<div class="workflow-result">${results.map(value => `<span>${escape(value)}</span>`).join('')}</div>` : ''}${actions}</div></article>`;
+    const running=active(step), resumed=paused(step);
+    const state=running||resumed?'is-active':actionable?'is-next':'is-locked';
+    const title=`<div class="workflow-step-head"><h4>${escape(step.title)}</h4><span>${running?'Bezig':resumed?'Gepauzeerd':actionable?'Volgende stap':'Wacht'}</span></div>`;
+    const supplies=[...step.requirements.map(requirementLabel),...(step.guide?.supplies||[])];
+    const needs=supplies.length?`<div class="workflow-needs" aria-label="Benodigdheden"><strong>Nodig</strong>${[...new Set(supplies)].map(item=>`<span>${escape(item)}</span>`).join('')}</div>`:'';
+    const instructions=running?`<p class="workflow-instruction">${escape(step.instruction)}</p>${needs}${window.LSMaintenanceGuide?.instruction(step)||''}<div class="workflow-timing">${timing(step)}</div><details data-step-warehouse><summary>Uit magazijn gepakt</summary><div data-step-warehouse-content></div></details>${finishForm(step)}`:'';
+    return `<article class="workflow-step ${state}" data-step-id="${escape(step.id)}"><div class="workflow-step-main">${title}${running?instructions:actionable||resumed?startForm(step):''}</div></article>`;
   }
 
   function render(host, data, materialId) {
@@ -185,7 +169,27 @@
     const summary = workflow.summary || {}, totalCost = number(summary.totalCost ?? summary.total_cost), totalSeconds = number(summary.totalSeconds ?? summary.total_seconds);
     host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3>${workflow.isTraining ? `<p>${escape([material.kind==='Ski'?"Ski’s (paar)":material.kind,material.package].filter(Boolean).join(' · '))}</p>` : ''}<p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSTreatmentOverview?window.LSTreatmentOverview.render(window.LSTreatmentOverview.workflow(workflow),{open:true}):''}${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
     if(!inspectionOnly&&(!workflow.isTraining||material.fullPractice)&&window.LSMaterialPhotos){const details=document.createElement('details');details.className='material-photo-disclosure';details.innerHTML='<summary>Foto’s bij binnenkomst en oplevering</summary><div data-material-photos></div>';const photoActions=document.createElement('div');photoActions.className='workflow-photo-shortcuts';photoActions.innerHTML='<button type="button" data-photo-stage="intake">📷 Binnenkomstfoto maken</button><button type="button" data-photo-stage="delivery">📷 Opleverfoto maken</button>';host.querySelector('.workflow-head').after(photoActions,details);photoActions.addEventListener('click',event=>{const button=event.target.closest('[data-photo-stage]');if(!button)return;details.open=true;const target=details.querySelector('[data-material-photos]');if(!target.children.length)window.LSMaterialPhotos.mount(target,materialId,{admin:host.dataset.ownerWorkflow==='true'});const select=target.querySelector('[name="stage"]');if(select)select.value=button.dataset.photoStage;target.querySelector('[data-photo-camera]')?.click();});details.addEventListener('toggle',()=>{const target=details.querySelector('[data-material-photos]');if(details.open&&!target.children.length)window.LSMaterialPhotos.mount(target,materialId,{admin:host.dataset.ownerWorkflow==='true'});});}
-    const currentGuide=host.querySelector('.workflow-step.is-next .maintenance-guide details,.workflow-step.is-active .maintenance-guide details');if(currentGuide)currentGuide.open=true;
+    const warehouse=host.querySelector('[data-step-warehouse]');
+    warehouse?.addEventListener('toggle',()=>{
+      const target=warehouse.querySelector('[data-step-warehouse-content]');
+      if(!warehouse.open||target.hasChildNodes())return;
+      const owner=host.dataset.ownerWorkflow==='true';
+      const token=()=>owner?(sessionStorage.getItem('lattenspecialist-admin-token')||localStorage.getItem('lattenspecialist-admin-token')):sessionStorage.getItem('ls-team-session');
+      const auth=token();
+      const warehouseApi=(path,options)=>request(path,options,host);
+      window.LSWarehouse?.open(warehouseApi,target,{owner,memberId:host.dataset.executionMemberId,onPicked:async()=>{
+        if(!host.isConnected||!auth||auth!==token()||!warehouse.isConnected)return;
+        const form=host.querySelector('[data-workflow-action=finish]');
+        const checks=[...form.querySelectorAll('input[type=checkbox]:not([name=toolSkus])')].map(input=>input.checked);
+        const measurements=[...form.querySelectorAll('input[type=number]')].map(input=>[input.name,input.value]);
+        await loadInto(host,materialId);
+        const updated=host.querySelector('[data-workflow-action=finish]');
+        if(!updated)return;
+        updated.querySelectorAll('input[type=checkbox]:not([name=toolSkus])').forEach((input,index)=>input.checked=Boolean(checks[index]));
+        for(const [name,value] of measurements){if(updated.elements.namedItem(name))updated.elements.namedItem(name).value=value;}
+        updated.querySelector('.workflow-message').textContent='Uitgifte uit magazijn opgeslagen.';
+      }});
+    });
     updateTimers();
   }
 
@@ -381,15 +385,8 @@
     event.preventDefault(); submitStep(form);
   });
   document.addEventListener('click', event => {
-    const start=event.target.closest('[data-workflow-start]');if(start){const form=start.closest('.workflow-step').querySelector('[data-workflow-action="start"]');if(form&&!form.dataset.submitting)form.requestSubmit();return;}
     const button = event.target.closest('[data-workflow-pause]');
     if (button) pauseStep(button);
-  });
-  document.addEventListener('change',event=>{
-    const input=event.target.closest('[data-workflow-complete]');if(!input)return;
-    input.checked=false; // Only the stored response may display a completed checkmark.
-    const form=input.closest('.workflow-step').querySelector('[data-workflow-action="finish"]');
-    if(form&&!form.dataset.submitting)form.requestSubmit();
   });
   window.LSWorkflows={practicePanel,open(host,materialId,{admin=false,memberId='',inspectionOnly=false}={}){host.dataset.inspectionOnly=String(inspectionOnly);host.dataset.ownerWorkflow=String(admin);host.dataset.executionMemberId=memberId;return loadInto(host,materialId);}};
   watchScans();

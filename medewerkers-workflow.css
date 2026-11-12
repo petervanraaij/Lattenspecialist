@@ -61,3 +61,7 @@
 .workflow-step-compact h4{margin:0;font-size:inherit}
 .workflow-step-compact span{color:#365f45;font-size:.84rem}
 .workflow-step-compact time{margin-left:.4em}
+
+.workflow-action-checklist{grid-column:1/-1;max-width:none}
+.workflow-action-checklist label{align-items:start}
+.workflow-needs>strong{align-self:center;font-size:.84rem}

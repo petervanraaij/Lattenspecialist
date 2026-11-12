@@ -291,18 +291,26 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace','work-que
     for(const item of items){
      const entry=document.createElement('details');
      entry.className='admin-record';
-     entry.innerHTML=`<summary><strong>${escape(item.displayCode)}</strong> · ${escape(item.kind)} · ${escape(item.package)}</summary><form><label>Uitvoerder<select name="executor" required><option value="">Kies medewerker</option>${people.map(person=>`<option value="${escape(person.id)}">${escape(person.name)}</option>`).join('')}</select></label><button type="submit" class="btn btn-gold">Open werkstappen</button></form><div data-work-queue-steps></div>`;
+     entry.innerHTML=`<summary><strong>${escape(item.displayCode)}</strong> · ${escape(item.kind)} · ${escape(item.package)}</summary><form><label>Uitvoerder<select name="executor" required><option value="">Kies medewerker</option>${people.map(person=>`<option value="${escape(person.id)}">${escape(person.name)}</option>`).join('')}</select></label><button type="submit" class="btn btn-gold">Open werkstappen</button></form>`;
      const form=entry.querySelector('form');
      form.elements.executor.value=item.assignedTo||(people.length===1?people[0].id:'');
      form.onsubmit=event=>{
       event.preventDefault();
-      void window.LSWorkflows.open(entry.querySelector('[data-work-queue-steps]'),item.id,{admin:true,memberId:form.elements.executor.value});
+      openQueueWorkorder(target,item,customer,reference,form.elements.executor.value);
      };
      group.append(entry);
     }
     target.append(group);
    }
   }catch(error){status.textContent=error.message;}
+ }
+ function openQueueWorkorder(target,item,customer,reference,memberId){
+  target.innerHTML=`<button type="button" class="btn btn-dark" data-work-queue-back>← Terug naar werkvoorraad</button><h2 tabindex="-1">${escape(item.displayCode)} · ${escape(item.kind)}</h2><p>${escape([customer,reference,item.package].filter(Boolean).join(' · '))}</p><div data-work-queue-steps></div>`;
+  target.querySelector('[data-work-queue-back]').onclick=()=>void loadWorkQueue();
+  const title=target.querySelector('h2');
+  title.focus({preventScroll:true});
+  target.scrollIntoView({block:'start'});
+  void window.LSWorkflows.open(target.querySelector('[data-work-queue-steps]'),item.id,{admin:true,memberId});
  }
  document.addEventListener('ls-workshop-entered',()=>void setTab('work-queue'));
  async function openWorkorderWorkspace(button){
