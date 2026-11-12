@@ -143,7 +143,7 @@
     return finishFormFields(step).replace(/(<form\b[^>]*>)/,match=>match+checklist);
   }
 
-  function stepCard(step, actionable) {
+  function stepCard(step, actionable, isTraining) {
     if(completed(step)){
       const finishedAt=step.completedAt && stamp(step.completedAt);
       const time=finishedAt?` <time datetime="${escape(step.completedAt)}">${escape(finishedAt)}</time>`:'';
@@ -151,7 +151,7 @@
     }
     const running=active(step), resumed=paused(step);
     const state=running||resumed?'is-active':actionable?'is-next':'is-locked';
-    const title=`<div class="workflow-step-head"><h4>${escape(!workflow.isTraining&&step.code==='finish' ? "Eindcontrole en opleverfoto’s" : step.title)}</h4><span>${running?'Bezig':resumed?'Gepauzeerd':actionable?'Volgende stap':'Wacht'}</span></div>`;
+    const title=`<div class="workflow-step-head"><h4>${escape(!isTraining&&step.code==='finish' ? "Eindcontrole en opleverfoto’s" : step.title)}</h4><span>${running?'Bezig':resumed?'Gepauzeerd':actionable?'Volgende stap':'Wacht'}</span></div>`;
     const supplies=[...step.requirements.map(requirementLabel),...(step.guide?.supplies||[])];
     const needs=supplies.length?`<div class="workflow-needs" aria-label="Benodigdheden"><strong>Nodig</strong>${[...new Set(supplies)].map(item=>`<span>${escape(item)}</span>`).join('')}</div>`:'';
     const instructions=running?`<p class="workflow-instruction">${escape(step.instruction)}</p>${needs}${window.LSMaintenanceGuide?.instruction(step,false,{referencesOnly:true})||''}<div class="workflow-timing">${timing(step)}</div><details data-step-warehouse><summary>Uit magazijn gepakt</summary><div data-step-warehouse-content></div></details>${finishForm(step)}`:'';
@@ -175,7 +175,7 @@
       return;
     }
     const summary = workflow.summary || {}, totalCost = number(summary.totalCost ?? summary.total_cost), totalSeconds = number(summary.totalSeconds ?? summary.total_seconds);
-    host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3>${workflow.isTraining ? `<p>${escape([material.kind==='Ski'?"Ski’s (paar)":material.kind,material.package].filter(Boolean).join(' · '))}</p>` : ''}<p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSTreatmentOverview?window.LSTreatmentOverview.render(window.LSTreatmentOverview.workflow(workflow),{open:true}):''}${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
+    host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3>${workflow.isTraining ? `<p>${escape([material.kind==='Ski'?"Ski’s (paar)":material.kind,material.package].filter(Boolean).join(' · '))}</p>` : ''}<p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSTreatmentOverview?window.LSTreatmentOverview.render(window.LSTreatmentOverview.workflow(workflow),{open:true}):''}${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex, workflow.isTraining)).join('')}</div>`;
     let context;
     if(focused){
       const list=host.querySelector('.workflow-list');
