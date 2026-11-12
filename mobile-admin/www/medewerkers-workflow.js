@@ -147,7 +147,7 @@
     const title=`<div class="workflow-step-head"><h4>${escape(step.title)}</h4><span>${running?'Bezig':resumed?'Gepauzeerd':actionable?'Volgende stap':'Wacht'}</span></div>`;
     const supplies=[...step.requirements.map(requirementLabel),...(step.guide?.supplies||[])];
     const needs=supplies.length?`<div class="workflow-needs" aria-label="Benodigdheden"><strong>Nodig</strong>${[...new Set(supplies)].map(item=>`<span>${escape(item)}</span>`).join('')}</div>`:'';
-    const instructions=running?`<p class="workflow-instruction">${escape(step.instruction)}</p>${needs}${window.LSMaintenanceGuide?.instruction(step)||''}<div class="workflow-timing">${timing(step)}</div><details data-step-warehouse><summary>Uit magazijn gepakt</summary><div data-step-warehouse-content></div></details>${finishForm(step)}`:'';
+    const instructions=running?`<p class="workflow-instruction">${escape(step.instruction)}</p>${needs}${window.LSMaintenanceGuide?.instruction(step,false,{referencesOnly:true})||''}<div class="workflow-timing">${timing(step)}</div><details data-step-warehouse><summary>Uit magazijn gepakt</summary><div data-step-warehouse-content></div></details>${finishForm(step)}`:'';
     return `<article class="workflow-step ${state}" data-step-id="${escape(step.id)}"><div class="workflow-step-main">${title}${running?instructions:actionable||resumed?startForm(step):''}</div></article>`;
   }
 
