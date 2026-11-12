@@ -130,10 +130,17 @@
   }
 
   function finishForm(step) {
-    const actions=step.guide?.steps||[];
-    const checklist=actions.length?`<fieldset class="guide-checks workflow-action-checklist"><legend>Uitvoering</legend>${actions.map(text=>`<label><input type="checkbox" required><span>${escape(text)}</span></label>`).join('')}</fieldset>`:'';
-    return finishFormFields(step).replace(/(<form\b[^>]*>)/,match=>match+checklist+(window.LSMaintenanceGuide?.checks(step)||''));
-
+    const guide=step.guide;
+    const checks=guide?.checks||[];
+    const actions=(guide?.steps||[]).map(label=>({label}));
+    const isStandardSetup=step.code==='setup'&&checks.map(check=>check.id).join(',')==='stable,workspace'&&!String(guide?.version).includes(':');
+    const rows=isStandardSetup?[
+      {id:'stable',label:'Zet het materiaal stabiel vast in passende klemmen. Controleer of het vrijligt voor je gereedschap.'},
+      {label:'Zet bij ski’s de remarmen opzij met stopperhouders. Laat de bindingsafstelling met rust.'},
+      {id:'workspace',label:'Leg het gereedschap klaar en zorg voor ventilatie, bescherming en een hittebestendige plek voor het waxijzer.'}
+    ]:[...new Map([...actions,...checks].map(row=>[row.label.trim().replace(/[.!?]+$/,'').toLowerCase(),row])).values()];
+    const checklist=rows.length?`<fieldset class="guide-checks workflow-action-checklist" data-guide-version="${escape(guide?.version||'')}"><legend>Afvinken tijdens de stap</legend>${rows.map(row=>`<label><input type="checkbox" required${row.id?` name="guideChecks" value="${escape(row.id)}"`:''}><span>${escape(row.label)}</span></label>`).join('')}</fieldset>`:'';
+    return finishFormFields(step).replace(/(<form\b[^>]*>)/,match=>match+checklist);
   }
 
   function stepCard(step, actionable) {
