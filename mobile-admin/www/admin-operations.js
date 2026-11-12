@@ -20,7 +20,7 @@
  function turnaroundChart(flow,period){const days=periodDays(period),values=new Map((flow.turnaround||[]).map(item=>[item.day,Number(item.seconds)||0])),points=days.map((day,index)=>({day,index,value:values.get(day)||0})).filter(item=>item.value>0),maximum=Math.max(60,...points.map(item=>item.value)),coordinates=points.map(item=>`${points.length===1?50:item.index/(days.length-1)*100},${94-item.value/maximum*82}`).join(' ');return `<div class="turnaround-chart"><svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Gemiddelde doorlooptijd per dag">${coordinates?`<polyline points="${coordinates}" vector-effect="non-scaling-stroke"></polyline>${points.map(item=>`<circle cx="${points.length===1?50:item.index/(days.length-1)*100}" cy="${94-item.value/maximum*82}" r="1.8"><title>${escape(dayLabel(item.day))}: ${duration(item.value)}</title></circle>`).join('')}`:''}</svg><div><small>${escape(dayLabel(days[0]))}</small><strong>${points.length?`Hoogste ${duration(maximum)}`:'Nog geen afgeronde materialen'}</strong><small>${escape(dayLabel(days.at(-1)))}</small></div></div>`;}
  const navigation = {
   orders: {label:'Aanvragen en statussen', sections:[]},
-  workplace: {label:'Werkplaats', sections:[['overview','Overzicht'],['planning-work','Planning'],['availability','Beschikbaarheid'],['practice','Oefenen'],['instructions','Instructies en gereedschap'],['warehouse','Magazijn'],['tool-stock','Gereedschap en reserve'],['wallboard','Groot scherm']]},
+  workplace: {label:'Werkplaats', sections:[['work-queue','Nog te onderhouden'],['overview','Overzicht'],['planning-work','Planning'],['availability','Beschikbaarheid'],['practice','Oefenen'],['instructions','Instructies en gereedschap'],['warehouse','Magazijn'],['tool-stock','Gereedschap en reserve'],['wallboard','Groot scherm']]},
   inventory: {label:'Beheer', sections:[['inventory','Voorraadbeheer'],['customers','Klanten & materiaal'],['website','Websitecijfers'],['employees','Medewerkers'],['diagnostics','Test en controle']]}
  };
  const groupFor = name => Object.keys(navigation).find(group => group === name ||
@@ -41,11 +41,12 @@
 
  const workshopViews = {workplace:'practice','planning-work':'planning',availability:'availability',practice:'practice',warehouse:'warehouse'};
  async function setTab(name){
+  if(name==='workplace')name='work-queue';
   const workshopView=workshopViews[name];
   const panelName=workshopView?'workplace':name;
-  const selectedTab=name==='workplace'?'practice':name;
+  const selectedTab=name;
   if(workshopView)name='workplace';
-if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes(name)){void window.AdminSecurity.open();return;}const tools=document.querySelector('.admin-tools');if(tools)tools.hidden=name!=='orders';const heading=document.querySelector('.admin-toolbar h1');if(heading)heading.textContent=navigation[groupFor(selectedTab)]?.label||'Beheer';clearInterval(wallboardRefreshTimer);clearInterval(wallboardMeterTimer);wallboardRefreshTimer=null;wallboardMeterTimer=null;updateNavigation(selectedTab);document.querySelector('#adminSummary').hidden=groupFor(selectedTab)!=='workplace';document.querySelectorAll('[data-admin-panel]').forEach(panel=>panel.hidden=panel.dataset.adminPanel!==panelName);if(workshopView)window.LSAdminWorkplace.open(api,document.querySelector('[data-admin-panel=workplace]'),workshopView);if(name==='customers')window.LSDossiers?.open(api,document.querySelector('[data-admin-panel=customers]'));if(name==='overview')loadDashboard();if(name==='wallboard'){loadWallboard();wallboardRefreshTimer=setInterval(loadWallboard,60000);}if(name==='instructions')window.LattenspecialistGuides.open(api,document.querySelector('[data-admin-panel=instructions]'),!window.AdminSecurity?.locked,false,true);if(name==='tool-stock')window.LattenspecialistInventory?.open(api,document.querySelector('[data-admin-panel=tool-stock]'),'tools');if(name==='inventory')window.LattenspecialistInventory?.open(api,document.querySelector('#inventoryPanel'),'inventory');if(name==='suppliers')window.LattenspecialistInventory?.open(api,document.querySelector('#suppliersPanel'),'suppliers');if(name==='creditors')window.LattenspecialistInventory?.open(api,document.querySelector('#creditorsPanel'),'creditors');if(name==='debtors')window.LattenspecialistInventory?.open(api,document.querySelector('#debtorsPanel'),'debtors');if(name==='planning')loadRoutes();if(name==='hrm')showHrmLock();}
+if(window.AdminSecurity?.locked&&!['orders','instructions','workplace','work-queue'].includes(name)){void window.AdminSecurity.open();return;}const tools=document.querySelector('.admin-tools');if(tools)tools.hidden=name!=='orders';const heading=document.querySelector('.admin-toolbar h1');if(heading)heading.textContent=navigation[groupFor(selectedTab)]?.label||'Beheer';clearInterval(wallboardRefreshTimer);clearInterval(wallboardMeterTimer);wallboardRefreshTimer=null;wallboardMeterTimer=null;updateNavigation(selectedTab);document.querySelector('#adminSummary').hidden=groupFor(selectedTab)!=='workplace';document.querySelectorAll('[data-admin-panel]').forEach(panel=>panel.hidden=panel.dataset.adminPanel!==panelName);if(workshopView)window.LSAdminWorkplace.open(api,document.querySelector('[data-admin-panel=workplace]'),workshopView);if(name==='customers')window.LSDossiers?.open(api,document.querySelector('[data-admin-panel=customers]'));if(name==='work-queue')void loadWorkQueue();if(name==='overview')loadDashboard();if(name==='wallboard'){loadWallboard();wallboardRefreshTimer=setInterval(loadWallboard,60000);}if(name==='instructions')window.LattenspecialistGuides.open(api,document.querySelector('[data-admin-panel=instructions]'),!window.AdminSecurity?.locked,false,true);if(name==='tool-stock')window.LattenspecialistInventory?.open(api,document.querySelector('[data-admin-panel=tool-stock]'),'tools');if(name==='inventory')window.LattenspecialistInventory?.open(api,document.querySelector('#inventoryPanel'),'inventory');if(name==='suppliers')window.LattenspecialistInventory?.open(api,document.querySelector('#suppliersPanel'),'suppliers');if(name==='creditors')window.LattenspecialistInventory?.open(api,document.querySelector('#creditorsPanel'),'creditors');if(name==='debtors')window.LattenspecialistInventory?.open(api,document.querySelector('#debtorsPanel'),'debtors');if(name==='planning')loadRoutes();if(name==='hrm')showHrmLock();}
  function prepareLayout(){if(initialised)return;initialised=true;const dashboard=document.querySelector('#adminDashboard'),tabs=document.querySelector('#adminTabs');tabs.innerHTML=Object.entries(navigation).map(([id,{label}])=>`<button type="button" data-tab="${id}">${label}</button>`).join('');
   const secondary=document.createElement('div');
   secondary.innerHTML=Object.entries(navigation).filter(([,item])=>item.sections.length).map(([id,{label,sections}])=>
@@ -56,7 +57,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   secondary.after(workshopSummary);
   secondary.addEventListener('click',event=>{const button=event.target.closest('button[data-tab]');if(button)setTab(button.dataset.tab);});
   const platformLink=document.createElement('a');platformLink.href='https://app.pierfinity.nl/';platformLink.target='_blank';platformLink.rel='noopener';platformLink.className='btn btn-gold';platformLink.dataset.sensitive='true';platformLink.textContent='Bedrijfsadministratie en HRM in Pierfinity ↗';secondary.querySelector('[data-admin-subnav=inventory]').append(platformLink);
-  const panels={};for(const name of ['overview','wallboard','orders','workplace','inventory','tool-stock','instructions','customers','suppliers','creditors','debtors','planning','hrm','website','employees','diagnostics']){const panel=document.createElement('div');panel.dataset.adminPanel=name;panel.hidden=name!=='orders';dashboard.append(panel);panels[name]=panel;}
+  const panels={};for(const name of ['work-queue','overview','wallboard','orders','workplace','inventory','tool-stock','instructions','customers','suppliers','creditors','debtors','planning','hrm','website','employees','diagnostics']){const panel=document.createElement('div');panel.dataset.adminPanel=name;panel.hidden=name!=='orders';dashboard.append(panel);panels[name]=panel;}
   panels.inventory.id='inventoryPanel';
   panels.suppliers.id='suppliersPanel';
   panels.creditors.id='creditorsPanel';
@@ -248,6 +249,38 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
  async function changeAdminAccessCode(event){event.preventDefault();const form=event.target,v=Object.fromEntries(new FormData(form)),status=form.querySelector('[role=status]');if(v.newCode!==v.confirmCode){status.textContent='De nieuwe beheercodes zijn niet gelijk.';return;}try{await api('/api/admin/settings/access-code',{method:'POST',body:JSON.stringify({currentCode:v.currentCode,newCode:v.newCode})});window.dispatchEvent(new CustomEvent('lattenspecialist:admin-code-changed',{detail:{code:String(v.newCode)}}));form.reset();form.hidden=true;alert('De beheercode is gewijzigd. Gebruik voortaan je nieuwe code om de beheerapp te openen.');}catch(error){status.textContent=error.message;}}
  async function changeAdminHrmPin(event){event.preventDefault();const form=event.target,v=Object.fromEntries(new FormData(form)),status=form.querySelector('[role=status]');if(v.newPin!==v.confirmPin){status.textContent='De nieuwe pincodes zijn niet gelijk.';return;}try{await api('/api/admin/hrm/change-pin',{method:'POST',headers:{'X-HRM-PIN':v.currentPin},body:JSON.stringify({newPin:v.newPin})});hrmPin=String(v.newPin);form.reset();form.hidden=true;alert('De HRM-pincode is gewijzigd. Gebruik voortaan je nieuwe code.');}catch(error){status.textContent=error.message;}}
  async function saveHrmMember(event){event.preventDefault();const form=event.target,v=Object.fromEntries(new FormData(form));try{await api('/api/admin/hrm/members/'+form.dataset.hrmMember,{method:'PATCH',headers:{'X-HRM-PIN':hrmPin},body:JSON.stringify({profile:{phone:v.phone,email:v.email,address:v.address,iban:v.iban},terms:{payType:v.payType,hourlyRate:Number(v.hourlyRate)||0,itemRate:Number(v.itemRate)||0,contract:v.contract}})});form.querySelector('[role=status]').textContent='Beveiligd opgeslagen.';}catch(error){form.querySelector('[role=status]').textContent=error.message;}}
+ async function loadWorkQueue(){
+  const target=document.querySelector('[data-admin-panel=work-queue]');
+  target.innerHTML='<h2>Nog te onderhouden</h2><p role="status">Materialen laden…</p>';
+  const status=target.querySelector('[role=status]');
+  try{
+   const records=getRecords().filter(record=>!record.closedAt&&!record.deletedAt&&record.service==='Onderhoud'&&Number(record.currentStep)>=4&&Number(record.currentStep)<8);
+   const [team,...orders]=await Promise.all([api('/api/admin/team/members'),...records.map(record=>labels(record.reference,false))]);
+   if(!status.isConnected||target.hidden)return;
+   const people=(team.members||[]).filter(member=>member.active);
+   const sets=orders.flatMap(order=>order.materials).filter(item=>item.receivedAt&&!['ready','delivered','material_removed'].includes(item.internalStatus));
+   status.textContent=sets.length?'':'Geen ski’s of snowboards in de werkplaats.';
+   for(const [title,items] of [['Ski’s',sets.filter(item=>/ski/i.test(item.kind))],['Snowboards',sets.filter(item=>/snowboard/i.test(item.kind))],['Overig materiaal',sets.filter(item=>!/ski|snowboard/i.test(item.kind))]]){
+    if(!items.length)continue;
+    const group=document.createElement('section');
+    group.innerHTML=`<h3>${title}</h3>`;
+    for(const item of items){
+     const entry=document.createElement('details');
+     entry.className='admin-record';
+     entry.innerHTML=`<summary><strong>${escape(item.displayCode)}</strong> · ${escape(item.package)}</summary><form><label>Uitvoerder<select name="executor" required><option value="">Kies medewerker</option>${people.map(person=>`<option value="${escape(person.id)}">${escape(person.name)}</option>`).join('')}</select></label><button type="submit" class="btn btn-gold">Open werkstappen</button></form><div data-work-queue-steps></div>`;
+     const form=entry.querySelector('form');
+     form.elements.executor.value=item.assignedTo||(people.length===1?people[0].id:'');
+     form.onsubmit=event=>{
+      event.preventDefault();
+      void window.LSWorkflows.open(entry.querySelector('[data-work-queue-steps]'),item.id,{admin:true,memberId:form.elements.executor.value});
+     };
+     group.append(entry);
+    }
+    target.append(group);
+   }
+  }catch(error){status.textContent=error.message;}
+ }
+ document.addEventListener('ls-workshop-entered',()=>void setTab('work-queue'));
  async function openWorkorderWorkspace(button){
   const card=button.closest('.admin-record'),inspectionOnly=button.hasAttribute('data-intake-inspection');
   window.dispatchEvent(new CustomEvent('lattenspecialist:workorder-opened',{detail:{reference:card.dataset.reference}}));let target=card.querySelector('.workorder-workspace');if(target?.querySelector('[data-workorder-member]')){target.scrollIntoView({behavior:'smooth',block:'start'});return;}if(!target){target=document.createElement('section');target.className='workorder-workspace';card.append(target);}button.disabled=true;target.textContent='Werkorder en materialen laden…';
@@ -280,8 +313,8 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
     <button type="button" class="btn btn-dark" data-intake-close>Sluiten</button>
   </form></section>
   <section data-intake-photos hidden>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem"><h3 data-intake-photo-title></h3><button type="button" class="btn btn-dark" data-intake-photo-close aria-label="Fotovenster sluiten">×</button></div><div data-intake-photo-host></div>
-    <div class="admin-save-actions"><button type="button" class="btn btn-dark" data-intake-photo-next>Later toevoegen</button><button type="button" class="btn btn-dark" data-intake-photo-close>× Sluiten</button></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem"><h3 data-intake-photo-title></h3><button type="button" class="btn btn-dark" data-intake-photo-close aria-label="Fotovenster sluiten">×</button></div><div data-intake-photo-host></div><div data-intake-checks></div>
+    <div class="admin-save-actions"><button type="button" class="btn btn-dark" data-intake-photo-next>Terug naar sets</button><button type="button" class="btn btn-dark" data-intake-photo-close>× Sluiten</button></div>
   </section>
   <a class="btn message-whatsapp" data-intake-whatsapp hidden>Ontvangst bevestigen via WhatsApp</a>
   <section data-intake-received hidden><h3>Al ontvangen</h3><div data-intake-received-list></div></section>`;
@@ -297,25 +330,79 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   const photoCloseButtons=dialog.querySelectorAll('[data-intake-photo-close]');
   for(const close of photoCloseButtons)close.onclick=()=>{if(!photoBusy)dialog.close();};
   const receivedSection=dialog.querySelector('[data-intake-received]');
-  let intakeScanner=null,busy=false,cameraStart=null,photoBusy=false,receivedSets=[];
-  function showPhotoStep(item,fromReceipt=false){
+  let intakeScanner=null,busy=false,cameraStart=null,photoBusy=false,receivedSets=[],allReceived=false;
+  const inspectionHost=dialog.querySelector('[data-intake-checks]');
+  const inspections=new Map();
+  const inspectionDone=item=>inspections.get(item.id)?.status==='completed';
+  const workflowPath=item=>'/api/admin/operations/materials/'+encodeURIComponent(item.id)+'/workflow';
+  async function loadInspection(item){
+   const result=await api(workflowPath(item));
+   const step=result.workflow.steps.find(step=>step.code==='inspection');
+   inspections.set(item.id,step);
+   return step;
+  }
+  async function showInspection(item){
+   inspectionHost.textContent='Inspectie laden…';
+   try{
+    const step=await loadInspection(item);
+    if(!dialog.open||photos.hidden||photoHost.dataset.materialId!==item.id)return;
+    if(!step)throw new Error('Inspectie niet gevonden.');
+    if(inspectionDone(item)){inspectionHost.textContent='✓ Inspectie gereed';return;}
+    const team=await api('/api/admin/team/members');
+    if(!dialog.open||photos.hidden||photoHost.dataset.materialId!==item.id)return;
+    const people=(team.members||[]).filter(member=>member.active);
+    const preferred=item.assignedTo|| (people.length===1?people[0].id:'');
+    const checks=step.guide?.checks||[];
+    inspectionHost.innerHTML=`<form><h3>Inspectie</h3><fieldset aria-label="Controlepunten">${checks.map(check=>`<label><input type="checkbox" required> ${escape(check.label)}</label>`).join('')}</fieldset><label ${preferred?'hidden':''}>Uitvoerder<select name="executionMemberId" required><option value="">Kies medewerker</option>${people.map(person=>`<option value="${escape(person.id)}">${escape(person.name)}</option>`).join('')}</select></label><button class="btn btn-gold" type="submit">Inspectie afvinken</button><p role="status"></p></form>`;
+    const checkForm=inspectionHost.querySelector('form');
+    const person=checkForm.elements.executionMemberId;
+    person.value=preferred;
+    if(!person.value)person.closest('label').hidden=false;
+    checkForm.onsubmit=async event=>{
+     event.preventDefault();
+     if(busy)return;
+     const executionMemberId=person.value;
+     const confirmButton=checkForm.querySelector('button');
+     const status=checkForm.querySelector('[role=status]');
+     const path='/api/admin/operations/steps/'+encodeURIComponent(step.id);
+     const post=(action,body)=>api(path+'/'+action,{method:'POST',body:JSON.stringify({executionMemberId,...body})});
+     busy=true;confirmButton.disabled=true;photoNext.disabled=true;
+     for(const close of photoCloseButtons)close.disabled=true;
+     try{
+      const latest=await loadInspection(item);
+      if(latest.status!=='completed'){
+       if(latest.status!=='in_progress')await post('start',{guideVersion:step.guide?.version});
+       const result=await post('finish',{guideChecks:{version:step.guide?.version,checkedIds:checks.map(check=>check.id)}});
+       inspections.set(item.id,result.workflow.steps.find(step=>step.code==='inspection'));
+      }
+      inspectionHost.textContent='✓ Inspectie gereed';
+      updateReceived();
+     }catch(error){status.textContent=error.message;}
+     finally{
+      busy=false;confirmButton.disabled=false;photoNext.disabled=photoBusy;
+      for(const close of photoCloseButtons)close.disabled=photoBusy;
+     }
+    };
+   }catch(error){inspectionHost.textContent=error.message;}
+  }
+  function showPhotoStep(item){
    scanSection.hidden=true;receivedSection.hidden=true;photos.hidden=false;
    dialog.querySelector('[data-intake-photo-title]').textContent=`Set ${item.itemNumber} · ${item.displayCode}`;
    photoHost.replaceChildren();
-   photoNext.textContent=fromReceipt?'Later toevoegen':'Terug naar ontvangst';
+   photoHost.dataset.materialId=item.id;
    window.LSMaterialPhotos?.mount(photoHost,item.id,{
     admin:true,intakeOnly:true,
-    onBusy(value){photoBusy=value;photoNext.disabled=value;for(const close of photoCloseButtons)close.disabled=value;},
-    onSaved(){photoNext.textContent='Verder met inname';}
+    onBusy(value){photoBusy=value;photoNext.disabled=value||busy;for(const close of photoCloseButtons)close.disabled=value||busy;}
    });
+   void showInspection(item);
    photoNext.focus();
   }
   photoNext.onclick=()=>{
-   if(photoBusy)return;
+   if(photoBusy||busy)return;
    photos.hidden=true;photoHost.replaceChildren();scanSection.hidden=false;
    receivedSection.hidden=!receivedSets.length;
    if(!select.disabled)camera.focus();
-   else continueButton.focus();
+   else if(!continueButton.disabled)continueButton.focus();
   };
   receivedSection.onclick=event=>{
    const button=event.target.closest('[data-intake-photo-material]');
@@ -330,22 +417,37 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    }
    reader.hidden=true;camera.textContent='QR-camera openen';
   }
-  function showSets(materials){
+  function updateReceived(){
+   continueButton.hidden=!allReceived;
+   continueButton.disabled=!allReceived||!receivedSets.every(inspectionDone);
+   if(allReceived)message.textContent=continueButton.disabled?'Rond de inspectie van elke set af.':'Alle sets zijn ontvangen en geïnspecteerd.';
+   const list=dialog.querySelector('[data-intake-received-list]');
+   list.replaceChildren(...receivedSets.map(item=>{
+    const done=inspectionDone(item);
+    const entry=document.createElement(done?'div':'button');
+    if(!done){
+     entry.type='button';
+     entry.className='btn btn-dark';
+     entry.dataset.intakePhotoMaterial=item.id;
+    }
+    entry.textContent=`Set ${item.itemNumber} · ${item.displayCode}${done?' · ✓ Geïnspecteerd':' · Foto’s en inspectie'}`;
+    return entry;
+   }));
+  }
+  function showSets(materials,openedSetId){
    const pending=materials.filter(item=>['label_created','pickup_underway'].includes(item.internalStatus));
    select.replaceChildren(...pending.map(item=>new Option(`Set ${item.itemNumber} · ${item.kind} · ${item.package}`,item.id)));
-   const allReceived=materials.length>0&&!pending.length&&materials.every(item=>item.receivedAt);
+   allReceived=materials.length>0&&!pending.length&&materials.every(item=>item.receivedAt);
    form.querySelector('[data-intake-fields]').hidden=allReceived;
    save.hidden=allReceived;
-   continueButton.hidden=!allReceived;
    receivedSets=materials.filter(item=>item.receivedAt);
    receivedSection.hidden=!receivedSets.length;
-   const receivedList=dialog.querySelector('[data-intake-received-list]');
-   receivedList.replaceChildren(...receivedSets.map(item=>{
-    const button=document.createElement('button');
-    button.type='button';button.className='btn btn-dark';button.dataset.intakePhotoMaterial=item.id;
-    button.textContent=`Innamefoto’s · set ${item.itemNumber} · ${item.displayCode}`;
-    return button;
-   }));
+   updateReceived();
+   for(const item of receivedSets){
+    if(item.id!==openedSetId&&!inspections.has(item.id)){
+     void loadInspection(item).then(()=>{if(dialog.open)updateReceived();}).catch(()=>{});
+    }
+   }
    select.disabled=!pending.length;
    camera.disabled=save.disabled=input.disabled=!pending.length;
    return pending.length;
@@ -358,11 +460,11 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    try{
     const result=await api('/api/admin/operations/materials/intake',{method:'POST',body:JSON.stringify({reference,materialId,label:input.value})});
     const received=result.materials.find(item=>item.id===materialId);
-    const remaining=showSets(result.materials);
+    const remaining=showSets(result.materials,materialId);
     input.value='';
     message.textContent=`${received.displayCode} ontvangen. ${remaining?'Scan de sticker van de volgende set.':'Alle sets van deze aanvraag zijn ontvangen.'}`;
     document.dispatchEvent(new CustomEvent('ls-intake-updated',{detail:result.record}));
-    showPhotoStep(received,true);
+    showPhotoStep(received);
     const whatsapp = dialog.querySelector('[data-intake-whatsapp]');
     const url = !remaining && receiptWhatsAppUrl?.(result.record);
     if (url) {
@@ -396,7 +498,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   continueButton.onclick=()=>{
    const card=Array.from(document.querySelectorAll('.admin-record')).find(item=>item.dataset.reference===reference);
    dialog.close();
-   card?.querySelector('[data-intake-inspection]')?.click();
+   card?.querySelector('[data-move-to-workshop]')?.click();
   };
   dialog.querySelector('[data-intake-close]').onclick=()=>dialog.close();
   dialog.addEventListener('cancel',event=>{if(photoBusy||busy)event.preventDefault();});
@@ -405,13 +507,12 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   try{
    const result=await api('/api/admin/operations/materials/intake',{method:'POST',body:JSON.stringify({reference})});
    if(dialog.open&&!showSets(result.materials)){
-    message.textContent=continueButton.hidden?'Er zijn geen sets meer om in ontvangst te nemen.':'Alle sets van deze aanvraag zijn ontvangen.';
-    if(!continueButton.hidden)continueButton.focus();
+    if(continueButton.hidden)message.textContent='Er zijn geen sets meer om in ontvangst te nemen.';
    }
   }catch(error){message.textContent=error.message;}
  }
  document.addEventListener('click',event=>{
-  const button=event.target.closest('[data-receive-label]');
+  const button=event.target.closest('[data-receive-label],[data-intake-inspection]');
   if(button)void openIntake(button);
  });
  document.addEventListener('toggle',async event=>{

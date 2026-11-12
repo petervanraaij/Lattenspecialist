@@ -91,13 +91,11 @@
   };
   const customerMessageLines = (record, type = 'status') => {
     const firstName = String(record.name || '').split(/\s+/)[0] || '';
-    if (type === 'receipt') {
-      const statusUrl = customerStatusUrl(record);
+    if (type === 'receipt' || (type === 'status' && Number(record.currentStep) === 3)) {
       return [
         firstName ? `Hoi ${firstName},` : 'Hoi,',
         '',
         'We hebben je materiaal ontvangen voor onderhoud bij De Lattenspecialist.',
-        statusUrl ? `Volg de voortgang van je onderhoud: ${statusUrl}` : `Aanvraagnummer: ${record.reference}`,
         '',
         'Groet,',
         'De Lattenspecialist'
@@ -110,7 +108,8 @@
       if (record.note) lines.push('',record.note);
       if (record.expectedReady) lines.push('',`Verwacht klaar: ${formatDate(record.expectedReady)}`);
       const statusUrl = customerStatusUrl(record);
-      lines.push('','Bekijk je onderhoudsstatus:',statusUrl,'Deze persoonlijke link opent direct jouw onderhoud. Je hoeft niets te installeren of een code in te voeren.','','Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.','','Groet,','De Lattenspecialist');
+      if(statusUrl)lines.push('','Bekijk je onderhoudsstatus:',statusUrl);
+      lines.push('','Geen statusupdates meer via WhatsApp? Laat het ons in deze chat weten.','','Groet,','De Lattenspecialist');
     }
     return lines;
   };
@@ -240,7 +239,7 @@
     const whatsappLabel = /Android/i.test(navigator.userAgent) ? 'WhatsApp Business' : 'WhatsApp';
     const minutes=plannedMinutes(record);
     return `<article class="admin-record${closed ? ' is-closed' : ''}" data-stage="${recordStage(record)}" data-reference="${escapeHtml(record.reference)}" data-search="${escapeHtml(searchText)}">
-      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(packageLabel(record.package))}</span>${record.service==='Onderhoud'&&Number(record.currentStep||1)===1?`<span>Warme waxreiniging: ${escapeHtml(warmCleaningLabel(record))}</span>`:''}<small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span>${record.service==='Onderhoud'&&!closed&&currentStep<3?'<button type="button" class="btn btn-gold" data-receive-label>In ontvangst nemen</button>':''}${record.service==='Onderhoud'&&!closed&&currentStep===3?'<button type="button" class="btn btn-dark open-workorder-workspace" data-intake-inspection>Inspectie openen</button><button type="button" class="btn btn-gold" data-move-to-workshop>Naar werkplaats</button>':''}<button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
+      <div class="admin-record-head"><button class="admin-open-request" type="button" aria-expanded="false"><span class="admin-request-code">${escapeHtml(record.workOrderNumber || record.reference)}</span><strong>${escapeHtml(record.name || 'Naam onbekend')}</strong><span>${escapeHtml(record.service || 'Aanvraag')} · ${escapeHtml(record.amount || 1)}× ${escapeHtml(record.material || record.rentaltype || 'materiaal')} · ${escapeHtml(packageLabel(record.package))}</span>${record.service==='Onderhoud'&&Number(record.currentStep||1)===1?`<span>Warme waxreiniging: ${escapeHtml(warmCleaningLabel(record))}</span>`:''}<small>Bekijk ${record.workOrderNumber?'werkorder':'aanvraag'} →</small></button><div class="admin-record-badges"><span class="admin-time-pill">⏱ ${escapeHtml(formatPlannedTime(minutes))} benodigd</span><span class="admin-status-pill">${closed ? 'Afgemeld' : escapeHtml(record.status || steps[currentStep-1])}</span>${record.service==='Onderhoud'&&!closed&&currentStep<3?'<button type="button" class="btn btn-gold" data-receive-label>In ontvangst nemen</button>':''}${record.service==='Onderhoud'&&!closed&&currentStep===3?'<button type="button" class="btn btn-dark" data-intake-inspection>Inspectie openen</button><button type="button" class="btn btn-gold" data-move-to-workshop hidden>Naar werkplaats</button>':''}<button class="admin-trash-cross" type="button" data-trash-action="remove" aria-label="Aanvraag verwijderen" title="Aanvraag verwijderen">×</button></div></div>
       ${Number(record.waxstickCount)>0?`<section class="admin-payment admin-waxstick" data-waxstick-reference="${escapeHtml(record.reference)}"><h3>Meebesteld · ${Number(record.waxstickCount)}× Holmenkol Natural Skiwax Stick 50 g</h3><p>€ 17,50 per stuk · bij deze opdracht meegeven.</p><p class="waxstick-handover-status" role="status" aria-live="polite">Meegeefstatus laden…</p><button class="btn btn-gold waxstick-handover" type="button" disabled>Meegeven bevestigen</button><button class="btn btn-dark waxstick-invoice" type="button">Factuur maken in Pierfinity →</button><button class="btn btn-dark waxstick-reload" type="button" hidden>Status opnieuw laden</button></section>`:''}
       <details class="admin-record-details"><summary>Open aanvraag en planning</summary><div class="admin-record-content">
         <div class="admin-save-actions">${statusLink?`<a class="btn message-whatsapp" href="${escapeHtml(statusLink)}">Status delen via ${whatsappLabel}</a>`:""}<button type="button" class="btn btn-dark" data-edit-request aria-expanded="false" aria-controls="edit-request-${escapeHtml(record.reference)}">Bewerken</button>${record.workOrderNumber&&currentStep!==3?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}</div>
@@ -701,6 +700,7 @@
       activeFilter='work';
       render();
       syncStatus.textContent='Werkorder staat nu in In werkplaats.';
+      document.dispatchEvent(new Event('ls-workshop-entered'));
     }catch(error){
       syncStatus.textContent=error.message;
       button.disabled=false;
