@@ -65,3 +65,7 @@
 .workflow-action-checklist{grid-column:1/-1;max-width:none}
 .workflow-action-checklist label{align-items:start}
 .workflow-needs>strong{align-self:center;font-size:.84rem}
+
+.workflow-delivery{margin-top:16px;padding:14px;border:1px solid #dedbd2;border-radius:12px}
+.workflow-delivery h4,.workflow-delivery p{margin:0 0 8px}
+.workflow-delivery .material-photo-disclosure{margin-top:12px}

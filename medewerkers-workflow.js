@@ -168,7 +168,41 @@
     }
     const summary = workflow.summary || {}, totalCost = number(summary.totalCost ?? summary.total_cost), totalSeconds = number(summary.totalSeconds ?? summary.total_seconds);
     host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3>${workflow.isTraining ? `<p>${escape([material.kind==='Ski'?"Ski’s (paar)":material.kind,material.package].filter(Boolean).join(' · '))}</p>` : ''}<p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSTreatmentOverview?window.LSTreatmentOverview.render(window.LSTreatmentOverview.workflow(workflow),{open:true}):''}${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
-    if(!inspectionOnly&&(!workflow.isTraining||material.fullPractice)&&window.LSMaterialPhotos){const details=document.createElement('details');details.className='material-photo-disclosure';details.innerHTML='<summary>Foto’s bij binnenkomst en oplevering</summary><div data-material-photos></div>';const photoActions=document.createElement('div');photoActions.className='workflow-photo-shortcuts';photoActions.innerHTML='<button type="button" data-photo-stage="intake">📷 Binnenkomstfoto maken</button><button type="button" data-photo-stage="delivery">📷 Opleverfoto maken</button>';host.querySelector('.workflow-head').after(photoActions,details);photoActions.addEventListener('click',event=>{const button=event.target.closest('[data-photo-stage]');if(!button)return;details.open=true;const target=details.querySelector('[data-material-photos]');if(!target.children.length)window.LSMaterialPhotos.mount(target,materialId,{admin:host.dataset.ownerWorkflow==='true'});const select=target.querySelector('[name="stage"]');if(select)select.value=button.dataset.photoStage;target.querySelector('[data-photo-camera]')?.click();});details.addEventListener('toggle',()=>{const target=details.querySelector('[data-material-photos]');if(details.open&&!target.children.length)window.LSMaterialPhotos.mount(target,materialId,{admin:host.dataset.ownerWorkflow==='true'});});}
+    if(!inspectionOnly&&(!workflow.isTraining||material.fullPractice)&&window.LSMaterialPhotos){
+      const deliveryAvailable=finished===steps.length||(material.fullPractice&&steps[nextIndex]?.code==='practice_delivery');
+      const details=document.createElement('details');
+      details.className='material-photo-disclosure';
+      details.innerHTML=`<summary>${deliveryAvailable?'Foto’s bij binnenkomst en oplevering':'Foto’s bij binnenkomst'}</summary><div data-material-photos></div>`;
+      const intakeActions=document.createElement('div');
+      intakeActions.className='workflow-photo-shortcuts';
+      intakeActions.innerHTML='<button type="button" data-photo-stage="intake">📷 Binnenkomstfoto maken</button>';
+      host.querySelector('.workflow-head').after(intakeActions,details);
+      const mount=()=>{
+        const target=details.querySelector('[data-material-photos]');
+        if(!target.children.length)window.LSMaterialPhotos.mount(target,materialId,{admin:host.dataset.ownerWorkflow==='true',intakeOnly:!deliveryAvailable});
+        return target;
+      };
+      const openCamera=stage=>{
+        details.open=true;
+        const target=mount(),select=target.querySelector('[name="stage"]');
+        if(select)select.value=stage;
+        target.querySelector('[data-photo-camera]')?.click();
+      };
+      details.addEventListener('toggle',()=>{if(details.open)mount();});
+      intakeActions.querySelector('button').onclick=()=>openCamera('intake');
+      const delivery=document.createElement('section');
+      delivery.className='workflow-delivery';
+      delivery.innerHTML=deliveryAvailable?'<h4>Opleverfoto’s</h4><button type="button" class="btn btn-gold">📷 Opleverfoto maken</button>':'<h4>Opleverfoto’s</h4><p>Maak de opleverfoto’s na de laatste onderhoudsstap.</p>';
+      if(deliveryAvailable)delivery.querySelector('button').onclick=()=>openCamera('delivery');
+      const practiceDelivery=material.fullPractice&&steps[nextIndex]?.code==='practice_delivery';
+      if(practiceDelivery){
+        const last=host.querySelectorAll('.workflow-step')[nextIndex];
+        last.querySelector('.workflow-actions')?.before(delivery);
+      }else{
+        host.append(delivery);
+        if(deliveryAvailable)delivery.append(details);
+      }
+    }
     const warehouse=host.querySelector('[data-step-warehouse]');
     warehouse?.addEventListener('toggle',()=>{
       const target=warehouse.querySelector('[data-step-warehouse-content]');
