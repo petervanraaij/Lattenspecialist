@@ -268,12 +268,15 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   dialog.className='workorder-executor-dialog';
   dialog.innerHTML=`<section data-intake-scan><form data-intake-form>
     <h3>In ontvangst nemen</h3>
+    <div data-intake-fields>
     <label>Set<select name="materialId" required><option value="">Sets laden…</option></select></label>
     <button type="button" class="btn btn-dark" data-intake-camera disabled>QR-camera openen</button>
     <div id="intakeQrReader" hidden></div>
     <label>Onderhoudscode op de sticker<input name="label" maxlength="500" autocomplete="off" autocapitalize="characters" required></label>
+    </div>
     <p data-intake-message role="status" aria-live="polite"></p>
     <button type="submit" class="btn btn-gold" disabled>Koppel en ontvang</button>
+    <button type="button" class="btn btn-gold" data-intake-continue hidden>Ga verder</button>
     <button type="button" class="btn btn-dark" data-intake-close>Sluiten</button>
   </form></section>
   <section data-intake-photos hidden>
@@ -287,6 +290,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   const message=dialog.querySelector('[data-intake-message]'),camera=dialog.querySelector('[data-intake-camera]');
   const reader=dialog.querySelector('#intakeQrReader'),save=form.querySelector('[type=submit]');
   const scanSection=dialog.querySelector('[data-intake-scan]');
+  const continueButton=dialog.querySelector('[data-intake-continue]');
   const photos=dialog.querySelector('[data-intake-photos]');
   const photoHost=dialog.querySelector('[data-intake-photo-host]');
   const photoNext=dialog.querySelector('[data-intake-photo-next]');
@@ -311,7 +315,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
    photos.hidden=true;photoHost.replaceChildren();scanSection.hidden=false;
    receivedSection.hidden=!receivedSets.length;
    if(!select.disabled)camera.focus();
-   else dialog.querySelector('[data-intake-close]').focus();
+   else continueButton.focus();
   };
   receivedSection.onclick=event=>{
    const button=event.target.closest('[data-intake-photo-material]');
@@ -329,7 +333,10 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   function showSets(materials){
    const pending=materials.filter(item=>['label_created','pickup_underway'].includes(item.internalStatus));
    select.replaceChildren(...pending.map(item=>new Option(`Set ${item.itemNumber} · ${item.kind} · ${item.package}`,item.id)));
-   if(!pending.length)select.add(new Option('Alles is ontvangen'));
+   const allReceived=materials.length>0&&!pending.length&&materials.every(item=>item.receivedAt);
+   form.querySelector('[data-intake-fields]').hidden=allReceived;
+   save.hidden=allReceived;
+   continueButton.hidden=!allReceived;
    receivedSets=materials.filter(item=>item.receivedAt);
    receivedSection.hidden=!receivedSets.length;
    const receivedList=dialog.querySelector('[data-intake-received-list]');
@@ -345,11 +352,12 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   }
   async function receive(){
    if(busy||!form.reportValidity())return;
+   const materialId=select.value;
    busy=true;save.disabled=camera.disabled=select.disabled=true;
    message.textContent='Sticker koppelen…';
    try{
-    const result=await api('/api/admin/operations/materials/intake',{method:'POST',body:JSON.stringify({reference,materialId:select.value,label:input.value})});
-    const received=result.materials.find(item=>item.id===select.value);
+    const result=await api('/api/admin/operations/materials/intake',{method:'POST',body:JSON.stringify({reference,materialId,label:input.value})});
+    const received=result.materials.find(item=>item.id===materialId);
     const remaining=showSets(result.materials);
     input.value='';
     message.textContent=`${received.displayCode} ontvangen. ${remaining?'Scan de sticker van de volgende set.':'Alle sets van deze aanvraag zijn ontvangen.'}`;
@@ -385,13 +393,21 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace'].includes
   };
   select.onchange=()=>{input.value='';message.textContent='';};
   form.onsubmit=event=>{event.preventDefault();void receive();};
+  continueButton.onclick=()=>{
+   const card=Array.from(document.querySelectorAll('.admin-record')).find(item=>item.dataset.reference===reference);
+   dialog.close();
+   card?.querySelector('[data-intake-inspection]')?.click();
+  };
   dialog.querySelector('[data-intake-close]').onclick=()=>dialog.close();
   dialog.addEventListener('cancel',event=>{if(photoBusy||busy)event.preventDefault();});
   dialog.addEventListener('close',async()=>{await stop();dialog.remove();if(intakeDialog===dialog)intakeDialog=null;},{once:true});
   dialog.showModal();
   try{
    const result=await api('/api/admin/operations/materials/intake',{method:'POST',body:JSON.stringify({reference})});
-   if(dialog.open&&!showSets(result.materials))message.textContent='Er zijn geen sets meer om in ontvangst te nemen.';
+   if(dialog.open&&!showSets(result.materials)){
+    message.textContent=continueButton.hidden?'Er zijn geen sets meer om in ontvangst te nemen.':'Alle sets van deze aanvraag zijn ontvangen.';
+    if(!continueButton.hidden)continueButton.focus();
+   }
   }catch(error){message.textContent=error.message;}
  }
  document.addEventListener('click',event=>{
