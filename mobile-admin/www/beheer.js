@@ -249,6 +249,7 @@
         <div class="admin-save-actions">${statusLink?`<a class="btn message-whatsapp" href="${escapeHtml(statusLink)}">Status delen via ${whatsappLabel}</a>`:""}<button type="button" class="btn btn-dark" data-edit-request aria-expanded="false" aria-controls="edit-request-${escapeHtml(record.reference)}">Bewerken</button>${record.workOrderNumber&&currentStep!==3?'<button class="btn btn-gold open-workorder-workspace" type="button">Werkzaamheden en foto’s openen</button>':''}</div>
         <div class="admin-info"><h3>Contact</h3><p><strong>${valueOrDash(record.name)}</strong><br><a href="tel:${encodeURIComponent(record.phone || '')}">${valueOrDash(record.phone)}</a><br><a href="mailto:${encodeURIComponent(record.email || '')}">${valueOrDash(record.email)}</a><br>${valueOrDash(record.address)}</p><span class="whatsapp-permission ${record.whatsappConsent ? 'is-allowed' : 'is-missing'}">${record.whatsappConsent ? '✓ WhatsApp-statusupdates toegestaan' : 'Geen WhatsApp-toestemming vastgelegd'}</span><h3>${entryLabel}</h3><div class="admin-detail-grid">${details}${record.service==='Onderhoud'?'<span data-request-material-codes hidden><b>Onderhoudscodes per set</b><span data-material-code-values></span></span>':''}</div>${requestNotesMarkup(record)}
           ${record.service==='Onderhoud'?'<section><h3>Ontvangst</h3><details class="admin-request-fields" data-inline-intake><summary>Innamefoto’s</summary><div data-inline-intake-content></div></details></section>':''}
+          ${record.service==='Onderhoud'&&(currentStep>=8||closed)?'<details class="admin-request-fields" data-inline-intake="delivery"><summary>Opleverfoto’s</summary><div data-inline-intake-content></div></details>':''}
           <div data-request-workplans></div>
           <details class="admin-request-fields team-history"><summary>Werklogboek</summary><div class="team-audit"></div></details>
         </div>
@@ -356,7 +357,7 @@
       }
     }
     const preserved=new Map([...list.querySelectorAll('.admin-record')].filter(card=>dirtyRequests.has(card.dataset.reference)||card.querySelector('.workorder-executor-dialog[open]')).map(card=>[card.dataset.reference,card]));
-    const intakePanels=new Map([...list.querySelectorAll('[data-inline-intake][open]')].map(panel=>[panel.closest('.admin-record').dataset.reference,panel]));
+    const intakePanels=new Map([...list.querySelectorAll('[data-inline-intake=""][open]')].map(panel=>[panel.closest('.admin-record').dataset.reference,panel]));
     const expanded=new Set([...list.querySelectorAll('.admin-record-details[open]')].map(detail=>detail.closest('.admin-record').dataset.reference));
     const editing=new Set([...list.querySelectorAll('[data-request-editor]:not([hidden])')].map(editor=>editor.closest('.admin-record').dataset.reference));
     const open = records.filter(record => !record.closedAt).length;
@@ -377,7 +378,7 @@
     }else{if(editing.has(card.dataset.reference))setRequestEditing(card,true);if(expanded.has(card.dataset.reference))card.querySelector('.admin-record-details').open=true;const workspace=workspaces.get(card.dataset.reference);if(workspace)card.append(workspace);}}
     for(const card of list.querySelectorAll('.admin-record')){
       const panel=intakePanels.get(card.dataset.reference);
-      if(panel)card.querySelector('[data-inline-intake]')?.replaceWith(panel);
+      if(panel)card.querySelector('[data-inline-intake=""]')?.replaceWith(panel);
     }
     for(const detail of list.querySelectorAll('.admin-record-details'))detail.closest('.admin-record').querySelector('.admin-open-request')?.setAttribute('aria-expanded',String(detail.open));
     list.querySelectorAll('[data-waxstick-reference]').forEach(panel=>void loadWaxstickHandover(panel));

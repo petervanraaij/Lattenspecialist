@@ -568,14 +568,15 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace','work-que
   const target=panel.querySelector('[data-inline-intake-content]');
   const reference=panel.closest('.admin-record').dataset.reference;
   panel.dataset.loaded='true';
-  target.textContent='Innamefoto’s laden…';
+  const delivery=panel.dataset.inlineIntake==='delivery';
+  target.textContent=delivery?'Opleverfoto’s laden…':'Innamefoto’s laden…';
   try{
    const {materials}=await labels(reference,false);
    if(!panel.isConnected)return;
    target.replaceChildren();
    if(!materials.length){target.textContent='Er zijn nog geen sets gekoppeld.';return;}
    const record = getRecords?.().find(item => item.reference === reference);
-   const whatsappUrl = record && materials.every(item => item.receivedAt) && receiptWhatsAppUrl?.(record);
+   const whatsappUrl = !delivery && record && materials.every(item => item.receivedAt) && receiptWhatsAppUrl?.(record);
    if (whatsappUrl) {
     const link = document.createElement('a');
     link.className = 'btn message-whatsapp';
@@ -591,7 +592,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace','work-que
     set.append(summary,photos);
     target.append(set);
     set.addEventListener('toggle',()=>{
-     if(set.open&&!photos.hasChildNodes())window.LSMaterialPhotos?.mount(photos,item.id,{admin:true,intakeOnly:true});
+     if(set.open&&!photos.hasChildNodes())window.LSMaterialPhotos?.mount(photos,item.id,{admin:true,...(delivery?{deliveryOnly:true}:{intakeOnly:true})});
     });
     if(materials.length===1)set.open=true;
    }

@@ -13,14 +13,15 @@
  function mount(host,materialId,options={}){
   const auth=()=>options.admin?(sessionStorage.getItem('lattenspecialist-admin-token')||localStorage.getItem('lattenspecialist-admin-token')):sessionStorage.getItem('ls-team-session');const token=auth(),endpoint=String(window.LATTENSPECIALIST_BOOKING?.endpoint||'').replace(/\/$/,'');if(!token||!materialId)return;
   const root=document.createElement('section');root.className='material-photo-panel';root.innerHTML=`<h3>Foto’s bij dit materiaal</h3><p>Leg vast hoe dit paar ski’s of snowboard binnenkomt en hoe je het oplevert. Foto’s zijn intern; klanten kunnen ze niet openen.</p><form data-photo-upload><label>Moment<select name="stage"><option value="intake">Binnenkomst</option><option value="delivery">Oplevering</option></select></label><label>Toelichting<input name="note" maxlength="500" placeholder="Bijvoorbeeld: kras onder linker ski"></label><div class="workflow-actions"><label class="photo-file-button">Foto maken<input data-photo-camera type="file" accept="image/*" capture="environment"></label><label class="photo-file-button">Foto’s kiezen<input data-photo-files type="file" accept="image/*" multiple></label></div><p data-photo-selection aria-live="polite">Nog geen foto gekozen.</p><button type="submit" class="primary">Foto’s opslaan</button></form><p data-photo-status role="status" aria-live="polite"></p><button type="button" data-photo-refresh>Foto’s vernieuwen</button><div class="material-photo-columns"><section><h4>Binnenkomst</h4><div data-photo-list="intake"></div></section><section><h4>Oplevering</h4><div data-photo-list="delivery"></div></section></div>`;host.append(root);
-  if(options.intakeOnly){
-   root.querySelector('h3').textContent='Innamefoto’s';
-   root.querySelector(':scope > p').textContent='Camera slaat direct op. Bewaar gekozen bestanden met Foto’s opslaan.';
+  const fixedStage=options.deliveryOnly?'delivery':options.intakeOnly?'intake':'';
+  if(fixedStage){
+   root.querySelector('h3').textContent=options.deliveryOnly?'Opleverfoto’s':'Innamefoto’s';
+   root.querySelector(':scope > p').textContent=options.deliveryOnly?'Maak een foto of kies een bestand en sla het op.':'Camera slaat direct op. Bewaar gekozen bestanden met Foto’s opslaan.';
    const stage=document.createElement('input');
-   stage.type='hidden';stage.name='stage';stage.value='intake';
+   stage.type='hidden';stage.name='stage';stage.value=fixedStage;
    root.querySelector('[name=stage]').closest('label').replaceWith(stage);
-   root.querySelector('[data-photo-list=delivery]').closest('section').hidden=true;
-   root.querySelector('[data-photo-camera]').closest('label').firstChild.textContent='Innamefoto maken';
+   root.querySelector(`[data-photo-list=${options.deliveryOnly?'intake':'delivery'}]`).closest('section').hidden=true;
+   root.querySelector('[data-photo-camera]').closest('label').firstChild.textContent=options.deliveryOnly?'Opleverfoto maken':'Innamefoto maken';
   }
   const area=options.admin?'admin':'team';
   const controller=new AbortController(),urls=new Set(),ids=new WeakMap();let files=[],busy=false;
