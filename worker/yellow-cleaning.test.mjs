@@ -7,7 +7,7 @@ const qty=sku=>Number(f.sql.prepare('SELECT on_hand FROM inventory_items WHERE s
 const checks=step=>({version:step.guide.version,checkedIds:step.guide.checks.map(c=>c.id)});
 try{
  const board=f.materials.find(m=>m.kind==='Snowboard'),material=()=>f.sql.prepare('SELECT * FROM materials WHERE id=?').get(board.id);
- let flow=await getWorkflow(f.db,material()),clean=flow.steps.find(s=>s.code==='clean'),wax=flow.steps.find(s=>s.code==='wax');
+ let flow=await getWorkflow(f.db,material()),clean=flow.steps.find(s=>s.code==='setup_clean'),wax=flow.steps.find(s=>s.code==='wax');
  assert.equal(clean.procedure,'cleaning');assert.equal(clean.cleaningWaxSku,null);assert.equal(clean.needsStartWeight,false);assert.ok(!flow.steps.some(s=>s.code==='base_wax'));assert.ok(wax.requiredItems.some(i=>i.sku==='24057'));
  const ski=f.materials.find(m=>m.kind==='Ski'),skiRow=()=>f.sql.prepare('SELECT * FROM materials WHERE id=?').get(ski.id);flow=await getWorkflow(f.db,skiRow());const pending=flow.steps.find(s=>s.code==='deep_clean');
  f.sql.prepare("UPDATE maintenance_steps SET procedure='cleaning',required_items=? WHERE id=?").run(JSON.stringify(['25422','24491']),pending.id);flow=await getWorkflow(f.db,skiRow());assert.equal(flow.steps.find(s=>s.id===pending.id).cleaningWaxSku,'24101');

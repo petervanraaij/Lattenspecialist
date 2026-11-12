@@ -47,6 +47,20 @@ export function maintenanceGuide(code,material={},overrides={}){
  let source=configured[code];
  if((code==='deep_clean'||(code==='clean'&&material.preserveLegacyCleaning))&&material.legacyCleaning)source=legacyCleaning[code];
  else if(code==='deep_clean'&&overrides[code])source={...source,version:(source.version||GUIDE_VERSION)+':yellow-clean',stop:[...(source.stop||[]),'Werkplaatsafspraak: reinigen altijd met Alpha Mix Yellow; bespreek oudere, afwijkende cleanerinstructies vóór uitvoering.'],checks:[...(source.checks||[]),check('yellow-workshop','Alpha Mix Yellow en afzonderlijk reinigingsverbruik zijn gecontroleerd')]};
+ if(code==='setup_clean'){
+  const setup=configured.setup,clean=configured.clean;
+  source={...setup,title:'Werkplek voorbereiden en belag reinigen',goal:'Zet het materiaal stabiel vast en maak het belag schoon en droog.',
+   supplies:[...new Set([...setup.supplies,...clean.supplies])],
+   steps:['Zet ski’s of snowboard vast met passende klemmen. Houd bij ski’s de remarmen opzij zonder de binding te verstellen.','Verwijder los vuil, neem het belag af met een schone doek en borstel waar nodig.','Laat gebruikte cleaner volledig verdampen en noteer het werkelijke verbruik.'],
+   checks:[...setup.checks,...clean.checks],stop:[...new Set([...setup.stop,...clean.stop])],sources:[...(clean.sources||[])]};
+ }
+ if(code==='filing_premium'){
+  const filing=configured.filing,diamond=configured.premium_diamond,file=configured.premium_file;
+  source={...filing,title:'Slijpen en premium afwerken',goal:'Werk de staalkanten op de afgesproken hoek bij en rond af met de gekozen premium bewerking.',
+   supplies:[...new Set([...filing.supplies,...diamond.supplies,...file.supplies])],
+   steps:['Controleer de afgesproken hoek en voer de basisbewerking uit met een passende geleider.','Werk eerst met de World Cup-diamant medium en daarna met de fijne Racing File S. Houd dezelfde hoek aan en werk met lichte druk.','Controleer de kanten op bramen en gelijkmatigheid. Registreer het werkelijk gebruikte gereedschap.'],
+   checks:[...filing.checks,check('premium_finish','De premium afwerking is uitgevoerd en gecontroleerd')],stop:[...new Set([...filing.stop,...file.stop,...diamond.stop])]};
+ }
  if(code==='wax')source={...source,title:material.wax_type&& !/beta|red/i.test(material.wax_type)?'Gekozen extra eindwax aanbrengen':'Rode basiswax aanbrengen',goal:'Normale voorbereiding en rode basis zijn inbegrepen. Geel/blauw als extra eindwax EUR 2,50; Purple EUR 5,00 per paar ski of EUR 7,50 per snowboard. Gele reinigingswax is afzonderlijk verbruik.',steps:['Controleer de werkbon: rood is de basis. Alleen bij een afgesproken extra eindwax volgt na de afgewerkte rode basis nog een waxlaag.',...source.steps]};
  if(code==='wax'&&material.combinedWax){
   const named=material.wax_type&& !/beta|red|24057/i.test(material.wax_type);

@@ -47,10 +47,32 @@ export function definitionFor(material){
  const add=(stepCode,title,instruction,procedure,requiredItems=[])=>steps.push({code:stepCode,title,instruction,procedure,requiredItems});
  if(material.is_training && options.activity!=='full'){const fixture=kind.includes('ski')?['25502','24432']:kind.includes('snow')?['20516']:[];if(options.activity==='warm_clean'){add('practice_clean','Warm reinigen met gele wax','Weeg Alpha Mix Yellow, breng de reinigingswax aan, schraap die warm af en weeg hetzelfde blok opnieuw.','wax',[...fixture,'24101','24580','20606','25631','24622']);return steps;}if(options.activity==='wax'&&options.waxProtocol==='yellow-red'){add('practice_clean','Oefenen: gele reinigingswax','Weeg Alpha Mix Yellow voor en na de warme reinigingsgang.','wax',[...fixture,'24101','24580','20606','25631','24622']);add('practice_wax','Oefenen: rode basiswax','Weeg Beta Mix Red voor en na het aanbrengen. Laat afkoelen, schraap en borstel.','wax',[...fixture,'24057','24580','20606','25631','24622','20687set']);if(WAX_SKUS[options.finishWax]&&options.finishWax!=='beta')add('practice_finish_wax','Oefenen: extra eindwax '+WAX_NAMES[options.finishWax],'Breng na de afgewerkte rode basis de gekozen eindwax aan. Weeg dit blok afzonderlijk, laat afkoelen, schraap en borstel.','wax',[...fixture,WAX_SKUS[options.finishWax],'24580','20606','25631','24622','20687set']);return steps;}if(options.activity==='repair')add('practice_repair','Kleine belagreparaties oefenen','Oefen op afgeschreven materiaal met een ondiepe kras. Beoordeel de schade, reinig en droog, vul volgens productinstructie, laat afkoelen en werk vlak af.','repair',[...fixture,'24408','24409','25635']);else if(options.activity==='filing')add('practice_filing','Vijlen oefenen','Oefen het slijpen en vijlen. Werk rustig, controleer regelmatig de hoek en rond af wanneer je klaar bent.','filing',[...fixture,'20551','24498','25521','25564','24684']);else add('practice_wax','Waxen oefenen','Weeg het waxblok, oefen het gelijkmatig warm aanbrengen en weeg het blok na afloop opnieuw.','wax',[...fixture,waxSku,'24580','20606','25631','24622','20687set']);if(options.activity==='filing'&&options.premiumFiling){add('premium_file','Premium: fijne vijl oefenen','Fijn afwerken met Racing File S uit set PRO.','filing',['20551','25564']);add('premium_diamond','Premium: diamantfinish oefenen','Afwerken met World Cup-diamant medium uit set PRO.','filing',['20551']);}return steps;}
  add('inspection','Inspecteren','Controleer belag, kanten, bindingen en beschadigingen voordat je begint.','inspection');
- if(kind.includes('ski'))add('setup','Ski vastzetten','Zet de skistoppers veilig vast en leg het materiaal stabiel klaar.','setup',['25502','24432']);if(kind.includes('snow'))add('setup','Snowboard vastzetten','Zet het snowboard stabiel in de Board / FreerideFix.','setup',['20516']);if(options.bindings)add('bindings_off','Bindingen demonteren','Demonteer de bindingen en leg bevestigingsmateriaal per board apart.','setup');
- const hasWax=['wax_only','wax_file','gold','platinum','custom'].includes(code)&&Boolean(options.waxSku||material.wax_type),hasFiling=['file_only','wax_file','gold','platinum'].includes(code),hasRepair=['platinum','repair_only'].includes(code)||Number(options.repairCount)>0;
- if(hasRepair)add('repair','Belag repareren','Reinig de beschadiging, vul deze met de gekozen repair-strip en werk de plek vlak af.','repair',['24408','24409','25635']);if(hasFiling)add('filing','Kanten vijlen en slijpen','Werk zijwand en kanten gecontroleerd af. Gebruik alleen de vijlen en slijphulpen die je werkelijk inzet.','filing',['20551','24498','25521','25564','24684']);if(hasFiling&&options.premiumFiling){add('premium_file','Premium: fijne vijl','Werk na de basisbewerking met Racing File S 25529 uit Slijpset PRO.','filing',['20551','25564']);add('premium_diamond','Premium: diamantfinish','Werk met World Cup-diamant medium 24483 uit Slijpset PRO en controleer de kant.','filing',['20551']);}
- if(hasWax){if(options.extraCleaning)add('deep_clean','Intensieve reiniging met gele wax','Voer alleen afgesproken extra reiniging uit; meet gele reinigingswax afzonderlijk.','wax',['24101','24580','20606','25631','24622']);else add('clean','Normale voorbereiding (inbegrepen)','Verwijder losse resten, neem af en borstel. Beoordeel het belag; spreek intensieve reiniging eerst af.','cleaning',['24491','20687set']);if(waxSku!=='24057')add('base_wax','Rode basiswax aanbrengen en afwerken','Breng Beta Mix Red aan, laat afkoelen, schraap en borstel voor de extra eindwax.','wax',['24057','24580','20606','25631','24622','20687set']);add('wax','Waxen en afwerken','Breng wax aan, laat afkoelen, schraap en borstel. Weeg hetzelfde waxblok voor en na.','wax',[waxSku,'24580','20606','25631','24622','20687set']);}
+ const hasWax=['wax_only','wax_file','gold','platinum','custom'].includes(code)&&Boolean(options.waxSku||material.wax_type);
+ const hasFiling=['file_only','wax_file','gold','platinum'].includes(code);
+ const hasRepair=['platinum','repair_only'].includes(code)||Number(options.repairCount)>0;
+ const supports=kind.includes('ski')?['25502','24432']:kind.includes('snow')?['20516']:[];
+ const combinedSetup=hasWax&&!options.extraCleaning&&!material.is_training;
+ if(combinedSetup)add('setup_clean','Werkplek voorbereiden en belag reinigen','Zet het materiaal vast, neem het belag af en borstel los vuil weg.','cleaning',[...supports,'24491','20687set']);
+ else if(supports.length)add('setup','Materiaal vastzetten','Zet het materiaal stabiel vast.','setup',supports);
+ if(options.bindings)add('bindings_off','Bindingen demonteren','Demonteer de bindingen en leg bevestigingsmateriaal per board apart.','setup');
+ if(hasRepair)add('repair','Belag repareren','Reinig de beschadiging, vul deze met de gekozen repair-strip en werk de plek vlak af.','repair',['24408','24409','25635']);
+ if(hasFiling){
+  const filingItems=['20551','24498','25521','25564','24684'];
+  if(options.premiumFiling&&!material.is_training)add('filing_premium','Slijpen en premium afwerken','Slijp op de afgesproken hoek en werk de kanten fijn af.','filing',filingItems);
+  else{
+   add('filing','Kanten vijlen en slijpen','Werk zijwand en kanten gecontroleerd af. Gebruik alleen de vijlen en slijphulpen die je werkelijk inzet.','filing',filingItems);
+   if(options.premiumFiling){
+    add('premium_file','Premium: fijne vijl','Werk na de basisbewerking met Racing File S.','filing',['20551','25564']);
+    add('premium_diamond','Premium: diamantfinish','Werk met World Cup-diamant medium en controleer de kant.','filing',['20551']);
+   }
+  }
+ }
+ if(hasWax){
+  if(options.extraCleaning)add('deep_clean','Intensieve reiniging met gele wax','Voer alleen afgesproken extra reiniging uit; meet gele reinigingswax afzonderlijk.','wax',['24101','24580','20606','25631','24622']);
+  else if(!combinedSetup)add('clean','Normale voorbereiding (inbegrepen)','Verwijder losse resten, neem af en borstel. Beoordeel het belag; spreek intensieve reiniging eerst af.','cleaning',['24491','20687set']);
+  if(waxSku!=='24057')add('base_wax','Rode basiswax aanbrengen en afwerken','Breng Beta Mix Red aan, laat afkoelen, schraap en borstel voor de extra eindwax.','wax',['24057','24580','20606','25631','24622','20687set']);
+  add('wax','Waxen en afwerken','Breng wax aan, laat afkoelen, schraap en borstel. Weeg hetzelfde waxblok voor en na.','wax',[waxSku,'24580','20606','25631','24622','20687set']);
+ }
  if(options.bindings)add('bindings_on','Bindingen monteren','Monteer de bindingen met het apart gelegde bevestigingsmateriaal.','setup');if(Number(options.waxstickCount)>0)add('waxstick','Waxstick klaarleggen',`Leg ${Number(options.waxstickCount)} Holmenkol Natural Skiwax Stick${Number(options.waxstickCount)===1?'':'s'} bij de afgeronde bestelling. Bevestig het daadwerkelijk meegeven later bij de opdracht in beheer; pas dan wordt de voorraad afgeboekt.`,'finish',['25018']);add('finish','Eindcontrole','Controleer kanten, belag, finish en uitgevoerde meerwerken.','finish');
  if(material.is_training && options.activity==='full')add('practice_delivery','Opleveren','Maak de opleverfoto en licht de uitgevoerde werkzaamheden toe alsof je het materiaal aan de klant teruggeeft.','finish');
  return steps;
@@ -78,23 +100,32 @@ async function upgradePendingBase(db,material){
  ]);
 }
 
-async function mergePendingWax(db,materialId){
- const rows=(await db.prepare("SELECT * FROM maintenance_steps WHERE material_id=? AND step_code IN ('wax','scrape','brush') ORDER BY step_order").bind(materialId).all()).results;
- if(rows.map(row=>row.step_code).join(',')!=='wax,scrape,brush'||rows.some(row=>row.status!=='pending'||row.started_at))return;
- const [wax,scrape,brush]=rows;
- const required=JSON.stringify([...new Set(rows.flatMap(row=>JSON.parse(row.required_items)))]);
- const untouched=`status='pending' AND started_at IS NULL AND NOT EXISTS(SELECT 1 FROM maintenance_step_sessions WHERE step_id=maintenance_steps.id)
-  AND NOT EXISTS(SELECT 1 FROM maintenance_step_guides WHERE step_id=maintenance_steps.id)
-  AND NOT EXISTS(SELECT 1 FROM maintenance_measurements WHERE step_id=maintenance_steps.id)
-  AND NOT EXISTS(SELECT 1 FROM maintenance_usage WHERE step_id=maintenance_steps.id)`;
- await db.batch([
-  db.prepare(`UPDATE maintenance_steps SET title='Waxen en afwerken',instruction='Breng wax aan, laat afkoelen, schraap en borstel.',required_items=?
-   WHERE id=? AND (SELECT COUNT(*) FROM maintenance_steps WHERE id IN (?,?,?) AND ${untouched})=3`).bind(required,wax.id,wax.id,scrape.id,brush.id),
-  db.prepare('DELETE FROM maintenance_steps WHERE id IN (?,?) AND changes()=1').bind(scrape.id,brush.id)
- ]);
+async function mergePendingSteps(db,material){
+ const rows=(await db.prepare("SELECT * FROM maintenance_steps WHERE material_id=? AND step_code IN ('wax','scrape','brush','setup','clean','filing','premium_file','premium_diamond') ORDER BY step_order").bind(material.id).all()).results;
+ const plans=[{codes:['wax','scrape','brush'],code:'wax',title:'Waxen en afwerken',procedure:'wax'}];
+ if(!material.is_training)plans.push(
+  {codes:['setup','clean'],code:'setup_clean',title:'Werkplek voorbereiden en belag reinigen',procedure:'cleaning'},
+  {codes:['filing','premium_file','premium_diamond'],code:'filing_premium',title:'Slijpen en premium afwerken',procedure:'filing'}
+ );
+ for(const {codes,code,title,procedure} of plans){
+  const steps=codes.map(code=>rows.find(row=>row.step_code===code));
+  if(steps.some(row=>!row||row.status!=='pending'||row.started_at))continue;
+  const [first,...rest]=steps;
+  const ids=steps.map(row=>row.id),placeholders=ids.map(()=>'?').join(',');
+  const required=JSON.stringify([...new Set(steps.flatMap(row=>JSON.parse(row.required_items)))]);
+  const untouched=`status='pending' AND started_at IS NULL AND NOT EXISTS(SELECT 1 FROM maintenance_step_sessions WHERE step_id=maintenance_steps.id)
+   AND NOT EXISTS(SELECT 1 FROM maintenance_step_guides WHERE step_id=maintenance_steps.id)
+   AND NOT EXISTS(SELECT 1 FROM maintenance_measurements WHERE step_id=maintenance_steps.id)
+   AND NOT EXISTS(SELECT 1 FROM maintenance_usage WHERE step_id=maintenance_steps.id)`;
+  await db.batch([
+   db.prepare(`UPDATE maintenance_steps SET step_code=?,title=?,instruction=?,procedure=?,required_items=?
+    WHERE id=? AND (SELECT COUNT(*) FROM maintenance_steps WHERE id IN (${placeholders}) AND ${untouched})=?`).bind(code,title,title,procedure,required,first.id,...ids,steps.length),
+   db.prepare(`DELETE FROM maintenance_steps WHERE id IN (${rest.map(()=>'?').join(',')}) AND changes()=1`).bind(...rest.map(row=>row.id))
+  ]);
+ }
 }
 
-export async function ensureWorkflow(db,material){const existing=await db.prepare('SELECT COUNT(*) amount FROM maintenance_steps WHERE material_id=?').bind(material.id).first();if(Number(existing?.amount)>0){await upgradePendingCleaning(db,material.id);await upgradePendingBase(db,material);await mergePendingWax(db,material.id);return;}const created=now(),definitions=definitionFor(material);for(let index=0;index<definitions.length;index+=1){const step=definitions[index];await db.prepare(`INSERT INTO maintenance_steps(id,material_id,step_order,step_code,title,instruction,procedure,required_items,created_at) VALUES(?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(),material.id,index+1,step.code,step.title,step.instruction,step.procedure,JSON.stringify(step.requiredItems),created).run();}}
+export async function ensureWorkflow(db,material){const existing=await db.prepare('SELECT COUNT(*) amount FROM maintenance_steps WHERE material_id=?').bind(material.id).first();if(Number(existing?.amount)>0){await upgradePendingCleaning(db,material.id);await upgradePendingBase(db,material);await mergePendingSteps(db,material);return;}const created=now(),definitions=definitionFor(material);for(let index=0;index<definitions.length;index+=1){const step=definitions[index];await db.prepare(`INSERT INTO maintenance_steps(id,material_id,step_order,step_code,title,instruction,procedure,required_items,created_at) VALUES(?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(),material.id,index+1,step.code,step.title,step.instruction,step.procedure,JSON.stringify(step.requiredItems),created).run();}}
 const materialView=row=>({id:row.id,token:row.scan_token,displayCode:row.display_code,reference:row.reference,itemNumber:row.item_number,kind:row.kind,package:row.package_name||'',packageCode:row.package_code||'',premiumIncluded:Boolean(JSON.parse(row.selected_options||'{}').premiumIncluded),waxType:row.wax_type||'',assignedTo:row.assigned_to||'',internalStatus:row.internal_status,customerStatus:row.customer_status,isTraining:Boolean(row.is_training),fullPractice:Boolean(row.is_training)&&JSON.parse(row.selected_options||'{}').activity==='full',createdAt:row.created_at,updatedAt:row.updated_at,qrValue:`https://lattenspecialist.nl/medewerkers.html#scan=${encodeURIComponent(row.scan_token)}`});
 export async function getWorkflow(db,material){
  if(material.internal_status==='material_removed')throw new InventoryError('Deze set is verwijderd.',404);

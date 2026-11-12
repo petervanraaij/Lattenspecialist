@@ -151,7 +151,7 @@
     }
     const running=active(step), resumed=paused(step);
     const state=running||resumed?'is-active':actionable?'is-next':'is-locked';
-    const title=`<div class="workflow-step-head"><h4>${escape(step.title)}</h4><span>${running?'Bezig':resumed?'Gepauzeerd':actionable?'Volgende stap':'Wacht'}</span></div>`;
+    const title=`<div class="workflow-step-head"><h4>${escape(!workflow.isTraining&&step.code==='finish' ? "Eindcontrole en opleverfoto’s" : step.title)}</h4><span>${running?'Bezig':resumed?'Gepauzeerd':actionable?'Volgende stap':'Wacht'}</span></div>`;
     const supplies=[...step.requirements.map(requirementLabel),...(step.guide?.supplies||[])];
     const needs=supplies.length?`<div class="workflow-needs" aria-label="Benodigdheden"><strong>Nodig</strong>${[...new Set(supplies)].map(item=>`<span>${escape(item)}</span>`).join('')}</div>`:'';
     const instructions=running?`<p class="workflow-instruction">${escape(step.instruction)}</p>${needs}${window.LSMaintenanceGuide?.instruction(step,false,{referencesOnly:true})||''}<div class="workflow-timing">${timing(step)}</div><details data-step-warehouse><summary>Uit magazijn gepakt</summary><div data-step-warehouse-content></div></details>${finishForm(step)}`:'';
@@ -191,7 +191,8 @@
       list.after(context);
     }
     if(!inspectionOnly&&(!workflow.isTraining||material.fullPractice)&&window.LSMaterialPhotos){
-      const deliveryAvailable=finished===steps.length||(material.fullPractice&&steps[nextIndex]?.code==='practice_delivery');
+      const finalCheck=!workflow.isTraining&&steps[nextIndex]?.code==='finish'&&active(steps[nextIndex]);
+      const deliveryAvailable=finished===steps.length||finalCheck||(material.fullPractice&&steps[nextIndex]?.code==='practice_delivery');
       const details=document.createElement('details');
       details.className='material-photo-disclosure';
       details.innerHTML=`<summary>${deliveryAvailable?'Foto’s bij binnenkomst en oplevering':'Foto’s bij binnenkomst'}</summary><div data-material-photos></div>`;
@@ -217,13 +218,13 @@
       delivery.className='workflow-delivery';
       delivery.innerHTML=deliveryAvailable?'<h4>Opleverfoto’s</h4><button type="button" class="btn btn-gold">📷 Opleverfoto maken</button>':'<h4>Opleverfoto’s</h4><p>Maak de opleverfoto’s na de laatste onderhoudsstap.</p>';
       if(deliveryAvailable)delivery.querySelector('button').onclick=()=>{
-        if(focused)delivery.append(details);
+        if(focused||finalCheck)delivery.append(details);
         openCamera('delivery');
       };
       const practiceDelivery=material.fullPractice&&steps[nextIndex]?.code==='practice_delivery';
-      if(practiceDelivery){
-        const last=host.querySelectorAll('.workflow-step')[nextIndex];
-        last.querySelector('.workflow-actions')?.before(delivery);
+      if(practiceDelivery||finalCheck){
+        const last=[...host.querySelectorAll('.workflow-step')].find(card=>card.dataset.stepId===steps[nextIndex].id);
+        last?.querySelector('.workflow-actions')?.before(delivery);
       }else{
         host.append(delivery);
         if(deliveryAvailable&&!focused)delivery.append(details);
