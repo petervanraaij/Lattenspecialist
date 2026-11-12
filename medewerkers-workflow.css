@@ -54,3 +54,10 @@
 .wax-weight-hint{grid-column:1/-1;padding:16px;background:#f8f5eb;border-radius:10px}.wax-weight-hint p{margin:8px 0}.wax-weight-hint small{display:block;line-height:1.5}
 
 .warehouse-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin:20px 0}.warehouse-grid article{padding:16px;background:#f8f5ec;border:1px solid #ded5c5;border-radius:14px}.warehouse-grid form{display:grid;gap:12px}.warehouse-grid input,.warehouse-grid select{max-width:100%;min-width:0;box-sizing:border-box}.warehouse-grid [hidden]{display:none}
+
+.workflow-step.workflow-step-compact{grid-template-columns:24px minmax(0,1fr);align-items:center;gap:10px;padding:8px 12px}
+.workflow-step-compact::before{width:24px;height:24px;font-size:12px}
+.workflow-step-compact .workflow-step-main{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:2px 12px}
+.workflow-step-compact h4{margin:0;font-size:inherit}
+.workflow-step-compact span{color:#365f45;font-size:.84rem}
+.workflow-step-compact time{margin-left:.4em}

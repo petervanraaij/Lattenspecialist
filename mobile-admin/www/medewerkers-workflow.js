@@ -155,7 +155,12 @@
   }
 
   function stepCard(step, actionable) {
-    const state = completed(step) ? 'is-completed' : active(step) || paused(step) ? 'is-active' : actionable ? 'is-next' : 'is-locked';
+    if(completed(step)){
+      const finishedAt=step.completedAt && stamp(step.completedAt);
+      const time=finishedAt?` <time datetime="${escape(step.completedAt)}">${escape(finishedAt)}</time>`:'';
+      return `<article class="workflow-step is-completed workflow-step-compact" data-step-id="${escape(step.id)}"><div class="workflow-step-main"><h4>${escape(step.title)}</h4><span>Afgerond${time}</span></div></article>`;
+    }
+    const state = active(step) || paused(step) ? 'is-active' : actionable ? 'is-next' : 'is-locked';
     const requirements = step.requirements.length ? `<div class="workflow-needs" aria-label="Benodigdheden">${step.requirements.map(item => `<span>${escape(requirementLabel(item))}</span>`).join('')}</div>` : '<div class="workflow-needs"><span>Geen voorraadartikel geregistreerd</span></div>';
     const results = usageValues(step);
     const actions = active(step) ? finishForm(step) : (paused(step) || actionable) && !completed(step) ? startForm(step) : '';
