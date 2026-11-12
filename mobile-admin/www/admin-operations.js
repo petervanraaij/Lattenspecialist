@@ -540,6 +540,21 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace','work-que
   if(button)void openIntake(button);
  });
  document.addEventListener('toggle',async event=>{
+  const details=event.target;
+  if(!details.matches?.('.admin-record-details')||!details.open)return;
+  const codes=details.querySelector('[data-request-material-codes]');
+  if(!codes||codes.dataset.loaded)return;
+  codes.dataset.loaded='true';
+  try{
+   const {materials}=await labels(details.closest('.admin-record').dataset.reference,false);
+   const received=materials.filter(item=>item.receivedAt&&item.displayCode);
+   codes.querySelector('[data-material-code-values]').textContent=received.map(item=>`Set ${item.itemNumber} · ${item.displayCode}`).join(' | ');
+   codes.hidden=!received.length;
+  }catch{
+   delete codes.dataset.loaded;
+  }
+ },true);
+ document.addEventListener('toggle',async event=>{
   const panel=event.target;
   if(!panel.matches?.('[data-inline-intake]')||!panel.open||panel.dataset.loaded)return;
   const target=panel.querySelector('[data-inline-intake-content]');
