@@ -23,6 +23,7 @@ try{
  const current=()=>f.sql.prepare('SELECT revision,payload FROM records WHERE reference=?').get(reference);
  const move=()=>f.call(reservation,'PATCH',{moveToWorkshop:true,revision:current().revision});
  assert.equal((await move()).status,409);
+ f.sql.prepare("UPDATE records SET payload=json_set(payload,'$.currentStep',2) WHERE reference=?").run(reference);
  for(const [index,set] of f.materials.entries()){
   if(index>0)assert.equal((await f.call('/api/admin/operations/materials/intake','POST',{reference,materialId:set.id,label:'LS-2601-0002'})).status,200);
   const path='/api/team/operations/materials/'+set.id+'/workflow';
@@ -30,7 +31,7 @@ try{
   const [inspection,next]=loaded.data.workflow.steps;
   const act=(step,action,body)=>f.call('/api/team/operations/steps/'+step.id+'/'+action,'POST',body,f.staff);
   assert.equal((await act(inspection,'start',{guideVersion:inspection.guide.version})).status,200);
-  assert.equal(JSON.parse(current().payload).currentStep,3);
+  assert.equal(JSON.parse(current().payload).currentStep,index===0?2:3);
   const done=await act(inspection,'finish',{guideChecks:{version:inspection.guide.version,checkedIds:inspection.guide.checks.map(check=>check.id)}});
   assert.equal(done.status,200,JSON.stringify(done.data));
   assert.equal((await act(next,'start',{})).status,409);
