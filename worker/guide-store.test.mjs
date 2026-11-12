@@ -19,8 +19,28 @@ try{
  assert.equal((await f.call('/api/team/operations/steps/'+step.id+'/finish','POST',{repairStrips:1,repairColor:'transparent',toolSkus:[]},f.staff)).status,400);
  assert.equal((await f.call('/api/team/operations/steps/'+step.id+'/finish','POST',{repairStrips:1,repairColor:'transparent',toolSkus:[],guideChecks:{version:step.guide.version,checkedIds:step.guide.checks.map(item=>item.id)}},f.staff)).status,200);
  const ski=f.sql.prepare('SELECT * FROM materials WHERE id=?').get(f.materials[0].id),freshWorkflow=await getWorkflow(f.db,ski);
- const brushStep=freshWorkflow.steps.find(step=>step.code==='brush');assert.equal(brushStep.title,'Bestaande structuur vrijborstelen en belag polijsten');
- const oldBrushGuide={...brushStep.guide,title:'Borstelen en finishen',goal:'Werk de waxlaag af en maak de bestaande glijstructuur vrij.',version:'2026-11-01.2',steps:['Borstel met het voor de wax passende materiaal en werk gelijkmatig richting tail.','Verwijder stof en beoordeel het glijvlak bij goed licht.']};
+ const combined=freshWorkflow.steps.find(step=>step.code==='wax');
+ assert.match(combined.title,/aanbrengen en afwerken/);
+ assert.ok(combined.guide.checks.some(item=>item.id==='finish'));
+ assert.ok(combined.requiredItems.some(item=>item.sku==='20687set'));
+ assert.ok(!freshWorkflow.steps.some(step=>['scrape','brush'].includes(step.code)));
+ const waxOrder=f.sql.prepare("SELECT step_order FROM maintenance_steps WHERE id=?").get(combined.id).step_order;
+ f.sql.prepare('UPDATE maintenance_steps SET step_order=step_order+20 WHERE material_id=? AND step_order>?').run(ski.id,waxOrder);
+ const addLegacy=f.sql.prepare("INSERT INTO maintenance_steps(id,material_id,step_order,step_code,title,instruction,procedure,required_items,created_at) VALUES(?,?,?,?,?,?,'wax',?,?)");
+ const seedLegacy=(code,order,required)=>{
+  const id=crypto.randomUUID();
+  addLegacy.run(id,ski.id,order,code,code,code,JSON.stringify(required),new Date().toISOString());
+  return id;
+ };
+ f.sql.prepare("UPDATE maintenance_steps SET required_items=? WHERE id=?").run(JSON.stringify(['24101','24580','20606']),combined.id);
+ seedLegacy('scrape',waxOrder+1,['25631','24622']);
+ seedLegacy('brush',waxOrder+2,['20687set']);
+ const migrated=await getWorkflow(f.db,ski);
+ assert.ok(!migrated.steps.some(step=>['scrape','brush'].includes(step.code)));
+ assert.equal(migrated.steps.find(step=>step.code==='wax').id,combined.id);
+ seedLegacy('scrape',waxOrder+1,['25631','24622']);
+ const brushStep={id:seedLegacy('brush',waxOrder+2,['20687set'])};
+ const oldBrushGuide={...combined.guide,title:'Borstelen en finishen',goal:'Werk de waxlaag af en maak de bestaande glijstructuur vrij.',version:'2026-11-01.2',steps:['Borstel met het voor de wax passende materiaal en werk gelijkmatig richting tail.','Verwijder stof en beoordeel het glijvlak bij goed licht.']};
  f.sql.prepare('INSERT INTO maintenance_step_guides(step_id,content_json) VALUES(?,?)').run(brushStep.id,JSON.stringify(oldBrushGuide));
  for(const status of ['in_progress','completed']){f.sql.prepare('UPDATE maintenance_steps SET status=? WHERE id=?').run(status,brushStep.id);const heldBrush=(await getWorkflow(f.db,ski)).steps.find(step=>step.id===brushStep.id);assert.deepEqual(heldBrush.guide,oldBrushGuide,'existing '+status+' brush instruction keeps its complete historical snapshot');assert.equal(heldBrush.title,oldBrushGuide.title);}
  let selects=0;const original=f.db.prepare.bind(f.db);f.db.prepare=query=>{if(/^SELECT/i.test(query))selects++;return original(query);};const workflow=await getWorkflow(f.db,ski);assert.ok(workflow.steps.length>6);assert.ok(selects<=13,`Workflow caused ${selects} SELECT statements`);
