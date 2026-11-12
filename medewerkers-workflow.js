@@ -154,6 +154,7 @@
   function render(host, data, materialId) {
     const workflow = normalizeWorkflow(data);
     const inspectionOnly = host.dataset.inspectionOnly === 'true';
+    const focused = host.dataset.focusedWorkflow === 'true';
     const steps = inspectionOnly ? workflow.steps.filter(step => step.code === 'inspection') : workflow.steps;
     const finished = steps.filter(completed).length;
     const runningIndex = steps.findIndex(step => active(step) || paused(step));
@@ -168,6 +169,20 @@
     }
     const summary = workflow.summary || {}, totalCost = number(summary.totalCost ?? summary.total_cost), totalSeconds = number(summary.totalSeconds ?? summary.total_seconds);
     host.innerHTML = `<div class="workflow-head"><div><span class="eyebrow">${workflow.isTraining ? 'OEFENKLANT' : 'STAPPENPLAN'}</span><h3>${escape(title)}</h3>${workflow.isTraining ? `<p>${escape([material.kind==='Ski'?"Ski’s (paar)":material.kind,material.package].filter(Boolean).join(' · '))}</p>` : ''}<p>${finished} van ${steps.length} stappen afgerond${totalSeconds ? ` · ${formatDuration(totalSeconds)} gewerkt` : ''}${totalCost ? ` · ${money(totalCost)} geregistreerd` : ''}</p></div><div class="workflow-badges">${workflow.isTraining ? '<span class="workflow-badge is-training">Buiten productiecijfers</span>' : ''}<span class="workflow-badge">Verbruik boeken bij afronden</span></div></div><div class="workflow-progress" aria-label="${finished} van ${steps.length} stappen afgerond"><i style="width:${steps.length ? finished / steps.length * 100 : 0}%"></i></div>${window.LSTreatmentOverview?window.LSTreatmentOverview.render(window.LSTreatmentOverview.workflow(workflow),{open:true}):''}${window.LSMaintenanceGuide?.preparation(workflow)||''}<div class="workflow-list">${steps.map((step, index) => stepCard(step, index === nextIndex)).join('')}</div>`;
+    let context;
+    if(focused){
+      const list=host.querySelector('.workflow-list');
+      if(nextIndex>=0)list.prepend(list.children[nextIndex]);
+      const head=host.querySelector('.workflow-head');
+      head.innerHTML=`<p>${finished} van ${steps.length} stappen afgerond</p>`;
+      context=document.createElement('details');
+      context.className='material-photo-disclosure';
+      context.innerHTML='<summary>Opdrachtgegevens en innamefoto’s</summary>';
+      for(const item of [...host.children]){
+        if(item!==head&&item!==list&&!item.matches('.workflow-progress'))context.append(item);
+      }
+      list.after(context);
+    }
     if(!inspectionOnly&&(!workflow.isTraining||material.fullPractice)&&window.LSMaterialPhotos){
       const deliveryAvailable=finished===steps.length||(material.fullPractice&&steps[nextIndex]?.code==='practice_delivery');
       const details=document.createElement('details');
@@ -176,7 +191,8 @@
       const intakeActions=document.createElement('div');
       intakeActions.className='workflow-photo-shortcuts';
       intakeActions.innerHTML='<button type="button" data-photo-stage="intake">📷 Binnenkomstfoto maken</button>';
-      host.querySelector('.workflow-head').after(intakeActions,details);
+      if(focused)context.append(details);
+      else host.querySelector('.workflow-head').after(intakeActions,details);
       const mount=()=>{
         const target=details.querySelector('[data-material-photos]');
         if(!target.children.length)window.LSMaterialPhotos.mount(target,materialId,{admin:host.dataset.ownerWorkflow==='true',intakeOnly:!deliveryAvailable});
@@ -193,14 +209,17 @@
       const delivery=document.createElement('section');
       delivery.className='workflow-delivery';
       delivery.innerHTML=deliveryAvailable?'<h4>Opleverfoto’s</h4><button type="button" class="btn btn-gold">📷 Opleverfoto maken</button>':'<h4>Opleverfoto’s</h4><p>Maak de opleverfoto’s na de laatste onderhoudsstap.</p>';
-      if(deliveryAvailable)delivery.querySelector('button').onclick=()=>openCamera('delivery');
+      if(deliveryAvailable)delivery.querySelector('button').onclick=()=>{
+        if(focused)delivery.append(details);
+        openCamera('delivery');
+      };
       const practiceDelivery=material.fullPractice&&steps[nextIndex]?.code==='practice_delivery';
       if(practiceDelivery){
         const last=host.querySelectorAll('.workflow-step')[nextIndex];
         last.querySelector('.workflow-actions')?.before(delivery);
       }else{
         host.append(delivery);
-        if(deliveryAvailable)delivery.append(details);
+        if(deliveryAvailable&&!focused)delivery.append(details);
       }
     }
     const warehouse=host.querySelector('[data-step-warehouse]');
@@ -422,7 +441,7 @@
     const button = event.target.closest('[data-workflow-pause]');
     if (button) pauseStep(button);
   });
-  window.LSWorkflows={practicePanel,open(host,materialId,{admin=false,memberId='',inspectionOnly=false}={}){host.dataset.inspectionOnly=String(inspectionOnly);host.dataset.ownerWorkflow=String(admin);host.dataset.executionMemberId=memberId;return loadInto(host,materialId);}};
+  window.LSWorkflows={practicePanel,open(host,materialId,{admin=false,memberId='',inspectionOnly=false,focused=false}={}){host.dataset.focusedWorkflow=String(focused);host.dataset.inspectionOnly=String(inspectionOnly);host.dataset.ownerWorkflow=String(admin);host.dataset.executionMemberId=memberId;return loadInto(host,materialId);}};
   watchScans();
   setInterval(updateTimers, 1000);
 })();

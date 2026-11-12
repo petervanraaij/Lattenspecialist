@@ -310,7 +310,7 @@ if(window.AdminSecurity?.locked&&!['orders','instructions','workplace','work-que
   const title=target.querySelector('h2');
   title.focus({preventScroll:true});
   target.scrollIntoView({block:'start'});
-  void window.LSWorkflows.open(target.querySelector('[data-work-queue-steps]'),item.id,{admin:true,memberId});
+  void window.LSWorkflows.open(target.querySelector('[data-work-queue-steps]'),item.id,{admin:true,memberId,focused:true});
  }
  document.addEventListener('ls-workshop-entered',()=>void setTab('work-queue'));
  async function openWorkorderWorkspace(button){
