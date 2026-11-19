@@ -89,3 +89,7 @@ De openbare homepage bevat een compact pakketoverzicht zonder invoervelden of le
 
 ## Dakkoffer: zelfmontage en huurafspraken
 De dakkoffer is alleen voor onderhoudsklanten. Aanbod, aanvraagformulier en klantenapp vermelden zelf monteren/demonteren en twee volwassenen bij ophalen/terugbrengen. Platen, bouten en handmoeren vereisen uitleg en productinstructies; geschiktheid volgt niet uit alleen het dakrailtype. Servicevoorwaarden behouden wettelijke aansprakelijkheid voor materiaal en instructies, en beschrijven de eigen verantwoordelijkheid van de huurder bij hanteren en gebruik. Nieuwe afspraken gelden voor nieuw bevestigde reserveringen vanaf 19 november 2026.
+
+
+### Huurovereenkomst dakkoffer en dakdragers
+De verantwoordelijkheid van de huurder voor deugdelijke montage van beide onderdelen en de controle vóór vertrek en tijdens de reis staat op de productpagina, in de huurafspraken, aanvraag en klantenapp. De downloadbare PDF bevat twee pagina’s, 18 invulvelden, lege bevestigingsvakjes en ruimte voor handtekeningen; er wordt niet automatisch een contract gesloten of digitaal ondertekend. Genereer opnieuw met scripts/build-roofbox-agreement.py (Python, reportlab en pypdf) en controleer de gerenderde pagina’s. Lever de afspraken vóór definitieve bevestiging aan de huurder.
