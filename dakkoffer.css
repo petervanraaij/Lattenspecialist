@@ -18,3 +18,5 @@
 .rental-page section[id]{scroll-margin-top:110px}
 .rental-page .main-nav [aria-current=page]{color:#d9b65e}
 @media(max-width:900px){.rental-layout{grid-template-columns:1fr;gap:24px}.rental-shell{padding-top:32px}.rental-intro{margin-bottom:28px}}
+
+.rental-mounting{background:#f7f0df;border:1px solid #d6bd81!important;border-radius:12px;padding:22px!important}.rental-mounting .eyebrow{display:block;margin-bottom:10px}.rental-mounting li{margin-bottom:10px}.rental-mounting a{color:#70531d;text-underline-offset:3px}
